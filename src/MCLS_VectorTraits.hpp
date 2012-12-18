@@ -58,7 +58,7 @@ namespace MCLS
 template<class VectorType>
 struct UndefinedVectorTraits
 {
-    static inline UndefinedType notDefined()
+    static inline VectorType notDefined()
     {
 	return VectorType::this_type_is_missing_a_specialization();
     }
@@ -80,10 +80,9 @@ class VectorTraits
     //@{
     //! Typedefs.
     typedef VectorType                                   vector_type;
-    typedef VectorType::scalar_type                      scalar_type;
-    typedef VectorType::local_ordinal_type               local_ordinal_type;
-    typedef VectorType::global_ordinal_type              global_ordinal_type;
-    typedef VectorType::size_t                           size_type;
+    typedef typename VectorType::scalar_type             scalar_type;
+    typedef typename VectorType::local_ordinal_type      local_ordinal_type;
+    typedef typename VectorType::global_ordinal_type     global_ordinal_type;
     //@}
 
     /*!
@@ -178,34 +177,34 @@ class VectorTraits
      */
     static scalar_type 
     dot( const VectorType& A, const VectorType& B )
-    { UndefinedVectorTraits<VectorType>::notDefined(); return 0 }
+    { UndefinedVectorTraits<VectorType>::notDefined(); return 0; }
 
     /*! 
      * \brief Compute the 1-norm of a vector.
      */
-    static Teuchos::ScalarTraits<scalar_type>::magnitudeType 
+    static typename Teuchos::ScalarTraits<scalar_type>::magnitudeType 
     norm1( const VectorType& vector )
-    { UndefinedVectorTraits<VectorType>::notDefined(); return 0 }
+    { UndefinedVectorTraits<VectorType>::notDefined(); return 0; }
 
     /*! 
      * \brief Compute the 2-norm of a vector.
      */
-    static Teuchos::ScalarTraits<scalar_type>::magnitudeType 
+    static typename Teuchos::ScalarTraits<scalar_type>::magnitudeType 
     norm2( const VectorType& vector )
-    { UndefinedVectorTraits<VectorType>::notDefined(); return 0 }
+    { UndefinedVectorTraits<VectorType>::notDefined(); return 0; }
 
     /*! 
      * \brief Compute the Inf-norm of a vector.
      */
-    static Teuchos::ScalarTraits<scalar_type>::magnitudeType 
+    static typename Teuchos::ScalarTraits<scalar_type>::magnitudeType 
     normInf( const VectorType& vector )
-    { UndefinedVectorTraits<VectorType>::notDefined(); return 0 }
+    { UndefinedVectorTraits<VectorType>::notDefined(); return 0; }
 
     /*!
      * \brief Compute the mean value of a vector.
      */
     static scalar_type meanValue( const VectorType& vector )
-    { UndefinedVectorTraits<VectorType>::notDefined(); return 0 }
+    { UndefinedVectorTraits<VectorType>::notDefined(); return 0; }
 
     /*!
      * \brief Replace output vector values with element-wise absolute values

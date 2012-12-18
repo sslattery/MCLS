@@ -40,19 +40,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, Typedefs, Scalar, LO, GO )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    TEST_EQUALITY_CONST( Teuchos::is_same<Scalar, VT::scalar_type>::value 
-			 == true, true );
-    TEST_EQUALITY_CONST( Teuchos::is_same<LO, VT::local_ordinal_type>::value
-			 == true, true );
-    TEST_EQUALITY_CONST( Teuchos::is_same<GO, VT::global_ordinal_type>::value
-			 == true, true );
+    typedef typename VT::scalar_type scalar_type;
+    typedef typename VT::local_ordinal_type local_ordinal_type;
+    typedef typename VT::global_ordinal_type global_ordinal_type;
+
+    TEST_EQUALITY_CONST( 
+	(Teuchos::TypeTraits::is_same<Scalar, scalar_type>::value)
+	== true, true );
+    TEST_EQUALITY_CONST( 
+	(Teuchos::TypeTraits::is_same<LO, local_ordinal_type>::value)
+	== true, true );
+    TEST_EQUALITY_CONST( 
+	(Teuchos::TypeTraits::is_same<GO, global_ordinal_type>::value)
+	== true, true );
 }
 
 //---------------------------------------------------------------------------//
 // Test instantiations.
 //---------------------------------------------------------------------------//
 #define UNIT_TEST_GROUP( SCALAR, LO, GO ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VectorTraits, Typedefs, LO, GO, SCALAR )
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( VectorTraits, Typedefs, LO, GO, SCALAR )
 
 //---------------------------------------------------------------------------//
 // end tstTpetraVector.cpp
