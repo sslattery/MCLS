@@ -34,9 +34,22 @@
 #include <Tpetra_Vector.hpp>
 
 //---------------------------------------------------------------------------//
+// Instantiation macro. 
+// 
+// These types are those enabled by Tpetra under explicit instantiation.
+//---------------------------------------------------------------------------//
+#define UNIT_TEST_INSTANTIATION( type, name )			           \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, int )      \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, long )     \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, double )   \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, int )     \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, long )    \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
+
+//---------------------------------------------------------------------------//
 // Test templates
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, Typedefs, Scalar, LO, GO )
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, Typedefs, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
@@ -55,11 +68,134 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, Typedefs, Scalar, LO, GO )
 	== true, true );
 }
 
+UNIT_TEST_INSTANTIATION( VectorTraits, Typedefs )
+
 //---------------------------------------------------------------------------//
-// Test instantiations.
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, Clone, LO, GO, Scalar )
+{
+    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef typename VT::scalar_type scalar_type;
+    typedef typename VT::local_ordinal_type local_ordinal_type;
+    typedef typename VT::global_ordinal_type global_ordinal_type;
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+	Teuchos::DefaultComm<int>::getComm();
+    int comm_size = comm->getSize();
+
+    int local_num_rows = 10;
+    int global_num_rows = local_num_rows*comm_size;
+    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
+	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
+
+    Teuchos::RCP<VectorType> A = Tpetra::createVector<Scalar,LO,GO>( map );
+    A->putScalar( 1.0 );
+
+    Teuchos::RCP<VectorType> B = VT::clone( *A );
+
+    TEST_ASSERT( A->getMap()->isSameAs( *(B->getMap()) ) );
+    
+    Teuchos::ArrayRCP<const Scalar> B_view = VT::view( *B );
+    typename Teuchos::ArrayRCP<const Scalar>::const_iterator view_iterator;
+    for ( view_iterator = B_view.begin();
+	  view_iterator != B_view.end();
+	  ++view_iterator )
+    {
+	TEST_EQUALITY( *view_iterator, 0.0 );
+    }
+}
+
+UNIT_TEST_INSTANTIATION( VectorTraits, Clone )
+
 //---------------------------------------------------------------------------//
-#define UNIT_TEST_GROUP( SCALAR, LO, GO ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( VectorTraits, Typedefs, LO, GO, SCALAR )
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, DeepCopy, LO, GO, Scalar )
+{
+    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef typename VT::scalar_type scalar_type;
+    typedef typename VT::local_ordinal_type local_ordinal_type;
+    typedef typename VT::global_ordinal_type global_ordinal_type;
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+	Teuchos::DefaultComm<int>::getComm();
+    int comm_size = comm->getSize();
+
+    int local_num_rows = 10;
+    int global_num_rows = local_num_rows*comm_size;
+    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
+	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
+
+    Teuchos::RCP<VectorType> A = Tpetra::createVector<Scalar,LO,GO>( map );
+    A->putScalar( 1.0 );
+
+    Teuchos::RCP<VectorType> B = VT::deepCopy( *A );
+
+    TEST_ASSERT( A->getMap()->isSameAs( *(B->getMap()) ) );
+    
+    Teuchos::ArrayRCP<const Scalar> B_view = VT::view( *B );
+    typename Teuchos::ArrayRCP<const Scalar>::const_iterator view_iterator;
+    for ( view_iterator = B_view.begin();
+	  view_iterator != B_view.end();
+	  ++view_iterator )
+    {
+	TEST_EQUALITY( *view_iterator, 1.0 );
+    }
+}
+
+UNIT_TEST_INSTANTIATION( VectorTraits, DeepCopy )
+
+//---------------------------------------------------------------------------//
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, Modifiers, LO, GO, Scalar )
+{
+    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef typename VT::scalar_type scalar_type;
+    typedef typename VT::local_ordinal_type local_ordinal_type;
+    typedef typename VT::global_ordinal_type global_ordinal_type;
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+	Teuchos::DefaultComm<int>::getComm();
+    int comm_size = comm->getSize();
+
+    int local_num_rows = 10;
+    int global_num_rows = local_num_rows*comm_size;
+    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
+	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
+
+    Teuchos::RCP<VectorType> A = Tpetra::createVector<Scalar,LO,GO>( map );
+    A->putScalar( 1.0 );
+
+    Teuchos::RCP<VectorType> B = VT::clone( *A );
+
+    VT::putScalar( *B, 2.0 );    
+
+    Teuchos::ArrayRCP<const Scalar> B_view = VT::view( *B );
+    typename Teuchos::ArrayRCP<const Scalar>::const_iterator view_iterator;
+    for ( view_iterator = B_view.begin();
+	  view_iterator != B_view.end();
+	  ++view_iterator )
+    {
+	TEST_EQUALITY( *view_iterator, 2.0 );
+    }
+
+    Teuchos::ArrayRCP<Scalar> B_view_non_const = VT::viewNonConst( *B );
+    typename Teuchos::ArrayRCP<Scalar>::iterator view_non_const_iterator;
+    for ( view_non_const_iterator = B_view_non_const.begin();
+	  view_non_const_iterator != B_view_non_const.end();
+	  ++view_non_const_iterator )
+    {
+	*view_non_const_iterator = 3.0;
+    }
+
+    for ( view_iterator = B_view.begin();
+	  view_iterator != B_view.end();
+	  ++view_iterator )
+    {
+	TEST_EQUALITY( *view_iterator, 3.0 );
+    }
+}
+
+UNIT_TEST_INSTANTIATION( VectorTraits, Modifiers )
 
 //---------------------------------------------------------------------------//
 // end tstTpetraVector.cpp

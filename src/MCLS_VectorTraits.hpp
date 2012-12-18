@@ -89,7 +89,7 @@ class VectorTraits
      * \brief Create a reference-counted pointer to a new empty vector with
      * the same parallel distribution as the given vector.
      */
-    static Teuchos::RCP<VectorType> create( const VectorType& vector )
+    static Teuchos::RCP<VectorType> clone( const VectorType& vector )
     { UndefinedVectorTraits<VectorType>::notDefined(); return Teuchos::null; }
 
     /*!
