@@ -218,6 +218,13 @@ class VectorTraits
      */
     static void scale( VectorType& A, const scalar_type value )
     { UndefinedVectorTraits<VectorType>::notDefined(); }
+
+    /*!
+     * \brief Scale a vector by a value A = value*B.
+     */
+    static void 
+    scaleCopy( VectorType& A, const scalar_type value, const VectorType& B )
+    { UndefinedVectorTraits<VectorType>::notDefined(); }
     
     /*!
      * \brief Replace output vector values with element-wise reciprocal values

@@ -105,41 +105,49 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
 	return Teuchos::as<local_ordinal_type>( vector.getLocalLength() );
     }
 
-    // /*!
-    //  * \brief Replace value at the global row index. The global index must
-    //  * exist on process.
-    //  */
-    // static void replaceGlobalValue( vector_type& vector,
-    // 				    global_ordinal_type global_row,
-    // 				    const scalar_type& value )
-    // { UndefinedVectorTraits<vector_type>::notDefined(); }
+    /*!
+     * \brief Replace value at the global row index. The global index must
+     * exist on process.
+     */
+    static void replaceGlobalValue( vector_type& vector,
+    				    global_ordinal_type global_row,
+    				    const scalar_type& value )
+    {
+	vector.replaceGlobalValue( global_row, value );
+    }
 
-    // /*!
-    //  * \brief Replace value at the local row index. The local index must exist
-    //  * on process.
-    //  */
-    // static void replaceLocalValue( vector_type& vector,
-    // 				   local_ordinal_type local_row,
-    // 				   const scalar_type& value )
-    // { UndefinedVectorTraits<vector_type>::notDefined(); }
+    /*!
+     * \brief Replace value at the local row index. The local index must exist
+     * on process.
+     */
+    static void replaceLocalValue( vector_type& vector,
+    				   local_ordinal_type local_row,
+    				   const scalar_type& value )
+    {
+	vector.replaceLocalValue( local_row, value );
+    }
 
-    // /*!
-    //  * \brief Sum a value into existing value at the global row index. The
-    //  * global index must exist on process.
-    //  */
-    // static void sumIntoGlobalValue( vector_type& vector,
-    // 				    global_ordinal_type global_row,
-    // 				    const scalar_type& value )
-    // { UndefinedVectorTraits<vector_type>::notDefined(); }
+    /*!
+     * \brief Sum a value into existing value at the global row index. The
+     * global index must exist on process.
+     */
+    static void sumIntoGlobalValue( vector_type& vector,
+    				    global_ordinal_type global_row,
+    				    const scalar_type& value )
+    {
+	vector.sumIntoGlobalValue( global_row, value );
+    }
 
-    // /*!
-    //  * \brief Sum a value into existing value at the local row index. The
-    //  * local index must exist on process.
-    //  */
-    // static void sumIntoLocalValue( vector_type& vector,
-    // 				   local_ordinal_type local_row,
-    // 				   const scalar_type& value )
-    // { UndefinedVectorTraits<vector_type>::notDefined(); }
+    /*!
+     * \brief Sum a value into existing value at the local row index. The
+     * local index must exist on process.
+     */
+    static void sumIntoLocalValue( vector_type& vector,
+    				   local_ordinal_type local_row,
+    				   const scalar_type& value )
+    {
+	vector.sumIntoLocalValue( local_row, value );
+    }
 
     /*!
      * \brief Set all values in the vector to a given value.
@@ -166,74 +174,103 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
 	return vector.getDataNonConst();
     }
 
-    // /*!
-    //  * \brief Compute the dot product of two vectors A \dot B.
-    //  */
-    // static scalar_type 
-    // dot( const vector_type& A, const vector_type& B )
-    // { UndefinedVectorTraits<vector_type>::notDefined(); return 0; }
+    /*!
+     * \brief Compute the dot product of two vectors A \dot B.
+     */
+    static scalar_type 
+    dot( const vector_type& A, const vector_type& B )
+    { 
+	return B.dot( A );
+    }
 
-    // /*! 
-    //  * \brief Compute the 1-norm of a vector.
-    //  */
-    // static typename Teuchos::ScalarTraits<scalar_type>::magnitudeType 
-    // norm1( const vector_type& vector )
-    // { UndefinedVectorTraits<vector_type>::notDefined(); return 0; }
+    /*! 
+     * \brief Compute the 1-norm of a vector.
+     */
+    static typename Teuchos::ScalarTraits<scalar_type>::magnitudeType 
+    norm1( const vector_type& vector )
+    {
+	return vector.norm1();
+    }
 
-    // /*! 
-    //  * \brief Compute the 2-norm of a vector.
-    //  */
-    // static typename Teuchos::ScalarTraits<scalar_type>::magnitudeType 
-    // norm2( const vector_type& vector )
-    // { UndefinedVectorTraits<vector_type>::notDefined(); return 0; }
+    /*! 
+     * \brief Compute the 2-norm of a vector.
+     */
+    static typename Teuchos::ScalarTraits<scalar_type>::magnitudeType 
+    norm2( const vector_type& vector )
+    {
+	return vector.norm2();
+    }
 
-    // /*! 
-    //  * \brief Compute the Inf-norm of a vector.
-    //  */
-    // static typename Teuchos::ScalarTraits<scalar_type>::magnitudeType 
-    // normInf( const vector_type& vector )
-    // { UndefinedVectorTraits<vector_type>::notDefined(); return 0; }
+    /*! 
+     * \brief Compute the Inf-norm of a vector.
+     */
+    static typename Teuchos::ScalarTraits<scalar_type>::magnitudeType 
+    normInf( const vector_type& vector )
+    {
+	return vector.normInf();
+    }
 
-    // /*!
-    //  * \brief Compute the mean value of a vector.
-    //  */
-    // static scalar_type meanValue( const vector_type& vector )
-    // { UndefinedVectorTraits<vector_type>::notDefined(); return 0; }
+    /*!
+     * \brief Compute the mean value of a vector.
+     */
+    static scalar_type meanValue( const vector_type& vector )
+    {
+	return vector.meanValue();
+    }
 
-    // /*!
-    //  * \brief Replace output vector values with element-wise absolute values
-    //  * of input vector A = abs(B).
-    //  */
-    // static void abs( vector_type& A, const vector_type& B )
-    // { UndefinedVectorTraits<vector_type>::notDefined(); }
+    /*!
+     * \brief Replace output vector values with element-wise absolute values
+     * of input vector A = abs(B).
+     */
+    static void abs( vector_type& A, const vector_type& B )
+    {
+	A.abs( B );
+    }
 
-    // /*!
-    //  * \brief Scale a vector by a value A = value*A.
-    //  */
-    // static void scale( vector_type& A, const scalar_type value )
-    // { UndefinedVectorTraits<vector_type>::notDefined(); }
+    /*!
+     * \brief Scale a vector by a value A = value*A.
+     */
+    static void scale( vector_type& A, const scalar_type value )
+    {
+	A.scale( value );
+    }
+
+    /*!
+     * \brief Scale a vector by a value A = value*B.
+     */
+    static void 
+    scaleCopy( vector_type& A, const scalar_type value, const vector_type& B )
+    {
+	A.scale( value, B );
+    }
     
-    // /*!
-    //  * \brief Replace output vector values with element-wise reciprocal values
-    //  * of input vector A(i) = 1 / B(i)
-    //  */
-    // static void reciprocal( vector_type& A, const vector_type& B )
-    // { UndefinedVectorTraits<vector_type>::notDefined(); }
+    /*!
+     * \brief Replace output vector values with element-wise reciprocal values
+     * of input vector A(i) = 1 / B(i)
+     */
+    static void reciprocal( vector_type& A, const vector_type& B )
+    { 
+	A.reciprocal( B );
+    }
 
-    // /*!
-    //  * \brief Update vector with A = alpha*A + beta*B.
-    //  */
-    // static void update( vector_type& A, const scalar_type& alpha,
-    // 			const vector_type& B, const scalar_type& beta )
-    // { UndefinedVectorTraits<vector_type>::notDefined(); }
+    /*!
+     * \brief Update vector with A = alpha*A + beta*B.
+     */
+    static void update( vector_type& A, const scalar_type& alpha,
+    			const vector_type& B, const scalar_type& beta )
+    {
+	A.update( beta, B, alpha );
+    }
 
-    // /*!
-    //  * \brief Update vector with A = alpha*A + beta*B + gamma*C.
-    //  */
-    // static void update( vector_type& A, const scalar_type& alpha,
-    // 			const vector_type& B, const scalar_type& beta,
-    // 			const vector_type& C, const scalar_type& gamma )
-    // { UndefinedVectorTraits<vector_type>::notDefined(); }
+    /*!
+     * \brief Update vector with A = alpha*A + beta*B + gamma*C.
+     */
+    static void update( vector_type& A, const scalar_type& alpha,
+    			const vector_type& B, const scalar_type& beta,
+    			const vector_type& C, const scalar_type& gamma )
+    {
+	A.update( beta, B, gamma, C, alpha );
+    }
 };
 
 //---------------------------------------------------------------------------//
