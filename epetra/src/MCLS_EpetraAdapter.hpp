@@ -32,20 +32,20 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_TpetraAdapater.hpp
+ * \file MCLS_EpetraAdapater.hpp
  * \author Stuart R. Slattery
- * \brief Tpetra Adapter.
+ * \brief Epetra Adapter.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_TPETRAADAPTER_HPP
-#define MCLS_TPETRAADAPTER_HPP
+#ifndef MCLS_EPETRAADAPTER_HPP
+#define MCLS_EPETRAADAPTER_HPP
 
 #include <MCLS_VectorTraits.hpp>
 
 #include <Teuchos_as.hpp>
 
-#include <Tpetra_Vector.hpp>
+#include <Epetra_Vector.h>
 
 namespace MCLS
 {
@@ -53,19 +53,19 @@ namespace MCLS
 //---------------------------------------------------------------------------//
 /*!
  * \class VectorTraits
- * \brief Traits specialization for Tpetra::Vector.
+ * \brief Traits specialization for Epetra_Vector.
  */
-template<class Scalar, class LO, class GO>
-class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
+template<>
+class VectorTraits<Epetra_Vector>
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef typename Tpetra::Vector<Scalar,LO,GO>        vector_type;
-    typedef typename vector_type::scalar_type            scalar_type;
-    typedef typename vector_type::local_ordinal_type     local_ordinal_type;
-    typedef typename vector_type::global_ordinal_type    global_ordinal_type;
+    typedef Epetra_Vector                       vector_type;
+    typedef double                              scalar_type;
+    typedef int                                 local_ordinal_type;
+    typedef int                                 global_ordinal_type;
     //@}
 
     /*!
@@ -74,7 +74,7 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
      */
     static Teuchos::RCP<vector_type> clone( const vector_type& vector )
     {
-	return Tpetra::createVector<Scalar,LO,GO>( vector.getMap() );
+	return Teuchos::rcp( new Epetra_Vector( vector.Map() ) );
     }
 
     /*!
@@ -83,7 +83,7 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
      */
     static Teuchos::RCP<vector_type> deepCopy( const vector_type& vector )
     {
-	return Teuchos::rcp( new Tpetra::Vector<Scalar,LO,GO>( vector ) );
+	return Teuchos::rcp( new Epetra_Vector( vector ) );
     }
 
     /*!
@@ -91,7 +91,7 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
      */
     static global_ordinal_type getGlobalLength( const vector_type& vector )
     { 
-	return Teuchos::as<global_ordinal_type>( vector.getGlobalLength() );
+	return Teuchos::as<global_ordinal_type>( vector.GlobalLength() );
     }
 
     /*!
@@ -99,7 +99,7 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
      */
     static local_ordinal_type getLocalLength( const vector_type& vector )
     { 
-	return Teuchos::as<local_ordinal_type>( vector.getLocalLength() );
+	return Teuchos::as<local_ordinal_type>( vector.MyLength() );
     }
 
     /*!
@@ -110,7 +110,7 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     				    global_ordinal_type global_row,
     				    const scalar_type& value )
     {
-	vector.replaceGlobalValue( global_row, value );
+	vector.ReplaceGlobalValue( global_row, 0, value );
     }
 
     /*!
@@ -121,7 +121,7 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     				   local_ordinal_type local_row,
     				   const scalar_type& value )
     {
-	vector.replaceLocalValue( local_row, value );
+	vector.ReplaceMyValue( local_row, 0, value );
     }
 
     /*!
@@ -132,7 +132,7 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     				    global_ordinal_type global_row,
     				    const scalar_type& value )
     {
-	vector.sumIntoGlobalValue( global_row, value );
+	vector.SumIntoGlobalValue( global_row, 0, value );
     }
 
     /*!
@@ -143,7 +143,7 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     				   local_ordinal_type local_row,
     				   const scalar_type& value )
     {
-	vector.sumIntoLocalValue( local_row, value );
+	vector.SumIntoMyValue( local_row, 0, value );
     }
 
     /*!
@@ -151,7 +151,7 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
      */
     static void putScalar( vector_type& vector, const scalar_type& value )
     { 
-	vector.putScalar( value );
+	vector.PutScalar( value );
     }
 
     /*!
@@ -159,7 +159,10 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
      */
     static Teuchos::ArrayRCP<const scalar_type> view( const vector_type& vector )
     { 
-	return vector.getData();
+	scalar_type* view_pointer;
+	vector.ExtractView( &view_pointer );
+	return Teuchos::ArrayRCP<const scalar_type>( 
+	    view_pointer, 0, vector.MyLength(), false );
     }
 
     /*!
@@ -168,7 +171,10 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     static Teuchos::ArrayRCP<scalar_type> 
     viewNonConst( vector_type& vector )
     { 
-	return vector.getDataNonConst();
+	scalar_type* view_pointer;
+	vector.ExtractView( &view_pointer );
+	return Teuchos::ArrayRCP<scalar_type>( 
+	    view_pointer, 0, vector.MyLength(), false );
     }
 
     /*!
@@ -177,7 +183,9 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     static scalar_type 
     dot( const vector_type& A, const vector_type& B )
     { 
-	return B.dot( A );
+	scalar_type product;
+	A.Dot( B, &product );
+	return product;
     }
 
     /*! 
@@ -186,7 +194,9 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     static typename Teuchos::ScalarTraits<scalar_type>::magnitudeType 
     norm1( const vector_type& vector )
     {
-	return vector.norm1();
+	scalar_type norm;
+	vector.Norm1( &norm );
+	return norm;
     }
 
     /*! 
@@ -195,7 +205,9 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     static typename Teuchos::ScalarTraits<scalar_type>::magnitudeType 
     norm2( const vector_type& vector )
     {
-	return vector.norm2();
+	scalar_type norm;
+	vector.Norm2( &norm );
+	return norm;
     }
 
     /*! 
@@ -204,7 +216,9 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     static typename Teuchos::ScalarTraits<scalar_type>::magnitudeType 
     normInf( const vector_type& vector )
     {
-	return vector.normInf();
+	scalar_type norm;
+	vector.NormInf( &norm );
+	return norm;
     }
 
     /*!
@@ -212,7 +226,9 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
      */
     static scalar_type meanValue( const vector_type& vector )
     {
-	return vector.meanValue();
+	scalar_type mean;
+	vector.MeanValue( &mean );
+	return mean;
     }
 
     /*!
@@ -221,7 +237,7 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
      */
     static void abs( vector_type& A, const vector_type& B )
     {
-	A.abs( B );
+	A.Abs( B );
     }
 
     /*!
@@ -229,7 +245,7 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
      */
     static void scale( vector_type& A, const scalar_type value )
     {
-	A.scale( value );
+	A.Scale( value );
     }
 
     /*!
@@ -238,7 +254,7 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     static void 
     scaleCopy( vector_type& A, const scalar_type value, const vector_type& B )
     {
-	A.scale( value, B );
+	A.Scale( value, B );
     }
     
     /*!
@@ -247,7 +263,7 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
      */
     static void reciprocal( vector_type& A, const vector_type& B )
     { 
-	A.reciprocal( B );
+	A.Reciprocal( B );
     }
 
     /*!
@@ -256,7 +272,7 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     static void update( vector_type& A, const scalar_type& alpha,
     			const vector_type& B, const scalar_type& beta )
     {
-	A.update( beta, B, alpha );
+	A.Update( beta, B, alpha );
     }
 
     /*!
@@ -266,7 +282,7 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     			const vector_type& B, const scalar_type& beta,
     			const vector_type& C, const scalar_type& gamma )
     {
-	A.update( beta, B, gamma, C, alpha );
+	A.Update( beta, B, gamma, C, alpha );
     }
 
     /*!
@@ -277,7 +293,7 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
 				     const vector_type& B, const vector_type& C, 
 				     const scalar_type& beta)
     { 
-	A.elementWiseMultiply( beta, B, C, alpha );
+	A.Multiply( beta, B, C, alpha );
     }
 };
 
