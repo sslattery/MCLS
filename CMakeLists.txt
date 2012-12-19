@@ -18,6 +18,14 @@ TRIBITS_PACKAGE(MCLS)
 ## B) Set up package-specific options
 ##---------------------------------------------------------------------------##
 
+# Design-by-Contract
+TRIBITS_ADD_OPTION_AND_DEFINE(
+	MCLS_ENABLE_DBC
+	HAVE_CHIMERA_DBC
+	"Enable Design-by-Contract checks. WARNING: use for debug checking but disable for production runs as it incurs a significant overhead."
+	${${PROJECT_NAME}_ENABLE_DEBUG}
+)
+
 TRIBITS_ADD_DEBUG_OPTION()
 
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
