@@ -271,6 +271,17 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     {
 	A.update( beta, B, gamma, C, alpha );
     }
+
+    /*!
+     * \brief Element-wise mulitply two vectors 
+     * A(i) = alpha*A(i) + beta*B(i)*C(i).
+     */
+    static void elementWiseMultiply( vector_type& A, const scalar_type& alpha,
+				     const vector_type& B, const vector_type& C, 
+				     const scalar_type& beta)
+    { 
+	A.elementWiseMultiply( beta, B, C, alpha );
+    }
 };
 
 //---------------------------------------------------------------------------//

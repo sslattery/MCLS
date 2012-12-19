@@ -247,6 +247,15 @@ class VectorTraits
 			const VectorType& B, const scalar_type& beta,
 			const VectorType& C, const scalar_type& gamma )
     { UndefinedVectorTraits<VectorType>::notDefined(); }
+
+    /*!
+     * \brief Element-wise mulitply two vectors 
+     * A(i) = alpha*A(i) + beta*B(i)*C(i).
+     */
+    static void elementWiseMultiply( vector_type& A, const scalar_type& alpha,
+				     const vector_type& B, const vector_type& C, 
+				     const scalar_type& beta)
+    { UndefinedVectorTraits<vector_type>::notDefined(); }
 };
 
 //---------------------------------------------------------------------------//

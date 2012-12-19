@@ -587,6 +587,51 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, Update, LO, GO, Scalar )
 UNIT_TEST_INSTANTIATION( VectorTraits, Update )
 
 //---------------------------------------------------------------------------//
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, ElementWiseMultiply, LO, GO, Scalar )
+{
+    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef typename VT::scalar_type scalar_type;
+    typedef typename VT::local_ordinal_type local_ordinal_type;
+    typedef typename VT::global_ordinal_type global_ordinal_type;
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+	Teuchos::DefaultComm<int>::getComm();
+    int comm_size = comm->getSize();
+
+    int local_num_rows = 10;
+    int global_num_rows = local_num_rows*comm_size;
+    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
+	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
+
+    Teuchos::RCP<VectorType> A = Tpetra::createVector<Scalar,LO,GO>( map );
+    VT::putScalar( *A, 1.0 );
+
+    Teuchos::RCP<VectorType> B = VT::clone( *A );
+    VT::putScalar( *B, 2.0 );
+
+    Teuchos::RCP<VectorType> C = VT::clone( *A );
+    VT::putScalar( *C, 3.0 );
+
+    Scalar alpha = 4.0;
+    Scalar beta = 5.0;
+
+    Scalar multiply_val = 1.0*alpha + beta*2.0*3.0;
+    VT::elementWiseMultiply( *A, alpha, *B, *C, beta );
+
+    Teuchos::ArrayRCP<const Scalar> A_view = VT::view( *A );
+    typename Teuchos::ArrayRCP<const Scalar>::const_iterator A_view_iterator;
+    for ( A_view_iterator = A_view.begin();
+	  A_view_iterator != A_view.end();
+	  ++A_view_iterator )
+    {
+	TEST_EQUALITY( *A_view_iterator, multiply_val );
+    }
+}
+
+UNIT_TEST_INSTANTIATION( VectorTraits, ElementWiseMultiply )
+
+//---------------------------------------------------------------------------//
 // end tstTpetraVector.cpp
 //---------------------------------------------------------------------------//
 
