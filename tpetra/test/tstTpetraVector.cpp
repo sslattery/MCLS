@@ -86,6 +86,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, Clone, LO, GO, Scalar )
 	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
 
     Teuchos::RCP<VectorType> A = Tpetra::createVector<Scalar,LO,GO>( map );
+
     VT::putScalar( *A, 1.0 );
 
     Teuchos::RCP<VectorType> B = VT::clone( *A );
@@ -385,7 +386,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, MeanValue, LO, GO, Scalar )
 
     Teuchos::RCP<VectorType> A = Tpetra::createVector<Scalar,LO,GO>( map );
     VT::putScalar( *A, 2.0 );
-    A->replaceLocalValue( 0, 1.0 );
+    VT::replaceLocalValue( *A, 0, 1.0 );
 
     Scalar mean_value = ((global_num_rows-comm_size)*2.0 + comm_size*1.0) 
 			/ global_num_rows;
