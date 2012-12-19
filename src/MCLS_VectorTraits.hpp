@@ -70,7 +70,7 @@ struct UndefinedVectorTraits
  * \brief Traits for vectors.
  *
  * VectorTraits defines an interface for parallel distributed vectors
- * (e.g. Tpetra::Vector or Epetra_Multivector).
+ * (e.g. Tpetra::Vector or Epetra_Vector).
  */
 template<class VectorType>
 class VectorTraits
