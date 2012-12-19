@@ -107,6 +107,72 @@ class OperatorTraits
 	return Teuchos::null; 
     }
 
+    /*! 
+     * \brief Insert matrix elements using global ordinals.
+     */
+    static void insertGlobalValues(
+	const operator_type& op,
+	const global_ordinal_type& global_row,
+	const Teuchos::ArrayView<const global_ordinal_type>& cols,
+	const Teuchos::ArrayView<const scalar_type>& values );
+    { UndefinedOperatorTraits<operator_type>::notDefined(); }
+
+    /*! 
+     * \brief Insert matrix elements using local ordinals.
+     */
+    static void insertLocalValues(
+	const operator_type& op,
+	const local_ordinal_type& local_row,
+	const Teuchos::ArrayView<const local_ordinal_type>& cols,
+	const Teuchos::ArrayView<const scalar_type>& values );
+    { UndefinedOperatorTraits<operator_type>::notDefined(); }
+
+    /*! 
+     * \brief Replace matrix elements using global ordinals.
+     */
+    static void replaceGlobalValues(
+	const operator_type& op,
+	const global_ordinal_type& global_row,
+	const Teuchos::ArrayView<const global_ordinal_type>& cols,
+	const Teuchos::ArrayView<const scalar_type>& values );
+    { UndefinedOperatorTraits<operator_type>::notDefined(); }
+
+    /*! 
+     * \brief Replace matrix elements using local ordinals.
+     */
+    static void replaceLocalValues(
+	const operator_type& op,
+	const local_ordinal_type& local_row,
+	const Teuchos::ArrayView<const local_ordinal_type>& cols,
+	const Teuchos::ArrayView<const scalar_type>& values );
+    { UndefinedOperatorTraits<operator_type>::notDefined(); }
+
+    /*! 
+     * \brief SumInto matrix elements using global ordinals.
+     */
+    static void sumIntoGlobalValues(
+	const operator_type& op,
+	const global_ordinal_type& global_row,
+	const Teuchos::ArrayView<const global_ordinal_type>& cols,
+	const Teuchos::ArrayView<const scalar_type>& values );
+    { UndefinedOperatorTraits<operator_type>::notDefined(); }
+
+    /*! 
+     * \brief SumInto matrix elements using local ordinals.
+     */
+    static void sumIntoLocalValues(
+	const operator_type& op,
+	const local_ordinal_type& local_row,
+	const Teuchos::ArrayView<const local_ordinal_type>& cols,
+	const Teuchos::ArrayView<const scalar_type>& values );
+    { UndefinedOperatorTraits<operator_type>::notDefined(); }
+
+    /*!
+     * \brief scale all elements in the matrix. op = op*value
+     */
+    static void scale( const operator_type& op, const scalar_type& value )
+    { UndefinedOperatorTraits<operator_type>::notDefined(); }
+
     /*!
      * \brief Get the global number of rows.
      */
@@ -125,6 +191,65 @@ class OperatorTraits
     static global_ordinal_type 
     getGlobalMaxNumRowEntries( const operator_type& op )
     { UndefinedOperatorTraits<operator_type>::notDefined(); return 0; }
+
+    /*!
+     * \brief Given a local row on process, provide the global ordinal.
+     */
+    static global_ordinal_type 
+    getGlobalRow( const operator_type& op,
+		  const local_ordinal_type& local_ordinal )
+    { UndefinedOperatorTraits<operator_type>::notDefined(); return 0; }
+
+    /*!
+     * \brief Given a global row on process, provide the local ordinal.
+     */
+    static local_ordinal_type 
+    getLocalRow( const operator_type& op,
+		 const global_ordinal_type& global_ordinal )
+    { UndefinedOperatorTraits<operator_type>::notDefined(); return 0; }
+
+    /*!
+     * \brief Given a local col on process, provide the global ordinal.
+     */
+    static global_ordinal_type 
+    getGlobalCol( const operator_type& op,
+		  const local_ordinal_type& local_ordinal )
+    { UndefinedOperatorTraits<operator_type>::notDefined(); return 0; }
+
+    /*!
+     * \brief Given a global col on process, provide the local ordinal.
+     */
+    static local_ordinal_type 
+    getLocalCol( const operator_type& op,
+		 const global_ordinal_type& global_ordinal )
+    { UndefinedOperatorTraits<operator_type>::notDefined(); return 0; }
+
+    /*!
+     * \brief Determine whether or not a given global row is on process.
+     */
+    static bool isGlobalRow( const operator_type& op,
+			     const global_ordinal_type& global_ordinal )
+    { UndefinedOperatorTraits<operator_type>::notDefined(); return false; }
+
+    /*!
+     * \brief Determine whether or not a given local row is on process.
+     */
+    static bool isLocalRow( const local_ordinal_type& local_ordinal )
+    { UndefinedOperatorTraits<operator_type>::notDefined(); return false; }
+
+    /*!
+     * \brief Determine whether or not a given global col is on process.
+     */
+    static bool isGlobalCol( const operator_type& op,
+			     const global_ordinal_type& global_ordinal )
+    { UndefinedOperatorTraits<operator_type>::notDefined(); return false; }
+
+    /*!
+     * \brief Determine whether or not a given local col is on process.
+     */
+    static bool isLocalCol( const operator_type& op,
+			    const local_ordinal_type& local_ordinal )
+    { UndefinedOperatorTraits<operator_type>::notDefined(); return false; }
 
     /*!
      * \brief Fill complete the matrix.
@@ -149,6 +274,22 @@ class OperatorTraits
 				 ArrayView<const local_ordinal_type> &indices,
 				 ArrayView<const scalar_type> &values)
     { UndefinedOperatorTraits<operator_type>::notDefined(); }
+
+    /*!
+     * \brief Get a matrix element from global ordinals.
+     */
+    static scalar_type getElementFromGlobal( const operator_type& op,
+					     global_ordinal_type global_row,
+					     global_ordinal_type global_col )
+    { UndefinedOperatorTraits<operator_type>::notDefined(); return 0; }
+
+    /*!
+     * \brief Get a matrix element from local ordinals.
+     */
+    static scalar_type getElementFromLocal( const operator_type& op,
+					    local_ordinal_type local_row,
+					    local_ordinal_type local_col )
+    { UndefinedOperatorTraits<operator_type>::notDefined(); return 0; }
 
     /*!
      * \brief Get a copy of the local diagonal of the matrix.

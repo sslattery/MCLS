@@ -60,9 +60,9 @@ TEUCHOS_UNIT_TEST( VectorTraits, Typedefs )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef typename VT::scalar_type scalar_type;
-    typedef typename VT::local_ordinal_type local_ordinal_type;
-    typedef typename VT::global_ordinal_type global_ordinal_type;
+    typedef VT::scalar_type scalar_type;
+    typedef VT::local_ordinal_type local_ordinal_type;
+    typedef VT::global_ordinal_type global_ordinal_type;
 
     TEST_EQUALITY_CONST( 
 	(Teuchos::TypeTraits::is_same<double, scalar_type>::value)
@@ -80,9 +80,9 @@ TEUCHOS_UNIT_TEST( VectorTraits, Clone )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef typename VT::scalar_type scalar_type;
-    typedef typename VT::local_ordinal_type local_ordinal_type;
-    typedef typename VT::global_ordinal_type global_ordinal_type;
+    typedef VT::scalar_type scalar_type;
+    typedef VT::local_ordinal_type local_ordinal_type;
+    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -104,7 +104,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, Clone )
     TEST_ASSERT( A->Map().SameAs( B->Map() ) );
     
     Teuchos::ArrayRCP<const double> B_view = VT::view( *B );
-    typename Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
     for ( view_iterator = B_view.begin();
 	  view_iterator != B_view.end();
 	  ++view_iterator )
@@ -118,9 +118,9 @@ TEUCHOS_UNIT_TEST( VectorTraits, DeepCopy )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef typename VT::scalar_type scalar_type;
-    typedef typename VT::local_ordinal_type local_ordinal_type;
-    typedef typename VT::global_ordinal_type global_ordinal_type;
+    typedef VT::scalar_type scalar_type;
+    typedef VT::local_ordinal_type local_ordinal_type;
+    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -141,7 +141,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, DeepCopy )
     TEST_ASSERT( A->Map().SameAs( B->Map() ) );
     
     Teuchos::ArrayRCP<const double> B_view = VT::view( *B );
-    typename Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
     for ( view_iterator = B_view.begin();
 	  view_iterator != B_view.end();
 	  ++view_iterator )
@@ -155,9 +155,9 @@ TEUCHOS_UNIT_TEST( VectorTraits, Modifiers )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef typename VT::scalar_type scalar_type;
-    typedef typename VT::local_ordinal_type local_ordinal_type;
-    typedef typename VT::global_ordinal_type global_ordinal_type;
+    typedef VT::scalar_type scalar_type;
+    typedef VT::local_ordinal_type local_ordinal_type;
+    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -175,7 +175,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, Modifiers )
     VT::putScalar( *A, 2.0 );    
 
     Teuchos::ArrayRCP<const double> A_view = VT::view( *A );
-    typename Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
     for ( view_iterator = A_view.begin();
 	  view_iterator != A_view.end();
 	  ++view_iterator )
@@ -184,7 +184,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, Modifiers )
     }
 
     Teuchos::ArrayRCP<double> A_view_non_const = VT::viewNonConst( *A );
-    typename Teuchos::ArrayRCP<double>::iterator view_non_const_iterator;
+    Teuchos::ArrayRCP<double>::iterator view_non_const_iterator;
     for ( view_non_const_iterator = A_view_non_const.begin();
 	  view_non_const_iterator != A_view_non_const.end();
 	  ++view_non_const_iterator )
@@ -205,9 +205,9 @@ TEUCHOS_UNIT_TEST( VectorTraits, SumIntoElement )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef typename VT::scalar_type scalar_type;
-    typedef typename VT::local_ordinal_type local_ordinal_type;
-    typedef typename VT::global_ordinal_type global_ordinal_type;
+    typedef VT::scalar_type scalar_type;
+    typedef VT::local_ordinal_type local_ordinal_type;
+    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -225,7 +225,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, SumIntoElement )
 
     Teuchos::ArrayView<const int> global_elements( 
 	A->Map().MyGlobalElements(), local_num_rows );
-    typename Teuchos::ArrayView<const int>::const_iterator element_iterator;
+    Teuchos::ArrayView<const int>::const_iterator element_iterator;
     for ( element_iterator = global_elements.begin();
 	  element_iterator != global_elements.end();
 	  ++element_iterator )
@@ -234,7 +234,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, SumIntoElement )
     }
 
     Teuchos::ArrayRCP<const double> A_view = VT::view( *A );
-    typename Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
     for ( view_iterator = A_view.begin();
 	  view_iterator != A_view.end();
 	  ++view_iterator )
@@ -263,9 +263,9 @@ TEUCHOS_UNIT_TEST( VectorTraits, ReplaceElement )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef typename VT::scalar_type scalar_type;
-    typedef typename VT::local_ordinal_type local_ordinal_type;
-    typedef typename VT::global_ordinal_type global_ordinal_type;
+    typedef VT::scalar_type scalar_type;
+    typedef VT::local_ordinal_type local_ordinal_type;
+    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -284,7 +284,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, ReplaceElement )
     Teuchos::ArrayView<const int> global_elements( 
 	A->Map().MyGlobalElements(), local_num_rows );
 
-    typename Teuchos::ArrayView<const int>::const_iterator element_iterator;
+    Teuchos::ArrayView<const int>::const_iterator element_iterator;
     for ( element_iterator = global_elements.begin();
 	  element_iterator != global_elements.end();
 	  ++element_iterator )
@@ -293,7 +293,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, ReplaceElement )
     }
 
     Teuchos::ArrayRCP<const double> A_view = VT::view( *A );
-    typename Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
     for ( view_iterator = A_view.begin();
 	  view_iterator != A_view.end();
 	  ++view_iterator )
@@ -322,9 +322,9 @@ TEUCHOS_UNIT_TEST( VectorTraits, DotProduct )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef typename VT::scalar_type scalar_type;
-    typedef typename VT::local_ordinal_type local_ordinal_type;
-    typedef typename VT::global_ordinal_type global_ordinal_type;
+    typedef VT::scalar_type scalar_type;
+    typedef VT::local_ordinal_type local_ordinal_type;
+    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -351,9 +351,9 @@ TEUCHOS_UNIT_TEST( VectorTraits, Norms )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef typename VT::scalar_type scalar_type;
-    typedef typename VT::local_ordinal_type local_ordinal_type;
-    typedef typename VT::global_ordinal_type global_ordinal_type;
+    typedef VT::scalar_type scalar_type;
+    typedef VT::local_ordinal_type local_ordinal_type;
+    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -380,9 +380,9 @@ TEUCHOS_UNIT_TEST( VectorTraits, MeanValue )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef typename VT::scalar_type scalar_type;
-    typedef typename VT::local_ordinal_type local_ordinal_type;
-    typedef typename VT::global_ordinal_type global_ordinal_type;
+    typedef VT::scalar_type scalar_type;
+    typedef VT::local_ordinal_type local_ordinal_type;
+    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -409,9 +409,9 @@ TEUCHOS_UNIT_TEST( VectorTraits, AbsoluteVal )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef typename VT::scalar_type scalar_type;
-    typedef typename VT::local_ordinal_type local_ordinal_type;
-    typedef typename VT::global_ordinal_type global_ordinal_type;
+    typedef VT::scalar_type scalar_type;
+    typedef VT::local_ordinal_type local_ordinal_type;
+    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -431,7 +431,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, AbsoluteVal )
 
     VT::abs( *B, *A );
     Teuchos::ArrayRCP<const double> B_view = VT::view( *B );
-    typename Teuchos::ArrayRCP<const double>::const_iterator B_view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator B_view_iterator;
     for ( B_view_iterator = B_view.begin();
 	  B_view_iterator != B_view.end();
 	  ++B_view_iterator )
@@ -441,7 +441,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, AbsoluteVal )
 
     VT::abs( *A, *A );
     Teuchos::ArrayRCP<const double> A_view = VT::view( *A );
-    typename Teuchos::ArrayRCP<const double>::const_iterator A_view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator A_view_iterator;
     for ( A_view_iterator = A_view.begin();
 	  A_view_iterator != A_view.end();
 	  ++A_view_iterator )
@@ -455,9 +455,9 @@ TEUCHOS_UNIT_TEST( VectorTraits, Scale )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef typename VT::scalar_type scalar_type;
-    typedef typename VT::local_ordinal_type local_ordinal_type;
-    typedef typename VT::global_ordinal_type global_ordinal_type;
+    typedef VT::scalar_type scalar_type;
+    typedef VT::local_ordinal_type local_ordinal_type;
+    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -475,7 +475,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, Scale )
 
     VT::scale( *A, 3.0 );
     Teuchos::ArrayRCP<const double> A_view = VT::view( *A );
-    typename Teuchos::ArrayRCP<const double>::const_iterator A_view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator A_view_iterator;
     for ( A_view_iterator = A_view.begin();
 	  A_view_iterator != A_view.end();
 	  ++A_view_iterator )
@@ -486,7 +486,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, Scale )
     Teuchos::RCP<VectorType> B = VT::clone( *A );
     VT::scaleCopy( *B, 2.0, *A );
     Teuchos::ArrayRCP<const double> B_view = VT::view( *B );
-    typename Teuchos::ArrayRCP<const double>::const_iterator B_view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator B_view_iterator;
     for ( B_view_iterator = B_view.begin();
 	  B_view_iterator != B_view.end();
 	  ++B_view_iterator )
@@ -500,9 +500,9 @@ TEUCHOS_UNIT_TEST( VectorTraits, Reciprocal )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef typename VT::scalar_type scalar_type;
-    typedef typename VT::local_ordinal_type local_ordinal_type;
-    typedef typename VT::global_ordinal_type global_ordinal_type;
+    typedef VT::scalar_type scalar_type;
+    typedef VT::local_ordinal_type local_ordinal_type;
+    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -523,7 +523,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, Reciprocal )
     double recip_val = 1 / 2.0;
     VT::reciprocal( *B, *A );
     Teuchos::ArrayRCP<const double> B_view = VT::view( *B );
-    typename Teuchos::ArrayRCP<const double>::const_iterator B_view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator B_view_iterator;
     for ( B_view_iterator = B_view.begin();
 	  B_view_iterator != B_view.end();
 	  ++B_view_iterator )
@@ -533,7 +533,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, Reciprocal )
 
     VT::reciprocal( *A, *A );
     Teuchos::ArrayRCP<const double> A_view = VT::view( *A );
-    typename Teuchos::ArrayRCP<const double>::const_iterator A_view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator A_view_iterator;
     for ( A_view_iterator = A_view.begin();
 	  A_view_iterator != A_view.end();
 	  ++A_view_iterator )
@@ -547,9 +547,9 @@ TEUCHOS_UNIT_TEST( VectorTraits, Update )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef typename VT::scalar_type scalar_type;
-    typedef typename VT::local_ordinal_type local_ordinal_type;
-    typedef typename VT::global_ordinal_type global_ordinal_type;
+    typedef VT::scalar_type scalar_type;
+    typedef VT::local_ordinal_type local_ordinal_type;
+    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -574,7 +574,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, Update )
     double update_val = alpha*1.0 + beta*2.0;
     VT::update( *A, alpha, *B, beta );
     Teuchos::ArrayRCP<const double> A_view = VT::view( *A );
-    typename Teuchos::ArrayRCP<const double>::const_iterator A_view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator A_view_iterator;
     for ( A_view_iterator = A_view.begin();
 	  A_view_iterator != A_view.end();
 	  ++A_view_iterator )
@@ -600,9 +600,9 @@ TEUCHOS_UNIT_TEST( VectorTraits, ElementWiseMultiply )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef typename VT::scalar_type scalar_type;
-    typedef typename VT::local_ordinal_type local_ordinal_type;
-    typedef typename VT::global_ordinal_type global_ordinal_type;
+    typedef VT::scalar_type scalar_type;
+    typedef VT::local_ordinal_type local_ordinal_type;
+    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -631,7 +631,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, ElementWiseMultiply )
     VT::elementWiseMultiply( *A, alpha, *B, *C, beta );
 
     Teuchos::ArrayRCP<const double> A_view = VT::view( *A );
-    typename Teuchos::ArrayRCP<const double>::const_iterator A_view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator A_view_iterator;
     for ( A_view_iterator = A_view.begin();
 	  A_view_iterator != A_view.end();
 	  ++A_view_iterator )
