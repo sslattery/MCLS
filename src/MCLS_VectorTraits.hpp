@@ -156,7 +156,8 @@ class VectorTraits
     /*!
      * \brief Get a const view of the local vector data.
      */
-    static Teuchos::ArrayRCP<const scalar_type> view( const vector_type& vector )
+    static Teuchos::ArrayRCP<const scalar_type> 
+    view( const vector_type& vector )
     { 
 	UndefinedVectorTraits<vector_type>::notDefined(); 
 	return Teuchos::ArrayRCP<const scalar_type>(0,0);

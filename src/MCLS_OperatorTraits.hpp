@@ -67,10 +67,10 @@ struct UndefinedOperatorTraits
 //---------------------------------------------------------------------------//
 /*!
  * \class OperatorTraits
- * \brief Traits for row matrices.
+ * \brief Traits for matrix operators.
  *
- * OperatorTraits defines an interface for parallel distributed row_matrices
- * (e.g. Tpetra::Operator or Epetra_Operator).
+ * OperatorTraits defines an interface for parallel distributed matrix
+ * operators.  (e.g. Tpetra::CrsMatrix or Epetra_VbrMatrix).
  */
 template<class OperatorType>
 class OperatorTraits
@@ -98,6 +98,18 @@ class OperatorTraits
     }
 
     /*!
+     * \brief Create a reference-counted pointer to a new empty vector from a
+     * matrix to give the vector the same parallel distribution as the
+     * matrix.
+     */
+    static Teuchos::RCP<vector_type> 
+    cloneVectorFromOperator( const operator_type& op )
+    { 
+	UndefinedOperatorTraits<operator_type>::notDefined(); 
+	return Teuchos::null; 
+    }
+
+    /*!
      * \brief Get the communicator.
      */
     static const Teuchos::RCP<const Teuchos::Comm<int> >&
@@ -106,72 +118,6 @@ class OperatorTraits
 	UndefinedOperatorTraits<operator_type>::notDefined(); 
 	return Teuchos::null; 
     }
-
-    /*! 
-     * \brief Insert matrix elements using global ordinals.
-     */
-    static void insertGlobalValues(
-	const operator_type& op,
-	const global_ordinal_type& global_row,
-	const Teuchos::ArrayView<const global_ordinal_type>& cols,
-	const Teuchos::ArrayView<const scalar_type>& values );
-    { UndefinedOperatorTraits<operator_type>::notDefined(); }
-
-    /*! 
-     * \brief Insert matrix elements using local ordinals.
-     */
-    static void insertLocalValues(
-	const operator_type& op,
-	const local_ordinal_type& local_row,
-	const Teuchos::ArrayView<const local_ordinal_type>& cols,
-	const Teuchos::ArrayView<const scalar_type>& values );
-    { UndefinedOperatorTraits<operator_type>::notDefined(); }
-
-    /*! 
-     * \brief Replace matrix elements using global ordinals.
-     */
-    static void replaceGlobalValues(
-	const operator_type& op,
-	const global_ordinal_type& global_row,
-	const Teuchos::ArrayView<const global_ordinal_type>& cols,
-	const Teuchos::ArrayView<const scalar_type>& values );
-    { UndefinedOperatorTraits<operator_type>::notDefined(); }
-
-    /*! 
-     * \brief Replace matrix elements using local ordinals.
-     */
-    static void replaceLocalValues(
-	const operator_type& op,
-	const local_ordinal_type& local_row,
-	const Teuchos::ArrayView<const local_ordinal_type>& cols,
-	const Teuchos::ArrayView<const scalar_type>& values );
-    { UndefinedOperatorTraits<operator_type>::notDefined(); }
-
-    /*! 
-     * \brief SumInto matrix elements using global ordinals.
-     */
-    static void sumIntoGlobalValues(
-	const operator_type& op,
-	const global_ordinal_type& global_row,
-	const Teuchos::ArrayView<const global_ordinal_type>& cols,
-	const Teuchos::ArrayView<const scalar_type>& values );
-    { UndefinedOperatorTraits<operator_type>::notDefined(); }
-
-    /*! 
-     * \brief SumInto matrix elements using local ordinals.
-     */
-    static void sumIntoLocalValues(
-	const operator_type& op,
-	const local_ordinal_type& local_row,
-	const Teuchos::ArrayView<const local_ordinal_type>& cols,
-	const Teuchos::ArrayView<const scalar_type>& values );
-    { UndefinedOperatorTraits<operator_type>::notDefined(); }
-
-    /*!
-     * \brief scale all elements in the matrix. op = op*value
-     */
-    static void scale( const operator_type& op, const scalar_type& value )
-    { UndefinedOperatorTraits<operator_type>::notDefined(); }
 
     /*!
      * \brief Get the global number of rows.
@@ -252,50 +198,29 @@ class OperatorTraits
     { UndefinedOperatorTraits<operator_type>::notDefined(); return false; }
 
     /*!
-     * \brief Fill complete the matrix.
-     */
-    static void fillComplete( const operator_type& op )
-    { UndefinedOperatorTraits<operator_type>::notDefined(); }
-
-    /*!
      * \brief Get a view of a global row.
      */
-    static void getGlobalRowView( const operator_type& op,
-				  const global_ordinal_type& global_ordinal, 
-				  Arrayview<const global_ordinal_type> &indices,
-				  ArrayView<const scalar_type> &values)
+    static void getGlobalRowView( 
+	const operator_type& op,
+	const global_ordinal_type& global_ordinal, 
+	Teuchos::ArrayView<const global_ordinal_type> &indices,
+	Teuchos::ArrayView<const scalar_type> &values)
     { UndefinedOperatorTraits<operator_type>::notDefined(); }
 
     /*!
      * \brief Get a view of a local row.
      */
-    static void getLocalRowView( const operator_type& op,
-				 const local_ordinal_type& local_ordinal, 
-				 ArrayView<const local_ordinal_type> &indices,
-				 ArrayView<const scalar_type> &values)
+    static void getLocalRowView( 
+	const operator_type& op,
+	const local_ordinal_type& local_ordinal, 
+	Teuchos::ArrayView<const local_ordinal_type> &indices,
+	Teuchos::ArrayView<const scalar_type> &values)
     { UndefinedOperatorTraits<operator_type>::notDefined(); }
-
-    /*!
-     * \brief Get a matrix element from global ordinals.
-     */
-    static scalar_type getElementFromGlobal( const operator_type& op,
-					     global_ordinal_type global_row,
-					     global_ordinal_type global_col )
-    { UndefinedOperatorTraits<operator_type>::notDefined(); return 0; }
-
-    /*!
-     * \brief Get a matrix element from local ordinals.
-     */
-    static scalar_type getElementFromLocal( const operator_type& op,
-					    local_ordinal_type local_row,
-					    local_ordinal_type local_col )
-    { UndefinedOperatorTraits<operator_type>::notDefined(); return 0; }
 
     /*!
      * \brief Get a copy of the local diagonal of the matrix.
      */
-    static Teuchos::RCP<vector_type> 
-    getLocalDiagCopy( const operator_type& op )
+    static void getLocalDiagCopy( const operator_type& op, vector_type& vector )
     { 
 	UndefinedOperatorTraits<operator_type>::notDefined(); 
 	return Teuchos::null; 
@@ -307,6 +232,28 @@ class OperatorTraits
     static void apply( const operator_type& A, const vector_type& x,
 		       const vector_type& y )
     { UndefinedOperatorTraits<operator_type>::notDefined(); }
+
+    /*
+     * \brief Create a reference-counted pointer to a new matrix with a
+     * specified number of off process nearest-neighbor global rows.
+     */
+    static Teuchos::RCP<operator_type> copyNearestNeighbors(
+	const operator_type& op, const global_ordinal_type& num_neighbors )
+    { 
+	UndefinedOperatorTraits<operator_type>::notDefined(); 
+	return Teuchos::null; 
+    }
+
+    /*!
+     * \brief Create a reference-counted pointer to a new matrix by
+     * subtracting the transpose of a matrix from the identity matrix.
+     */
+    static Teuchos::RCP<operator_type> 
+    subtractTransposeFromIdentity( const operator_type& op )
+    { 
+	UndefinedOperatorTraits<operator_type>::notDefined(); 
+	return Teuchos::null; 
+    }
 };
 
 //---------------------------------------------------------------------------//
