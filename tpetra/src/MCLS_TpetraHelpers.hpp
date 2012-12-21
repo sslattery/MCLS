@@ -69,11 +69,11 @@ namespace MCLS
 {
 //---------------------------------------------------------------------------//
 /*!
- * \class TpetraHelpers
+ * \class TpetraMatrixHelpers
  * \brief Helper functions for Tpetra implementations.
  */
 template<class OperatorType>
-class TpetraHelpers
+class TpetraMatrixHelpers
 {
   public:
 
@@ -99,11 +99,11 @@ class TpetraHelpers
 
 //---------------------------------------------------------------------------//
 /*!
- * \class TpetraHelpers
- * \brief TpetraHelpers specialization for Tpetra::CrsMatrix.
+ * \class TpetraMatrixHelpers
+ * \brief TpetraMatrixHelpers specialization for Tpetra::CrsMatrix.
  */
 template<class Scalar, class LO, class GO>
-class TpetraHelpers<Tpetra::CrsMatrix<Scalar,LO,GO> >
+class TpetraMatrixHelpers<Tpetra::CrsMatrix<Scalar,LO,GO> >
 {
   public:
 
@@ -146,11 +146,11 @@ class TpetraHelpers<Tpetra::CrsMatrix<Scalar,LO,GO> >
 
 //---------------------------------------------------------------------------//
 /*!
- * \class TpetraHelpers
- * \brief TpetraHelpers specialization for Tpetra::VbrMatrix.
+ * \class TpetraMatrixHelpers
+ * \brief TpetraMatrixHelpers specialization for Tpetra::VbrMatrix.
  */
 template<class Scalar, class LO, class GO>
-class TpetraHelpers<Tpetra::VbrMatrix<Scalar,LO,GO> >
+class TpetraMatrixHelpers<Tpetra::VbrMatrix<Scalar,LO,GO> >
 {
   public:
 
@@ -198,5 +198,5 @@ class TpetraHelpers<Tpetra::VbrMatrix<Scalar,LO,GO> >
 #endif // end MCLS_TPETRAHELPERS_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_TpetraAdapater.hpp
+// end MCLS_TpetraHelpers.hpp
 //---------------------------------------------------------------------------//
