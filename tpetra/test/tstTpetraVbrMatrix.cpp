@@ -35,7 +35,7 @@ TEUCHOS_UNIT_TEST( VbrMatrix, test )
 {
     typedef Tpetra::VbrMatrix<double,int,int> OperatorType;
     typedef Tpetra::Vector<double,int,int> VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();

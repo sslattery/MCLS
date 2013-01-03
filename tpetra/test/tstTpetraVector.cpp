@@ -49,7 +49,7 @@
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, Typedefs, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
     typedef typename VT::scalar_type scalar_type;
     typedef typename VT::local_ordinal_type local_ordinal_type;
     typedef typename VT::global_ordinal_type global_ordinal_type;
@@ -71,7 +71,7 @@ UNIT_TEST_INSTANTIATION( VectorTraits, Typedefs )
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, Clone, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
     typedef typename VT::scalar_type scalar_type;
     typedef typename VT::local_ordinal_type local_ordinal_type;
     typedef typename VT::global_ordinal_type global_ordinal_type;
@@ -109,7 +109,7 @@ UNIT_TEST_INSTANTIATION( VectorTraits, Clone )
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, DeepCopy, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
     typedef typename VT::scalar_type scalar_type;
     typedef typename VT::local_ordinal_type local_ordinal_type;
     typedef typename VT::global_ordinal_type global_ordinal_type;
@@ -146,7 +146,7 @@ UNIT_TEST_INSTANTIATION( VectorTraits, DeepCopy )
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, Modifiers, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
     typedef typename VT::scalar_type scalar_type;
     typedef typename VT::local_ordinal_type local_ordinal_type;
     typedef typename VT::global_ordinal_type global_ordinal_type;
@@ -196,7 +196,7 @@ UNIT_TEST_INSTANTIATION( VectorTraits, Modifiers )
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, SumIntoElement, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
     typedef typename VT::scalar_type scalar_type;
     typedef typename VT::local_ordinal_type local_ordinal_type;
     typedef typename VT::global_ordinal_type global_ordinal_type;
@@ -254,7 +254,7 @@ UNIT_TEST_INSTANTIATION( VectorTraits, SumIntoElement )
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, ReplaceElement, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
     typedef typename VT::scalar_type scalar_type;
     typedef typename VT::local_ordinal_type local_ordinal_type;
     typedef typename VT::global_ordinal_type global_ordinal_type;
@@ -312,7 +312,7 @@ UNIT_TEST_INSTANTIATION( VectorTraits, ReplaceElement )
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, DotProduct, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
     typedef typename VT::scalar_type scalar_type;
     typedef typename VT::local_ordinal_type local_ordinal_type;
     typedef typename VT::global_ordinal_type global_ordinal_type;
@@ -341,7 +341,7 @@ UNIT_TEST_INSTANTIATION( VectorTraits, DotProduct )
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, Norms, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
     typedef typename VT::scalar_type scalar_type;
     typedef typename VT::local_ordinal_type local_ordinal_type;
     typedef typename VT::global_ordinal_type global_ordinal_type;
@@ -370,7 +370,7 @@ UNIT_TEST_INSTANTIATION( VectorTraits, Norms )
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, MeanValue, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
     typedef typename VT::scalar_type scalar_type;
     typedef typename VT::local_ordinal_type local_ordinal_type;
     typedef typename VT::global_ordinal_type global_ordinal_type;
@@ -399,7 +399,7 @@ UNIT_TEST_INSTANTIATION( VectorTraits, MeanValue )
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, AbsoluteVal, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
     typedef typename VT::scalar_type scalar_type;
     typedef typename VT::local_ordinal_type local_ordinal_type;
     typedef typename VT::global_ordinal_type global_ordinal_type;
@@ -445,7 +445,7 @@ UNIT_TEST_INSTANTIATION( VectorTraits, AbsoluteVal )
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, Scale, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
     typedef typename VT::scalar_type scalar_type;
     typedef typename VT::local_ordinal_type local_ordinal_type;
     typedef typename VT::global_ordinal_type global_ordinal_type;
@@ -490,7 +490,7 @@ UNIT_TEST_INSTANTIATION( VectorTraits, Scale )
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, Reciprocal, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
     typedef typename VT::scalar_type scalar_type;
     typedef typename VT::local_ordinal_type local_ordinal_type;
     typedef typename VT::global_ordinal_type global_ordinal_type;
@@ -537,7 +537,7 @@ UNIT_TEST_INSTANTIATION( VectorTraits, Reciprocal )
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, Update, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
     typedef typename VT::scalar_type scalar_type;
     typedef typename VT::local_ordinal_type local_ordinal_type;
     typedef typename VT::global_ordinal_type global_ordinal_type;
@@ -590,7 +590,7 @@ UNIT_TEST_INSTANTIATION( VectorTraits, Update )
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, ElementWiseMultiply, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
     typedef typename VT::scalar_type scalar_type;
     typedef typename VT::local_ordinal_type local_ordinal_type;
     typedef typename VT::global_ordinal_type global_ordinal_type;

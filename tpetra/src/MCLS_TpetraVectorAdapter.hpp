@@ -56,7 +56,7 @@ namespace MCLS
  * \brief Traits specialization for Tpetra::Vector.
  */
 template<class Scalar, class LO, class GO>
-class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
+class VectorTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO> >
 {
   public:
 

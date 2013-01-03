@@ -55,12 +55,12 @@ namespace MCLS
  *
  * Will throw a compile-time error if these traits are not specialized.
  */
-template<class VectorType>
+template<class Scalar, class LO, class GO, class Vector>
 struct UndefinedVectorTraits
 {
-    static inline VectorType notDefined()
+    static inline void notDefined()
     {
-	return VectorType::this_type_is_missing_a_specialization();
+	return Vector::this_type_is_missing_a_specialization();
     }
 };
 
@@ -72,191 +72,199 @@ struct UndefinedVectorTraits
  * VectorTraits defines an interface for parallel distributed vectors
  * (e.g. Tpetra::Vector or Epetra_Vector).
  */
-template<class VectorType>
+template<class Scalar, class LO, class GO, class Vector>
 class VectorTraits
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef VectorType                                   vector_type;
-    typedef typename vector_type::scalar_type            scalar_type;
-    typedef typename vector_type::local_ordinal_type     local_ordinal_type;
-    typedef typename vector_type::global_ordinal_type    global_ordinal_type;
+    typedef Scalar                                  scalar_type;
+    typedef LO                                      local_ordinal_type;
+    typedef GO                                      global_ordinal_type;
+    typedef Vector                                  vector_type;
     //@}
 
     /*!
      * \brief Create a reference-counted pointer to a new empty vector with
      * the same parallel distribution as the given vector.
      */
-    static Teuchos::RCP<vector_type> clone( const vector_type& vector )
-    { UndefinedVectorTraits<vector_type>::notDefined(); return Teuchos::null; }
+    static Teuchos::RCP<Vector> clone( const Vector& vector )
+    { 
+	UndefinedVectorTraits<Scalar,LO,GO,Vector>::notDefined(); 
+	return Teuchos::null; 
+    }
 
     /*!
      * \brief Create a deep copy of the provided vector and return a
      * reference-counted pointer.
      */
-    static Teuchos::RCP<vector_type> deepCopy( const vector_type& vector )
-    { UndefinedVectorTraits<vector_type>::notDefined(); return Teuchos::null; }
+    static Teuchos::RCP<Vector> deepCopy( const Vector& vector )
+    { 
+	UndefinedVectorTraits<Scalar,LO,GO,Vector>::notDefined(); 
+	return Teuchos::null; 
+    }
 
     /*!
      * \brief Get the global length of the vector.
      */
-    static global_ordinal_type getGlobalLength( const vector_type& vector )
-    { UndefinedVectorTraits<vector_type>::notDefined(); return 0; }
+    static GO getGlobalLength( const Vector& vector )
+    { 
+	UndefinedVectorTraits<Scalar,LO,GO,Vector>::notDefined(); 
+	return 0; 
+    }
 
     /*!
      * \brief Get the local length of the vector.
      */
-    static local_ordinal_type getLocalLength( const vector_type& vector )
-    { UndefinedVectorTraits<vector_type>::notDefined(); return 0; }
+    static LO getLocalLength( const Vector& vector )
+    { 
+	UndefinedVectorTraits<Scalar,LO,GO,Vector>::notDefined(); 
+	return 0; 
+    }
 
     /*!
      * \brief Replace value at the global row index. The global index must
      * exist on process.
      */
-    static void replaceGlobalValue( vector_type& vector,
-				    global_ordinal_type global_row,
-				    const scalar_type& value )
-    { UndefinedVectorTraits<vector_type>::notDefined(); }
+    static void replaceGlobalValue( Vector& vector, 
+				    GO global_row,  
+				    const Scalar& value )
+    { UndefinedVectorTraits<Scalar,LO,GO,Vector>::notDefined(); }
 
     /*!
      * \brief Replace value at the local row index. The local index must exist
      * on process.
      */
-    static void replaceLocalValue( vector_type& vector,
-				   local_ordinal_type local_row,
-				   const scalar_type& value )
-    { UndefinedVectorTraits<vector_type>::notDefined(); }
+    static void replaceLocalValue( Vector& vector,
+				   LO local_row,
+				   const Scalar& value )
+    { UndefinedVectorTraits<Scalar,LO,GO,Vector>::notDefined(); }
 
     /*!
      * \brief Sum a value into existing value at the global row index. The
      * global index must exist on process.
      */
-    static void sumIntoGlobalValue( vector_type& vector,
-				    global_ordinal_type global_row,
-				    const scalar_type& value )
-    { UndefinedVectorTraits<vector_type>::notDefined(); }
+    static void sumIntoGlobalValue( Vector& vector,
+				    GO global_row,
+				    const Scalar& value )
+    { UndefinedVectorTraits<Scalar,LO,GO,Vector>::notDefined(); }
 
     /*!
      * \brief Sum a value into existing value at the local row index. The
      * local index must exist on process.
      */
-    static void sumIntoLocalValue( vector_type& vector,
-				   local_ordinal_type local_row,
-				   const scalar_type& value )
-    { UndefinedVectorTraits<vector_type>::notDefined(); }
+    static void sumIntoLocalValue( Vector& vector,
+				   LO local_row,
+				   const Scalar& value )
+    { UndefinedVectorTraits<Scalar,LO,GO,Vector>::notDefined(); }
 
     /*!
      * \brief Set all values in the vector to a given value.
      */
-    static void putScalar( vector_type& vector, const scalar_type& value )
-    { UndefinedVectorTraits<vector_type>::notDefined(); }
+    static void putScalar( Vector& vector, const Scalar& value )
+    { UndefinedVectorTraits<Scalar,LO,GO,Vector>::notDefined(); }
 
     /*!
      * \brief Get a const view of the local vector data.
      */
-    static Teuchos::ArrayRCP<const scalar_type> 
-    view( const vector_type& vector )
+    static Teuchos::ArrayRCP<const Scalar> view( const Vector& vector )
     { 
-	UndefinedVectorTraits<vector_type>::notDefined(); 
-	return Teuchos::ArrayRCP<const scalar_type>(0,0);
+	UndefinedVectorTraits<Scalar,LO,GO,Vector>::notDefined(); 
+	return Teuchos::ArrayRCP<const Scalar>(0,0);
     }
 
     /*!
      * \brief Get a non-const view of the local vector data.
      */
-    static Teuchos::ArrayRCP<scalar_type> 
-    viewNonConst( vector_type& vector )
+    static Teuchos::ArrayRCP<Scalar> viewNonConst( Vector& vector )
     { 
-	UndefinedVectorTraits<vector_type>::notDefined(); 
-	return Teuchos::ArrayRCP<scalar_type>(0,0);
+	UndefinedVectorTraits<Scalar,LO,GO,Vector>::notDefined(); 
+	return Teuchos::ArrayRCP<Scalar>(0,0);
     }
 
     /*!
      * \brief Compute the dot product of two vectors A \dot B.
      */
-    static scalar_type 
-    dot( const vector_type& A, const vector_type& B )
-    { UndefinedVectorTraits<vector_type>::notDefined(); return 0; }
+    static Scalar dot( const Vector& A, const Vector& B )
+    { UndefinedVectorTraits<Scalar,LO,GO,Vector>::notDefined(); return 0; }
 
     /*! 
      * \brief Compute the 1-norm of a vector.
      */
-    static typename Teuchos::ScalarTraits<scalar_type>::magnitudeType 
-    norm1( const vector_type& vector )
-    { UndefinedVectorTraits<vector_type>::notDefined(); return 0; }
+    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType 
+    norm1( const Vector& vector )
+    { UndefinedVectorTraits<Scalar,LO,GO,Vector>::notDefined(); return 0; }
 
     /*! 
      * \brief Compute the 2-norm of a vector.
      */
-    static typename Teuchos::ScalarTraits<scalar_type>::magnitudeType 
-    norm2( const vector_type& vector )
-    { UndefinedVectorTraits<vector_type>::notDefined(); return 0; }
+    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType 
+    norm2( const Vector& vector )
+    { UndefinedVectorTraits<Scalar,LO,GO,Vector>::notDefined(); return 0; }
 
     /*! 
      * \brief Compute the Inf-norm of a vector.
      */
-    static typename Teuchos::ScalarTraits<scalar_type>::magnitudeType 
-    normInf( const vector_type& vector )
-    { UndefinedVectorTraits<vector_type>::notDefined(); return 0; }
+    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType 
+    normInf( const Vector& vector )
+    { UndefinedVectorTraits<Scalar,LO,GO,Vector>::notDefined(); return 0; }
 
     /*!
      * \brief Compute the mean value of a vector.
      */
-    static scalar_type meanValue( const vector_type& vector )
-    { UndefinedVectorTraits<vector_type>::notDefined(); return 0; }
+    static Scalar meanValue( const Vector& vector )
+    { UndefinedVectorTraits<Scalar,LO,GO,Vector>::notDefined(); return 0; }
 
     /*!
      * \brief Replace output vector values with element-wise absolute values
      * of input vector A = abs(B).
      */
-    static void abs( vector_type& A, const vector_type& B )
-    { UndefinedVectorTraits<vector_type>::notDefined(); }
+    static void abs( Vector& A, const Vector& B )
+    { UndefinedVectorTraits<Scalar,LO,GO,Vector>::notDefined(); }
 
     /*!
      * \brief Scale a vector by a value A = value*A.
      */
-    static void scale( vector_type& A, const scalar_type value )
-    { UndefinedVectorTraits<vector_type>::notDefined(); }
+    static void scale( Vector& A, const Scalar value )
+    { UndefinedVectorTraits<Scalar,LO,GO,Vector>::notDefined(); }
 
     /*!
      * \brief Scale a vector by a value A = value*B.
      */
-    static void 
-    scaleCopy( vector_type& A, const scalar_type value, const vector_type& B )
-    { UndefinedVectorTraits<vector_type>::notDefined(); }
+    static void scaleCopy( Vector& A, const Scalar value, const Vector& B )
+    { UndefinedVectorTraits<Scalar,LO,GO,Vector>::notDefined(); }
     
     /*!
      * \brief Replace output vector values with element-wise reciprocal values
      * of input vector A(i) = 1 / B(i)
      */
-    static void reciprocal( vector_type& A, const vector_type& B )
-    { UndefinedVectorTraits<vector_type>::notDefined(); }
+    static void reciprocal( Vector& A, const Vector& B )
+    { UndefinedVectorTraits<Scalar,LO,GO,Vector>::notDefined(); }
 
     /*!
      * \brief Update vector with A = alpha*A + beta*B.
      */
-    static void update( vector_type& A, const scalar_type& alpha,
-			const vector_type& B, const scalar_type& beta )
-    { UndefinedVectorTraits<vector_type>::notDefined(); }
+    static void update( Vector& A, const Scalar& alpha,
+			const Vector& B, const Scalar& beta )
+    { UndefinedVectorTraits<Scalar,LO,GO,Vector>::notDefined(); }
 
     /*!
      * \brief Update vector with A = alpha*A + beta*B + gamma*C.
      */
-    static void update( vector_type& A, const scalar_type& alpha,
-			const vector_type& B, const scalar_type& beta,
-			const vector_type& C, const scalar_type& gamma )
-    { UndefinedVectorTraits<vector_type>::notDefined(); }
+    static void update( Vector& A, const Scalar& alpha,
+			const Vector& B, const Scalar& beta,
+			const Vector& C, const Scalar& gamma )
+    { UndefinedVectorTraits<Scalar,LO,GO,Vector>::notDefined(); }
 
     /*!
      * \brief Element-wise mulitply two vectors 
      * A(i) = alpha*A(i) + beta*B(i)*C(i).
      */
-    static void elementWiseMultiply( vector_type& A, const scalar_type& alpha,
-				     const vector_type& B, const vector_type& C,
-				     const scalar_type& beta)
-    { UndefinedVectorTraits<vector_type>::notDefined(); }
+    static void elementWiseMultiply( Vector& A, const Scalar& alpha,
+				     const Vector& B, const Vector& C,
+				     const Scalar& beta)
+    { UndefinedVectorTraits<Scalar,LO,GO,Vector>::notDefined(); }
 };
 
 //---------------------------------------------------------------------------//
