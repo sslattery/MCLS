@@ -205,7 +205,7 @@ class MatrixTraits
     /*!
      * \brief Determine whether or not a given local row is on-process.
      */
-    static bool isLocalRow( const LO& local_ordinal )
+    static bool isLocalRow( const Matrix& matrix, const LO& local_ordinal )
     { 
 	UndefinedMatrixTraits<Scalar,LO,GO,Vector,Matrix>::notDefined(); 
 	return false; 

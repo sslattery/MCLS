@@ -41,6 +41,7 @@
 #ifndef MCLS_TPETRACRSMATRIXADAPTER_HPP
 #define MCLS_TPETRACRSMATRIXADAPTER_HPP
 
+#include <MCLS_Assertion.hpp>
 #include <MCLS_MatrixTraits.hpp>
 
 #include <Teuchos_as.hpp>
@@ -99,6 +100,7 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
     static Teuchos::RCP<vector_type> 
     cloneVectorFromMatrixCols( const matrix_type& matrix )
     { 
+	testPrecondition( matrix.isFillComplete() );
 	return Tpetra::createVector<Scalar,LO,GO>( matrix.getColMap() );
     }
 
@@ -133,6 +135,74 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
     static GO getGlobalMaxNumRowEntries( const matrix_type& matrix )
     {
 	return Teuchos::as<GO>( matrix.getGlobalMaxNumRowEntries() );
+    }
+
+    /*!
+     * \brief Given a local row on-process, provide the global ordinal.
+     */
+    static GO getGlobalRow( const matrix_type& matrix, const LO& local_ordinal )
+    { 
+	return matrix.getRowMap()->getGlobalElement( local_ordinal );
+    }
+
+    /*!
+     * \brief Given a global row on-process, provide the local ordinal.
+     */
+    static LO getLocalRow( const matrix_type& matrix, const GO& global_ordinal )
+    { 
+	return matrix.getRowMap()->getLocalElement( global_ordinal );
+    }
+
+    /*!
+     * \brief Given a local col on-process, provide the global ordinal.
+     */
+    static GO getGlobalCol( const matrix_type& matrix, const LO& local_ordinal )
+    {
+	testPrecondition( matrix.isFillComplete() );
+	return matrix.getColMap()->getGlobalElement( local_ordinal );
+    }
+
+    /*!
+     * \brief Given a global col on-process, provide the local ordinal.
+     */
+    static LO getLocalCol( const matrix_type& matrix, const GO& global_ordinal )
+    {
+	testPrecondition( matrix.isFillComplete() );
+	return matrix.getColMap()->getLocalElement( global_ordinal );
+    }
+
+    /*!
+     * \brief Determine whether or not a given global row is on-process.
+     */
+    static bool isGlobalRow( const matrix_type& matrix, const GO& global_ordinal )
+    {
+	return matrix.getRowMap()->isNodeGlobalElement( global_ordinal );
+    }
+
+    /*!
+     * \brief Determine whether or not a given local row is on-process.
+     */
+    static bool isLocalRow( const matrix_type& matrix, const LO& local_ordinal )
+    { 
+	return matrix.getRowMap()->isNodeLocalElement( local_ordinal );
+    }
+
+    /*!
+     * \brief Determine whether or not a given global col is on-process.
+     */
+    static bool isGlobalCol( const matrix_type& matrix, const GO& global_ordinal )
+    { 
+	testPrecondition( matrix.isFillComplete() );
+	return matrix.getColMap()->isNodeGlobalElement( global_ordinal );
+    }
+
+    /*!
+     * \brief Determine whether or not a given local col is on-process.
+     */
+    static bool isLocalCol( const matrix_type& matrix, const LO& local_ordinal )
+    { 
+	testPrecondition( matrix.isFillComplete() );
+	return matrix.getColMap()->isNodeLocalElement( local_ordinal );
     }
 };
 
