@@ -101,6 +101,39 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
     { 
 	return Tpetra::createVector<Scalar,LO,GO>( matrix.getColMap() );
     }
+
+    /*!
+     * \brief Get the communicator.
+     */
+    static const Teuchos::RCP<const Teuchos::Comm<int> >&
+    getComm( const matrix_type& matrix )
+    {
+	return matrix.getComm();
+    }
+
+    /*!
+     * \brief Get the global number of rows.
+     */
+    static GO getGlobalNumRows( const matrix_type& matrix )
+    { 
+	return Teuchos::as<GO>( matrix.getGlobalNumRows() );
+    }
+
+    /*!
+     * \brief Get the local number of rows.
+     */
+    static LO getLocalNumRows( const matrix_type& matrix )
+    {
+	return Teuchos::as<LO>( matrix.getRowMap()->getNodeNumElements() );
+    }
+
+    /*!
+     * \brief Get the maximum number of entries in a row globally.
+     */
+    static GO getGlobalMaxNumRowEntries( const matrix_type& matrix )
+    {
+	return Teuchos::as<GO>( matrix.getGlobalMaxNumRowEntries() );
+    }
 };
 
 //---------------------------------------------------------------------------//
