@@ -56,12 +56,12 @@
  *
  * Will throw a compile-time error if these traits are not specialized.
  */
-template<class OperatorType>
+template<class Scalar, class LO, class GO, class Matrix>
 struct UndefinedTpetraHelpers
 {
-    static inline OperatorType notDefined()
+    static inline void notDefined()
     {
-	return OperatorType::this_type_is_missing_a_specialization();
+	return Matrix::this_type_is_missing_a_specialization();
     }
 };
 
@@ -72,28 +72,27 @@ namespace MCLS
  * \class TpetraMatrixHelpers
  * \brief Helper functions for Tpetra implementations.
  */
-template<class OperatorType>
+template<class Scalar, class LO, class GO, class Matrix>
 class TpetraMatrixHelpers
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef OperatorType                                  operator_type;
-    typedef typename operator_type::scalar_type           scalar_type;
-    typedef typename operator_type::local_ordinal_type    local_ordinal_type;
-    typedef typename operator_type::global_ordinal_type   global_ordinal_type;
+    typedef Scalar                                  scalar_type;
+    typedef LO                                      local_ordinal_type;
+    typedef GO                                      global_ordinal_type;
+    typedef Matrix                                  matrix_type;
     //@}
 
     /*!
      * \brief Get the on process global matrix row indices that, as global
      * column indices, are off process.
      */
-    static Teuchos::Array<global_ordinal_type> 
-    getOffProcRowsAsCols( const operator_type& op )
+    static Teuchos::Array<GO> getOffProcRowsAsCols( const Matrix& matrix )
     { 
-	UndefinedTpetraHelpers<operator_type>::notDefined(); 
-	return Teuchos::Array<global_ordinal_type>(0); 
+	UndefinedTpetraHelpers<Scalar,LO,GO,Matrix>::notDefined(); 
+	return Teuchos::Array<GO>(0); 
     }
 };
 
@@ -103,27 +102,28 @@ class TpetraMatrixHelpers
  * \brief TpetraMatrixHelpers specialization for Tpetra::CrsMatrix.
  */
 template<class Scalar, class LO, class GO>
-class TpetraMatrixHelpers<Tpetra::CrsMatrix<Scalar,LO,GO> >
+class TpetraMatrixHelpers<Scalar,LO,GO,Tpetra::CrsMatrix<Scalar,LO,GO> >
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO>               operator_type;
     typedef Scalar                                        scalar_type;
     typedef LO                                            local_ordinal_type;
     typedef GO                                            global_ordinal_type;
+    typedef Tpetra::CrsMatrix<Scalar,LO,GO>               matrix_type;
     //@}
 
     /*!
      * \brief Get the on process global matrix row indices that, as global
      * column indices, are off process.
      */
-    static Teuchos::Array<global_ordinal_type> 
-    getOffProcRowsAsCols( const operator_type& op )
+    static Teuchos::Array<GO> getOffProcRowsAsCols( const matrix_type& matrix )
     { 
-	Teuchos::RCP<const Tpetra::Map<LO,GO> > row_map = op.getRowMap();
-	Teuchos::RCP<const Tpetra::Map<LO,GO> > col_map = op.getColMap();
+	Teuchos::RCP<const Tpetra::Map<LO,GO> > row_map = 
+	    matrix.getRowMap();
+	Teuchos::RCP<const Tpetra::Map<LO,GO> > col_map = 
+	    matrix.getColMap();
 
 	Teuchos::ArrayView<const GO> global_cols = 
 	    col_map->getNodeElementList();
@@ -150,27 +150,28 @@ class TpetraMatrixHelpers<Tpetra::CrsMatrix<Scalar,LO,GO> >
  * \brief TpetraMatrixHelpers specialization for Tpetra::VbrMatrix.
  */
 template<class Scalar, class LO, class GO>
-class TpetraMatrixHelpers<Tpetra::VbrMatrix<Scalar,LO,GO> >
+class TpetraMatrixHelpers<Scalar,LO,GO,Tpetra::VbrMatrix<Scalar,LO,GO> >
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Tpetra::VbrMatrix<Scalar,LO,GO>               operator_type;
     typedef Scalar                                        scalar_type;
     typedef LO                                            local_ordinal_type;
     typedef GO                                            global_ordinal_type;
+    typedef Tpetra::VbrMatrix<Scalar,LO,GO>               matrix_type;
     //@}
 
     /*!
      * \brief Get the on process global matrix row indices that, as global
      * column indices, are off process.
      */
-    static Teuchos::Array<global_ordinal_type> 
-    getOffProcRowsAsCols( const operator_type& op )
+    static Teuchos::Array<GO> getOffProcRowsAsCols( const matrix_type& matrix )
     { 
-	Teuchos::RCP<const Tpetra::Map<LO,GO> > row_map = op.getPointRowMap();
-	Teuchos::RCP<const Tpetra::Map<LO,GO> > col_map = op.getPointColMap();
+	Teuchos::RCP<const Tpetra::Map<LO,GO> > row_map = 
+	    matrix.getPointRowMap();
+	Teuchos::RCP<const Tpetra::Map<LO,GO> > col_map = 
+	    matrix.getPointColMap();
 
 	Teuchos::ArrayView<const GO> global_cols = 
 	    col_map->getNodeElementList();
