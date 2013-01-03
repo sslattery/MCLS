@@ -86,10 +86,10 @@ class TpetraMatrixHelpers
     //@}
 
     /*!
-     * \brief Get the on process global matrix row indices that, as global
-     * column indices, are off process.
+     * \brief Get the on-process global matrix column indices that, as global
+     * row indices, are off-process.
      */
-    static Teuchos::Array<GO> getOffProcRowsAsCols( const Matrix& matrix )
+    static Teuchos::Array<GO> getOffProcColsAsRows( const Matrix& matrix )
     { 
 	UndefinedTpetraHelpers<Scalar,LO,GO,Matrix>::notDefined(); 
 	return Teuchos::Array<GO>(0); 
@@ -115,10 +115,10 @@ class TpetraMatrixHelpers<Scalar,LO,GO,Tpetra::CrsMatrix<Scalar,LO,GO> >
     //@}
 
     /*!
-     * \brief Get the on process global matrix row indices that, as global
-     * column indices, are off process.
+     * \brief Get the on-process global matrix column indices that, as global
+     * row indices, are off-process.
      */
-    static Teuchos::Array<GO> getOffProcRowsAsCols( const matrix_type& matrix )
+    static Teuchos::Array<GO> getOffProcColsAsRows( const matrix_type& matrix )
     { 
 	Teuchos::RCP<const Tpetra::Map<LO,GO> > row_map = 
 	    matrix.getRowMap();
@@ -163,10 +163,10 @@ class TpetraMatrixHelpers<Scalar,LO,GO,Tpetra::VbrMatrix<Scalar,LO,GO> >
     //@}
 
     /*!
-     * \brief Get the on process global matrix row indices that, as global
-     * column indices, are off process.
+     * \brief Get the on-process global matrix column indices that, as global
+     * row indices, are off-process.
      */
-    static Teuchos::Array<GO> getOffProcRowsAsCols( const matrix_type& matrix )
+    static Teuchos::Array<GO> getOffProcColsAsRows( const matrix_type& matrix )
     { 
 	Teuchos::RCP<const Tpetra::Map<LO,GO> > row_map = 
 	    matrix.getPointRowMap();

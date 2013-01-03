@@ -81,7 +81,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TpetraHelpers, CrsOffProcCols, LO, GO, Scalar
 	A->fillComplete();
 
 	Teuchos::Array<GO> off_proc_cols = 
-	    MCLS::TpetraMatrixHelpers<Scalar,LO,GO,MatrixType>::getOffProcRowsAsCols( *A );
+	    MCLS::TpetraMatrixHelpers<Scalar,LO,GO,MatrixType>::getOffProcColsAsRows( *A );
 
 	if ( comm_size == 1 )
 	{
@@ -172,7 +172,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TpetraHelpers, VbrOffProcCols, LO, GO, Scalar
     	A->fillComplete();
 
     	Teuchos::Array<GO> off_proc_cols = 
-	    MCLS::TpetraMatrixHelpers<Scalar,LO,GO,MatrixType>::getOffProcRowsAsCols( *A );
+	    MCLS::TpetraMatrixHelpers<Scalar,LO,GO,MatrixType>::getOffProcColsAsRows( *A );
 	std::cout << "COL SIZE " << off_proc_cols.size() << std::endl;
     	if ( comm_size == 1 )
     	{
