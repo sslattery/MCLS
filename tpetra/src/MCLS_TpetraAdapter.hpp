@@ -32,7 +32,7 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_TpetraAdapater.hpp
+ * \file MCLS_TpetraAdapter.hpp
  * \author Stuart R. Slattery
  * \brief Tpetra Adapter.
  */
@@ -42,9 +42,10 @@
 #define MCLS_TPETRAADAPTER_HPP
 
 #include "MCLS_TpetraVectorAdapter.hpp"
+#include "MCLS_TpetraCrsMatrixAdapter.hpp"
 
 #endif // end MCLS_TPETRAADAPTER_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_TpetraAdapater.hpp
+// end MCLS_TpetraAdapter.hpp
 //---------------------------------------------------------------------------//

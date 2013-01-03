@@ -32,7 +32,7 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_TpetraVectorAdapater.hpp
+ * \file MCLS_TpetraVectorAdapter.hpp
  * \author Stuart R. Slattery
  * \brief Tpetra::Vector Adapter.
  */
@@ -288,5 +288,5 @@ class VectorTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO> >
 #endif // end MCLS_TPETRAVECTORADAPTER_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_TpetraVectorAdapater.hpp
+// end MCLS_TpetraVectorAdapter.hpp
 //---------------------------------------------------------------------------//

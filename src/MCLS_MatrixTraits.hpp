@@ -60,7 +60,7 @@ struct UndefinedMatrixTraits
 {
     static inline void notDefined()
     {
-	return OP::this_type_is_missing_a_specialization();
+	return Matrix::this_type_is_missing_a_specialization();
     }
 };
 
