@@ -177,7 +177,6 @@ class TpetraMatrixHelpers<Scalar,LO,GO,Tpetra::CrsMatrix<Scalar,LO,GO> >
 	Ensure( !new_matrix.is_null() );
 	return new_matrix;
     }
-
 };
 
 //---------------------------------------------------------------------------//

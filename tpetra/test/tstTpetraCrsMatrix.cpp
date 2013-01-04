@@ -898,33 +898,33 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, copy_neighbor, LO, GO, Scalar )
 	Teuchos::RCP<MatrixType> B = 
 	    MT::copyNearestNeighbors( *A, num_neighbors );
 
-	int local_num_overlap = 0;
+	int local_num_neighbor = 0;
 	if ( i > 0 )
 	{
-	    local_num_overlap = global_num_rows - local_num_rows;
+	    local_num_neighbor = global_num_rows - local_num_rows;
 	}
 
-	TEST_EQUALITY( local_num_overlap, MT::getLocalNumRows( *B ) );
+	TEST_EQUALITY( local_num_neighbor, MT::getLocalNumRows( *B ) );
 
 	Teuchos::ArrayView<const LO> view_columns;
 	Teuchos::ArrayView<const Scalar> view_values;
-	for ( int j = 0; j < local_num_overlap; ++j )
+	for ( int j = 0; j < local_num_neighbor; ++j )
 	{
-	    MT::getLocalRowView( *B, j, view_columns, view_values );
-	    TEST_EQUALITY( view_columns.size(), local_num_rows  );
-	    TEST_EQUALITY( view_values.size(), local_num_rows );
+	    for ( int k = comm_rank*local_num_rows; 
+		  k < (comm_rank+1)*local_num_rows; ++k )
+	    {
+		TEST_INEQUALITY( MT::getGlobalRow( *B, j ), k );
+	    }
 
-	    for ( int i = 0; i < local_num_rows; ++i )
+	    MT::getLocalRowView( *B, j, view_columns, view_values );
+	    TEST_EQUALITY( view_columns.size(), global_num_rows  );
+	    TEST_EQUALITY( view_values.size(), global_num_rows );
+
+	    for ( int i = 0; i < global_num_rows; ++i )
 	    {
 		TEST_EQUALITY( view_columns[i], i );
 		TEST_EQUALITY( view_values[i], comm_size );
 
-		for ( int k = comm_rank*local_num_rows; 
-		      k < (comm_rank+i)*local_num_rows; ++k )
-		{
-		    TEST_INEQUALITY(
-			MT::getGlobalCol( *B, view_columns[i] ), k );
-		}
 	    }
 	}
     }

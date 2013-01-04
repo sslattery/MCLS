@@ -280,13 +280,13 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
     { 
 	Require( num_neighbors >= 0 ); 
 
-	// Setup for overlap construction.
+	// Setup for neighbor construction.
 	Teuchos::RCP<const Tpetra::Map<LO,GO> > empty_map = 
 	    Tpetra::createUniformContigMap<LO,GO>( 
 		0, matrix.getComm() );
-	Teuchos::RCP<matrix_type> overlap_matrix = 
+	Teuchos::RCP<matrix_type> neighbor_matrix = 
 	    Tpetra::createCrsMatrix<Scalar,LO,GO>( empty_map );
-	overlap_matrix->fillComplete();
+	neighbor_matrix->fillComplete();
 
 	Teuchos::ArrayView<const GO> global_rows;
 	typename Teuchos::ArrayView<const GO>::const_iterator global_rows_it;
@@ -296,11 +296,11 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
 	Teuchos::Array<GO> ghost_global_rows =
 	    TMH::getOffProcColsAsRows( matrix );
 
-	// Build the overlap in the matrix by traversing the graph.
+	// Build the neighbor in the matrix by traversing the graph.
 	for ( GO i = 0; i < num_neighbors; ++i )
 	{
 	    // Get rid of the global rows that belong to the original
-	    // matrix. We don't need to store these, just the overlap.
+	    // matrix. We don't need to store these, just the neighbors.
 	    global_rows = matrix.getRowMap()->getNodeElementList();
 	    for ( global_rows_it = global_rows.begin();
 		  global_rows_it != global_rows.end();
@@ -313,10 +313,10 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
 							ghost_global_bound) );
 	    }
 
-	    // Get the current set of global rows in the overlap matrix. 
-	    global_rows = overlap_matrix->getRowMap()->getNodeElementList();
+	    // Get the current set of global rows in the neighbor matrix. 
+	    global_rows = neighbor_matrix->getRowMap()->getNodeElementList();
 
-	    // Append the on proc overlap columns to the off proc columns.
+	    // Append the on proc neighbor columns to the off proc columns.
 	    for ( global_rows_it = global_rows.begin();
 		  global_rows_it != global_rows.end();
 		  ++global_rows_it )
@@ -327,22 +327,21 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
 	    // Make a new map of the combined global rows and off proc columns.
 	    Teuchos::RCP<const Tpetra::Map<LO,GO> > ghost_map = 
 		Tpetra::createNonContigMap<LO,GO>( 
-		    ghost_global_rows(), overlap_matrix->getComm() );
+		    ghost_global_rows(), neighbor_matrix->getComm() );
 
-	    // Export the overlap matrix with the new overlap.
+	    // Export the neighbor matrix with the new neighbor.
 	    Tpetra::Export<LO,GO> ghost_exporter( 
 		matrix.getRowMap(), ghost_map );
 
-	    // Update the overlap matrix for the next iteration.
-	    overlap_matrix = 
+	    neighbor_matrix = 
 		TMH::exportAndFillCompleteMatrix( matrix, ghost_exporter );
 
 	    // Get the next rows in the graph.
-	    ghost_global_rows = TMH::getOffProcColsAsRows( matrix );
+	    ghost_global_rows = TMH::getOffProcColsAsRows( *neighbor_matrix );
 	}
 
-	Ensure( !overlap_matrix.is_null() );
-	return overlap_matrix;
+	Ensure( !neighbor_matrix.is_null() );
+	return neighbor_matrix;
     }
 };
 
