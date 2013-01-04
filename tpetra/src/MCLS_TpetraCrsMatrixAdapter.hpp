@@ -45,6 +45,8 @@
 #include <MCLS_MatrixTraits.hpp>
 
 #include <Teuchos_as.hpp>
+#include <Teuchos_ArrayView.hpp>
+#include <Teuchos_Array.hpp>
 
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
@@ -140,69 +142,173 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
     /*!
      * \brief Given a local row on-process, provide the global ordinal.
      */
-    static GO getGlobalRow( const matrix_type& matrix, const LO& local_ordinal )
+    static GO getGlobalRow( const matrix_type& matrix, const LO& local_row )
     { 
-	return matrix.getRowMap()->getGlobalElement( local_ordinal );
+	return matrix.getRowMap()->getGlobalElement( local_row );
     }
 
     /*!
      * \brief Given a global row on-process, provide the local ordinal.
      */
-    static LO getLocalRow( const matrix_type& matrix, const GO& global_ordinal )
+    static LO getLocalRow( const matrix_type& matrix, const GO& global_row )
     { 
-	return matrix.getRowMap()->getLocalElement( global_ordinal );
+	return matrix.getRowMap()->getLocalElement( global_row );
     }
 
     /*!
      * \brief Given a local col on-process, provide the global ordinal.
      */
-    static GO getGlobalCol( const matrix_type& matrix, const LO& local_ordinal )
+    static GO getGlobalCol( const matrix_type& matrix, const LO& local_col )
     {
 	testPrecondition( matrix.isFillComplete() );
-	return matrix.getColMap()->getGlobalElement( local_ordinal );
+	return matrix.getColMap()->getGlobalElement( local_col );
     }
 
     /*!
      * \brief Given a global col on-process, provide the local ordinal.
      */
-    static LO getLocalCol( const matrix_type& matrix, const GO& global_ordinal )
+    static LO getLocalCol( const matrix_type& matrix, const GO& global_col )
     {
 	testPrecondition( matrix.isFillComplete() );
-	return matrix.getColMap()->getLocalElement( global_ordinal );
+	return matrix.getColMap()->getLocalElement( global_col );
     }
 
     /*!
      * \brief Determine whether or not a given global row is on-process.
      */
-    static bool isGlobalRow( const matrix_type& matrix, const GO& global_ordinal )
+    static bool isGlobalRow( const matrix_type& matrix, const GO& global_row )
     {
-	return matrix.getRowMap()->isNodeGlobalElement( global_ordinal );
+	return matrix.getRowMap()->isNodeGlobalElement( global_row );
     }
 
     /*!
      * \brief Determine whether or not a given local row is on-process.
      */
-    static bool isLocalRow( const matrix_type& matrix, const LO& local_ordinal )
+    static bool isLocalRow( const matrix_type& matrix, const LO& local_row )
     { 
-	return matrix.getRowMap()->isNodeLocalElement( local_ordinal );
+	return matrix.getRowMap()->isNodeLocalElement( local_row );
     }
 
     /*!
      * \brief Determine whether or not a given global col is on-process.
      */
-    static bool isGlobalCol( const matrix_type& matrix, const GO& global_ordinal )
+    static bool isGlobalCol( const matrix_type& matrix, const GO& global_col )
     { 
 	testPrecondition( matrix.isFillComplete() );
-	return matrix.getColMap()->isNodeGlobalElement( global_ordinal );
+	return matrix.getColMap()->isNodeGlobalElement( global_col );
     }
 
     /*!
      * \brief Determine whether or not a given local col is on-process.
      */
-    static bool isLocalCol( const matrix_type& matrix, const LO& local_ordinal )
+    static bool isLocalCol( const matrix_type& matrix, const LO& local_col )
     { 
 	testPrecondition( matrix.isFillComplete() );
-	return matrix.getColMap()->isNodeLocalElement( local_ordinal );
+	return matrix.getColMap()->isNodeLocalElement( local_col );
+    }
+
+    /*!
+     * \brief Get a view of a global row.
+     */
+    static void getGlobalRowView( const matrix_type& matrix,
+				  const GO& global_row, 
+				  Teuchos::ArrayView<const GO> &indices,
+				  Teuchos::ArrayView<const Scalar> &values )
+    {
+	testPrecondition( !matrix.isFillComplete() );
+	matrix.getGlobalRowView( global_row, indices, values );
+    }
+
+    /*!
+     * \brief Get a view of a local row.
+     */
+    static void getLocalRowView( const matrix_type& matrix,
+				 const LO& local_row, 
+				 Teuchos::ArrayView<const LO> &indices,
+				 Teuchos::ArrayView<const Scalar> &values )
+    {
+	testPrecondition( matrix.isFillComplete() );
+	matrix.getLocalRowView( local_row, indices, values );
+    }
+
+    /*!
+     * \brief Get a copy of the local diagonal of the matrix.
+     */
+    static void getLocalDiagCopy( const matrix_type& matrix, 
+				  vector_type& vector )
+    { 
+	matrix.getLocalDiagCopy( vector );
+    }
+
+    /*!
+     * \brief Apply the row matrix to a vector. A*x = y.
+     */
+    static void apply( const matrix_type& A, 
+		       const vector_type& x, 
+		       vector_type& y )
+    {
+	A.apply( x, y );
+    }
+
+    /*!
+     * \brief Create a reference-counted pointer to a new matrix by
+     * subtracting a matrix from the identity matrix. H = I - A.
+     */
+    static Teuchos::RCP<matrix_type>
+    subtractMatrixFromIdentity( const matrix_type& matrix )
+    { 
+	testPrecondition( matrix.isFillComplete() );
+
+	Teuchos::RCP<const Tpetra::Map<LO,GO> > row_map =
+	    matrix.getRowMap();
+	Teuchos::RCP<const Tpetra::Map<LO,GO> > col_map =
+	    matrix.getColMap();
+
+	Teuchos::RCP<matrix_type> i_minus_a = Teuchos::rcp(
+	    new matrix_type( 
+		row_map, col_map, matrix.getGlobalMaxNumRowEntries() ) );
+
+	Teuchos::ArrayView<const LO> local_cols;
+	typename Teuchos::ArrayView<const LO>::const_iterator 
+	    local_cols_it;
+	Teuchos::ArrayView<const Scalar> local_values;
+	typename Teuchos::ArrayView<const Scalar>::const_iterator 
+	    local_values_it;
+	Teuchos::Array<Scalar> i_minus_a_vals;
+	typename Teuchos::Array<Scalar>::iterator i_minus_a_vals_it;
+
+	for ( LO local_row = row_map->getMinLocalIndex();
+	      local_row <= row_map->getMaxLocalIndex();
+	      ++local_row )
+	{
+	    matrix.getLocalRowView(
+		local_row, local_cols, local_values );
+
+	    i_minus_a_vals.resize( local_values.size() );
+
+	    for ( local_cols_it = local_cols.begin(),
+		  local_values_it = local_values.begin(),
+		i_minus_a_vals_it = i_minus_a_vals.begin();
+		  local_cols_it != local_cols.end();
+		  ++local_cols_it, ++local_values_it, ++i_minus_a_vals_it )
+	    {
+		if ( row_map->getGlobalElement( local_row ) == 
+		     col_map->getGlobalElement( *local_cols_it ) )
+		{
+		    *i_minus_a_vals_it = 1.0 - (*local_values_it);
+		}
+		else
+		{
+		    *i_minus_a_vals_it = -(*local_values_it);
+		}
+	    }
+
+	    i_minus_a->insertLocalValues(
+		local_row, local_cols, i_minus_a_vals() );
+	}
+
+	i_minus_a->fillComplete();
+	return i_minus_a;
     }
 };
 

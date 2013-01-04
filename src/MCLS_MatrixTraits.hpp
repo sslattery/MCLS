@@ -160,7 +160,7 @@ class MatrixTraits
     /*!
      * \brief Given a local row on-process, provide the global ordinal.
      */
-    static GO getGlobalRow( const Matrix& matrix, const LO& local_ordinal )
+    static GO getGlobalRow( const Matrix& matrix, const LO& local_row )
     { 
 	UndefinedMatrixTraits<Scalar,LO,GO,Vector,Matrix>::notDefined(); 
 	return 0;
@@ -169,7 +169,7 @@ class MatrixTraits
     /*!
      * \brief Given a global row on-process, provide the local ordinal.
      */
-    static LO getLocalRow( const Matrix& matrix, const GO& global_ordinal )
+    static LO getLocalRow( const Matrix& matrix, const GO& global_row )
     { 
 	UndefinedMatrixTraits<Scalar,LO,GO,Vector,Matrix>::notDefined(); 
 	return 0; 
@@ -178,7 +178,7 @@ class MatrixTraits
     /*!
      * \brief Given a local col on-process, provide the global ordinal.
      */
-    static GO getGlobalCol( const Matrix& matrix, const LO& local_ordinal )
+    static GO getGlobalCol( const Matrix& matrix, const LO& local_col )
     {
 	UndefinedMatrixTraits<Scalar,LO,GO,Vector,Matrix>::notDefined(); 
 	return 0; 
@@ -187,7 +187,7 @@ class MatrixTraits
     /*!
      * \brief Given a global col on-process, provide the local ordinal.
      */
-    static LO getLocalCol( const Matrix& matrix, const GO& global_ordinal )
+    static LO getLocalCol( const Matrix& matrix, const GO& global_col )
     {
 	UndefinedMatrixTraits<Scalar,LO,GO,Vector,Matrix>::notDefined(); 
 	return 0; 
@@ -196,7 +196,7 @@ class MatrixTraits
     /*!
      * \brief Determine whether or not a given global row is on-process.
      */
-    static bool isGlobalRow( const Matrix& matrix, const GO& global_ordinal )
+    static bool isGlobalRow( const Matrix& matrix, const GO& global_row )
     {
 	UndefinedMatrixTraits<Scalar,LO,GO,Vector,Matrix>::notDefined(); 
 	return false; 
@@ -205,7 +205,7 @@ class MatrixTraits
     /*!
      * \brief Determine whether or not a given local row is on-process.
      */
-    static bool isLocalRow( const Matrix& matrix, const LO& local_ordinal )
+    static bool isLocalRow( const Matrix& matrix, const LO& local_row )
     { 
 	UndefinedMatrixTraits<Scalar,LO,GO,Vector,Matrix>::notDefined(); 
 	return false; 
@@ -214,7 +214,7 @@ class MatrixTraits
     /*!
      * \brief Determine whether or not a given global col is on-process.
      */
-    static bool isGlobalCol( const Matrix& matrix, const GO& global_ordinal )
+    static bool isGlobalCol( const Matrix& matrix, const GO& global_col )
     { 
 	UndefinedMatrixTraits<Scalar,LO,GO,Vector,Matrix>::notDefined();
 	return false; 
@@ -223,7 +223,7 @@ class MatrixTraits
     /*!
      * \brief Determine whether or not a given local col is on-process.
      */
-    static bool isLocalCol( const Matrix& matrix, const LO& local_ordinal )
+    static bool isLocalCol( const Matrix& matrix, const LO& local_col )
     { 
 	UndefinedMatrixTraits<Scalar,LO,GO,Vector,Matrix>::notDefined(); 
 	return false; 
@@ -233,7 +233,7 @@ class MatrixTraits
      * \brief Get a view of a global row.
      */
     static void getGlobalRowView( const Matrix& matrix,
-				  const GO& global_ordinal, 
+				  const GO& global_row, 
 				  Teuchos::ArrayView<const GO> &indices,
 				  Teuchos::ArrayView<const Scalar> &values )
     { UndefinedMatrixTraits<Scalar,LO,GO,Vector,Matrix>::notDefined(); }
@@ -242,7 +242,7 @@ class MatrixTraits
      * \brief Get a view of a local row.
      */
     static void getLocalRowView( const Matrix& matrix,
-				 const LO& local_ordinal, 
+				 const LO& local_row, 
 				 Teuchos::ArrayView<const LO> &indices,
 				 Teuchos::ArrayView<const Scalar> &values )
     { UndefinedMatrixTraits<Scalar,LO,GO,Vector,Matrix>::notDefined(); }
@@ -259,8 +259,19 @@ class MatrixTraits
     /*!
      * \brief Apply the row matrix to a vector. A*x = y.
      */
-    static void apply( const Matrix& A, const Vector& x, const Vector& y )
+    static void apply( const Matrix& A, const Vector& x, Vector& y )
     { UndefinedMatrixTraits<Scalar,LO,GO,Vector,Matrix>::notDefined(); }
+
+    /*!
+     * \brief Create a reference-counted pointer to a new matrix by
+     * subtracting a matrix from the identity matrix. H = I - A.
+     */
+    static Teuchos::RCP<Matrix>
+    subtractMatrixFromIdentity( const Matrix& matrix )
+    { 
+	UndefinedMatrixTraits<Scalar,LO,GO,Vector,Matrix>::notDefined(); 
+	return Teuchos::null; 
+    }
 
     /*
      * \brief Create a reference-counted pointer to a new matrix with a
@@ -268,18 +279,6 @@ class MatrixTraits
      */
     static Teuchos::RCP<Matrix> copyNearestNeighbors( const Matrix& matrix,
 						      const GO& num_neighbors )
-    { 
-	UndefinedMatrixTraits<Scalar,LO,GO,Vector,Matrix>::notDefined(); 
-	return Teuchos::null; 
-    }
-
-    /*!
-     * \brief Create a reference-counted pointer to a new matrix by
-     * subtracting the transpose of a matrix from the identity matrix. 
-     * H = I - A.
-     */
-    static Teuchos::RCP<Matrix>
-    subtractTransposeFromIdentity( const Matrix& matrix )
     { 
 	UndefinedMatrixTraits<Scalar,LO,GO,Vector,Matrix>::notDefined(); 
 	return Teuchos::null; 
