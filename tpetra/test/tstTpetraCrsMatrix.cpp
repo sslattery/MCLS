@@ -828,11 +828,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, transpose, LO, GO, Scalar )
 	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
 
     Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
-    Teuchos::Array<GO> global_columns( 1 );
-    Teuchos::Array<Scalar> values( 1, 1 );
-    for ( int i = 0; i < global_num_rows; ++i )
+    Teuchos::Array<GO> global_columns( 2 );
+    Teuchos::Array<Scalar> values( 2 );
+    for ( int i = 0; i < global_num_rows-1; ++i )
     {
 	global_columns[0] = i;
+	global_columns[1] = i+1;
+	values[0] = 1;
+	values[1] = 2;
 	A->insertGlobalValues( i, global_columns(), values() );
     }
     A->fillComplete();
@@ -841,13 +844,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, transpose, LO, GO, Scalar )
 
     Teuchos::ArrayView<const LO> view_columns;
     Teuchos::ArrayView<const Scalar> view_values;
-    for ( int i = 0; i < local_num_rows; ++i )
+    for ( int i = 1; i < local_num_rows-1; ++i )
     {
 	MT::getLocalRowView( *B, i, view_columns, view_values );
-	TEST_EQUALITY( view_columns.size(), 1 );
-	TEST_EQUALITY( view_values.size(), 1 );
-	TEST_EQUALITY( view_columns[0], i );
-	TEST_EQUALITY( view_values[0], comm_size );
+	TEST_EQUALITY( view_columns.size(), 2 );
+	TEST_EQUALITY( view_values.size(), 2 );
+	TEST_EQUALITY( view_columns[0], i-1 );
+	TEST_EQUALITY( view_columns[1], i );
+	TEST_EQUALITY( view_values[0], 2*comm_size );
+	TEST_EQUALITY( view_values[1], 1*comm_size );
     }
 }
 
