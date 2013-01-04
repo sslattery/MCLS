@@ -859,6 +859,80 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, transpose, LO, GO, Scalar )
 UNIT_TEST_INSTANTIATION( MatrixTraits, transpose )
 
 //---------------------------------------------------------------------------//
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, copy_neighbor, LO, GO, Scalar )
+{
+    typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
+    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
+    typedef MCLS::MatrixTraits<Scalar,LO,GO,VectorType,MatrixType> MT;
+    typedef typename MT::scalar_type scalar_type;
+    typedef typename MT::local_ordinal_type local_ordinal_type;
+    typedef typename MT::global_ordinal_type global_ordinal_type;
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+	Teuchos::DefaultComm<int>::getComm();
+    int comm_size = comm->getSize();
+    int comm_rank = comm->getRank();
+
+    int local_num_rows = 10;
+    int global_num_rows = local_num_rows*comm_size;
+    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
+	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
+
+    Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
+    Teuchos::Array<GO> global_columns( global_num_rows );
+    Teuchos::Array<Scalar> values( global_num_rows, 1 );
+    for ( int i = 0; i < global_num_rows; ++i )
+    {
+	global_columns[i] = i;
+    }
+    for ( int i = 0; i < global_num_rows; ++i )
+    {
+	A->insertGlobalValues( i, global_columns(), values() );
+    }
+    A->fillComplete();
+
+    for ( int i = 0; i < 5; ++i )
+    {
+	int num_neighbors = i;
+	Teuchos::RCP<MatrixType> B = 
+	    MT::copyNearestNeighbors( *A, num_neighbors );
+
+	int local_num_overlap = 0;
+	if ( i > 0 )
+	{
+	    local_num_overlap = global_num_rows - local_num_rows;
+	}
+
+	TEST_EQUALITY( local_num_overlap, MT::getLocalNumRows( *B ) );
+
+	Teuchos::ArrayView<const LO> view_columns;
+	Teuchos::ArrayView<const Scalar> view_values;
+	for ( int j = 0; j < local_num_overlap; ++j )
+	{
+	    MT::getLocalRowView( *B, j, view_columns, view_values );
+	    TEST_EQUALITY( view_columns.size(), local_num_rows  );
+	    TEST_EQUALITY( view_values.size(), local_num_rows );
+
+	    for ( int i = 0; i < local_num_rows; ++i )
+	    {
+		TEST_EQUALITY( view_columns[i], i );
+		TEST_EQUALITY( view_values[i], comm_size );
+
+		for ( int k = comm_rank*local_num_rows; 
+		      k < (comm_rank+i)*local_num_rows; ++k )
+		{
+		    TEST_INEQUALITY(
+			MT::getGlobalCol( *B, view_columns[i] ), k );
+		}
+	    }
+	}
+    }
+}
+
+UNIT_TEST_INSTANTIATION( MatrixTraits, copy_neighbor )
+
+//---------------------------------------------------------------------------//
 // end tstTpetraCrsMatrix.cpp
 //---------------------------------------------------------------------------//
 

@@ -72,11 +72,12 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
 
     //@{
     //! Typedefs.
-    typedef typename Tpetra::CrsMatrix<Scalar,LO,GO>     matrix_type;
-    typedef typename Tpetra::Vector<Scalar,LO,GO>        vector_type;
-    typedef typename vector_type::scalar_type            scalar_type;
-    typedef typename vector_type::local_ordinal_type     local_ordinal_type;
-    typedef typename vector_type::global_ordinal_type    global_ordinal_type;
+    typedef typename Tpetra::CrsMatrix<Scalar,LO,GO>      matrix_type;
+    typedef typename Tpetra::Vector<Scalar,LO,GO>         vector_type;
+    typedef typename vector_type::scalar_type             scalar_type;
+    typedef typename vector_type::local_ordinal_type      local_ordinal_type;
+    typedef typename vector_type::global_ordinal_type     global_ordinal_type;
+    typedef TpetraMatrixHelpers<Scalar,LO,GO,matrix_type> TMH;
     //@}
 
     /*!
@@ -277,10 +278,12 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
     static Teuchos::RCP<matrix_type> copyNearestNeighbors( 
     	const matrix_type& matrix, const GO& num_neighbors )
     { 
+	Require( num_neighbors >= 0 ); 
+
 	// Setup for overlap construction.
-	Teuchos::RCP<const Tpetra::Map<int> > empty_map = 
-	    Tpetra::createUniformContigMap<int,int>( 
-		0, matrix->getComm() );
+	Teuchos::RCP<const Tpetra::Map<LO,GO> > empty_map = 
+	    Tpetra::createUniformContigMap<LO,GO>( 
+		0, matrix.getComm() );
 	Teuchos::RCP<matrix_type> overlap_matrix = 
 	    Tpetra::createCrsMatrix<Scalar,LO,GO>( empty_map );
 	overlap_matrix->fillComplete();
@@ -290,16 +293,15 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
 	typename Teuchos::Array<GO>::iterator ghost_global_bound;
 
 	// Get the initial off proc columns.
-	Teuchos::Array<GO> ghost_global_rows = 
-	    TpetraMatrixHelpers<Scalar,LO,GO,matrix_type>::getOffProcColsAsRows( 
-		matrix );
+	Teuchos::Array<GO> ghost_global_rows =
+	    TMH::getOffProcColsAsRows( matrix );
 
 	// Build the overlap in the matrix by traversing the graph.
 	for ( GO i = 0; i < num_neighbors; ++i )
 	{
 	    // Get rid of the global rows that belong to the original
 	    // matrix. We don't need to store these, just the overlap.
-	    global_rows = matrix->getRowMap()->getNodeElementList();
+	    global_rows = matrix.getRowMap()->getNodeElementList();
 	    for ( global_rows_it = global_rows.begin();
 		  global_rows_it != global_rows.end();
 		  ++global_rows_it )
@@ -329,17 +331,14 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
 
 	    // Export the overlap matrix with the new overlap.
 	    Tpetra::Export<LO,GO> ghost_exporter( 
-		matrix->getRowMap(), ghost_map );
+		matrix.getRowMap(), ghost_map );
 
 	    // Update the overlap matrix for the next iteration.
-	    overlap_matrix = Tpetra::exportAndFillCompleteCrsMatrix<
-		Tpetra::CrsMatrix<Scalar,LO,GO> >(
-		    matrix, ghost_exporter );
+	    overlap_matrix = 
+		TMH::exportAndFillCompleteMatrix( matrix, ghost_exporter );
 
 	    // Get the next rows in the graph.
-	    ghost_global_rows = 
-		TpetraMatrixHelpers<Scalar,LO,GO,matrix_type>::getOffProcColsAsRows( 
-		    matrix );
+	    ghost_global_rows = TMH::getOffProcColsAsRows( matrix );
 	}
 
 	Ensure( !overlap_matrix.is_null() );

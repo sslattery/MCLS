@@ -41,6 +41,8 @@
 #ifndef MCLS_TPETRAHELPERS_HPP
 #define MCLS_TPETRAHELPERS_HPP
 
+#include <MCLS_DBC.hpp>
+
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
@@ -48,6 +50,7 @@
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_VbrMatrix.hpp>
+#include <Tpetra_Export.hpp>
 
 //---------------------------------------------------------------------------//
 /*!
@@ -93,6 +96,18 @@ class TpetraMatrixHelpers
     { 
 	UndefinedTpetraHelpers<Scalar,LO,GO,Matrix>::notDefined(); 
 	return Teuchos::Array<GO>(0); 
+    }
+
+    /*!
+     * \brief Given a source matrix and an exporter, build a new matrix with
+     * the new decomposition.
+     */
+    static Teuchos::RCP<Matrix> 
+    exportAndFillCompleteMatrix( const Matrix& matrix, 
+				 const Tpetra::Export<LO,GO>& exporter )
+    {
+	UndefinedTpetraHelpers<Scalar,LO,GO,Matrix>::notDefined(); 
+	return Teuchos::null;
     }
 };
 
@@ -142,6 +157,27 @@ class TpetraMatrixHelpers<Scalar,LO,GO,Tpetra::CrsMatrix<Scalar,LO,GO> >
 
 	return off_proc_cols;
     }
+
+    /*!
+     * \brief Given a source matrix and an exporter, build a new matrix with
+     * the new decomposition.
+     */
+    static Teuchos::RCP<matrix_type> 
+    exportAndFillCompleteMatrix( const matrix_type& matrix, 
+				 const Tpetra::Export<LO,GO>& exporter )
+    {
+	Require( matrix.isFillComplete() );
+
+	Teuchos::RCP<matrix_type> new_matrix = Teuchos::rcp(
+	    new matrix_type( exporter.getTargetMap(), 0 ) );
+
+	new_matrix->doExport( matrix, exporter, Tpetra::INSERT );
+	new_matrix->fillComplete( matrix.getDomainMap(), matrix.getRangeMap() );
+
+	Ensure( !new_matrix.is_null() );
+	return new_matrix;
+    }
+
 };
 
 //---------------------------------------------------------------------------//
