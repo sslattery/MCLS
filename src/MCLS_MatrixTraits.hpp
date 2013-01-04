@@ -262,18 +262,6 @@ class MatrixTraits
     static void apply( const Matrix& A, const Vector& x, Vector& y )
     { UndefinedMatrixTraits<Scalar,LO,GO,Vector,Matrix>::notDefined(); }
 
-    /*!
-     * \brief Create a reference-counted pointer to a new matrix by
-     * subtracting the tranpose a matrix from the identity matrix. 
-     * H = I - A^T.
-     */
-    static Teuchos::RCP<Matrix>
-    subtractTransposeFromIdentity( const Matrix& matrix )
-    { 
-	UndefinedMatrixTraits<Scalar,LO,GO,Vector,Matrix>::notDefined(); 
-	return Teuchos::null; 
-    }
-
     /*
      * \brief Create a reference-counted pointer to a new matrix with a
      * specified number of off-process nearest-neighbor global rows.

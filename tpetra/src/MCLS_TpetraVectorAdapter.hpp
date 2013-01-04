@@ -41,6 +41,7 @@
 #ifndef MCLS_TPETRAVECTORADAPTER_HPP
 #define MCLS_TPETRAVECTORADAPTER_HPP
 
+#include <MCLS_DBC.hpp>
 #include <MCLS_VectorTraits.hpp>
 
 #include <Teuchos_as.hpp>
@@ -112,7 +113,7 @@ class VectorTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO> >
     				    global_ordinal_type global_row,
     				    const scalar_type& value )
     {
-	testPrecondition( vector.getMap()->isNodeGlobalElement( global_row ) );
+	Require( vector.getMap()->isNodeGlobalElement( global_row ) );
 	vector.replaceGlobalValue( global_row, value );
     }
 
@@ -124,7 +125,7 @@ class VectorTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO> >
     				   local_ordinal_type local_row,
     				   const scalar_type& value )
     {
-	testPrecondition( vector.getMap()->isNodeLocalElement( local_row ) );
+	Require( vector.getMap()->isNodeLocalElement( local_row ) );
 	vector.replaceLocalValue( local_row, value );
     }
 
@@ -136,7 +137,7 @@ class VectorTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO> >
     				    global_ordinal_type global_row,
     				    const scalar_type& value )
     {
-	testPrecondition( vector.getMap()->isNodeGlobalElement( global_row ) );
+	Require( vector.getMap()->isNodeGlobalElement( global_row ) );
 	vector.sumIntoGlobalValue( global_row, value );
     }
 
@@ -148,7 +149,7 @@ class VectorTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO> >
     				   local_ordinal_type local_row,
     				   const scalar_type& value )
     {
-	testPrecondition( vector.getMap()->isNodeLocalElement( local_row ) );
+	Require( vector.getMap()->isNodeLocalElement( local_row ) );
 	vector.sumIntoLocalValue( local_row, value );
     }
 

@@ -41,6 +41,7 @@
 #ifndef MCLS_EPETRAVECTORADAPTER_HPP
 #define MCLS_EPETRAVECTORADAPTER_HPP
 
+#include <MCLS_DBC.hpp>
 #include <MCLS_VectorTraits.hpp>
 
 #include <Teuchos_as.hpp>

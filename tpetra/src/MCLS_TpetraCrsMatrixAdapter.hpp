@@ -43,7 +43,7 @@
 
 #include <algorithm>
 
-#include <MCLS_Assertion.hpp>
+#include <MCLS_DBC.hpp>
 #include <MCLS_MatrixTraits.hpp>
 #include <MCLS_TpetraHelpers.hpp>
 
@@ -106,7 +106,7 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
     static Teuchos::RCP<vector_type> 
     cloneVectorFromMatrixCols( const matrix_type& matrix )
     { 
-	testPrecondition( matrix.isFillComplete() );
+	Require( matrix.isFillComplete() );
 	return Tpetra::createVector<Scalar,LO,GO>( matrix.getColMap() );
     }
 
@@ -148,7 +148,7 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
      */
     static GO getGlobalRow( const matrix_type& matrix, const LO& local_row )
     { 
-	testPrecondition( matrix.getRowMap()->isNodeLocalElement( local_row ) );
+	Require( matrix.getRowMap()->isNodeLocalElement( local_row ) );
 	return matrix.getRowMap()->getGlobalElement( local_row );
     }
 
@@ -157,7 +157,7 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
      */
     static LO getLocalRow( const matrix_type& matrix, const GO& global_row )
     { 
-	testPrecondition( matrix.getRowMap()->isNodeGlobalElement( global_row ) );
+	Require( matrix.getRowMap()->isNodeGlobalElement( global_row ) );
 	return matrix.getRowMap()->getLocalElement( global_row );
     }
 
@@ -166,8 +166,8 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
      */
     static GO getGlobalCol( const matrix_type& matrix, const LO& local_col )
     {
-	testPrecondition( matrix.isFillComplete() );
-	testPrecondition( matrix.getColMap()->isNodeLocalElement( local_col ) );
+	Require( matrix.isFillComplete() );
+	Require( matrix.getColMap()->isNodeLocalElement( local_col ) );
 	return matrix.getColMap()->getGlobalElement( local_col );
     }
 
@@ -176,8 +176,8 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
      */
     static LO getLocalCol( const matrix_type& matrix, const GO& global_col )
     {
-	testPrecondition( matrix.isFillComplete() );
-	testPrecondition( matrix.getColMap()->isNodeGlobalElement( global_col ) );
+	Require( matrix.isFillComplete() );
+	Require( matrix.getColMap()->isNodeGlobalElement( global_col ) );
 	return matrix.getColMap()->getLocalElement( global_col );
     }
 
@@ -202,7 +202,7 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
      */
     static bool isGlobalCol( const matrix_type& matrix, const GO& global_col )
     { 
-	testPrecondition( matrix.isFillComplete() );
+	Require( matrix.isFillComplete() );
 	return matrix.getColMap()->isNodeGlobalElement( global_col );
     }
 
@@ -211,7 +211,7 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
      */
     static bool isLocalCol( const matrix_type& matrix, const LO& local_col )
     { 
-	testPrecondition( matrix.isFillComplete() );
+	Require( matrix.isFillComplete() );
 	return matrix.getColMap()->isNodeLocalElement( local_col );
     }
 
@@ -223,8 +223,8 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
 				  Teuchos::ArrayView<const GO> &indices,
 				  Teuchos::ArrayView<const Scalar> &values )
     {
-	testPrecondition( !matrix.isFillComplete() );
-	testPrecondition( matrix.getRowMap()->isNodeGlobalElement( global_row ) );
+	Require( !matrix.isFillComplete() );
+	Require( matrix.getRowMap()->isNodeGlobalElement( global_row ) );
 	matrix.getGlobalRowView( global_row, indices, values );
     }
 
@@ -236,8 +236,8 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
 				 Teuchos::ArrayView<const LO> &indices,
 				 Teuchos::ArrayView<const Scalar> &values )
     {
-	testPrecondition( matrix.isFillComplete() );
-	testPrecondition( matrix.getRowMap()->isNodeLocalElement( local_row ) );
+	Require( matrix.isFillComplete() );
+	Require( matrix.getRowMap()->isNodeLocalElement( local_row ) );
 	matrix.getLocalRowView( local_row, indices, values );
     }
 
@@ -258,69 +258,6 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
 		       vector_type& y )
     {
 	A.apply( x, y );
-    }
-
-    /*!
-     * \brief Create a reference-counted pointer to a new matrix by
-     * subtracting the transpose a matrix from the identity matrix. 
-     * H = I - A^T.
-     */
-    static Teuchos::RCP<matrix_type>
-    subtractTransposeFromIdentity( const matrix_type& matrix )
-    { 
-	testPrecondition( matrix.isFillComplete() );
-
-	Teuchos::RCP<const Tpetra::Map<LO,GO> > row_map =
-	    matrix.getRowMap();
-	Teuchos::RCP<const Tpetra::Map<LO,GO> > col_map =
-	    matrix.getColMap();
-
-	Teuchos::RCP<matrix_type> i_minus_atrans = Teuchos::rcp(
-	    new matrix_type( 
-		row_map, col_map, matrix.getGlobalMaxNumRowEntries() ) );
-
-	Teuchos::ArrayView<const LO> local_cols;
-	typename Teuchos::ArrayView<const LO>::const_iterator 
-	    local_cols_it;
-	Teuchos::ArrayView<const Scalar> local_values;
-	typename Teuchos::ArrayView<const Scalar>::const_iterator 
-	    local_values_it;
-	Teuchos::Array<Scalar> i_minus_atrans_val(1);
-	Teuchos::Array<GO> global_row_array(1);
-
-	for ( LO local_row = row_map->getMinLocalIndex();
-	      local_row <= row_map->getMaxLocalIndex();
-	      ++local_row )
-	{
-	    matrix.getLocalRowView(
-		local_row, local_cols, local_values );
-
-	    for ( local_cols_it = local_cols.begin(),
-		local_values_it = local_values.begin();
-		  local_cols_it != local_cols.end();
-		  ++local_cols_it, ++local_values_it )
-	    {
-		if ( row_map->getGlobalElement( local_row ) == 
-		     col_map->getGlobalElement( *local_cols_it ) )
-		{
-		    i_minus_atrans_val[0] = 1.0 - (*local_values_it);
-		}
-		else
-		{
-		    i_minus_atrans_val[0] = -(*local_values_it);
-		}
-
-		global_row_array[0] = row_map->getGlobalElement(local_row);
-		i_minus_atrans->insertGlobalValues(
-		    col_map->getGlobalElement(*local_cols_it), 
-		    global_row_array(), i_minus_atrans_val() );
-	    }
-	}
-
-	i_minus_atrans->fillComplete();
-
-	testPostcondition( !i_minus_atrans.is_null() );
-	return i_minus_atrans;
     }
 
     /*
@@ -395,7 +332,7 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
 		    matrix );
 	}
 
-	testPostcondition( !overlap_matrix.is_null() );
+	Ensure( !overlap_matrix.is_null() );
 	return overlap_matrix;
     }
 };
