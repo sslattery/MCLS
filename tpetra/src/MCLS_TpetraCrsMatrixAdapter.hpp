@@ -41,8 +41,11 @@
 #ifndef MCLS_TPETRACRSMATRIXADAPTER_HPP
 #define MCLS_TPETRACRSMATRIXADAPTER_HPP
 
+#include <algorithm>
+
 #include <MCLS_Assertion.hpp>
 #include <MCLS_MatrixTraits.hpp>
+#include <MCLS_TpetraHelpers.hpp>
 
 #include <Teuchos_as.hpp>
 #include <Teuchos_ArrayView.hpp>
@@ -50,6 +53,7 @@
 
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_Export.hpp>
 
 namespace MCLS
 {
@@ -252,10 +256,11 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
 
     /*!
      * \brief Create a reference-counted pointer to a new matrix by
-     * subtracting a matrix from the identity matrix. H = I - A.
+     * subtracting the transpose a matrix from the identity matrix. 
+     * H = I - A^T.
      */
     static Teuchos::RCP<matrix_type>
-    subtractMatrixFromIdentity( const matrix_type& matrix )
+    subtractTransposeFromIdentity( const matrix_type& matrix )
     { 
 	testPrecondition( matrix.isFillComplete() );
 
@@ -264,7 +269,7 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
 	Teuchos::RCP<const Tpetra::Map<LO,GO> > col_map =
 	    matrix.getColMap();
 
-	Teuchos::RCP<matrix_type> i_minus_a = Teuchos::rcp(
+	Teuchos::RCP<matrix_type> i_minus_atrans = Teuchos::rcp(
 	    new matrix_type( 
 		row_map, col_map, matrix.getGlobalMaxNumRowEntries() ) );
 
@@ -274,8 +279,8 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
 	Teuchos::ArrayView<const Scalar> local_values;
 	typename Teuchos::ArrayView<const Scalar>::const_iterator 
 	    local_values_it;
-	Teuchos::Array<Scalar> i_minus_a_vals;
-	typename Teuchos::Array<Scalar>::iterator i_minus_a_vals_it;
+	Teuchos::Array<Scalar> i_minus_atrans_val(1);
+	Teuchos::Array<LO> local_row_array(1);
 
 	for ( LO local_row = row_map->getMinLocalIndex();
 	      local_row <= row_map->getMaxLocalIndex();
@@ -284,39 +289,112 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
 	    matrix.getLocalRowView(
 		local_row, local_cols, local_values );
 
-	    i_minus_a_vals.resize( local_values.size() );
-
 	    for ( local_cols_it = local_cols.begin(),
-		  local_values_it = local_values.begin(),
-		i_minus_a_vals_it = i_minus_a_vals.begin();
+		local_values_it = local_values.begin();
 		  local_cols_it != local_cols.end();
-		  ++local_cols_it, ++local_values_it, ++i_minus_a_vals_it )
+		  ++local_cols_it, ++local_values_it )
 	    {
 		if ( row_map->getGlobalElement( local_row ) == 
 		     col_map->getGlobalElement( *local_cols_it ) )
 		{
-		    *i_minus_a_vals_it = 1.0 - (*local_values_it);
+		    i_minus_atrans_val[0] = 1.0 - (*local_values_it);
 		}
 		else
 		{
-		    *i_minus_a_vals_it = -(*local_values_it);
+		    i_minus_atrans_val[0] = -(*local_values_it);
 		}
-	    }
 
-	    i_minus_a->insertLocalValues(
-		local_row, local_cols, i_minus_a_vals() );
+		local_row_array[0] = local_row;
+		i_minus_atrans->insertLocalValues(
+		    *local_cols_it, local_row_array(), i_minus_atrans_val() );
+	    }
 	}
 
-	i_minus_a->fillComplete();
-	return i_minus_a;
+	i_minus_atrans->fillComplete();
+	return i_minus_atrans;
+    }
+
+    /*
+     * \brief Create a reference-counted pointer to a new matrix with a
+     * specified number of off-process nearest-neighbor global rows.
+     */
+    static Teuchos::RCP<matrix_type> copyNearestNeighbors( 
+    	const matrix_type& matrix, const GO& num_neighbors )
+    { 
+	// Setup for overlap construction.
+	Teuchos::RCP<const Tpetra::Map<int> > empty_map = 
+	    Tpetra::createUniformContigMap<int,int>( 
+		0, matrix->getComm() );
+	Teuchos::RCP<matrix_type> overlap_matrix = 
+	    Tpetra::createCrsMatrix<Scalar,LO,GO>( empty_map );
+	overlap_matrix->fillComplete();
+
+	Teuchos::ArrayView<const GO> global_rows;
+	typename Teuchos::ArrayView<const GO>::const_iterator global_rows_it;
+	typename Teuchos::Array<GO>::iterator ghost_global_bound;
+
+	// Get the initial off proc columns.
+	Teuchos::Array<GO> ghost_global_rows = 
+	    TpetraMatrixHelpers<Scalar,LO,GO,matrix_type>::getOffProcColsAsRows( 
+		matrix );
+
+	// Build the overlap in the matrix by traversing the graph.
+	for ( GO i = 0; i < num_neighbors; ++i )
+	{
+	    // Get rid of the global rows that belong to the original
+	    // matrix. We don't need to store these, just the overlap.
+	    global_rows = matrix->getRowMap()->getNodeElementList();
+	    for ( global_rows_it = global_rows.begin();
+		  global_rows_it != global_rows.end();
+		  ++global_rows_it )
+	    {
+		ghost_global_bound = std::remove( ghost_global_rows.begin(), 
+						  ghost_global_rows.end(), 
+						  *global_rows_it );
+		ghost_global_rows.resize( std::distance(ghost_global_rows.begin(),
+							ghost_global_bound) );
+	    }
+
+	    // Get the current set of global rows in the overlap matrix. 
+	    global_rows = overlap_matrix->getRowMap()->getNodeElementList();
+
+	    // Append the on proc overlap columns to the off proc columns.
+	    for ( global_rows_it = global_rows.begin();
+		  global_rows_it != global_rows.end();
+		  ++global_rows_it )
+	    {
+		ghost_global_rows.push_back( *global_rows_it );
+	    }
+	
+	    // Make a new map of the combined global rows and off proc columns.
+	    Teuchos::RCP<const Tpetra::Map<LO,GO> > ghost_map = 
+		Tpetra::createNonContigMap<LO,GO>( 
+		    ghost_global_rows(), overlap_matrix->getComm() );
+
+	    // Export the overlap matrix with the new overlap.
+	    Tpetra::Export<LO,GO> ghost_exporter( 
+		matrix->getRowMap(), ghost_map );
+
+	    // Update the overlap matrix for the next iteration.
+	    overlap_matrix = Tpetra::exportAndFillCompleteCrsMatrix<
+		Tpetra::CrsMatrix<Scalar,LO,GO> >(
+		    matrix, ghost_exporter );
+
+	    // Get the next rows in the graph.
+	    ghost_global_rows = 
+		TpetraMatrixHelpers<Scalar,LO,GO,matrix_type>::getOffProcColsAsRows( 
+		    matrix );
+	}
+
+	return overlap_matrix;
     }
 };
 
 //---------------------------------------------------------------------------//
 
-} // end namespace MCLS
-
 #endif // end MCLS_TPETRACRSMATRIXADAPTER_HPP
+
+} // end namespace MCLS
 
 //---------------------------------------------------------------------------//
 // end MCLS_TpetraCrsMatrixAdapter.hpp

@@ -264,10 +264,11 @@ class MatrixTraits
 
     /*!
      * \brief Create a reference-counted pointer to a new matrix by
-     * subtracting a matrix from the identity matrix. H = I - A.
+     * subtracting the tranpose a matrix from the identity matrix. 
+     * H = I - A^T.
      */
     static Teuchos::RCP<Matrix>
-    subtractMatrixFromIdentity( const Matrix& matrix )
+    subtractTransposeFromIdentity( const Matrix& matrix )
     { 
 	UndefinedMatrixTraits<Scalar,LO,GO,Vector,Matrix>::notDefined(); 
 	return Teuchos::null; 
