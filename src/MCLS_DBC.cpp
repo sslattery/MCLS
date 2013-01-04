@@ -8,7 +8,7 @@
 
 #include <sstream>
 
-#include "MCLS_Assertion.hpp"
+#include "MCLS_DBC.hpp"
 
 namespace MCLS
 {
@@ -54,6 +54,30 @@ void throwAssertion( const std::string& cond, const std::string& file,
 {
     throw Assertion( cond, file, line );
 }
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Insist a statement is true with a provided message.
+ *
+ * \param cond A string containing the assertion condition that failed.
+ *
+ * \param msg A message to provide if the assertion is thrown.
+ * \param field A string containing the file name in which the assertion
+ * failed. 
+ *
+ * \param line The line number at which the assertion failed.
+ */
+void insist( const std::string& cond, const std::string& msg,
+	     const std::string& file, const int line )
+{
+    std::ostringstream output_msg;
+    output_msg <<  "Insist: " << cond << ", failed in "
+	      << file << ":" << line << std::endl
+	      << "The following message was provided:" << std::endl
+	      << "\"" << msg << "\"" << std::endl;
+    throw Assertion( output_msg.str() );
+}
+
 
 //---------------------------------------------------------------------------//
 

@@ -148,6 +148,7 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
      */
     static GO getGlobalRow( const matrix_type& matrix, const LO& local_row )
     { 
+	testPrecondition( matrix.getRowMap()->isNodeLocalElement( local_row ) );
 	return matrix.getRowMap()->getGlobalElement( local_row );
     }
 
@@ -156,6 +157,7 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
      */
     static LO getLocalRow( const matrix_type& matrix, const GO& global_row )
     { 
+	testPrecondition( matrix.getRowMap()->isNodeGlobalElement( global_row ) );
 	return matrix.getRowMap()->getLocalElement( global_row );
     }
 
@@ -165,6 +167,7 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
     static GO getGlobalCol( const matrix_type& matrix, const LO& local_col )
     {
 	testPrecondition( matrix.isFillComplete() );
+	testPrecondition( matrix.getColMap()->isNodeLocalElement( local_col ) );
 	return matrix.getColMap()->getGlobalElement( local_col );
     }
 
@@ -174,6 +177,7 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
     static LO getLocalCol( const matrix_type& matrix, const GO& global_col )
     {
 	testPrecondition( matrix.isFillComplete() );
+	testPrecondition( matrix.getColMap()->isNodeGlobalElement( global_col ) );
 	return matrix.getColMap()->getLocalElement( global_col );
     }
 
@@ -220,6 +224,7 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
 				  Teuchos::ArrayView<const Scalar> &values )
     {
 	testPrecondition( !matrix.isFillComplete() );
+	testPrecondition( matrix.getRowMap()->isNodeGlobalElement( global_row ) );
 	matrix.getGlobalRowView( global_row, indices, values );
     }
 
@@ -232,6 +237,7 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
 				 Teuchos::ArrayView<const Scalar> &values )
     {
 	testPrecondition( matrix.isFillComplete() );
+	testPrecondition( matrix.getRowMap()->isNodeLocalElement( local_row ) );
 	matrix.getLocalRowView( local_row, indices, values );
     }
 
@@ -280,7 +286,7 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
 	typename Teuchos::ArrayView<const Scalar>::const_iterator 
 	    local_values_it;
 	Teuchos::Array<Scalar> i_minus_atrans_val(1);
-	Teuchos::Array<LO> local_row_array(1);
+	Teuchos::Array<GO> global_row_array(1);
 
 	for ( LO local_row = row_map->getMinLocalIndex();
 	      local_row <= row_map->getMaxLocalIndex();
@@ -304,13 +310,16 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
 		    i_minus_atrans_val[0] = -(*local_values_it);
 		}
 
-		local_row_array[0] = local_row;
-		i_minus_atrans->insertLocalValues(
-		    *local_cols_it, local_row_array(), i_minus_atrans_val() );
+		global_row_array[0] = row_map->getGlobalElement(local_row);
+		i_minus_atrans->insertGlobalValues(
+		    col_map->getGlobalElement(*local_cols_it), 
+		    global_row_array(), i_minus_atrans_val() );
 	    }
 	}
 
 	i_minus_atrans->fillComplete();
+
+	testPostcondition( !i_minus_atrans.is_null() );
 	return i_minus_atrans;
     }
 
@@ -386,6 +395,7 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
 		    matrix );
 	}
 
+	testPostcondition( !overlap_matrix.is_null() );
 	return overlap_matrix;
     }
 };

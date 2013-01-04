@@ -1,13 +1,13 @@
 //---------------------------------------------------------------------------//
 /*!
- * \file   MCLS_Assertion.hpp
+ * \file   MCLS_DBC.hpp
  * \author Stuart Slattery
  * \brief  Assertions and Design-by-Contract for error handling.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_ASSERTION_HPP
-#define MCLS_ASSERTION_HPP
+#ifndef MCLS_DBC_HPP
+#define MCLS_DBC_HPP
 
 #include <stdexcept>
 #include <string>
@@ -67,9 +67,13 @@ class Assertion : public std::logic_error
 //---------------------------------------------------------------------------//
 // Throw functions.
 //---------------------------------------------------------------------------//
-// Throw a MCLS::Assertion.
+// Throw an MCLS::Assertion.
 void throwAssertion( const std::string& cond, const std::string& file,
 		     const int line );
+
+// Insist a statement is true with a provided message.
+void insist( const std::string& cond, const std::string& msg,
+	     const std::string& file, const int line );
 
 //---------------------------------------------------------------------------//
 
@@ -103,32 +107,27 @@ void throwAssertion( const std::string& cond, const std::string& file,
 
 #if HAVE_MCLS_DBC
 
-#define testPrecondition(c) \
-    if (!(c)) MCLS::throwAssertion( #c, __FILE__, __LINE__ )
-#define testPostcondition(c) \
-    if (!(c)) MCLS::throwAssertion( #c, __FILE__, __LINE__ )
-#define testInvariant(c) \
-    if (!(c)) MCLS::throwAssertion( #c, __FILE__, __LINE__ )
-#define remember(c) c
+#define Require(c) if (!(c)) MCLS::throwAssertion( #c, __FILE__, __LINE__ )
+#define Ensure(c) if (!(c)) MCLS::throwAssertion( #c, __FILE__, __LINE__ )
+#define Check(c) if (!(c)) MCLS::throwAssertion( #c, __FILE__, __LINE__ )
+#define Remember(c) c
 
 #else
 
-#define testPrecondition(c)
-#define testPostcondition(c)
-#define testInvariant(c)
-#define remember(c)
+#define Require(c)
+#define Ensure(c)
+#define Check(c)
+#define Remember(c)
 
 #endif
 
-
-#define testAssertion(c) \
-    if (!(c)) MCLS::throwAssertion( #c, __FILE__, __LINE__ )
+#define Insist(c,m) if (!(c)) MCLS::insist( #c, m, __FILE__, __LINE__ )
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_ASSERTION_HPP
+#endif // end MCLS_DBC_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_Assertion.hpp
+// end MCLS_DBC.hpp
 //---------------------------------------------------------------------------//
 

@@ -112,6 +112,7 @@ class VectorTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO> >
     				    global_ordinal_type global_row,
     				    const scalar_type& value )
     {
+	testPrecondition( vector.getMap()->isNodeGlobalElement( global_row ) );
 	vector.replaceGlobalValue( global_row, value );
     }
 
@@ -123,6 +124,7 @@ class VectorTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO> >
     				   local_ordinal_type local_row,
     				   const scalar_type& value )
     {
+	testPrecondition( vector.getMap()->isNodeLocalElement( local_row ) );
 	vector.replaceLocalValue( local_row, value );
     }
 
@@ -134,6 +136,7 @@ class VectorTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO> >
     				    global_ordinal_type global_row,
     				    const scalar_type& value )
     {
+	testPrecondition( vector.getMap()->isNodeGlobalElement( global_row ) );
 	vector.sumIntoGlobalValue( global_row, value );
     }
 
@@ -145,6 +148,7 @@ class VectorTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO> >
     				   local_ordinal_type local_row,
     				   const scalar_type& value )
     {
+	testPrecondition( vector.getMap()->isNodeLocalElement( local_row ) );
 	vector.sumIntoLocalValue( local_row, value );
     }
 
@@ -167,8 +171,7 @@ class VectorTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO> >
     /*!
      * \brief Get a non-const view of the local vector data.
      */
-    static Teuchos::ArrayRCP<scalar_type> 
-    viewNonConst( vector_type& vector )
+    static Teuchos::ArrayRCP<scalar_type> viewNonConst( vector_type& vector )
     { 
 	return vector.getDataNonConst();
     }
@@ -176,8 +179,7 @@ class VectorTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO> >
     /*!
      * \brief Compute the dot product of two vectors A \dot B.
      */
-    static scalar_type 
-    dot( const vector_type& A, const vector_type& B )
+    static scalar_type dot( const vector_type& A, const vector_type& B )
     { 
 	return B.dot( A );
     }

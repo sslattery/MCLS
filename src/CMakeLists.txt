@@ -22,13 +22,13 @@ SET(HEADERS ${HEADERS}
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
-  MCLS_Assertion.hpp
+  MCLS_DBC.hpp
   MCLS_MatrixTraits.hpp
   MCLS_VectorTraits.hpp
   ) 
 
 APPEND_SET(SOURCES
-  MCLS_Assertion.cpp
+  MCLS_DBC.cpp
   )
 
 #

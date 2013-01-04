@@ -13,7 +13,7 @@
 #include <stdexcept>
 
 #include <MCLS_config.hpp>
-#include <MCLS_Assertion.hpp>
+#include <MCLS_DBC.hpp>
 
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_RCP.hpp"
@@ -110,7 +110,7 @@ TEUCHOS_UNIT_TEST( Assertion, precondition_test )
 {
     try 
     {
-	testPrecondition( 0 );
+	Require( 0 );
 	throw std::runtime_error( "this shouldn't be thrown" );
     }
     catch( const MCLS::Assertion& assertion )
@@ -141,7 +141,7 @@ TEUCHOS_UNIT_TEST( Assertion, postcondition_test )
 {
     try 
     {
-	testPostcondition( 0 );
+	Ensure( 0 );
 	throw std::runtime_error( "this shouldn't be thrown" );
     }
     catch( const MCLS::Assertion& assertion )
@@ -172,7 +172,7 @@ TEUCHOS_UNIT_TEST( Assertion, invariant_test )
 {
     try 
     {
-	testInvariant( 0 );
+	Check( 0 );
 	throw std::runtime_error( "this shouldn't be thrown" );
     }
     catch( const MCLS::Assertion& assertion )
@@ -201,12 +201,12 @@ TEUCHOS_UNIT_TEST( Assertion, invariant_test )
 // Test that we can remember a value and check it with DBC.
 TEUCHOS_UNIT_TEST( Assertion, remember_test )
 {
-    remember( int test_value_1 = 0 );
-    remember( int test_value_2 = 1 );
+    Remember( int test_value_1 = 0 );
+    Remember( int test_value_2 = 1 );
  
     try 
     {
-	testInvariant( test_value_1 );
+	Check( test_value_1 );
     }
     catch( const MCLS::Assertion& assertion )
     {
@@ -225,7 +225,7 @@ TEUCHOS_UNIT_TEST( Assertion, remember_test )
 
     try 
     {
-	testInvariant( test_value_2 );
+	Check( test_value_2 );
 	TEST_ASSERT( 1 );
     }
     catch( ... )
@@ -235,18 +235,21 @@ TEUCHOS_UNIT_TEST( Assertion, remember_test )
 }
 
 //---------------------------------------------------------------------------//
-// Test the assertion check for DBC.
-TEUCHOS_UNIT_TEST( Assertion, assertion_test )
+// Test the insist macro for DBC.
+TEUCHOS_UNIT_TEST( Assertion, _test )
 {
     try 
     {
-	testAssertion( 0 );
+	std::string in_message( "test message content" );
+	Insist( 0, in_message );
 	throw std::runtime_error( "this shouldn't be thrown" );
     }
     catch( const MCLS::Assertion& assertion )
     {
+	TEST_ASSERT( 1 );
+
 	std::string message( assertion.what() );
-	std::string true_message( "MCLS Assertion: 0, failed in" );
+	std::string true_message( "test message content" );
 	std::string::size_type idx = message.find( true_message );
 	if ( idx == std::string::npos )
 	{
