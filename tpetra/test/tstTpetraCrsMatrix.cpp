@@ -808,7 +808,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, apply, LO, GO, Scalar )
 UNIT_TEST_INSTANTIATION( MatrixTraits, apply )
 
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, transpose_subtract, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, transpose, LO, GO, Scalar )
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
@@ -837,7 +837,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, transpose_subtract, LO, GO, Sca
     }
     A->fillComplete();
 
-    Teuchos::RCP<MatrixType> B = MT::subtractTransposeFromIdentity( *A );
+    Teuchos::RCP<MatrixType> B = MT::copyTranspose( *A );
 
     Teuchos::ArrayView<const LO> view_columns;
     Teuchos::ArrayView<const Scalar> view_values;
@@ -847,11 +847,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, transpose_subtract, LO, GO, Sca
 	TEST_EQUALITY( view_columns.size(), 1 );
 	TEST_EQUALITY( view_values.size(), 1 );
 	TEST_EQUALITY( view_columns[0], i );
-	TEST_EQUALITY( view_values[0], 1-comm_size );
+	TEST_EQUALITY( view_values[0], comm_size );
     }
 }
 
-UNIT_TEST_INSTANTIATION( MatrixTraits, transpose_subtract )
+UNIT_TEST_INSTANTIATION( MatrixTraits, transpose )
 
 //---------------------------------------------------------------------------//
 // end tstTpetraCrsMatrix.cpp

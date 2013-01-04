@@ -54,6 +54,7 @@
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Export.hpp>
+#include <Tpetra_RowMatrixTransposer.hpp>
 
 namespace MCLS
 {
@@ -258,6 +259,15 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
 		       vector_type& y )
     {
 	A.apply( x, y );
+    }
+
+    /*!
+     * \brief Get a copy of the transpose of a matrix.
+     */
+    static Teuchos::RCP<matrix_type> copyTranspose( const matrix_type& matrix )
+    { 
+	Tpetra::RowMatrixTransposer<Scalar,LO,GO> transposer( matrix );
+	return transposer.createTranspose();
     }
 
     /*
