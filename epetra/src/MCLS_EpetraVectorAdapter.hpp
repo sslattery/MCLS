@@ -46,6 +46,7 @@
 #include <Teuchos_as.hpp>
 
 #include <Epetra_Vector.h>
+#include <Epetra_Export.h>
 
 namespace MCLS
 {
@@ -66,6 +67,7 @@ class VectorTraits<double,int,int,Epetra_Vector>
     typedef double                              scalar_type;
     typedef int                                 local_ordinal_type;
     typedef int                                 global_ordinal_type;
+    typedef Epetra_Export                       export_type;
     //@}
 
     /*!

@@ -48,56 +48,114 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 /*!
+ * \class UndefinedVectorExport
+ * \brief Class for undefined vector export. 
+ *
+ * Will throw a compile-time error if the specified VectorExport functions are
+ * not specialized.
+ */
+template<class VectorTraits>
+struct UndefinedVectorExport
+{
+    static inline void notDefined()
+    {
+	return VectorTraits::this_type_is_missing_a_specialization();
+    }
+};
+
+//---------------------------------------------------------------------------//
+/*!
  * \class VectorExport
- * \brief Export mechanism.
+ * \brief Parallel export mechanism.
  *
  * VectorExport defines an interface for moving data between parallel
  * distributed vectors with different parallel distributions.
- * (e.g. Tpetra::Vector or Epetra_Vector).
+ * (e.g. Tpetra::Vector or Epetra_Vector). We separate this from the stateless
+ * traits classes as the parallel mappings are expensive to construct. This
+ * provides a state container for these mappings so that the may be reused.
+ *
+ * The members should be overloaded for each vector type.
  */
-template<class Vector>
+template<class VectorTraits>
 class VectorExport
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Vector                                  vector_type;
+    typedef VectorTraits                                     VT;
+    typedef typename VT::vector_type                         Vector;
+    typedef typename VT::export_type                         Export;
     //@}
-
-    /*!
-     * \brief Combine mode enum.
-     */
-    enum CombineMode {
-	ADD,     /*!< Existing values will be summed with new values. */
-	INSERT,  /*!< Insert new values that don't currently exist. */
-	REPLACE, /*!< Existing values will be replaced with new values. */
-	ABSMAX   /*!< Replacment is <tt>max( abs(old_value), abs(new_value) )</tt> */
-    };
 
     /*!
      * \brief Constructor.
      */
     VectorExport( const Teuchos::RCP<Vector>& source_vector,
-		  const Teuchos::RCP<Vector>& target_vector );
+		  const Teuchos::RCP<Vector>& target_vector )
+	: d_source_vector( source_vector )
+	, d_target_vector( target_vector )
+    { 
+	setup();
+    }
 
     /*!
      * \brief Destructor.
      */
-    virtual ~VectorExport();
+    ~VectorExport()
+    { /* ... */ }
 
     /*!
-     * \brief Do the export.
+     * \brief Do the export. Existing values are summed with new values.
      */
-    virtual doExport( CombineMode mode ) = 0;
+    void doExportAdd()
+    {
+	UndefinedVectorExport<VectorTraits>::notDefined();
+    }
 
-  protected:
+    /*!
+     * \brief Do the export. Insert new values that do not exist.
+     */
+    void doExportInsert()
+    {
+	UndefinedVectorExport<VectorTraits>::notDefined();
+    }
+
+    /*!
+     * \brief Do the export. Replace existing values with new values.
+     */
+    void doExportReplace()
+    {
+	UndefinedVectorExport<VectorTraits>::notDefined();
+    }
+
+    /*!
+     * \brief Do the export. Replace existing values if its absolute value is
+     * smaller than the absolute value of the new value.
+     */
+    void doExportAbsMax()
+    {
+	UndefinedVectorExport<VectorTraits>::notDefined();
+    }
+
+  private:
+
+    // Setup the source-to-target exporter.
+    void setup()
+    {
+	UndefinedVectorExport<VectorTraits>::notDefined();
+    }
+
+  private:
 
     // Source vector.
-    Teuchos::RCP<Vector> b_source_vector;
+    Teuchos::RCP<Vector> d_source_vector;
 
     // Target vector.
-    Teuchos::RCP<Vector> b_target_vector;
+    Teuchos::RCP<Vector> d_target_vector;
+
+    // Source-to-target exporter.
+    Export d_export;
 };
 
 //---------------------------------------------------------------------------//

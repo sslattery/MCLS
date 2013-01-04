@@ -31,6 +31,7 @@
 
 #include <Epetra_Map.h>
 #include <Epetra_Vector.h>
+#include <Epetra_Export.h>
 #include <Epetra_Comm.h>
 #include <Epetra_SerialComm.h>
 #include <Epetra_MpiComm.h>
@@ -58,11 +59,13 @@ Teuchos::RCP<Epetra_Comm> getEpetraComm(
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST( VectorTraits, Typedefs )
 {
+    typedef Epetra_Export ExportType;
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef VT::scalar_type scalar_type;
     typedef VT::local_ordinal_type local_ordinal_type;
     typedef VT::global_ordinal_type global_ordinal_type;
+    typedef VT::export_type export_type;
 
     TEST_EQUALITY_CONST( 
 	(Teuchos::TypeTraits::is_same<double, scalar_type>::value)
@@ -72,6 +75,9 @@ TEUCHOS_UNIT_TEST( VectorTraits, Typedefs )
 	== true, true );
     TEST_EQUALITY_CONST( 
 	(Teuchos::TypeTraits::is_same<int, global_ordinal_type>::value)
+	== true, true );
+    TEST_EQUALITY_CONST( 
+	(Teuchos::TypeTraits::is_same<ExportType, export_type>::value)
 	== true, true );
 }
 
