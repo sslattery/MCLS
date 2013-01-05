@@ -892,7 +892,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, copy_neighbor, LO, GO, Scalar )
     }
     A->fillComplete();
 
-    for ( int i = 1; i < 2; ++i )
+    for ( int i = 0; i < 5; ++i )
     {
 	Teuchos::RCP<MatrixType> B =  MT::copyNearestNeighbors( *A, i );
 
