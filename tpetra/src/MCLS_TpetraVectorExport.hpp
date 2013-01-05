@@ -32,68 +32,50 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_VectorExport.hpp
+ * \file MCLS_TpetraVectorAdapter.hpp
  * \author Stuart R. Slattery
- * \brief Vector Export base class.
+ * \brief Tpetra::Vector Adapter.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_VECTOREXPORT_HPP
-#define MCLS_VECTOREXPORT_HPP
+#ifndef MCLS_TPETRAVECTOREXPORT_HPP
+#define MCLS_TPETRAVECTOREXPORT_HPP
 
-#include <Teuchos_RCP.hpp>
+#include <MCLS_VectorExport.hpp>
+
+#include <Teuchos_as.hpp>
+
+#include <Tpetra_Vector.hpp>
+#include <Tpetra_Export.hpp>
 
 namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class UndefinedVectorExport
- * \brief Class for undefined vector export. 
- *
- * Will throw a compile-time error if the specified VectorExport functions are
- * not specialized.
- */
-template<class Vector>
-struct UndefinedVectorExport
-{
-    static inline void notDefined()
-    {
-	return Vector::this_type_is_missing_a_specialization();
-    }
-};
-
-//---------------------------------------------------------------------------//
-/*!
  * \class VectorExport
- * \brief Parallel export mechanism.
- *
- * VectorExport defines an interface for moving data between parallel
- * distributed vectors with different parallel distributions.
- * (e.g. Tpetra::Vector or Epetra_Vector). We separate this from the stateless
- * traits classes as the parallel mappings are expensive to construct. This
- * provides a state container for these mappings so that the may be reused.
- *
- * The members should be overloaded for each vector type.
+ * \brief VectorExport specialization for Tpetra::Vector.
  */
-template<class Vector>
-class VectorExport
+template<class Scalar, class LO, class GO>
+class VectorExport<Tpetra::Vector<Scalar,LO,GO> >
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Vector                                  vector_type;
-    typedef typename Vector::export_type            export_type;
+    typedef Tpetra::Vector<Scalar,LO,GO>            vector_type;
+    typedef Tpetra::Export<LO,GO>                   export_type;
     //@}
 
     /*!
      * \brief Constructor.
      */
-    VectorExport( const Teuchos::RCP<Vector>& source_vector,
-		  const Teuchos::RCP<Vector>& target_vector )
+    VectorExport( const Teuchos::RCP<vector_type>& source_vector,
+		  const Teuchos::RCP<vector_type>& target_vector )
 	: d_source_vector( source_vector )
 	, d_target_vector( target_vector )
+	, d_export( new export_type( d_source_vector->getMap(), 
+				     d_target_vector->getMap() ) )
     { /* ... */ }
 
     /*!
@@ -107,7 +89,7 @@ class VectorExport
      */
     void doExportAdd()
     {
-	UndefinedVectorExport<Vector>::notDefined();
+	d_target_vector->doExport( *d_source_vector, *d_export, Tpetra::ADD );
     }
 
     /*!
@@ -115,7 +97,7 @@ class VectorExport
      */
     void doExportInsert()
     {
-	UndefinedVectorExport<Vector>::notDefined();
+	d_target_vector->doExport( *d_source_vector, *d_export, Tpetra::INSERT );
     }
 
     /*!
@@ -123,7 +105,7 @@ class VectorExport
      */
     void doExportReplace()
     {
-	UndefinedVectorExport<Vector>::notDefined();
+	d_target_vector->doExport( *d_source_vector, *d_export, Tpetra::REPLACE );
     }
 
     /*!
@@ -132,7 +114,7 @@ class VectorExport
      */
     void doExportAbsMax()
     {
-	UndefinedVectorExport<Vector>::notDefined();
+	d_target_vector->doExport( *d_source_vector, *d_export, Tpetra::ABSMAX );
     }
 
   private:
@@ -151,9 +133,8 @@ class VectorExport
 
 } // end namespace MCLS
 
-#endif // end MCLS_VECTOREXPORT_HPP
+#endif // end MCLS_TPETRAVECTOREXPORT_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_VectorExport.hpp
+// end MCLS_TpetraVectorAdapter.hpp
 //---------------------------------------------------------------------------//
-

@@ -42,6 +42,7 @@
 #define MCLS_TPETRAADAPTER_HPP
 
 #include "MCLS_TpetraVectorAdapter.hpp"
+#include "MCLS_TpetraVectorExport.hpp"
 #include "MCLS_TpetraCrsMatrixAdapter.hpp"
 
 #endif // end MCLS_TPETRAADAPTER_HPP

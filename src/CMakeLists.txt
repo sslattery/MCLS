@@ -24,6 +24,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_SET(HEADERS
   MCLS_DBC.hpp
   MCLS_MatrixTraits.hpp
+  MCLS_VectorExport.hpp
   MCLS_VectorTraits.hpp
   ) 
 

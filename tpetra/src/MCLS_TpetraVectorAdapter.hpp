@@ -47,7 +47,6 @@
 #include <Teuchos_as.hpp>
 
 #include <Tpetra_Vector.hpp>
-#include <Tpetra_Export.hpp>
 
 namespace MCLS
 {
@@ -68,7 +67,6 @@ class VectorTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO> >
     typedef typename vector_type::scalar_type            scalar_type;
     typedef typename vector_type::local_ordinal_type     local_ordinal_type;
     typedef typename vector_type::global_ordinal_type    global_ordinal_type;
-    typedef Tpetra::Export<LO,GO>                        export_type;
     //@}
 
     /*!

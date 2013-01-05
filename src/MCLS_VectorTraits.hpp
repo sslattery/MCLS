@@ -83,7 +83,6 @@ class VectorTraits
     typedef LO                                      local_ordinal_type;
     typedef GO                                      global_ordinal_type;
     typedef Vector                                  vector_type;
-    typedef typename Vector::export_type            export_type;
     //@}
 
     /*!

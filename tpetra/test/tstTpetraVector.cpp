@@ -29,7 +29,6 @@
 
 #include <Tpetra_Map.hpp>
 #include <Tpetra_Vector.hpp>
-#include <Tpetra_Export.hpp>
 
 //---------------------------------------------------------------------------//
 // Instantiation macro. 
@@ -49,13 +48,11 @@
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, Typedefs, LO, GO, Scalar )
 {
-    typedef typename Tpetra::Export<LO,GO> ExportType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
     typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
     typedef typename VT::scalar_type scalar_type;
     typedef typename VT::local_ordinal_type local_ordinal_type;
     typedef typename VT::global_ordinal_type global_ordinal_type;
-    typedef typename VT::export_type export_type;
 
     TEST_EQUALITY_CONST( 
 	(Teuchos::TypeTraits::is_same<Scalar, scalar_type>::value)
@@ -65,9 +62,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, Typedefs, LO, GO, Scalar )
 	== true, true );
     TEST_EQUALITY_CONST( 
 	(Teuchos::TypeTraits::is_same<GO, global_ordinal_type>::value)
-	== true, true );
-    TEST_EQUALITY_CONST( 
-	(Teuchos::TypeTraits::is_same<ExportType, export_type>::value)
 	== true, true );
 }
 

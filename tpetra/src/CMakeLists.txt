@@ -20,6 +20,7 @@ APPEND_SET(HEADERS
   MCLS_TpetraCrsMatrixAdapter.hpp
   MCLS_TpetraHelpers.hpp
   MCLS_TpetraVectorAdapter.hpp
+  MCLS_TpetraVectorExport.hpp
   ) 
 
 APPEND_SET(SOURCES
