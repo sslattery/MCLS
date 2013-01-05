@@ -50,6 +50,7 @@
 #include <Teuchos_as.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_Array.hpp>
+#include <Teuchos_Comm.hpp>
 
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsMatrix.hpp>

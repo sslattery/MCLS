@@ -50,12 +50,15 @@
 #include <Teuchos_as.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_Array.hpp>
+#include <Teuchos_Comm.hpp>
+#include <Teuchos_DefaultMpiComm.hpp>
 
 #include <Epetra_Vector.h>
 #include <Epetra_RowMatrix.h>
 #include <Epetra_RowMatrixTransposer.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_VbrMatrix.h>
+#include <Epetra_MpiComm.h>
 
 namespace MCLS
 {
@@ -88,7 +91,7 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
     static Teuchos::RCP<vector_type> 
     cloneVectorFromMatrixRows( const matrix_type& matrix )
     { 
-	return Epetra::createVector<Scalar,LO,GO>( matrix.getRowMap() );
+	return Teuchos::rcp( new vector_type( matrix.RowMatrixRowMap() );
     }
 
     /*!
@@ -99,8 +102,8 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
     static Teuchos::RCP<vector_type> 
     cloneVectorFromMatrixCols( const matrix_type& matrix )
     { 
-	Require( matrix.isFillComplete() );
-	return Epetra::createVector<Scalar,LO,GO>( matrix.getColMap() );
+	Require( matrix.Filled() );
+	return Teuchos::rcp( new vector_type( matrix.RowMatrixColMap() );
     }
 
     /*!
@@ -109,7 +112,12 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
     static const Teuchos::RCP<const Teuchos::Comm<int> >&
     getComm( const matrix_type& matrix )
     {
-	return matrix.getComm();
+#ifdef HAVE_MPI
+	Epetra_MpiComm epetra_comm( Teuchos::as<Epetra_MpiComm>( matrix.Comm() ) );
+	return Teuchos::rcp( new Teuchos::MpiComm( epetra_comm.getMpiComm() )) ;
+#else
+	return Teuchos::rcp( new Teuchos::SerialComm<int>() );
+#endif
     }
 
     /*!
@@ -117,7 +125,7 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
      */
     static GO getGlobalNumRows( const matrix_type& matrix )
     { 
-	return Teuchos::as<GO>( matrix.getGlobalNumRows() );
+	return Teuchos::as<GO>( matrix.NumGlobalRows() );
     }
 
     /*!
@@ -125,7 +133,7 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
      */
     static LO getLocalNumRows( const matrix_type& matrix )
     {
-	return Teuchos::as<LO>( matrix.getRowMap()->getNodeNumElements() );
+	return Teuchos::as<LO>( matrix.NumMyRows() );
     }
 
     /*!
@@ -133,7 +141,7 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
      */
     static GO getGlobalMaxNumRowEntries( const matrix_type& matrix )
     {
-	return Teuchos::as<GO>( matrix.getGlobalMaxNumRowEntries() );
+	return Teuchos::as<GO>( matrix.MaxNumEntries() );
     }
 
     /*!
@@ -141,8 +149,8 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
      */
     static GO getGlobalRow( const matrix_type& matrix, const LO& local_row )
     { 
-	Require( matrix.getRowMap()->isNodeLocalElement( local_row ) );
-	return matrix.getRowMap()->getGlobalElement( local_row );
+	Require( matrix.RowMatrixRowMap()->MyLID( local_row ) );
+	return matrix.RowMatrixRowMap()->GID( local_row );
     }
 
     /*!
@@ -150,8 +158,8 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
      */
     static LO getLocalRow( const matrix_type& matrix, const GO& global_row )
     { 
-	Require( matrix.getRowMap()->isNodeGlobalElement( global_row ) );
-	return matrix.getRowMap()->getLocalElement( global_row );
+	Require( matrix.RowMatrixRowMap()->MyGID( global_row ) );
+	return matrix.RowMatrxRowMap()->LID( global_row );
     }
 
     /*!
@@ -159,9 +167,9 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
      */
     static GO getGlobalCol( const matrix_type& matrix, const LO& local_col )
     {
-	Require( matrix.isFillComplete() );
-	Require( matrix.getColMap()->isNodeLocalElement( local_col ) );
-	return matrix.getColMap()->getGlobalElement( local_col );
+	Require( matrix.Filled() );
+	Require( matrix.RowMatrixColMap()->myLID( local_col ) );
+	return matrix.RowMatrixColMap()->GID( local_col );
     }
 
     /*!
@@ -169,9 +177,9 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
      */
     static LO getLocalCol( const matrix_type& matrix, const GO& global_col )
     {
-	Require( matrix.isFillComplete() );
-	Require( matrix.getColMap()->isNodeGlobalElement( global_col ) );
-	return matrix.getColMap()->getLocalElement( global_col );
+	Require( matrix.Filled() );
+	Require( matrix.RowMatrixColMap()->MyGID( global_col ) );
+	return matrix.RowMatrixColMap()->LID( global_col );
     }
 
     /*!
@@ -179,7 +187,7 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
      */
     static bool isGlobalRow( const matrix_type& matrix, const GO& global_row )
     {
-	return matrix.getRowMap()->isNodeGlobalElement( global_row );
+	return matrix.RowMatrixRowMap()->MyGID( global_row );
     }
 
     /*!
@@ -187,7 +195,7 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
      */
     static bool isLocalRow( const matrix_type& matrix, const LO& local_row )
     { 
-	return matrix.getRowMap()->isNodeLocalElement( local_row );
+	return matrix.RowMatrixRowMap()->MyLID( local_row );
     }
 
     /*!
@@ -195,8 +203,8 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
      */
     static bool isGlobalCol( const matrix_type& matrix, const GO& global_col )
     { 
-	Require( matrix.isFillComplete() );
-	return matrix.getColMap()->isNodeGlobalElement( global_col );
+	Require( matrix.Filled() );
+	return matrix.RowMatrixColMap()->MyGID( global_col );
     }
 
     /*!
@@ -204,8 +212,8 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
      */
     static bool isLocalCol( const matrix_type& matrix, const LO& local_col )
     { 
-	Require( matrix.isFillComplete() );
-	return matrix.getColMap()->isNodeLocalElement( local_col );
+	Require( matrix.Filled() );
+	return matrix.RowMatrixColMap()->MyLID( local_col );
     }
 
     /*!
@@ -217,9 +225,13 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
 				  const Teuchos::ArrayView<Scalar>& values,
 				  std::size_t& num_entries )
     {
-	Require( !matrix.isFillComplete() );
-	Require( matrix.getRowMap()->isNodeGlobalElement( global_row ) );
-	matrix.getGlobalRowCopy( global_row, indices, values, num_entries );
+	Require( !matrix.Filled() );
+	Require( matrix.RowMatrixRowMap()->GID( global_row ) );
+	LO local_row = matrix.LID( global_row );
+	matrix.ExtractMyRowCopy( local_row, 
+				 Teuchos::as<LO>(values.size()), 
+				 Teuchos::as<LO>(num_entries),
+				 values.getRawPtr(), indices.getRawPtr() );
     }
 
     /*!
@@ -231,9 +243,12 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
 				 const Teuchos::ArrayView<Scalar>& values,
 				 std::size_t& num_entries )
     {
-	Require( matrix.isFillComplete() );
-	Require( matrix.getRowMap()->isNodeLocalElement( local_row ) );
-	matrix.getLocalRowCopy( local_row, indices, values, num_entries );
+	Require( !matrix.Filled() );
+	Require( matrix.RowMatrixRowMap()->MyLID( local_row ) );
+	matrix.ExtractMyRowCopy( local_row, 
+				 Teuchos::as<LO>(values.size()), 
+				 Teuchos::as<LO>(num_entries),
+				 values.getRawPtr(), indices.getRawPtr() );
     }
 
     /*!
@@ -242,7 +257,7 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
     static void getLocalDiagCopy( const matrix_type& matrix, 
 				  vector_type& vector )
     { 
-	matrix.getLocalDiagCopy( vector );
+	matrix.ExtractDiagonalCopy( vector );
     }
 
     /*!
@@ -252,7 +267,7 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
 		       const vector_type& x, 
 		       vector_type& y )
     {
-	A.apply( x, y );
+	A.apply( false, x, y );
     }
 
     /*!
@@ -260,8 +275,14 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
      */
     static Teuchos::RCP<matrix_type> copyTranspose( const matrix_type& matrix )
     { 
-	Epetra::RowMatrixTransposer<Scalar,LO,GO> transposer( matrix );
-	return transposer.createTranspose();
+	Epetra_RowMatrixTransposer transposer( &matrix );
+
+	Teuchos::RCP<Epetra_CrsMatrix> tranpose_matrix = Teuchos::rcp(
+	    new Epetra_CrsMatrix( Copy, matrix.RowMatrixRowMap(), 0 ) );
+
+	transposer.CreateTranspose( true, tranpose_matrix.getRawPtr() );
+
+	return tranpose_matrix;
     }
 };
 
