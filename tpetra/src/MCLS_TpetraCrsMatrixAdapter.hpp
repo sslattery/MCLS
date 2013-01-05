@@ -53,7 +53,7 @@
 
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_Export.hpp>
+#include <Tpetra_Import.hpp>
 #include <Tpetra_RowMatrixTransposer.hpp>
 
 namespace MCLS
@@ -296,7 +296,7 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
 	Teuchos::Array<GO> ghost_global_rows =
 	    TMH::getOffProcColsAsRows( matrix );
 
-	// Build the neighbor in the matrix by traversing the graph.
+	// Build the neighbors by traversing the graph.
 	for ( GO i = 0; i < num_neighbors; ++i )
 	{
 	    // Get rid of the global rows that belong to the original
@@ -329,18 +329,19 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
 		Tpetra::createNonContigMap<LO,GO>( 
 		    ghost_global_rows(), neighbor_matrix->getComm() );
 
-	    // Export the neighbor matrix with the new neighbor.
-	    Tpetra::Export<LO,GO> ghost_exporter( 
+	    // Import the neighbor matrix with the new neighbor.
+	    Tpetra::Import<LO,GO> ghost_importer( 
 		matrix.getRowMap(), ghost_map );
 
 	    neighbor_matrix = 
-		TMH::exportAndFillCompleteMatrix( matrix, ghost_exporter );
+		TMH::importAndFillCompleteMatrix( matrix, ghost_importer );
 
 	    // Get the next rows in the graph.
 	    ghost_global_rows = TMH::getOffProcColsAsRows( *neighbor_matrix );
 	}
 
 	Ensure( !neighbor_matrix.is_null() );
+	Ensure( neighbor_matrix.isFillComplete() );
 	return neighbor_matrix;
     }
 };

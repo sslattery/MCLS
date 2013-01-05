@@ -892,11 +892,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, copy_neighbor, LO, GO, Scalar )
     }
     A->fillComplete();
 
-    for ( int i = 0; i < 5; ++i )
+    for ( int i = 1; i < 2; ++i )
     {
-	int num_neighbors = i;
-	Teuchos::RCP<MatrixType> B = 
-	    MT::copyNearestNeighbors( *A, num_neighbors );
+	Teuchos::RCP<MatrixType> B =  MT::copyNearestNeighbors( *A, i );
 
 	int local_num_neighbor = 0;
 	if ( i > 0 )
@@ -917,13 +915,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, copy_neighbor, LO, GO, Scalar )
 	    }
 
 	    MT::getLocalRowView( *B, j, view_columns, view_values );
-	    TEST_EQUALITY( view_columns.size(), global_num_rows  );
+	    TEST_EQUALITY( view_columns.size(), global_num_rows );
 	    TEST_EQUALITY( view_values.size(), global_num_rows );
 
-	    for ( int i = 0; i < global_num_rows; ++i )
+	    for ( int n = 0; n < global_num_rows; ++n )
 	    {
-		TEST_EQUALITY( view_columns[i], i );
-		TEST_EQUALITY( view_values[i], comm_size );
+	    	TEST_EQUALITY( view_columns[n], n );
+	    	TEST_EQUALITY( view_values[n], comm_size );
 
 	    }
 	}

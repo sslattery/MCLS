@@ -50,7 +50,7 @@
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_VbrMatrix.hpp>
-#include <Tpetra_Export.hpp>
+#include <Tpetra_Import.hpp>
 
 //---------------------------------------------------------------------------//
 /*!
@@ -99,12 +99,12 @@ class TpetraMatrixHelpers
     }
 
     /*!
-     * \brief Given a source matrix and an exporter, build a new matrix with
+     * \brief Given a source matrix and an importer, build a new matrix with
      * the new decomposition.
      */
     static Teuchos::RCP<Matrix> 
-    exportAndFillCompleteMatrix( const Matrix& matrix, 
-				 const Tpetra::Export<LO,GO>& exporter )
+    importAndFillCompleteMatrix( const Matrix& matrix, 
+				 const Tpetra::Import<LO,GO>& importer )
     {
 	UndefinedTpetraHelpers<Scalar,LO,GO,Matrix>::notDefined(); 
 	return Teuchos::null;
@@ -159,19 +159,19 @@ class TpetraMatrixHelpers<Scalar,LO,GO,Tpetra::CrsMatrix<Scalar,LO,GO> >
     }
 
     /*!
-     * \brief Given a source matrix and an exporter, build a new matrix with
+     * \brief Given a source matrix and an importer, build a new matrix with
      * the new decomposition.
      */
     static Teuchos::RCP<matrix_type> 
-    exportAndFillCompleteMatrix( const matrix_type& matrix, 
-				 const Tpetra::Export<LO,GO>& exporter )
+    importAndFillCompleteMatrix( const matrix_type& matrix, 
+				 const Tpetra::Import<LO,GO>& importer )
     {
 	Require( matrix.isFillComplete() );
 
 	Teuchos::RCP<matrix_type> new_matrix = Teuchos::rcp(
-	    new matrix_type( exporter.getTargetMap(), 0 ) );
+	    new matrix_type( importer.getTargetMap(), 0 ) );
 
-	new_matrix->doExport( matrix, exporter, Tpetra::INSERT );
+	new_matrix->doImport( matrix, importer, Tpetra::INSERT );
 	new_matrix->fillComplete( matrix.getDomainMap(), matrix.getRangeMap() );
 
 	Ensure( !new_matrix.is_null() );
