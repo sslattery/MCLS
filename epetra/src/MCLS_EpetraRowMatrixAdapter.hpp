@@ -52,12 +52,10 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_DefaultMpiComm.hpp>
+#include <Teuchos_TypeTraits.hpp>
 
 #include <Epetra_Vector.h>
 #include <Epetra_RowMatrix.h>
-#include <Epetra_RowMatrixTransposer.h>
-#include <Epetra_CrsMatrix.h>
-#include <Epetra_VbrMatrix.h>
 #include <Epetra_MpiComm.h>
 
 namespace MCLS
@@ -80,7 +78,6 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
     typedef double                                        scalar_type;
     typedef int                                           local_ordinal_type;
     typedef int                                           global_ordinal_type;
-    typedef EpetraMatrixHelpers<matrix_type>              EMH;
     //@}
 
     /*!
@@ -113,8 +110,11 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
     getComm( const matrix_type& matrix )
     {
 #ifdef HAVE_MPI
-	Epetra_MpiComm epetra_comm( Teuchos::as<Epetra_MpiComm>( matrix.Comm() ) );
-	return Teuchos::rcp( new Teuchos::MpiComm<int>( epetra_comm.GetMpiComm() ) );
+	const Epetra_Comm& epetra_comm = matrix.Comm();
+	const Epetra_MpiComm* epetra_mpi_comm = 
+	    dynamic_cast<const Epetra_MpiComm*>( &epetra_comm );
+	return Teuchos::rcp( 
+	    new Teuchos::MpiComm<int>( epetra_mpi_comm->GetMpiComm() ) );
 #else
 	return Teuchos::rcp( new Teuchos::SerialComm<int>() );
 #endif
@@ -171,7 +171,7 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
 					     const local_ordinal_type& local_col )
     {
 	Require( matrix.Filled() );
-	Require( matrix.RowMatrixColMap().myLID( local_col ) );
+	Require( matrix.RowMatrixColMap().MyLID( local_col ) );
 	return matrix.RowMatrixColMap().GID( local_col );
     }
 
@@ -234,8 +234,8 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
 	const Teuchos::ArrayView<scalar_type>& values,
 	std::size_t& num_entries )
     {
-	Require( !matrix.Filled() );
-	Require( matrix.RowMatrixRowMap().GID( global_row ) );
+	Require( matrix.Filled() );
+	Require( matrix.RowMatrixRowMap().MyGID( global_row ) );
 	local_ordinal_type local_row = matrix.RowMatrixRowMap().LID( global_row );
 	int num_entries_int = 0;
 	matrix.ExtractMyRowCopy( local_row, 
@@ -255,7 +255,7 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
 	const Teuchos::ArrayView<scalar_type>& values,
 	std::size_t& num_entries )
     {
-	Require( !matrix.Filled() );
+	Require( matrix.Filled() );
 	Require( matrix.RowMatrixRowMap().MyLID( local_row ) );
 	int num_entries_int = 0;
 	matrix.ExtractMyRowCopy( local_row, 
@@ -289,38 +289,8 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
      */
     static Teuchos::RCP<matrix_type> copyTranspose( const matrix_type& matrix )
     { 
-	Epetra_RowMatrixTransposer transposer( const_cast<matrix_type*>(&matrix) );
-
-	Teuchos::RCP<Epetra_CrsMatrix> transpose_matrix = Teuchos::rcp(
-	    new Epetra_CrsMatrix( Copy, matrix.RowMatrixRowMap(), 0 ) );
-
-	Epetra_CrsMatrix* raw_transpose_matrix = transpose_matrix.getRawPtr();
-	transposer.CreateTranspose( true, raw_transpose_matrix );
-
-	Ensure( !transpose_matrix.is_null() );
-	return transpose_matrix;
+	return EpetraMatrixHelpers<matrix_type>::copyTranspose( matrix );
     }
-};
-
-//---------------------------------------------------------------------------//
-/*!
- * \class MatrixTraits
- * \brief Traits specialization for Epetra_CrsMatrix.
- */
-template<>
-class MatrixTraits<double,int,int,Epetra_Vector,Epetra_CrsMatrix>
-{
-  public:
-
-    //@{
-    //! Typedefs.
-    typedef Epetra_CrsMatrix                              matrix_type;
-    typedef Epetra_Vector                                 vector_type;
-    typedef double                                        scalar_type;
-    typedef int                                           local_ordinal_type;
-    typedef int                                           global_ordinal_type;
-    typedef EpetraMatrixHelpers<matrix_type>              EMH;
-    //@}
 
     /*
      * \brief Create a reference-counted pointer to a new matrix with a
@@ -329,38 +299,8 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_CrsMatrix>
     static Teuchos::RCP<matrix_type> copyNearestNeighbors( 
     	const matrix_type& matrix, const global_ordinal_type& num_neighbors )
     { 
-	return EMH::copyNearestNeighbors( matrix, num_neighbors );
-    }
-};
-
-//---------------------------------------------------------------------------//
-/*!
- * \class MatrixTraits
- * \brief Traits specialization for Epetra_VbrMatrix.
- */
-template<>
-class MatrixTraits<double,int,int,Epetra_Vector,Epetra_VbrMatrix>
-{
-  public:
-
-    //@{
-    //! Typedefs.
-    typedef Epetra_VbrMatrix                              matrix_type;
-    typedef Epetra_Vector                                 vector_type;
-    typedef double                                        scalar_type;
-    typedef int                                           local_ordinal_type;
-    typedef int                                           global_ordinal_type;
-    typedef EpetraMatrixHelpers<matrix_type>              EMH;
-    //@}
-
-    /*
-     * \brief Create a reference-counted pointer to a new matrix with a
-     * specified number of off-process nearest-neighbor global vbrs.
-     */
-    static Teuchos::RCP<matrix_type> copyNearestNeighbors( 
-    	const matrix_type& matrix, const global_ordinal_type& num_neighbors )
-    { 
-	return EMH::copyNearestNeighbors( matrix, num_neighbors );
+	    return EpetraMatrixHelpers<matrix_type>::copyNearestNeighbors( 
+		matrix, num_neighbors );
     }
 };
 
