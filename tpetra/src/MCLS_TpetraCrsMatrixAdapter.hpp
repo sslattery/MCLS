@@ -107,7 +107,7 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
     /*!
      * \brief Get the communicator.
      */
-    static const Teuchos::RCP<const Teuchos::Comm<int> >&
+    static Teuchos::RCP<const Teuchos::Comm<int> >
     getComm( const matrix_type& matrix )
     {
 	return matrix.getComm();

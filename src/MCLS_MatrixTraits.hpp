@@ -113,7 +113,7 @@ class MatrixTraits
     /*!
      * \brief Get the communicator.
      */
-    static const Teuchos::RCP<const Teuchos::Comm<int> >&
+    static Teuchos::RCP<const Teuchos::Comm<int> >
     getComm( const Matrix& matrix )
     {
 	UndefinedMatrixTraits<Scalar,LO,GO,Vector,Matrix>::notDefined(); 

@@ -106,15 +106,18 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
     /*!
      * \brief Get the communicator.
      */
-    static const Teuchos::RCP<const Teuchos::Comm<int> >&
+    static Teuchos::RCP<const Teuchos::Comm<int> >
     getComm( const matrix_type& matrix )
     {
 #ifdef HAVE_MPI
-	const Epetra_Comm& epetra_comm = matrix.Comm();
-	const Epetra_MpiComm* epetra_mpi_comm = 
-	    dynamic_cast<const Epetra_MpiComm*>( &epetra_comm );
-	return Teuchos::rcp( 
-	    new Teuchos::MpiComm<int>( epetra_mpi_comm->GetMpiComm() ) );
+	Epetra_Comm* epetra_comm = matrix.Comm().Clone();
+	Epetra_MpiComm* epetra_mpi_comm = 
+	    dynamic_cast<Epetra_MpiComm*>( epetra_comm );
+	Teuchos::RCP<const Teuchos::Comm<int> > teuchos_comm =
+	    Teuchos::rcp( 
+		new Teuchos::MpiComm<int>( epetra_mpi_comm->GetMpiComm() ) );
+	delete epetra_comm;
+	return teuchos_comm;
 #else
 	return Teuchos::rcp( new Teuchos::SerialComm<int>() );
 #endif
