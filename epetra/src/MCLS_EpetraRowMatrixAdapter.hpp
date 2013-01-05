@@ -75,11 +75,11 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
 
     //@{
     //! Typedefs.
-    typedef typename Epetra_RowMatrix                     matrix_type;
-    typedef typename Epetra_Vector                        vector_type;
-    typedef typename double                               scalar_type;
-    typedef typename int                                  local_ordinal_type;
-    typedef typename int                                  global_ordinal_type;
+    typedef Epetra_RowMatrix                              matrix_type;
+    typedef Epetra_Vector                                 vector_type;
+    typedef double                                        scalar_type;
+    typedef int                                           local_ordinal_type;
+    typedef int                                           global_ordinal_type;
     typedef EpetraMatrixHelpers<matrix_type>              EMH;
     //@}
 
@@ -91,7 +91,7 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
     static Teuchos::RCP<vector_type> 
     cloneVectorFromMatrixRows( const matrix_type& matrix )
     { 
-	return Teuchos::rcp( new vector_type( matrix.RowMatrixRowMap() );
+	return Teuchos::rcp( new vector_type( matrix.RowMatrixRowMap() ) );
     }
 
     /*!
@@ -103,7 +103,7 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
     cloneVectorFromMatrixCols( const matrix_type& matrix )
     { 
 	Require( matrix.Filled() );
-	return Teuchos::rcp( new vector_type( matrix.RowMatrixColMap() );
+	return Teuchos::rcp( new vector_type( matrix.RowMatrixColMap() ) );
     }
 
     /*!
@@ -114,7 +114,7 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
     {
 #ifdef HAVE_MPI
 	Epetra_MpiComm epetra_comm( Teuchos::as<Epetra_MpiComm>( matrix.Comm() ) );
-	return Teuchos::rcp( new Teuchos::MpiComm( epetra_comm.getMpiComm() )) ;
+	return Teuchos::rcp( new Teuchos::MpiComm<int>( epetra_comm.GetMpiComm() ) );
 #else
 	return Teuchos::rcp( new Teuchos::SerialComm<int>() );
 #endif
@@ -123,132 +123,146 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
     /*!
      * \brief Get the global number of rows.
      */
-    static GO getGlobalNumRows( const matrix_type& matrix )
+    static global_ordinal_type getGlobalNumRows( const matrix_type& matrix )
     { 
-	return Teuchos::as<GO>( matrix.NumGlobalRows() );
+	return Teuchos::as<global_ordinal_type>( matrix.NumGlobalRows() );
     }
 
     /*!
      * \brief Get the local number of rows.
      */
-    static LO getLocalNumRows( const matrix_type& matrix )
+    static local_ordinal_type getLocalNumRows( const matrix_type& matrix )
     {
-	return Teuchos::as<LO>( matrix.NumMyRows() );
+	return Teuchos::as<local_ordinal_type>( matrix.NumMyRows() );
     }
 
     /*!
      * \brief Get the maximum number of entries in a row globally.
      */
-    static GO getGlobalMaxNumRowEntries( const matrix_type& matrix )
+    static global_ordinal_type getGlobalMaxNumRowEntries( const matrix_type& matrix )
     {
-	return Teuchos::as<GO>( matrix.MaxNumEntries() );
+	return Teuchos::as<global_ordinal_type>( matrix.MaxNumEntries() );
     }
 
     /*!
      * \brief Given a local row on-process, provide the global ordinal.
      */
-    static GO getGlobalRow( const matrix_type& matrix, const LO& local_row )
+    static global_ordinal_type getGlobalRow( const matrix_type& matrix, 
+					     const local_ordinal_type& local_row )
     { 
-	Require( matrix.RowMatrixRowMap()->MyLID( local_row ) );
-	return matrix.RowMatrixRowMap()->GID( local_row );
+	Require( matrix.RowMatrixRowMap().MyLID( local_row ) );
+	return matrix.RowMatrixRowMap().GID( local_row );
     }
 
     /*!
      * \brief Given a global row on-process, provide the local ordinal.
      */
-    static LO getLocalRow( const matrix_type& matrix, const GO& global_row )
+    static local_ordinal_type getLocalRow( const matrix_type& matrix, 
+					   const global_ordinal_type& global_row )
     { 
-	Require( matrix.RowMatrixRowMap()->MyGID( global_row ) );
-	return matrix.RowMatrxRowMap()->LID( global_row );
+	Require( matrix.RowMatrixRowMap().MyGID( global_row ) );
+	return matrix.RowMatrixRowMap().LID( global_row );
     }
 
     /*!
      * \brief Given a local col on-process, provide the global ordinal.
      */
-    static GO getGlobalCol( const matrix_type& matrix, const LO& local_col )
+    static global_ordinal_type getGlobalCol( const matrix_type& matrix,
+					     const local_ordinal_type& local_col )
     {
 	Require( matrix.Filled() );
-	Require( matrix.RowMatrixColMap()->myLID( local_col ) );
-	return matrix.RowMatrixColMap()->GID( local_col );
+	Require( matrix.RowMatrixColMap().myLID( local_col ) );
+	return matrix.RowMatrixColMap().GID( local_col );
     }
 
     /*!
      * \brief Given a global col on-process, provide the local ordinal.
      */
-    static LO getLocalCol( const matrix_type& matrix, const GO& global_col )
+    static local_ordinal_type getLocalCol( const matrix_type& matrix, 
+					   const global_ordinal_type& global_col )
     {
 	Require( matrix.Filled() );
-	Require( matrix.RowMatrixColMap()->MyGID( global_col ) );
-	return matrix.RowMatrixColMap()->LID( global_col );
+	Require( matrix.RowMatrixColMap().MyGID( global_col ) );
+	return matrix.RowMatrixColMap().LID( global_col );
     }
 
     /*!
      * \brief Determine whether or not a given global row is on-process.
      */
-    static bool isGlobalRow( const matrix_type& matrix, const GO& global_row )
+    static bool isGlobalRow( const matrix_type& matrix, 
+			     const global_ordinal_type& global_row )
     {
-	return matrix.RowMatrixRowMap()->MyGID( global_row );
+	return matrix.RowMatrixRowMap().MyGID( global_row );
     }
 
     /*!
      * \brief Determine whether or not a given local row is on-process.
      */
-    static bool isLocalRow( const matrix_type& matrix, const LO& local_row )
+    static bool isLocalRow( const matrix_type& matrix, 
+			    const local_ordinal_type& local_row )
     { 
-	return matrix.RowMatrixRowMap()->MyLID( local_row );
+	return matrix.RowMatrixRowMap().MyLID( local_row );
     }
 
     /*!
      * \brief Determine whether or not a given global col is on-process.
      */
-    static bool isGlobalCol( const matrix_type& matrix, const GO& global_col )
+    static bool isGlobalCol( const matrix_type& matrix,
+			     const global_ordinal_type& global_col )
     { 
 	Require( matrix.Filled() );
-	return matrix.RowMatrixColMap()->MyGID( global_col );
+	return matrix.RowMatrixColMap().MyGID( global_col );
     }
 
     /*!
      * \brief Determine whether or not a given local col is on-process.
      */
-    static bool isLocalCol( const matrix_type& matrix, const LO& local_col )
+    static bool isLocalCol( const matrix_type& matrix, 
+			    const local_ordinal_type& local_col )
     { 
 	Require( matrix.Filled() );
-	return matrix.RowMatrixColMap()->MyLID( local_col );
+	return matrix.RowMatrixColMap().MyLID( local_col );
     }
 
     /*!
      * \brief Get a copy of a global row.
      */
-    static void getGlobalRowCopy( const matrix_type& matrix,
-				  const GO& global_row, 
-				  const Teuchos::ArrayView<GO>& indices,
-				  const Teuchos::ArrayView<Scalar>& values,
-				  std::size_t& num_entries )
+    static void getGlobalRowCopy( 
+	const matrix_type& matrix,
+	const global_ordinal_type& global_row, 
+	const Teuchos::ArrayView<global_ordinal_type>& indices,
+	const Teuchos::ArrayView<scalar_type>& values,
+	std::size_t& num_entries )
     {
 	Require( !matrix.Filled() );
-	Require( matrix.RowMatrixRowMap()->GID( global_row ) );
-	LO local_row = matrix.LID( global_row );
+	Require( matrix.RowMatrixRowMap().GID( global_row ) );
+	local_ordinal_type local_row = matrix.RowMatrixRowMap().LID( global_row );
+	int num_entries_int = 0;
 	matrix.ExtractMyRowCopy( local_row, 
-				 Teuchos::as<LO>(values.size()), 
-				 Teuchos::as<LO>(num_entries),
+				 Teuchos::as<local_ordinal_type>(values.size()), 
+				 num_entries_int,
 				 values.getRawPtr(), indices.getRawPtr() );
+	num_entries = num_entries_int;
     }
 
     /*!
      * \brief Get a copy of a local row.
      */
-    static void getLocalRowCopy( const matrix_type& matrix,
-				 const LO& local_row, 
-				 const Teuchos::ArrayView<LO>& indices,
-				 const Teuchos::ArrayView<Scalar>& values,
-				 std::size_t& num_entries )
+    static void getLocalRowCopy( 
+	const matrix_type& matrix,
+	const local_ordinal_type& local_row, 
+	const Teuchos::ArrayView<local_ordinal_type>& indices,
+	const Teuchos::ArrayView<scalar_type>& values,
+	std::size_t& num_entries )
     {
 	Require( !matrix.Filled() );
-	Require( matrix.RowMatrixRowMap()->MyLID( local_row ) );
+	Require( matrix.RowMatrixRowMap().MyLID( local_row ) );
+	int num_entries_int = 0;
 	matrix.ExtractMyRowCopy( local_row, 
-				 Teuchos::as<LO>(values.size()), 
-				 Teuchos::as<LO>(num_entries),
+				 Teuchos::as<local_ordinal_type>(values.size()), 
+				 num_entries_int,
 				 values.getRawPtr(), indices.getRawPtr() );
+	num_entries = num_entries_int;
     }
 
     /*!
@@ -267,7 +281,7 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
 		       const vector_type& x, 
 		       vector_type& y )
     {
-	A.apply( false, x, y );
+	A.Apply( x, y );
     }
 
     /*!
@@ -275,14 +289,16 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
      */
     static Teuchos::RCP<matrix_type> copyTranspose( const matrix_type& matrix )
     { 
-	Epetra_RowMatrixTransposer transposer( &matrix );
+	Epetra_RowMatrixTransposer transposer( const_cast<matrix_type*>(&matrix) );
 
-	Teuchos::RCP<Epetra_CrsMatrix> tranpose_matrix = Teuchos::rcp(
+	Teuchos::RCP<Epetra_CrsMatrix> transpose_matrix = Teuchos::rcp(
 	    new Epetra_CrsMatrix( Copy, matrix.RowMatrixRowMap(), 0 ) );
 
-	transposer.CreateTranspose( true, tranpose_matrix.getRawPtr() );
+	Epetra_CrsMatrix* raw_transpose_matrix = transpose_matrix.getRawPtr();
+	transposer.CreateTranspose( true, raw_transpose_matrix );
 
-	return tranpose_matrix;
+	Ensure( !transpose_matrix.is_null() );
+	return transpose_matrix;
     }
 };
 
@@ -298,11 +314,11 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_CrsMatrix>
 
     //@{
     //! Typedefs.
-    typedef typename Epetra_CrsMatrix                     matrix_type;
-    typedef typename Epetra_Vector                        vector_type;
-    typedef typename double                               scalar_type;
-    typedef typename int                                  local_ordinal_type;
-    typedef typename int                                  global_ordinal_type;
+    typedef Epetra_CrsMatrix                              matrix_type;
+    typedef Epetra_Vector                                 vector_type;
+    typedef double                                        scalar_type;
+    typedef int                                           local_ordinal_type;
+    typedef int                                           global_ordinal_type;
     typedef EpetraMatrixHelpers<matrix_type>              EMH;
     //@}
 
@@ -311,7 +327,7 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_CrsMatrix>
      * specified number of off-process nearest-neighbor global crss.
      */
     static Teuchos::RCP<matrix_type> copyNearestNeighbors( 
-    	const matrix_type& matrix, const GO& num_neighbors )
+    	const matrix_type& matrix, const global_ordinal_type& num_neighbors )
     { 
 	return EMH::copyNearestNeighbors( matrix, num_neighbors );
     }
@@ -329,11 +345,11 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_VbrMatrix>
 
     //@{
     //! Typedefs.
-    typedef typename Epetra_VbrMatrix                     matrix_type;
-    typedef typename Epetra_Vector                        vector_type;
-    typedef typename double                               scalar_type;
-    typedef typename int                                  local_ordinal_type;
-    typedef typename int                                  global_ordinal_type;
+    typedef Epetra_VbrMatrix                              matrix_type;
+    typedef Epetra_Vector                                 vector_type;
+    typedef double                                        scalar_type;
+    typedef int                                           local_ordinal_type;
+    typedef int                                           global_ordinal_type;
     typedef EpetraMatrixHelpers<matrix_type>              EMH;
     //@}
 
@@ -342,7 +358,7 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_VbrMatrix>
      * specified number of off-process nearest-neighbor global vbrs.
      */
     static Teuchos::RCP<matrix_type> copyNearestNeighbors( 
-    	const matrix_type& matrix, const GO& num_neighbors )
+    	const matrix_type& matrix, const global_ordinal_type& num_neighbors )
     { 
 	return EMH::copyNearestNeighbors( matrix, num_neighbors );
     }
