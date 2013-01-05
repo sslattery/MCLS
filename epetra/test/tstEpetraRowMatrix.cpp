@@ -1,8 +1,8 @@
 //---------------------------------------------------------------------------//
 /*!
- * \file tstEpetraCrsMatrix.cpp
+ * \file tstEpetraRowMatrix.cpp
  * \author Stuart R. Slattery
- * \brief Epetra::CrsMatrix adapter tests.
+ * \brief Epetra_RowMatrix adapter tests.
  */
 //---------------------------------------------------------------------------//
 
@@ -55,7 +55,7 @@ Teuchos::RCP<Epetra_Comm> getEpetraComm(
 }
 
 //---------------------------------------------------------------------------//
-// Test templates - CrsMatrix based.
+// Test templates.
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST( MatrixTraits, Typedefs )
 {
@@ -102,7 +102,8 @@ TEUCHOS_UNIT_TEST( MatrixTraits, RowVectorClone )
     Teuchos::RCP<Epetra_CrsMatrix> A = 
 	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
 
-    Teuchos::RCP<VectorType> X = MT::cloneVectorFromMatrixRows( *A );
+    Teuchos::RCP<MatrixType> B = A;
+    Teuchos::RCP<VectorType> X = MT::cloneVectorFromMatrixRows( *B );
 
     TEST_ASSERT( A->RowMap().SameAs( X->Map() ) );
 
@@ -150,7 +151,8 @@ TEUCHOS_UNIT_TEST( MatrixTraits, ColVectorClone )
     }
     A->FillComplete();
 
-    Teuchos::RCP<VectorType> X = MT::cloneVectorFromMatrixCols( *A );
+    Teuchos::RCP<MatrixType> B = A;
+    Teuchos::RCP<VectorType> X = MT::cloneVectorFromMatrixCols( *B );
 
     TEST_ASSERT( A->ColMap().SameAs( X->Map() ) );
 
@@ -187,7 +189,8 @@ TEUCHOS_UNIT_TEST( MatrixTraits, Comm )
     Teuchos::RCP<Epetra_CrsMatrix> A = 
 	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
 
-    Teuchos::RCP<const Teuchos::Comm<int> > copy_comm = MT::getComm( *A );
+    Teuchos::RCP<MatrixType> B = A;
+    Teuchos::RCP<const Teuchos::Comm<int> > copy_comm = MT::getComm( *B );
 
     TEST_EQUALITY( comm->getRank(), copy_comm->getRank() );
     TEST_EQUALITY( comm->getSize(), copy_comm->getSize() );
@@ -228,7 +231,8 @@ TEUCHOS_UNIT_TEST( MatrixTraits, GlobalNumRows )
     }
     A->FillComplete();
 
-    TEST_EQUALITY( MT::getGlobalNumRows( *A ), global_num_rows );
+    Teuchos::RCP<MatrixType> B = A;
+    TEST_EQUALITY( MT::getGlobalNumRows( *B ), global_num_rows );
 }
 
 //---------------------------------------------------------------------------//
@@ -266,7 +270,8 @@ TEUCHOS_UNIT_TEST( MatrixTraits, LocalNumRows )
     }
     A->FillComplete();
 
-    TEST_EQUALITY( MT::getLocalNumRows( *A ), local_num_rows );
+    Teuchos::RCP<MatrixType> B = A;
+    TEST_EQUALITY( MT::getLocalNumRows( *B ), local_num_rows );
 }
 
 //---------------------------------------------------------------------------//
@@ -304,7 +309,8 @@ TEUCHOS_UNIT_TEST( MatrixTraits, GlobalMaxEntries )
     }
     A->FillComplete();
 
-    TEST_EQUALITY( MT::getGlobalMaxNumRowEntries( *A ), 1 );
+    Teuchos::RCP<MatrixType> B = A;
+    TEST_EQUALITY( MT::getGlobalMaxNumRowEntries( *B ), 1 );
 }
 
 //---------------------------------------------------------------------------//
@@ -342,10 +348,11 @@ TEUCHOS_UNIT_TEST( MatrixTraits, l2g_row )
     }
     A->FillComplete();
 
+    Teuchos::RCP<MatrixType> B = A;
     int offset = comm->getRank() * local_num_rows;
     for ( int i = 0; i < local_num_rows; ++i )
     {
-	TEST_EQUALITY( MT::getGlobalRow( *A, i ), i + offset );
+	TEST_EQUALITY( MT::getGlobalRow( *B, i ), i + offset );
     }
 }
 
@@ -384,10 +391,11 @@ TEUCHOS_UNIT_TEST( MatrixTraits, g2l_row )
     }
     A->FillComplete();
 
+    Teuchos::RCP<MatrixType> B = A;
     int offset = comm->getRank() * local_num_rows;
     for ( int i = offset; i < local_num_rows+offset; ++i )
     {
-	TEST_EQUALITY( MT::getLocalRow( *A, i ), i );
+	TEST_EQUALITY( MT::getLocalRow( *B, i ), i );
     }
 }
 
@@ -426,10 +434,11 @@ TEUCHOS_UNIT_TEST( MatrixTraits, l2g_col )
     }
     A->FillComplete();
 
+    Teuchos::RCP<MatrixType> B = A;
     int offset = comm->getRank() * local_num_rows;
     for ( int i = 0; i < local_num_rows; ++i )
     {
-	TEST_EQUALITY( MT::getGlobalCol( *A, i ), i + offset );
+	TEST_EQUALITY( MT::getGlobalCol( *B, i ), i + offset );
     }
 }
 
@@ -468,10 +477,11 @@ TEUCHOS_UNIT_TEST( MatrixTraits, g2l_col )
     }
     A->FillComplete();
 
+    Teuchos::RCP<MatrixType> B = A;
     int offset = comm->getRank() * local_num_rows;
     for ( int i = offset; i < local_num_rows+offset; ++i )
     {
-	TEST_EQUALITY( MT::getLocalCol( *A, i ), i );
+	TEST_EQUALITY( MT::getLocalCol( *B, i ), i );
     }
 }
 
@@ -510,9 +520,10 @@ TEUCHOS_UNIT_TEST( MatrixTraits, is_l_row )
     }
     A->FillComplete();
 
+    Teuchos::RCP<MatrixType> B = A;
     for ( int i = 0; i < local_num_rows; ++i )
     {
-	TEST_ASSERT( MT::isLocalRow( *A, i ) );
+	TEST_ASSERT( MT::isLocalRow( *B, i ) );
     }
 }
 
@@ -551,10 +562,11 @@ TEUCHOS_UNIT_TEST( MatrixTraits, is_g_row )
     }
     A->FillComplete();
 
+    Teuchos::RCP<MatrixType> B = A;
     int offset = comm->getRank() * local_num_rows;
     for ( int i = offset; i < local_num_rows+offset; ++i )
     {
-	TEST_ASSERT( MT::isGlobalRow( *A, i ) );
+	TEST_ASSERT( MT::isGlobalRow( *B, i ) );
     }
 }
 
@@ -593,9 +605,10 @@ TEUCHOS_UNIT_TEST( MatrixTraits, is_l_col )
     }
     A->FillComplete();
 
+    Teuchos::RCP<MatrixType> B = A;
     for ( int i = 0; i < local_num_rows; ++i )
     {
-	TEST_ASSERT( MT::isLocalCol( *A, i ) );
+	TEST_ASSERT( MT::isLocalCol( *B, i ) );
     }
 }
 
@@ -634,10 +647,11 @@ TEUCHOS_UNIT_TEST( MatrixTraits, is_g_col )
     }
     A->FillComplete();
 
+    Teuchos::RCP<MatrixType> B = A;
     int offset = comm->getRank() * local_num_rows;
     for ( int i = offset; i < local_num_rows+offset; ++i )
     {
-	TEST_ASSERT( MT::isGlobalCol( *A, i ) );
+	TEST_ASSERT( MT::isGlobalCol( *B, i ) );
     }
 }
 
@@ -676,13 +690,14 @@ TEUCHOS_UNIT_TEST( MatrixTraits, g_row_copy )
     }
     A->FillComplete();
 
+    Teuchos::RCP<MatrixType> B = A;
     std::size_t num_entries;
     Teuchos::Array<int> view_columns(1);
     Teuchos::Array<double> view_values(1);
     int offset = comm->getRank() * local_num_rows;
     for ( int i = offset; i < local_num_rows+offset; ++i )
     {
-	MT::getGlobalRowCopy( *A, i, view_columns(), view_values(), num_entries );
+	MT::getGlobalRowCopy( *B, i, view_columns(), view_values(), num_entries );
 	TEST_EQUALITY( num_entries, 1 );
 	TEST_EQUALITY( view_columns[0], i );
 	TEST_EQUALITY( view_values[0], 1 );
@@ -724,12 +739,13 @@ TEUCHOS_UNIT_TEST( MatrixTraits, l_row_copy )
     }
     A->FillComplete();
 
+    Teuchos::RCP<MatrixType> B = A;
     std::size_t num_entries;
     Teuchos::Array<int> view_columns(1);
     Teuchos::Array<double> view_values(1);
     for ( int i = 0; i < local_num_rows; ++i )
     {
-	MT::getLocalRowCopy( *A, i, view_columns(), view_values(), num_entries );
+	MT::getLocalRowCopy( *B, i, view_columns(), view_values(), num_entries );
 	TEST_EQUALITY( num_entries, 1 );
 	TEST_EQUALITY( view_columns[0], i );
 	TEST_EQUALITY( view_values[0], comm_size );
@@ -771,8 +787,9 @@ TEUCHOS_UNIT_TEST( MatrixTraits, diag_copy )
     }
     A->FillComplete();
 
-    Teuchos::RCP<VectorType> X = MT::cloneVectorFromMatrixRows( *A );
-    MT::getLocalDiagCopy( *A, *X );
+    Teuchos::RCP<MatrixType> B = A;
+    Teuchos::RCP<VectorType> X = MT::cloneVectorFromMatrixRows( *B );
+    MT::getLocalDiagCopy( *B, *X );
 
     Teuchos::ArrayRCP<const double> X_view = VT::view( *X );
     Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
@@ -819,11 +836,12 @@ TEUCHOS_UNIT_TEST( MatrixTraits, apply )
     }
     A->FillComplete();
 
-    Teuchos::RCP<VectorType> X = MT::cloneVectorFromMatrixRows( *A );
+    Teuchos::RCP<MatrixType> B = A;
+    Teuchos::RCP<VectorType> X = MT::cloneVectorFromMatrixRows( *B );
     double x_fill = 2;
     VT::putScalar( *X, x_fill );
     Teuchos::RCP<VectorType> Y = VT::clone( *X );
-    MT::apply( *A, *X, *Y );
+    MT::apply( *B, *X, *Y );
 
     Teuchos::ArrayRCP<const double> Y_view = VT::view( *Y );
     Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
@@ -873,14 +891,15 @@ TEUCHOS_UNIT_TEST( MatrixTraits, transpose )
     }
     A->FillComplete();
 
-    Teuchos::RCP<MatrixType> B = MT::copyTranspose( *A );
+    Teuchos::RCP<MatrixType> B = A;
+    Teuchos::RCP<MatrixType> C = MT::copyTranspose( *B );
 
     std::size_t num_entries;
     Teuchos::Array<int> view_columns(2);
     Teuchos::Array<double> view_values(2);
     for ( int i = 1; i < local_num_rows-1; ++i )
     {
-	MT::getLocalRowCopy( *B, i, view_columns, view_values, num_entries );
+	MT::getLocalRowCopy( *C, i, view_columns, view_values, num_entries );
 	TEST_EQUALITY( num_entries, 2 );
 	TEST_EQUALITY( view_columns[0], i-1 );
 	TEST_EQUALITY( view_columns[1], i );
@@ -928,9 +947,10 @@ TEUCHOS_UNIT_TEST( MatrixTraits, copy_neighbor )
     }
     A->FillComplete();
 
+    Teuchos::RCP<MatrixType> B = A;
     for ( int i = 0; i < 5; ++i )
     {
-	Teuchos::RCP<MatrixType> B = MT::copyNearestNeighbors( *A, i );
+	Teuchos::RCP<MatrixType> C = MT::copyNearestNeighbors( *B, i );
 
 	int local_num_neighbor = 0;
 	if ( i > 0 )
@@ -938,7 +958,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, copy_neighbor )
 	    local_num_neighbor = global_num_rows - local_num_rows;
 	}
 
-	TEST_EQUALITY( local_num_neighbor, MT::getLocalNumRows( *B ) );
+	TEST_EQUALITY( local_num_neighbor, MT::getLocalNumRows( *C ) );
 
 	std::size_t num_entries;
 	Teuchos::Array<int> view_columns( global_num_rows );
@@ -948,7 +968,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, copy_neighbor )
 	    for ( int k = comm_rank*local_num_rows; 
 		  k < (comm_rank+1)*local_num_rows; ++k )
 	    {
-		TEST_INEQUALITY( MT::getGlobalRow( *B, j ), k );
+		TEST_INEQUALITY( MT::getGlobalRow( *C, j ), k );
 	    }
 
 	    MT::getLocalRowCopy( *B, j, view_columns, view_values, num_entries );

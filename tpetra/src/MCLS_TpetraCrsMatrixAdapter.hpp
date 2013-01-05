@@ -335,7 +335,7 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
 	}
 
 	Ensure( !neighbor_matrix.is_null() );
-	Ensure( neighbor_matrix.isFillComplete() );
+	Ensure( neighbor_matrix->isFillComplete() );
 	return neighbor_matrix;
     }
 };

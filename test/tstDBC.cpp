@@ -115,7 +115,7 @@ TEUCHOS_UNIT_TEST( Assertion, precondition_test )
     }
     catch( const MCLS::Assertion& assertion )
     {
-#if HAVE_CHIMERA_DBC
+#if HAVE_MCLS_DBC
 	std::string message( assertion.what() );
 	std::string true_message( "MCLS Assertion: 0, failed in" );
 	std::string::size_type idx = message.find( true_message );
@@ -129,7 +129,7 @@ TEUCHOS_UNIT_TEST( Assertion, precondition_test )
     }
     catch( ... )
     {
-#if HAVE_CHIMERA_DBC
+#if HAVE_MCLS_DBC
 	TEST_ASSERT( 0 );
 #endif
     }
@@ -146,7 +146,7 @@ TEUCHOS_UNIT_TEST( Assertion, postcondition_test )
     }
     catch( const MCLS::Assertion& assertion )
     {
-#if HAVE_CHIMERA_DBC
+#if HAVE_MCLS_DBC
 	std::string message( assertion.what() );
 	std::string true_message( "MCLS Assertion: 0, failed in" );
 	std::string::size_type idx = message.find( true_message );
@@ -160,7 +160,7 @@ TEUCHOS_UNIT_TEST( Assertion, postcondition_test )
     }
     catch( ... )
     {
-#if HAVE_CHIMERA_DBC
+#if HAVE_MCLS_DBC
 	TEST_ASSERT( 0 );
 #endif
     }
@@ -177,7 +177,7 @@ TEUCHOS_UNIT_TEST( Assertion, invariant_test )
     }
     catch( const MCLS::Assertion& assertion )
     {
-#if HAVE_CHIMERA_DBC
+#if HAVE_MCLS_DBC
 	std::string message( assertion.what() );
 	std::string true_message( "MCLS Assertion: 0, failed in" );
 	std::string::size_type idx = message.find( true_message );
@@ -191,7 +191,7 @@ TEUCHOS_UNIT_TEST( Assertion, invariant_test )
     }
     catch( ... )
     {
-#if HAVE_CHIMERA_DBC
+#if HAVE_MCLS_DBC
 	TEST_ASSERT( 0 );
 #endif
     }
@@ -210,7 +210,7 @@ TEUCHOS_UNIT_TEST( Assertion, remember_test )
     }
     catch( const MCLS::Assertion& assertion )
     {
-#if HAVE_CHIMERA_DBC
+#if HAVE_MCLS_DBC
 	TEST_ASSERT( 1 );
 #else
 	TEST_ASSERT( 0 );
@@ -218,7 +218,7 @@ TEUCHOS_UNIT_TEST( Assertion, remember_test )
     }
     catch( ... )
     {
-#if HAVE_CHIMERA_DBC
+#if HAVE_MCLS_DBC
 	TEST_ASSERT( 0 );
 #endif
     }
