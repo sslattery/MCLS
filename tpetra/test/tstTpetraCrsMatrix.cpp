@@ -71,34 +71,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, Typedefs, LO, GO, Scalar )
 UNIT_TEST_INSTANTIATION( MatrixTraits, Typedefs )
 
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, Clone, LO, GO, Scalar )
-{
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::MatrixTraits<Scalar,LO,GO,VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
-
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
-	Teuchos::DefaultComm<int>::getComm();
-    int comm_size = comm->getSize();
-
-    int local_num_rows = 10;
-    int global_num_rows = local_num_rows*comm_size;
-    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
-	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
-
-    Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
-
-    Teuchos::RCP<MatrixType> B = MT::clone( *A );
-
-    TEST_ASSERT( A->getMap()->isSameAs( *(B->getMap()) ) );
-}
-
-UNIT_TEST_INSTANTIATION( MatrixTraits, Clone )
-
-//---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, RowVectorClone, LO, GO, Scalar )
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
@@ -627,7 +599,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, is_g_col, LO, GO, Scalar )
 UNIT_TEST_INSTANTIATION( MatrixTraits, is_g_col )
 
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, g_row_view, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, g_row_copy, LO, GO, Scalar )
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
@@ -655,23 +627,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, g_row_view, LO, GO, Scalar )
 	A->insertGlobalValues( i, global_columns(), values() );
     }
 
-    Teuchos::ArrayView<const GO> view_columns;
-    Teuchos::ArrayView<const Scalar> view_values;
+    Teuchos::Array<GO> view_columns(1);
+    Teuchos::Array<Scalar> view_values(1);
+    std::size_t num_entries;
     int offset = comm->getRank() * local_num_rows;
     for ( int i = offset; i < local_num_rows+offset; ++i )
     {
-	MT::getGlobalRowView( *A, i, view_columns, view_values );
-	TEST_EQUALITY( view_columns.size(), 1 );
-	TEST_EQUALITY( view_values.size(), 1 );
+	MT::getGlobalRowCopy( *A, i, view_columns(), view_values(), num_entries );
+	TEST_EQUALITY( num_entries, 1 );
 	TEST_EQUALITY( view_columns[0], i );
 	TEST_EQUALITY( view_values[0], 1 );
     }
 }
 
-UNIT_TEST_INSTANTIATION( MatrixTraits, g_row_view )
+UNIT_TEST_INSTANTIATION( MatrixTraits, g_row_copy )
 
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, l_row_view, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, l_row_copy, LO, GO, Scalar )
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
@@ -700,19 +672,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, l_row_view, LO, GO, Scalar )
     }
     A->fillComplete();
 
-    Teuchos::ArrayView<const LO> view_columns;
-    Teuchos::ArrayView<const Scalar> view_values;
+    std::size_t num_entries;
+    Teuchos::Array<LO> view_columns(1);
+    Teuchos::Array<Scalar> view_values(1);
     for ( int i = 0; i < local_num_rows; ++i )
     {
-	MT::getLocalRowView( *A, i, view_columns, view_values );
-	TEST_EQUALITY( view_columns.size(), 1 );
-	TEST_EQUALITY( view_values.size(), 1 );
+	MT::getLocalRowCopy( *A, i, view_columns(), view_values(), num_entries );
+	TEST_EQUALITY( num_entries, 1 );
 	TEST_EQUALITY( view_columns[0], i );
 	TEST_EQUALITY( view_values[0], comm_size );
     }
 }
 
-UNIT_TEST_INSTANTIATION( MatrixTraits, l_row_view )
+UNIT_TEST_INSTANTIATION( MatrixTraits, l_row_copy )
 
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, diag_copy, LO, GO, Scalar )
@@ -842,13 +814,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, transpose, LO, GO, Scalar )
 
     Teuchos::RCP<MatrixType> B = MT::copyTranspose( *A );
 
-    Teuchos::ArrayView<const LO> view_columns;
-    Teuchos::ArrayView<const Scalar> view_values;
+    std::size_t num_entries;
+    Teuchos::Array<LO> view_columns(2);
+    Teuchos::Array<Scalar> view_values(2);
     for ( int i = 1; i < local_num_rows-1; ++i )
     {
-	MT::getLocalRowView( *B, i, view_columns, view_values );
-	TEST_EQUALITY( view_columns.size(), 2 );
-	TEST_EQUALITY( view_values.size(), 2 );
+	MT::getLocalRowCopy( *B, i, view_columns, view_values, num_entries );
+	TEST_EQUALITY( num_entries, 2 );
 	TEST_EQUALITY( view_columns[0], i-1 );
 	TEST_EQUALITY( view_columns[1], i );
 	TEST_EQUALITY( view_values[0], 2*comm_size );
@@ -904,8 +876,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, copy_neighbor, LO, GO, Scalar )
 
 	TEST_EQUALITY( local_num_neighbor, MT::getLocalNumRows( *B ) );
 
-	Teuchos::ArrayView<const LO> view_columns;
-	Teuchos::ArrayView<const Scalar> view_values;
+	std::size_t num_entries;
+	Teuchos::Array<LO> view_columns( global_num_rows );
+	Teuchos::Array<Scalar> view_values( global_num_rows );
 	for ( int j = 0; j < local_num_neighbor; ++j )
 	{
 	    for ( int k = comm_rank*local_num_rows; 
@@ -914,9 +887,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, copy_neighbor, LO, GO, Scalar )
 		TEST_INEQUALITY( MT::getGlobalRow( *B, j ), k );
 	    }
 
-	    MT::getLocalRowView( *B, j, view_columns, view_values );
-	    TEST_EQUALITY( view_columns.size(), global_num_rows );
-	    TEST_EQUALITY( view_values.size(), global_num_rows );
+	    MT::getLocalRowCopy( *B, j, view_columns, view_values, num_entries );
+	    TEST_EQUALITY( num_entries, Teuchos::as<std::size_t>(global_num_rows) );
 
 	    for ( int n = 0; n < global_num_rows; ++n )
 	    {

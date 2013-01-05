@@ -81,15 +81,6 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
     //@}
 
     /*!
-     * \brief Create a reference-counted pointer to a new empty matrix with
-     * the same parallel distribution as the given matrix.
-     */
-    static Teuchos::RCP<matrix_type> clone( const matrix_type& matrix )
-    { 
-	return Tpetra::createCrsMatrix<Scalar,LO,GO>( matrix.getMap() );
-    }
-
-    /*!
      * \brief Create a reference-counted pointer to a new empty vector from a
      * matrix to give the vector the same parallel distribution as the
      * matrix parallel row distribution.
@@ -218,29 +209,31 @@ class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,
     }
 
     /*!
-     * \brief Get a view of a global row.
+     * \brief Get a copy of a global row.
      */
-    static void getGlobalRowView( const matrix_type& matrix,
+    static void getGlobalRowCopy( const matrix_type& matrix,
 				  const GO& global_row, 
-				  Teuchos::ArrayView<const GO> &indices,
-				  Teuchos::ArrayView<const Scalar> &values )
+				  const Teuchos::ArrayView<GO>& indices,
+				  const Teuchos::ArrayView<Scalar>& values,
+				  std::size_t& num_entries )
     {
 	Require( !matrix.isFillComplete() );
 	Require( matrix.getRowMap()->isNodeGlobalElement( global_row ) );
-	matrix.getGlobalRowView( global_row, indices, values );
+	matrix.getGlobalRowCopy( global_row, indices, values, num_entries );
     }
 
     /*!
-     * \brief Get a view of a local row.
+     * \brief Get a copy of a local row.
      */
-    static void getLocalRowView( const matrix_type& matrix,
+    static void getLocalRowCopy( const matrix_type& matrix,
 				 const LO& local_row, 
-				 Teuchos::ArrayView<const LO> &indices,
-				 Teuchos::ArrayView<const Scalar> &values )
+				 const Teuchos::ArrayView<LO>& indices,
+				 const Teuchos::ArrayView<Scalar>& values,
+				 std::size_t& num_entries )
     {
 	Require( matrix.isFillComplete() );
 	Require( matrix.getRowMap()->isNodeLocalElement( local_row ) );
-	matrix.getLocalRowView( local_row, indices, values );
+	matrix.getLocalRowCopy( local_row, indices, values, num_entries );
     }
 
     /*!

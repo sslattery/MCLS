@@ -87,16 +87,6 @@ class MatrixTraits
     //@}
 
     /*!
-     * \brief Create a reference-counted pointer to a new empty matrix with
-     * the same parallel distribution as the given matrix.
-     */
-    static Teuchos::RCP<Matrix> clone( const Matrix& matrix )
-    { 
-	UndefinedMatrixTraits<Scalar,LO,GO,Vector,Matrix>::notDefined(); 
-	return Teuchos::null; 
-    }
-
-    /*!
      * \brief Create a reference-counted pointer to a new empty vector from a
      * matrix to give the vector the same parallel distribution as the
      * matrix parallel row distribution.
@@ -226,25 +216,27 @@ class MatrixTraits
     static bool isLocalCol( const Matrix& matrix, const LO& local_col )
     { 
 	UndefinedMatrixTraits<Scalar,LO,GO,Vector,Matrix>::notDefined(); 
-	return false; 
+	return false;
     }
 
     /*!
-     * \brief Get a view of a global row.
+     * \brief Get a copy of a global row.
      */
-    static void getGlobalRowView( const Matrix& matrix,
+    static void getGlobalRowCopy( const Matrix& matrix,
 				  const GO& global_row, 
-				  Teuchos::ArrayView<const GO> &indices,
-				  Teuchos::ArrayView<const Scalar> &values )
+				  const Teuchos::ArrayView<GO>& indices,
+				  const Teuchos::ArrayView<Scalar>& values,
+				  std::size_t& num_entries )
     { UndefinedMatrixTraits<Scalar,LO,GO,Vector,Matrix>::notDefined(); }
 
     /*!
-     * \brief Get a view of a local row.
+     * \brief Get a copy of a local row.
      */
-    static void getLocalRowView( const Matrix& matrix,
+    static void getLocalRowCopy( const Matrix& matrix,
 				 const LO& local_row, 
-				 Teuchos::ArrayView<const LO> &indices,
-				 Teuchos::ArrayView<const Scalar> &values )
+				 const Teuchos::ArrayView<LO>& indices,
+				 const Teuchos::ArrayView<Scalar>& values,
+				 std::size_t& num_entries )
     { UndefinedMatrixTraits<Scalar,LO,GO,Vector,Matrix>::notDefined(); }
 
     /*!
