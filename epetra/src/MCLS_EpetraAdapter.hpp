@@ -42,7 +42,7 @@
 #define MCLS_EPETRAADAPTER_HPP
 
 #include "MCLS_EpetraVectorAdapter.hpp"
-//#include "MCLS_EpetraRowMatrixAdapter.hpp"
+#include "MCLS_EpetraRowMatrixAdapter.hpp"
 
 #endif // end MCLS_EPETRAADAPTER_HPP
 

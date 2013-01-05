@@ -100,7 +100,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, RowVectorClone )
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
     Teuchos::RCP<Epetra_CrsMatrix> A = 
-	Teuchos::rcp( new Epetra_CrsMatrix( copy, *map, 0 ) );
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
 
     Teuchos::RCP<VectorType> X = MT::cloneVectorFromMatrixRows( *A );
 
@@ -137,7 +137,9 @@ TEUCHOS_UNIT_TEST( MatrixTraits, ColVectorClone )
     Teuchos::RCP<const Epetra::Map<int,int> > map = 
 	Epetra::createUniformContigMap<int,int>( global_num_rows, comm );
 
-    Teuchos::RCP<Epetra_CrsMatrix> A = Epetra::createRowMatrix<double,int,int>( map );
+    Teuchos::RCP<Epetra_CrsMatrix> A = 
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
+
     Teuchos::Array<int> global_columns( 1 );
     Teuchos::Array<double> values( 1, 1 );
     for ( int i = 0; i < global_num_rows; ++i )
@@ -182,8 +184,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, Comm )
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
     Teuchos::RCP<Epetra_CrsMatrix> A = 
-	Teuchos::rcp( new Epetra_CrsMatrix( copy, *map, 0 ) );
-
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
 
     Teuchos::RCP<const Teuchos::Comm<int> > copy_comm = MT::getComm( *A );
 
@@ -213,7 +214,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, GlobalNumRows )
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
     Teuchos::RCP<Epetra_CrsMatrix> A = 
-	Teuchos::rcp( new Epetra_CrsMatrix( copy, *map, 0 ) );
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
 
     Teuchos::Array<int> global_columns( 1 );
     Teuchos::Array<double> values( 1, 1 );
@@ -249,7 +250,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, LocalNumRows )
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
     Teuchos::RCP<Epetra_CrsMatrix> A = 
-	Teuchos::rcp( new Epetra_CrsMatrix( copy, *map, 0 ) );
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
 
     Teuchos::Array<int> global_columns( 1 );
     Teuchos::Array<double> values( 1, 1 );
@@ -285,7 +286,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, GlobalMaxEntries )
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
     Teuchos::RCP<Epetra_CrsMatrix> A = 
-	Teuchos::rcp( new Epetra_CrsMatrix( copy, *map, 0 ) );
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
 
     Teuchos::Array<int> global_columns( 1 );
     Teuchos::Array<double> values( 1, 1 );
@@ -321,7 +322,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, l2g_row )
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
     Teuchos::RCP<Epetra_CrsMatrix> A = 
-	Teuchos::rcp( new Epetra_CrsMatrix( copy, *map, 0 ) );
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
 
     Teuchos::Array<int> global_columns( 1 );
     Teuchos::Array<double> values( 1, 1 );
@@ -361,7 +362,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, g2l_row )
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
     Teuchos::RCP<Epetra_CrsMatrix> A = 
-	Teuchos::rcp( new Epetra_CrsMatrix( copy, *map, 0 ) );
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
 
     Teuchos::Array<int> global_columns( 1 );
     Teuchos::Array<double> values( 1, 1 );
@@ -401,7 +402,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, l2g_col )
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
     Teuchos::RCP<Epetra_CrsMatrix> A = 
-	Teuchos::rcp( new Epetra_CrsMatrix( copy, *map, 0 ) );
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
 
     Teuchos::Array<int> global_columns( 1 );
     Teuchos::Array<double> values( 1, 1 );
@@ -441,7 +442,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, g2l_col )
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
     Teuchos::RCP<Epetra_CrsMatrix> A = 
-	Teuchos::rcp( new Epetra_CrsMatrix( copy, *map, 0 ) );
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
 
     Teuchos::Array<int> global_columns( 1 );
     Teuchos::Array<double> values( 1, 1 );
@@ -481,7 +482,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, is_l_row )
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
     Teuchos::RCP<Epetra_CrsMatrix> A = 
-	Teuchos::rcp( new Epetra_CrsMatrix( copy, *map, 0 ) );
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
 
     Teuchos::Array<int> global_columns( 1 );
     Teuchos::Array<double> values( 1, 1 );
@@ -520,7 +521,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, is_g_row )
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
     Teuchos::RCP<Epetra_CrsMatrix> A = 
-	Teuchos::rcp( new Epetra_CrsMatrix( copy, *map, 0 ) );
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
 
     Teuchos::Array<int> global_columns( 1 );
     Teuchos::Array<double> values( 1, 1 );
@@ -560,7 +561,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, is_l_col )
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
     Teuchos::RCP<Epetra_CrsMatrix> A = 
-	Teuchos::rcp( new Epetra_CrsMatrix( copy, *map, 0 ) );
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
 
     Teuchos::Array<int> global_columns( 1 );
     Teuchos::Array<double> values( 1, 1 );
@@ -599,7 +600,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, is_g_col )
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
     Teuchos::RCP<Epetra_CrsMatrix> A = 
-	Teuchos::rcp( new Epetra_CrsMatrix( copy, *map, 0 ) );
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
 
     Teuchos::Array<int> global_columns( 1 );
     Teuchos::Array<double> values( 1, 1 );
@@ -639,7 +640,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, g_row_copy )
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
     Teuchos::RCP<Epetra_CrsMatrix> A = 
-	Teuchos::rcp( new Epetra_CrsMatrix( copy, *map, 0 ) );
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
 
     Teuchos::Array<int> global_columns( 1 );
     Teuchos::Array<double> values( 1, 1 );
@@ -684,7 +685,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, l_row_copy )
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
     Teuchos::RCP<Epetra_CrsMatrix> A = 
-	Teuchos::rcp( new Epetra_CrsMatrix( copy, *map, 0 ) );
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
 
     Teuchos::Array<int> global_columns( 1 );
     Teuchos::Array<double> values( 1, 1 );
@@ -729,7 +730,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, diag_copy )
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
     Teuchos::RCP<Epetra_CrsMatrix> A = 
-	Teuchos::rcp( new Epetra_CrsMatrix( copy, *map, 0 ) );
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
 
     Teuchos::Array<int> global_columns( 1 );
     Teuchos::Array<double> values( 1, 1 );
@@ -775,7 +776,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, apply )
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
     Teuchos::RCP<Epetra_CrsMatrix> A = 
-	Teuchos::rcp( new Epetra_CrsMatrix( copy, *map, 0 ) );
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
 
     Teuchos::Array<int> global_columns( 1 );
     Teuchos::Array<double> values( 1, 1 );
@@ -824,7 +825,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, transpose )
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
     Teuchos::RCP<Epetra_CrsMatrix> A = 
-	Teuchos::rcp( new Epetra_CrsMatrix( copy, *map, 0 ) );
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
 
     Teuchos::Array<int> global_columns( 2 );
     Teuchos::Array<double> values( 2 );
@@ -877,7 +878,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, copy_neighbor )
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
     Teuchos::RCP<Epetra_CrsMatrix> A = 
-	Teuchos::rcp( new Epetra_CrsMatrix( copy, *map, 0 ) );
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
 
     Teuchos::Array<int> global_columns( global_num_rows );
     Teuchos::Array<double> values( global_num_rows, 1 );

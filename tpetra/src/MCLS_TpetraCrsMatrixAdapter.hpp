@@ -61,8 +61,8 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 /*!
- * \class VectorTraits
- * \brief Traits specialization for Tpetra::Vector.
+ * \class MatrixTraits
+ * \brief Traits specialization for Tpetra::CrsMatrix.
  */
 template<class Scalar, class LO, class GO>
 class MatrixTraits<Scalar,LO,GO,Tpetra::Vector<Scalar,LO,GO>,

@@ -50,6 +50,7 @@
 #include <Epetra_Map.h>
 #include <Epetra_RowMatrix.h>
 #include <Epetra_CrsMatrix.h>
+#include <Epetra_VbrMatrix.h>
 #include <Epetra_Import.h>
 
 //---------------------------------------------------------------------------//
@@ -93,18 +94,6 @@ class EpetraMatrixHelpers
     { 
 	UndefinedEpetraHelpers<Matrix>::notDefined(); 
 	return Teuchos::Array<int>(0); 
-    }
-
-    /*!
-     * \brief Given a source matrix and an importer, build a new matrix with
-     * the new decomposition.
-     */
-    static Teuchos::RCP<Matrix> 
-    importAndFillCompleteMatrix( const Matrix& matrix, 
-				 const Epetra_Import& importer )
-    {
-	UndefinedEpetraHelpers<Matrix>::notDefined(); 
-	return Teuchos::null;
     }
 
     /*
@@ -162,26 +151,206 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
 
 	return off_proc_cols;
     }
+};
 
-    // /*!
-    //  * \brief Given a source matrix and an importer, build a new matrix with
-    //  * the new decomposition.
-    //  */
-    // static Teuchos::RCP<matrix_type> 
-    // importAndFillCompleteMatrix( const matrix_type& matrix, 
-    // 				 const Epetra_Import& importer )
-    // {
-    // 	Require( matrix.Filled() );
+//---------------------------------------------------------------------------//
+/*!
+ * \class EpetraMatrixHelpers
+ * \brief EpetraMatrixHelpers specialization for Epetra_CrsMatrix.
+ */
+template<>
+class EpetraMatrixHelpers<Epetra_CrsMatrix>
+{
+  public:
 
-    // 	Teuchos::RCP<Epetra_CrsMatrix> new_matrix = Teuchos::rcp(
-    // 	    new Epetra_CrsMatrix( Copy, importer.TargetMap(), 0 ) );
+    //@{
+    //! Typedefs.
+    typedef Epetra_CrsMatrix               matrix_type;
+    //@}
 
-    // 	new_matrix->Import( matrix, importer, Insert );
-    // 	new_matrix->FillComplete();
+    /*
+     * \brief Create a reference-counted pointer to a new matrix with a
+     * specified number of off-process nearest-neighbor global rows.
+     */
+    static Teuchos::RCP<matrix_type> copyNearestNeighbors( 
+    	const matrix_type& matrix, const int& num_neighbors )
+    { 
+	Require( num_neighbors >= 0 ); 
 
-    // 	Ensure( !new_matrix.is_null() );
-    // 	return new_matrix;
-    // }
+	// Setup for neighbor construction.
+	Teuchos::RCP<const Epetra_Map> empty_map = Teuchos::rcp(
+	    new Epetra_Map( 0, 0, matrix.Comm() ) );
+	Teuchos::RCP<Epetra_CrsMatrix> neighbor_matrix = 
+	    Teuchos::rcp( new Epetra_CrsMatrix( Copy, *empty_map, 0 ) );
+	neighbor_matrix->FillComplete();
+
+	Teuchos::ArrayView<const int> global_rows;
+	Teuchos::ArrayView<const int>::const_iterator global_rows_it;
+	Teuchos::Array<int>::iterator ghost_global_bound;
+
+	// Get the initial off proc columns.
+	Teuchos::Array<int> ghost_global_rows = 
+	    EpetraMatrixHelpers<Epetra_RowMatrix>::getOffProcColsAsRows( matrix );
+
+	// Build the neighbors by traversing the graph.
+	for ( int i = 0; i < num_neighbors; ++i )
+	{
+	    // Get rid of the global rows that belong to the original
+	    // matrix. We don't need to store these, just the neighbors.
+	    global_rows = Teuchos::ArrayView<const int>( 
+		matrix.RowMatrixRowMap().MyGlobalElements(),
+		matrix.RowMatrixRowMap().NumMyElements() );
+	    for ( global_rows_it = global_rows.begin();
+		  global_rows_it != global_rows.end();
+		  ++global_rows_it )
+	    {
+		ghost_global_bound = std::remove( ghost_global_rows.begin(), 
+						  ghost_global_rows.end(), 
+						  *global_rows_it );
+		ghost_global_rows.resize( std::distance(ghost_global_rows.begin(),
+							ghost_global_bound) );
+	    }
+
+	    // Get the current set of global rows in the neighbor matrix. 
+	    global_rows = Teuchos::ArrayView<const int>( 
+		neighbor_matrix->RowMatrixRowMap().MyGlobalElements(),
+		neighbor_matrix->RowMatrixRowMap().NumMyElements() );
+
+	    // Append the on proc neighbor columns to the off proc columns.
+	    for ( global_rows_it = global_rows.begin();
+		  global_rows_it != global_rows.end();
+		  ++global_rows_it )
+	    {
+		ghost_global_rows.push_back( *global_rows_it );
+	    }
+	
+	    // Make a new map of the combined global rows and off proc columns.
+	    Teuchos::RCP<const Epetra_Map> ghost_map = Teuchos::rcp( 
+		new Epetra_Map( -1, 
+				Teuchos::as<int>(ghost_global_rows.size()),
+				ghost_global_rows.getRawPtr(),
+				0,
+				neighbor_matrix->Comm() ) );
+
+	    // Import the neighbor matrix with the new neighbor.
+	    Epetra_Import ghost_importer( matrix.RowMatrixRowMap(), *ghost_map );
+
+	    neighbor_matrix = Teuchos::rcp( 
+		new Epetra_CrsMatrix( Copy, *ghost_map, 0 ) );
+
+	    neighbor_matrix->Import( matrix, ghost_importer, Insert );
+	    neighbor_matrix->FillComplete();
+
+	    // Get the next rows in the graph.
+	    ghost_global_rows = 
+		EpetraMatrixHelpers<Epetra_RowMatrix>::getOffProcColsAsRows( 
+		    *neighbor_matrix );
+	}
+
+	Ensure( !neighbor_matrix.is_null() );
+	Ensure( neighbor_matrix.FillComplete() );
+	return neighbor_matrix;
+    }
+};
+
+//---------------------------------------------------------------------------//
+/*!
+ * \class EpetraMatrixHelpers
+ * \brief EpetraMatrixHelpers specialization for Epetra_VbrMatrix.
+ */
+template<>
+class EpetraMatrixHelpers<Epetra_VbrMatrix>
+{
+  public:
+
+    //@{
+    //! Typedefs.
+    typedef Epetra_VbrMatrix               matrix_type;
+    //@}
+
+    /*
+     * \brief Create a reference-counted pointer to a new matrix with a
+     * specified number of off-process nearest-neighbor global rows.
+     */
+    static Teuchos::RCP<matrix_type> copyNearestNeighbors( 
+    	const matrix_type& matrix, const int& num_neighbors )
+    { 
+	Require( num_neighbors >= 0 ); 
+
+	// Setup for neighbor construction.
+	Teuchos::RCP<const Epetra_Map> empty_map = Teuchos::rcp(
+	    new Epetra_Map( 0, 0, matrix.Comm() ) );
+	Teuchos::RCP<Epetra_VbrMatrix> neighbor_matrix = 
+	    Teuchos::rcp( new Epetra_VbrMatrix( Copy, *empty_map, 0 ) );
+	neighbor_matrix->FillComplete();
+
+	Teuchos::ArrayView<const int> global_rows;
+	Teuchos::ArrayView<const int>::const_iterator global_rows_it;
+	Teuchos::Array<int>::iterator ghost_global_bound;
+
+	// Get the initial off proc columns.
+	Teuchos::Array<int> ghost_global_rows = 
+	    EpetraMatrixHelpers<Epetra_RowMatrix>::getOffProcColsAsRows( matrix );
+
+	// Build the neighbors by traversing the graph.
+	for ( int i = 0; i < num_neighbors; ++i )
+	{
+	    // Get rid of the global rows that belong to the original
+	    // matrix. We don't need to store these, just the neighbors.
+	    global_rows = Teuchos::ArrayView<const int>( 
+		matrix.RowMatrixRowMap().MyGlobalElements(),
+		matrix.RowMatrixRowMap().NumMyElements() );
+	    for ( global_rows_it = global_rows.begin();
+		  global_rows_it != global_rows.end();
+		  ++global_rows_it )
+	    {
+		ghost_global_bound = std::remove( ghost_global_rows.begin(), 
+						  ghost_global_rows.end(), 
+						  *global_rows_it );
+		ghost_global_rows.resize( std::distance(ghost_global_rows.begin(),
+							ghost_global_bound) );
+	    }
+
+	    // Get the current set of global rows in the neighbor matrix. 
+	    global_rows = Teuchos::ArrayView<const int>( 
+		neighbor_matrix->RowMatrixRowMap().MyGlobalElements(),
+		neighbor_matrix->RowMatrixRowMap().NumMyElements() );
+
+	    // Append the on proc neighbor columns to the off proc columns.
+	    for ( global_rows_it = global_rows.begin();
+		  global_rows_it != global_rows.end();
+		  ++global_rows_it )
+	    {
+		ghost_global_rows.push_back( *global_rows_it );
+	    }
+	
+	    // Make a new map of the combined global rows and off proc columns.
+	    Teuchos::RCP<const Epetra_Map> ghost_map = Teuchos::rcp( 
+		new Epetra_Map( -1, 
+				Teuchos::as<int>(ghost_global_rows.size()),
+				ghost_global_rows.getRawPtr(),
+				0,
+				neighbor_matrix->Comm() ) );
+
+	    // Import the neighbor matrix with the new neighbor.
+	    Epetra_Import ghost_importer( matrix.RowMatrixRowMap(), *ghost_map );
+
+	    neighbor_matrix = Teuchos::rcp( 
+		new Epetra_VbrMatrix( Copy, *ghost_map, 0 ) );
+
+	    neighbor_matrix->Import( matrix, ghost_importer, Insert );
+	    neighbor_matrix->FillComplete();
+
+	    // Get the next rows in the graph.
+	    ghost_global_rows = 
+		EpetraMatrixHelpers<Epetra_RowMatrix>::getOffProcColsAsRows( 
+		    *neighbor_matrix );
+	}
+
+	Ensure( !neighbor_matrix.is_null() );
+	Ensure( neighbor_matrix.FillComplete() );
+	return neighbor_matrix;
+    }
 };
 
 //---------------------------------------------------------------------------//
