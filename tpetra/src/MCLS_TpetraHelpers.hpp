@@ -135,6 +135,8 @@ class TpetraMatrixHelpers<Scalar,LO,GO,Tpetra::CrsMatrix<Scalar,LO,GO> >
      */
     static Teuchos::Array<GO> getOffProcColsAsRows( const matrix_type& matrix )
     { 
+	Require( matrix.isFillComplete() );
+
 	Teuchos::RCP<const Tpetra::Map<LO,GO> > row_map = 
 	    matrix.getRowMap();
 	Teuchos::RCP<const Tpetra::Map<LO,GO> > col_map = 
@@ -203,6 +205,8 @@ class TpetraMatrixHelpers<Scalar,LO,GO,Tpetra::VbrMatrix<Scalar,LO,GO> >
      */
     static Teuchos::Array<GO> getOffProcColsAsRows( const matrix_type& matrix )
     { 
+	Require( matrix.isFillComplete() );
+
 	Teuchos::RCP<const Tpetra::Map<LO,GO> > row_map = 
 	    matrix.getPointRowMap();
 	Teuchos::RCP<const Tpetra::Map<LO,GO> > col_map = 

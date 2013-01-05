@@ -52,7 +52,7 @@
 #include <Teuchos_Array.hpp>
 
 #include <Epetra_Vector.h>
-#include <Epetra_CrsMatrix.h>
+#include <Epetra_RowMatrix.h>
 #include <Epetra_Import.h>
 #include <Epetra_RowMatrixTransposer.h>
 
@@ -64,13 +64,13 @@ namespace MCLS
  * \class VectorTraits
  * \brief Traits specialization for Epetra::Vector.
  */
-class MatrixTraits<double,int,int,Epetra_Vector,Epetra_CrsMatrix>
+class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef typename Epetra_CrsMatrix                     matrix_type;
+    typedef typename Epetra_RowMatrix                     matrix_type;
     typedef typename Epetra_Vector                        vector_type;
     typedef typename double                               scalar_type;
     typedef typename int                                  local_ordinal_type;
@@ -207,29 +207,31 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_CrsMatrix>
     }
 
     /*!
-     * \brief Get a view of a global row.
+     * \brief Get a copy of a global row.
      */
-    static void getGlobalRowView( const matrix_type& matrix,
+    static void getGlobalRowCopy( const matrix_type& matrix,
 				  const GO& global_row, 
-				  Teuchos::ArrayView<const GO> &indices,
-				  Teuchos::ArrayView<const Scalar> &values )
+				  const Teuchos::ArrayView<GO>& indices,
+				  const Teuchos::ArrayView<Scalar>& values,
+				  std::size_t& num_entries )
     {
 	Require( !matrix.isFillComplete() );
 	Require( matrix.getRowMap()->isNodeGlobalElement( global_row ) );
-	matrix.getGlobalRowView( global_row, indices, values );
+	matrix.getGlobalRowCopy( global_row, indices, values, num_entries );
     }
 
     /*!
-     * \brief Get a view of a local row.
+     * \brief Get a copy of a local row.
      */
-    static void getLocalRowView( const matrix_type& matrix,
+    static void getLocalRowCopy( const matrix_type& matrix,
 				 const LO& local_row, 
-				 Teuchos::ArrayView<const LO> &indices,
-				 Teuchos::ArrayView<const Scalar> &values )
+				 const Teuchos::ArrayView<LO>& indices,
+				 const Teuchos::ArrayView<Scalar>& values,
+				 std::size_t& num_entries )
     {
 	Require( matrix.isFillComplete() );
 	Require( matrix.getRowMap()->isNodeLocalElement( local_row ) );
-	matrix.getLocalRowView( local_row, indices, values );
+	matrix.getLocalRowCopy( local_row, indices, values, num_entries );
     }
 
     /*!
@@ -274,7 +276,7 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_CrsMatrix>
 	    Epetra::createUniformContigMap<LO,GO>( 
 		0, matrix.getComm() );
 	Teuchos::RCP<matrix_type> neighbor_matrix = 
-	    Epetra::createCrsMatrix<Scalar,LO,GO>( empty_map );
+	    Epetra::createRowMatrix<Scalar,LO,GO>( empty_map );
 	neighbor_matrix->fillComplete();
 
 	Teuchos::ArrayView<const GO> global_rows;
@@ -342,5 +344,5 @@ class MatrixTraits<double,int,int,Epetra_Vector,Epetra_CrsMatrix>
 } // end namespace MCLS
 
 //---------------------------------------------------------------------------//
-// end MCLS_EpetraCrsMatrixAdapter.hpp
+// end MCLS_EpetraRowMatrixAdapter.hpp
 //---------------------------------------------------------------------------//

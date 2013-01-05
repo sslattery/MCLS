@@ -17,6 +17,8 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
   MCLS_EpetraAdapter.hpp
+  MCLS_EpetraHelpers.hpp
+  MCLS_EpetraRowMatrixAdapter.hpp
   MCLS_EpetraVectorAdapter.hpp
   ) 
 
