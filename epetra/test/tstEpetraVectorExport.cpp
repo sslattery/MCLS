@@ -1,8 +1,8 @@
 //---------------------------------------------------------------------------//
 /*!
- * \file tstTpetraVectorExport.cpp
+ * \file tstEpetraVectorExport.cpp
  * \author Stuart R. Slattery
- * \brief Tpetra VectorExport tests.
+ * \brief Epetra VectorExport tests.
  */
 //---------------------------------------------------------------------------//
 
@@ -17,7 +17,7 @@
 
 #include <MCLS_VectorExport.hpp>
 #include <MCLS_VectorTraits.hpp>
-#include <MCLS_TpetraAdapter.hpp>
+#include <MCLS_EpetraAdapter.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -28,31 +28,36 @@
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_TypeTraits.hpp>
 
-#include <Tpetra_Map.hpp>
-#include <Tpetra_Vector.hpp>
-#include <Tpetra_Export.hpp>
+#include <Epetra_Map.h>
+#include <Epetra_Vector.h>
+#include <Epetra_Export.h>
 
 //---------------------------------------------------------------------------//
-// Instantiation macro. 
-// 
-// These types are those enabled by Tpetra under explicit instantiation.
+// Helper functions.
 //---------------------------------------------------------------------------//
-#define UNIT_TEST_INSTANTIATION( type, name )			           \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, int )      \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, long )     \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, double )   \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, int )     \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, long )    \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
+
+Teuchos::RCP<Epetra_Comm> getEpetraComm( 
+    const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
+{
+#ifdef HAVE_MPI
+    Teuchos::RCP< const Teuchos::MpiComm<int> > mpi_comm = 
+	Teuchos::rcp_dynamic_cast< const Teuchos::MpiComm<int> >( comm );
+    Teuchos::RCP< const Teuchos::OpaqueWrapper<MPI_Comm> > opaque_comm = 
+	mpi_comm->getRawMpiComm();
+    return Teuchos::rcp( new Epetra_MpiComm( (*opaque_comm)() ) );
+#else
+    return Teuchos::rcp( new Epetra_SerialComm() );
+#endif
+}
 
 //---------------------------------------------------------------------------//
 // Test templates
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorExport, Typedefs, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST( VectorExport, Typedefs )
 {
-    typedef Tpetra::Export<LO,GO> ExportType;
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
+    typedef Epetra_Export ExportType;
+    typedef Epetra_Vector VectorType;
+    typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef MCLS::VectorExport<VectorType> VE;
     typedef typename VE::export_type export_type;
 
@@ -61,39 +66,38 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorExport, Typedefs, LO, GO, Scalar )
 	== true, true );
 }
 
-UNIT_TEST_INSTANTIATION( VectorExport, Typedefs )
-
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorExport, Add, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST( VectorExport, Add )
 {
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
+    typedef Epetra_Vector VectorType;
+    typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef typename VT::scalar_type scalar_type;
     typedef typename VT::local_ordinal_type local_ordinal_type;
     typedef typename VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
     int comm_size = comm->getSize();
 
     int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
-    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
-	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
+    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
+	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
-    Teuchos::RCP<VectorType> A = Tpetra::createVector<Scalar,LO,GO>( map );
-    Scalar a_val = 2;
+    Teuchos::RCP<VectorType> A = Teuchos::rcp( new Epetra_Vector( *map ) );
+    double a_val = 2;
     VT::putScalar( *A, a_val );
 
     Teuchos::RCP<VectorType> B = VT::clone( *A );
-    Scalar b_val = 3;
+    double b_val = 3;
     VT::putScalar( *B, b_val );
 
     MCLS::VectorExport<VectorType> vector_export( A, B );
     vector_export.doExportAdd();
     
-    Teuchos::ArrayRCP<const Scalar> B_view = VT::view( *B );
-    typename Teuchos::ArrayRCP<const Scalar>::const_iterator view_iterator;
+    Teuchos::ArrayRCP<const double> B_view = VT::view( *B );
+    typename Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
     for ( view_iterator = B_view.begin();
 	  view_iterator != B_view.end();
 	  ++view_iterator )
@@ -102,39 +106,38 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorExport, Add, LO, GO, Scalar )
     }
 }
 
-UNIT_TEST_INSTANTIATION( VectorExport, Add )
-
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorExport, Insert, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST( VectorExport, Insert )
 {
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
+    typedef Epetra_Vector VectorType;
+    typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef typename VT::scalar_type scalar_type;
     typedef typename VT::local_ordinal_type local_ordinal_type;
     typedef typename VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
     int comm_size = comm->getSize();
 
     int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
-    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
-	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
+    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
+	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
-    Teuchos::RCP<VectorType> A = Tpetra::createVector<Scalar,LO,GO>( map );
-    Scalar a_val = 2;
+    Teuchos::RCP<VectorType> A = Teuchos::rcp( new Epetra_Vector( *map ) );
+    double a_val = 2;
     VT::putScalar( *A, a_val );
 
     Teuchos::RCP<VectorType> B = VT::clone( *A );
-    Scalar b_val = 3;
+    double b_val = 3;
     VT::putScalar( *B, b_val );
 
     MCLS::VectorExport<VectorType> vector_export( A, B );
     vector_export.doExportInsert();
     
-    Teuchos::ArrayRCP<const Scalar> B_view = VT::view( *B );
-    typename Teuchos::ArrayRCP<const Scalar>::const_iterator view_iterator;
+    Teuchos::ArrayRCP<const double> B_view = VT::view( *B );
+    typename Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
     for ( view_iterator = B_view.begin();
 	  view_iterator != B_view.end();
 	  ++view_iterator )
@@ -143,9 +146,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorExport, Insert, LO, GO, Scalar )
     }
 }
 
-UNIT_TEST_INSTANTIATION( VectorExport, Insert )
-
 //---------------------------------------------------------------------------//
-// end tstTpetraVectorExport.cpp
+// end tstEpetraVectorExport.cpp
 //---------------------------------------------------------------------------//
 

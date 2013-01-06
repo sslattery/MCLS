@@ -9,6 +9,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  EpetraVectorExport_tests
+  SOURCES tstEpetraVectorExport.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   EpetraHelpers_tests
   SOURCES tstEpetraHelpers.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi

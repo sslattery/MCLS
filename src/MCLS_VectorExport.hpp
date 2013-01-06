@@ -118,23 +118,6 @@ class VectorExport
 	UndefinedVectorExport<Vector>::notDefined();
     }
 
-    /*!
-     * \brief Do the export. Replace existing values with new values.
-     */
-    void doExportReplace()
-    {
-	UndefinedVectorExport<Vector>::notDefined();
-    }
-
-    /*!
-     * \brief Do the export. Replace existing values if its absolute value is
-     * smaller than the absolute value of the new value.
-     */
-    void doExportAbsMax()
-    {
-	UndefinedVectorExport<Vector>::notDefined();
-    }
-
   private:
 
     // Source vector.

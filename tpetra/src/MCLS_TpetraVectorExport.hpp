@@ -32,9 +32,9 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_TpetraVectorAdapter.hpp
+ * \file MCLS_TpetraVectorExport.hpp
  * \author Stuart R. Slattery
- * \brief Tpetra::Vector Adapter.
+ * \brief Tpetra::Vector Export.
  */
 //---------------------------------------------------------------------------//
 
@@ -108,15 +108,6 @@ class VectorExport<Tpetra::Vector<Scalar,LO,GO> >
 	d_target_vector->doExport( *d_source_vector, *d_export, Tpetra::REPLACE );
     }
 
-    /*!
-     * \brief Do the export. Replace existing values if its absolute value is
-     * smaller than the absolute value of the new value.
-     */
-    void doExportAbsMax()
-    {
-	d_target_vector->doExport( *d_source_vector, *d_export, Tpetra::ABSMAX );
-    }
-
   private:
 
     // Source vector.
@@ -136,5 +127,5 @@ class VectorExport<Tpetra::Vector<Scalar,LO,GO> >
 #endif // end MCLS_TPETRAVECTOREXPORT_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_TpetraVectorAdapter.hpp
+// end MCLS_TpetraVectorExport.hpp
 //---------------------------------------------------------------------------//

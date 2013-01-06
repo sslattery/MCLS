@@ -32,21 +32,92 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_EpetraAdapater.hpp
+ * \file MCLS_EpetraVectorExport.hpp
  * \author Stuart R. Slattery
- * \brief Epetra Adapter.
+ * \brief Epetra::Vector Export.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_EPETRAADAPTER_HPP
-#define MCLS_EPETRAADAPTER_HPP
+#ifndef MCLS_EPETRAVECTOREXPORT_HPP
+#define MCLS_EPETRAVECTOREXPORT_HPP
 
-#include "MCLS_EpetraVectorAdapter.hpp"
-#include "MCLS_EpetraVectorExport.hpp"
-#include "MCLS_EpetraRowMatrixAdapter.hpp"
+#include <MCLS_VectorExport.hpp>
 
-#endif // end MCLS_EPETRAADAPTER_HPP
+#include <Teuchos_as.hpp>
+
+#include <Epetra_Vector.h>
+#include <Epetra_Export.h>
+
+namespace MCLS
+{
 
 //---------------------------------------------------------------------------//
-// end MCLS_EpetraAdapater.hpp
+/*!
+ * \class VectorExport
+ * \brief VectorExport specialization for Epetra::Vector.
+ */
+template<>
+class VectorExport<Epetra_Vector>
+{
+  public:
+
+    //@{
+    //! Typedefs.
+    typedef Epetra_Vector                           vector_type;
+    typedef Epetra_Export                           export_type;
+    //@}
+
+    /*!
+     * \brief Constructor.
+     */
+    VectorExport( const Teuchos::RCP<vector_type>& source_vector,
+		  const Teuchos::RCP<vector_type>& target_vector )
+	: d_source_vector( source_vector )
+	, d_target_vector( target_vector )
+	, d_export( new export_type( d_source_vector->Map(), 
+				     d_target_vector->Map() ) )
+    { /* ... */ }
+
+    /*!
+     * \brief Destructor.
+     */
+    ~VectorExport()
+    { /* ... */ }
+
+    /*!
+     * \brief Do the export. Existing values are summed with new values.
+     */
+    void doExportAdd()
+    {
+	d_target_vector->Export( *d_source_vector, *d_export, Add );
+    }
+
+    /*!
+     * \brief Do the export. Insert new values that do not exist.
+     */
+    void doExportInsert()
+    {
+	d_target_vector->Export( *d_source_vector, *d_export, Insert );
+    }
+
+  private:
+
+    // Source vector.
+    Teuchos::RCP<vector_type> d_source_vector;
+
+    // Target vector.
+    Teuchos::RCP<vector_type> d_target_vector;
+
+    // Source-to-target exporter.
+    Teuchos::RCP<export_type> d_export;
+};
+
+//---------------------------------------------------------------------------//
+
+} // end namespace MCLS
+
+#endif // end MCLS_EPETRAVECTOREXPORT_HPP
+
+//---------------------------------------------------------------------------//
+// end MCLS_EpetraVectorExport.hpp
 //---------------------------------------------------------------------------//
