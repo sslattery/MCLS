@@ -51,7 +51,7 @@
 #include <Epetra_Map.h>
 #include <Epetra_RowMatrix.h>
 #include <Epetra_CrsMatrix.h>
-#include <Epetra_Import.h>
+#include <Epetra_Export.h>
 #include <Epetra_RowMatrixTransposer.h>
 
 //---------------------------------------------------------------------------//
@@ -239,13 +239,13 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
 				0,
 				neighbor_matrix->Comm() ) );
 
-	    // Import the neighbor matrix with the new neighbor.
-	    Epetra_Import ghost_importer( matrix.RowMatrixRowMap(), *ghost_map );
+	    // Export the neighbor matrix with the new neighbor.
+	    Epetra_Export ghost_exporter( matrix.RowMatrixRowMap(), *ghost_map );
 
 	    neighbor_matrix = Teuchos::rcp( 
 		new Epetra_CrsMatrix( Copy, *ghost_map, 0 ) );
 
-	    neighbor_matrix->Import( matrix, ghost_importer, Insert );
+	    neighbor_matrix->Export( matrix, ghost_exporter, Insert );
 	    neighbor_matrix->FillComplete();
 
 	    // Get the next rows in the graph.

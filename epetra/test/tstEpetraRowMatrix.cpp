@@ -143,6 +143,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, ColVectorClone )
 
     Teuchos::Array<int> global_columns( 1 );
     Teuchos::Array<double> values( 1, 1 );
+
     for ( int i = 0; i < global_num_rows; ++i )
     {
 	global_columns[0] = i;
@@ -748,7 +749,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, l_row_copy )
 	MT::getLocalRowCopy( *B, i, view_columns(), view_values(), num_entries );
 	TEST_EQUALITY( num_entries, 1 );
 	TEST_EQUALITY( view_columns[0], i );
-	TEST_EQUALITY( view_values[0], comm_size );
+	TEST_EQUALITY( view_values[0], 1 );
     }
 }
 
@@ -797,7 +798,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, diag_copy )
 	  view_iterator != X_view.end();
 	  ++view_iterator )
     {
-	TEST_EQUALITY( *view_iterator, comm_size );
+	TEST_EQUALITY( *view_iterator, 1 );
     }
 }
 
@@ -849,7 +850,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, apply )
 	  view_iterator != Y_view.end();
 	  ++view_iterator )
     {
-	TEST_EQUALITY( *view_iterator, comm_size*x_fill );
+	TEST_EQUALITY( *view_iterator, x_fill );
     }
 }
 
@@ -903,8 +904,8 @@ TEUCHOS_UNIT_TEST( MatrixTraits, transpose )
 	TEST_EQUALITY( num_entries, 2 );
 	TEST_EQUALITY( view_columns[0], i-1 );
 	TEST_EQUALITY( view_columns[1], i );
-	TEST_EQUALITY( view_values[0], 2*comm_size );
-	TEST_EQUALITY( view_values[1], 1*comm_size );
+	TEST_EQUALITY( view_values[0], 2 );
+	TEST_EQUALITY( view_values[1], 1 );
     }
 }
 
@@ -971,13 +972,13 @@ TEUCHOS_UNIT_TEST( MatrixTraits, copy_neighbor )
 		TEST_INEQUALITY( MT::getGlobalRow( *C, j ), k );
 	    }
 
-	    MT::getLocalRowCopy( *B, j, view_columns, view_values, num_entries );
+	    MT::getLocalRowCopy( *C, j, view_columns, view_values, num_entries );
 	    TEST_EQUALITY( num_entries, Teuchos::as<std::size_t>(global_num_rows) );
 
 	    for ( int n = 0; n < global_num_rows; ++n )
 	    {
 	    	TEST_EQUALITY( view_columns[n], n );
-	    	TEST_EQUALITY( view_values[n], comm_size );
+	    	TEST_EQUALITY( view_values[n], 1 );
 
 	    }
 	}
