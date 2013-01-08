@@ -59,7 +59,7 @@ TEUCHOS_UNIT_TEST( VectorExport, Typedefs )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef MCLS::VectorExport<VectorType> VE;
-    typedef typename VE::export_type export_type;
+    typedef VE::export_type export_type;
 
     TEST_EQUALITY_CONST( 
 	(Teuchos::TypeTraits::is_same<ExportType, export_type>::value)
@@ -71,9 +71,9 @@ TEUCHOS_UNIT_TEST( VectorExport, Add )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
-    typedef typename VT::scalar_type scalar_type;
-    typedef typename VT::local_ordinal_type local_ordinal_type;
-    typedef typename VT::global_ordinal_type global_ordinal_type;
+    typedef VT::scalar_type scalar_type;
+    typedef VT::local_ordinal_type local_ordinal_type;
+    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -111,7 +111,7 @@ TEUCHOS_UNIT_TEST( VectorExport, Add )
     vector_export.doExportAdd();
 
     Teuchos::ArrayRCP<const double> B_view = VT::view( *B );
-    typename Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
     for ( view_iterator = B_view.begin();
 	  view_iterator != B_view.end();
 	  ++view_iterator )
@@ -132,9 +132,9 @@ TEUCHOS_UNIT_TEST( VectorExport, Insert )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
-    typedef typename VT::scalar_type scalar_type;
-    typedef typename VT::local_ordinal_type local_ordinal_type;
-    typedef typename VT::global_ordinal_type global_ordinal_type;
+    typedef VT::scalar_type scalar_type;
+    typedef VT::local_ordinal_type local_ordinal_type;
+    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -172,7 +172,7 @@ TEUCHOS_UNIT_TEST( VectorExport, Insert )
     vector_export.doExportInsert();
 
     Teuchos::ArrayRCP<const double> B_view = VT::view( *B );
-    typename Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
     for ( view_iterator = B_view.begin();
 	  view_iterator != B_view.end();
 	  ++view_iterator )

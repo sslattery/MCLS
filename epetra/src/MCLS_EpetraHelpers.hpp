@@ -148,7 +148,7 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
 						   col_map.NumMyElements() );
 
 	Teuchos::Array<int> off_proc_cols(0);
-	typename Teuchos::ArrayView<const int>::const_iterator global_col_it;
+	Teuchos::ArrayView<const int>::const_iterator global_col_it;
 	for ( global_col_it = global_cols.begin();
 	      global_col_it != global_cols.end();
 	      ++global_col_it )

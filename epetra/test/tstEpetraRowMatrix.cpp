@@ -62,9 +62,9 @@ TEUCHOS_UNIT_TEST( MatrixTraits, Typedefs )
     typedef Epetra_RowMatrix MatrixType;
     typedef Epetra_Vector VectorType;
     typedef MCLS::MatrixTraits<double,int,int,VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     TEST_EQUALITY_CONST( 
 	(Teuchos::TypeTraits::is_same<double, scalar_type>::value)
@@ -84,9 +84,9 @@ TEUCHOS_UNIT_TEST( MatrixTraits, RowVectorClone )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef MCLS::MatrixTraits<double,int,int,VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -124,9 +124,9 @@ TEUCHOS_UNIT_TEST( MatrixTraits, ColVectorClone )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef MCLS::MatrixTraits<double,int,int,VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -173,9 +173,9 @@ TEUCHOS_UNIT_TEST( MatrixTraits, Comm )
     typedef Epetra_RowMatrix MatrixType;
     typedef Epetra_Vector VectorType;
     typedef MCLS::MatrixTraits<double,int,int,VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -204,9 +204,9 @@ TEUCHOS_UNIT_TEST( MatrixTraits, GlobalNumRows )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef MCLS::MatrixTraits<double,int,int,VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -243,9 +243,9 @@ TEUCHOS_UNIT_TEST( MatrixTraits, LocalNumRows )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef MCLS::MatrixTraits<double,int,int,VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -282,9 +282,9 @@ TEUCHOS_UNIT_TEST( MatrixTraits, GlobalMaxEntries )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef MCLS::MatrixTraits<double,int,int,VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -321,9 +321,9 @@ TEUCHOS_UNIT_TEST( MatrixTraits, l2g_row )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef MCLS::MatrixTraits<double,int,int,VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -364,9 +364,9 @@ TEUCHOS_UNIT_TEST( MatrixTraits, g2l_row )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef MCLS::MatrixTraits<double,int,int,VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -407,9 +407,9 @@ TEUCHOS_UNIT_TEST( MatrixTraits, l2g_col )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef MCLS::MatrixTraits<double,int,int,VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -450,9 +450,9 @@ TEUCHOS_UNIT_TEST( MatrixTraits, g2l_col )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef MCLS::MatrixTraits<double,int,int,VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -493,9 +493,9 @@ TEUCHOS_UNIT_TEST( MatrixTraits, is_l_row )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef MCLS::MatrixTraits<double,int,int,VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -535,9 +535,9 @@ TEUCHOS_UNIT_TEST( MatrixTraits, is_g_row )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef MCLS::MatrixTraits<double,int,int,VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -578,9 +578,9 @@ TEUCHOS_UNIT_TEST( MatrixTraits, is_l_col )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef MCLS::MatrixTraits<double,int,int,VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -620,9 +620,9 @@ TEUCHOS_UNIT_TEST( MatrixTraits, is_g_col )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef MCLS::MatrixTraits<double,int,int,VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -663,9 +663,9 @@ TEUCHOS_UNIT_TEST( MatrixTraits, g_row_copy )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef MCLS::MatrixTraits<double,int,int,VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -712,9 +712,9 @@ TEUCHOS_UNIT_TEST( MatrixTraits, l_row_copy )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef MCLS::MatrixTraits<double,int,int,VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -760,9 +760,9 @@ TEUCHOS_UNIT_TEST( MatrixTraits, diag_copy )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef MCLS::MatrixTraits<double,int,int,VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -809,9 +809,9 @@ TEUCHOS_UNIT_TEST( MatrixTraits, apply )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef MCLS::MatrixTraits<double,int,int,VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -861,9 +861,9 @@ TEUCHOS_UNIT_TEST( MatrixTraits, transpose )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef MCLS::MatrixTraits<double,int,int,VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -916,9 +916,9 @@ TEUCHOS_UNIT_TEST( MatrixTraits, copy_neighbor )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
     typedef MCLS::MatrixTraits<double,int,int,VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
