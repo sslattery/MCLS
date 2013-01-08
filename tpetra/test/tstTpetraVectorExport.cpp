@@ -75,17 +75,27 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorExport, Add, LO, GO, Scalar )
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
     int comm_size = comm->getSize();
+    int comm_rank = comm->getRank();
 
     int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
-    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
+    Teuchos::RCP<const Tpetra::Map<LO,GO> > map_a = 
 	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
 
-    Teuchos::RCP<VectorType> A = Tpetra::createVector<Scalar,LO,GO>( map );
+    Teuchos::RCP<VectorType> A = Tpetra::createVector<Scalar,LO,GO>( map_a );
     Scalar a_val = 2;
     VT::putScalar( *A, a_val );
 
-    Teuchos::RCP<VectorType> B = VT::clone( *A );
+    Teuchos::Array<GO> inverse_rows( local_num_rows );
+    for ( int i = 0; i < local_num_rows; ++i )
+    {
+	inverse_rows[i] = 
+	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
+    }
+    Teuchos::RCP<const Tpetra::Map<LO,GO> > map_b = 
+	Tpetra::createNonContigMap<LO,GO>( inverse_rows(), comm );
+
+    Teuchos::RCP<VectorType> B = Tpetra::createVector<Scalar,LO,GO>( map_b );
     Scalar b_val = 3;
     VT::putScalar( *B, b_val );
 
@@ -98,7 +108,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorExport, Add, LO, GO, Scalar )
 	  view_iterator != B_view.end();
 	  ++view_iterator )
     {
-	TEST_EQUALITY( *view_iterator, b_val + a_val );
+	if ( comm_size == 1 )
+	{
+	    TEST_EQUALITY( *view_iterator, a_val );
+	}
+	else
+	{
+	    TEST_EQUALITY( *view_iterator, b_val + a_val );
+	}
     }
 }
 
@@ -116,17 +133,27 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorExport, Insert, LO, GO, Scalar )
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
     int comm_size = comm->getSize();
+    int comm_rank = comm->getRank();
 
     int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
-    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
+    Teuchos::RCP<const Tpetra::Map<LO,GO> > map_a = 
 	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
 
-    Teuchos::RCP<VectorType> A = Tpetra::createVector<Scalar,LO,GO>( map );
+    Teuchos::RCP<VectorType> A = Tpetra::createVector<Scalar,LO,GO>( map_a );
     Scalar a_val = 2;
     VT::putScalar( *A, a_val );
 
-    Teuchos::RCP<VectorType> B = VT::clone( *A );
+    Teuchos::Array<GO> inverse_rows( local_num_rows );
+    for ( int i = 0; i < local_num_rows; ++i )
+    {
+	inverse_rows[i] = 
+	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
+    }
+    Teuchos::RCP<const Tpetra::Map<LO,GO> > map_b = 
+	Tpetra::createNonContigMap<LO,GO>( inverse_rows(), comm );
+
+    Teuchos::RCP<VectorType> B = Tpetra::createVector<Scalar,LO,GO>( map_b );
     Scalar b_val = 3;
     VT::putScalar( *B, b_val );
 
@@ -139,7 +166,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorExport, Insert, LO, GO, Scalar )
 	  view_iterator != B_view.end();
 	  ++view_iterator )
     {
-	TEST_EQUALITY( *view_iterator, b_val );
+	TEST_EQUALITY( *view_iterator, a_val );
     }
 }
 

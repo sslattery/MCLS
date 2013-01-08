@@ -79,30 +79,51 @@ TEUCHOS_UNIT_TEST( VectorExport, Add )
 	Teuchos::DefaultComm<int>::getComm();
     Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
     int comm_size = comm->getSize();
+    int comm_rank = comm->getRank();
 
     int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
-    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
+    Teuchos::RCP<Epetra_Map> map_a = Teuchos::rcp(
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
-    Teuchos::RCP<VectorType> A = Teuchos::rcp( new Epetra_Vector( *map ) );
+    Teuchos::RCP<VectorType> A = Teuchos::rcp( new Epetra_Vector( *map_a ) );
     double a_val = 2;
     VT::putScalar( *A, a_val );
 
-    Teuchos::RCP<VectorType> B = VT::clone( *A );
+    Teuchos::Array<int> inverse_rows( local_num_rows );
+    for ( int i = 0; i < local_num_rows; ++i )
+    {
+	inverse_rows[i] = 
+	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
+    }
+    Teuchos::RCP<Epetra_Map> map_b = Teuchos::rcp(
+		new Epetra_Map( -1, 
+				Teuchos::as<int>(inverse_rows.size()),
+				inverse_rows.getRawPtr(),
+				0,
+				*epetra_comm ) );
+
+    Teuchos::RCP<VectorType> B = Teuchos::rcp( new Epetra_Vector( *map_b ) );
     double b_val = 3;
     VT::putScalar( *B, b_val );
 
     MCLS::VectorExport<VectorType> vector_export( A, B );
     vector_export.doExportAdd();
-    
+
     Teuchos::ArrayRCP<const double> B_view = VT::view( *B );
     typename Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
     for ( view_iterator = B_view.begin();
 	  view_iterator != B_view.end();
 	  ++view_iterator )
     {
-	TEST_EQUALITY( *view_iterator, b_val + a_val );
+	if ( comm_size == 1 )
+	{
+	    TEST_EQUALITY( *view_iterator, a_val );
+	}
+	else
+	{
+	    TEST_EQUALITY( *view_iterator, b_val + a_val );
+	}
     }
 }
 
@@ -119,30 +140,44 @@ TEUCHOS_UNIT_TEST( VectorExport, Insert )
 	Teuchos::DefaultComm<int>::getComm();
     Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
     int comm_size = comm->getSize();
+    int comm_rank = comm->getRank();
 
     int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
-    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
+    Teuchos::RCP<Epetra_Map> map_a = Teuchos::rcp(
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
-    Teuchos::RCP<VectorType> A = Teuchos::rcp( new Epetra_Vector( *map ) );
+    Teuchos::RCP<VectorType> A = Teuchos::rcp( new Epetra_Vector( *map_a ) );
     double a_val = 2;
     VT::putScalar( *A, a_val );
 
-    Teuchos::RCP<VectorType> B = VT::clone( *A );
+    Teuchos::Array<int> inverse_rows( local_num_rows );
+    for ( int i = 0; i < local_num_rows; ++i )
+    {
+	inverse_rows[i] = 
+	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
+    }
+    Teuchos::RCP<Epetra_Map> map_b = Teuchos::rcp(
+		new Epetra_Map( -1, 
+				Teuchos::as<int>(inverse_rows.size()),
+				inverse_rows.getRawPtr(),
+				0,
+				*epetra_comm ) );
+
+    Teuchos::RCP<VectorType> B = Teuchos::rcp( new Epetra_Vector( *map_b ) );
     double b_val = 3;
     VT::putScalar( *B, b_val );
 
     MCLS::VectorExport<VectorType> vector_export( A, B );
     vector_export.doExportInsert();
-    
+
     Teuchos::ArrayRCP<const double> B_view = VT::view( *B );
     typename Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
     for ( view_iterator = B_view.begin();
 	  view_iterator != B_view.end();
 	  ++view_iterator )
     {
-	TEST_EQUALITY( *view_iterator, b_val );
+	    TEST_EQUALITY( *view_iterator, a_val );
     }
 }
 
