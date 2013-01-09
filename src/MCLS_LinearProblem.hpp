@@ -32,97 +32,101 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_EpetraVectorExport.hpp
+ * \file MCLS_LinearProblem.hpp
  * \author Stuart R. Slattery
- * \brief Epetra::Vector Export.
+ * \brief Linear Problem declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_EPETRAVECTOREXPORT_HPP
-#define MCLS_EPETRAVECTOREXPORT_HPP
+#ifndef MCLS_LINEARPROBLEM_HPP
+#define MCLS_LINEARPROBLEM_HPP
 
-#include <MCLS_VectorExport.hpp>
-#include <MCLS_DBC.hpp>
+#include "MCLS_VectorTraits.hpp"
+#include "MCLS_MatrixTraits.hpp"
 
-#include <Teuchos_as.hpp>
-
-#include <Epetra_Vector.h>
-#include <Epetra_Export.h>
+#include <Teuchos_RCP.hpp>
 
 namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class VectorExport
- * \brief VectorExport specialization for Epetra::Vector.
+ * \class LinearProblem
+ * \brief Linear system container for A*x = b.
  */
-template<>
-class VectorExport<Epetra_Vector>
+template<class Vector, class Matrix>
+class LinearProblem
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Epetra_Vector                           vector_type;
-    typedef Epetra_Export                           export_type;
+    typedef Vector                                      vector_type;
+    typedef Matrix                                      matrix_type;
+    typedef VectorTraits<Vector>                        VT;
+    typedef MatrixTraits<Vector,Matrix>                 MT;
     //@}
 
-    /*!
-     * \brief Constructor.
-     */
-    VectorExport( const Teuchos::RCP<vector_type>& source_vector,
-		  const Teuchos::RCP<vector_type>& target_vector )
-	: d_source_vector( source_vector )
-	, d_target_vector( target_vector )
-	, d_export( new export_type( d_source_vector->Map(), 
-				     d_target_vector->Map() ) )
-    {
-	Ensure( !d_source_vector.is_null() );
-	Ensure( !d_target_vector.is_null() );
-	Ensure( !d_export.is_null() );
-    }
+    // Constructor.
+    LinearProblem( const Teuchos::RCP<const Matrix>& A,
+		   const Teuchos::RCP<Vector>& x,
+		   const Teuchos::RCP<const Vector>& b );
 
-    /*!
-     * \brief Destructor.
-     */
-    ~VectorExport()
-    { /* ... */ }
+    // Destructor.
+    ~LinearProblem();
 
-    /*!
-     * \brief Do the export. Existing values are summed with new values.
-     */
-    void doExportAdd()
-    {
-	d_target_vector->Export( *d_source_vector, *d_export, Add );
-    }
+    //! Get the linear operator.
+    Teuchos::RCP<const Matrix> getOperator() const
+    { return d_A; }
 
-    /*!
-     * \brief Do the export. Insert new values that do not exist.
-     */
-    void doExportInsert()
-    {
-	d_target_vector->Export( *d_source_vector, *d_export, Insert );
-    }
+    //! Get the left-hand side.
+    Teuchos::RCP<Vector> getLHS() const
+    { return d_x; }
+
+    //! Get the right-hand side.
+    Teuchos::RCP<const Vector> getRHS() const
+    { return d_b; }
+
+    //! Get the residual.
+    Teuchos::RCP<const Vector> getResidual() const
+    { return d_r; }
+
+    // Apply the linear operator to a vector.
+    void apply( const Vector& x, Vector& y );
+
+    // Update the residual.
+    void updateResidual();
 
   private:
 
-    // Source vector.
-    Teuchos::RCP<vector_type> d_source_vector;
+    // Linear operator.
+    Teuchos::RCP<const Matrix> d_A;
 
-    // Target vector.
-    Teuchos::RCP<vector_type> d_target_vector;
+    // Left-hand side (solution vector).
+    Teuchos::RCP<Vector> d_x;
 
-    // Source-to-target exporter.
-    Teuchos::RCP<export_type> d_export;
+    // Right-hand side.
+    Teuchos::RCP<const Vector> d_b;
+
+    // Residual r = b - A*x.
+    Teuchos::RCP<Vector> d_r;
 };
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
-#endif // end MCLS_EPETRAVECTOREXPORT_HPP
+//---------------------------------------------------------------------------//
+// Template includes.
+//---------------------------------------------------------------------------//
+
+#include "MCLS_LinearProblem_impl.hpp"
 
 //---------------------------------------------------------------------------//
-// end MCLS_EpetraVectorExport.hpp
+
+#endif // end MCLS_LINEARPROBLEM_HPP
+
 //---------------------------------------------------------------------------//
+// end MCLS_LinearProblem.hpp
+// ---------------------------------------------------------------------------//
+

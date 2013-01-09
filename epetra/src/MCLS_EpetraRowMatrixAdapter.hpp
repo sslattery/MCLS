@@ -67,7 +67,7 @@ namespace MCLS
  * \brief Traits specialization for Epetra_RowMatrix.
  */
 template<>
-class MatrixTraits<double,int,int,Epetra_Vector,Epetra_RowMatrix>
+class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
 {
   public:
 

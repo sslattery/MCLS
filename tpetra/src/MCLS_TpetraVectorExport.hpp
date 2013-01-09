@@ -42,6 +42,7 @@
 #define MCLS_TPETRAVECTOREXPORT_HPP
 
 #include <MCLS_VectorExport.hpp>
+#include <MCLS_DBC.hpp>
 
 #include <Teuchos_as.hpp>
 
@@ -76,7 +77,11 @@ class VectorExport<Tpetra::Vector<Scalar,LO,GO> >
 	, d_target_vector( target_vector )
 	, d_export( new export_type( d_source_vector->getMap(), 
 				     d_target_vector->getMap() ) )
-    { /* ... */ }
+    {
+	Ensure( !d_source_vector.is_null() );
+	Ensure( !d_target_vector.is_null() );
+	Ensure( !d_export.is_null() );
+    }
 
     /*!
      * \brief Destructor.

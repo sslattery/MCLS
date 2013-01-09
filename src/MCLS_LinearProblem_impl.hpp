@@ -32,97 +32,75 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_EpetraVectorExport.hpp
+ * \file MCLS_LinearProblem_impl.hpp
  * \author Stuart R. Slattery
- * \brief Epetra::Vector Export.
+ * \brief Linear problem implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_EPETRAVECTOREXPORT_HPP
-#define MCLS_EPETRAVECTOREXPORT_HPP
+#ifndef MCLS_LINEARPROBLEM_IMPL_HPP
+#define MCLS_LINEARPROBLEM_IMPL_HPP
 
-#include <MCLS_VectorExport.hpp>
-#include <MCLS_DBC.hpp>
-
-#include <Teuchos_as.hpp>
-
-#include <Epetra_Vector.h>
-#include <Epetra_Export.h>
+#include "MCLS_DBC.hpp"
 
 namespace MCLS
 {
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Constructor.
+ */
+template<class Vector, class Matrix>
+LinearProblem<Vector,Matrix>::LinearProblem( 
+    const Teuchos::RCP<const Matrix>& A,
+    const Teuchos::RCP<Vector>& x,
+    const Teuchos::RCP<const Vector>& b )
+    : d_A( A )
+    , d_x( x )
+    , d_b( b )
+    , d_r( VT::clone( *d_x ) )
+{
+    Ensure( !d_A.is_null() );
+    Ensure( !d_x.is_null() );
+    Ensure( !d_b.is_null() );
+    Ensure( !d_r.is_null() );
+}
 
 //---------------------------------------------------------------------------//
 /*!
- * \class VectorExport
- * \brief VectorExport specialization for Epetra::Vector.
+ * \brief Destructor.
  */
-template<>
-class VectorExport<Epetra_Vector>
+template<class Vector, class Matrix>
+LinearProblem<Vector,Matrix>::~LinearProblem()
+{ /* ... */ }
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Apply the linear operator to a vector.
+ */
+template<class Vector, class Matrix>
+void LinearProblem<Vector,Matrix>::apply( const Vector& x, Vector& y )
 {
-  public:
+    MT::apply( *d_A, x, y );
+}
 
-    //@{
-    //! Typedefs.
-    typedef Epetra_Vector                           vector_type;
-    typedef Epetra_Export                           export_type;
-    //@}
-
-    /*!
-     * \brief Constructor.
-     */
-    VectorExport( const Teuchos::RCP<vector_type>& source_vector,
-		  const Teuchos::RCP<vector_type>& target_vector )
-	: d_source_vector( source_vector )
-	, d_target_vector( target_vector )
-	, d_export( new export_type( d_source_vector->Map(), 
-				     d_target_vector->Map() ) )
-    {
-	Ensure( !d_source_vector.is_null() );
-	Ensure( !d_target_vector.is_null() );
-	Ensure( !d_export.is_null() );
-    }
-
-    /*!
-     * \brief Destructor.
-     */
-    ~VectorExport()
-    { /* ... */ }
-
-    /*!
-     * \brief Do the export. Existing values are summed with new values.
-     */
-    void doExportAdd()
-    {
-	d_target_vector->Export( *d_source_vector, *d_export, Add );
-    }
-
-    /*!
-     * \brief Do the export. Insert new values that do not exist.
-     */
-    void doExportInsert()
-    {
-	d_target_vector->Export( *d_source_vector, *d_export, Insert );
-    }
-
-  private:
-
-    // Source vector.
-    Teuchos::RCP<vector_type> d_source_vector;
-
-    // Target vector.
-    Teuchos::RCP<vector_type> d_target_vector;
-
-    // Source-to-target exporter.
-    Teuchos::RCP<export_type> d_export;
-};
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Update the residual.
+ */
+template<class Vector, class Matrix>
+void LinearProblem<Vector,Matrix>::updateResidual()
+{
+    apply( *d_x, *d_r );
+    VT::update( *d_r, -1.0, *d_b, 1.0 );
+}
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
-#endif // end MCLS_EPETRAVECTOREXPORT_HPP
+#endif // end MCLS_LINEARPROBLEM_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_EpetraVectorExport.hpp
-//---------------------------------------------------------------------------//
+// end MCLS_LinearProblem_impl.hpp
+// ---------------------------------------------------------------------------//
+

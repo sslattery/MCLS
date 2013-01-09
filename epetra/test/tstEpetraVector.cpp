@@ -59,7 +59,7 @@ Teuchos::RCP<Epetra_Comm> getEpetraComm(
 TEUCHOS_UNIT_TEST( VectorTraits, Typedefs )
 {
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
+    typedef MCLS::VectorTraits<VectorType> VT;
     typedef VT::scalar_type scalar_type;
     typedef VT::local_ordinal_type local_ordinal_type;
     typedef VT::global_ordinal_type global_ordinal_type;
@@ -79,7 +79,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, Typedefs )
 TEUCHOS_UNIT_TEST( VectorTraits, Clone )
 {
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
+    typedef MCLS::VectorTraits<VectorType> VT;
     typedef VT::scalar_type scalar_type;
     typedef VT::local_ordinal_type local_ordinal_type;
     typedef VT::global_ordinal_type global_ordinal_type;
@@ -117,7 +117,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, Clone )
 TEUCHOS_UNIT_TEST( VectorTraits, DeepCopy )
 {
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
+    typedef MCLS::VectorTraits<VectorType> VT;
     typedef VT::scalar_type scalar_type;
     typedef VT::local_ordinal_type local_ordinal_type;
     typedef VT::global_ordinal_type global_ordinal_type;
@@ -154,7 +154,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, DeepCopy )
 TEUCHOS_UNIT_TEST( VectorTraits, Modifiers )
 {
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
+    typedef MCLS::VectorTraits<VectorType> VT;
     typedef VT::scalar_type scalar_type;
     typedef VT::local_ordinal_type local_ordinal_type;
     typedef VT::global_ordinal_type global_ordinal_type;
@@ -204,7 +204,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, Modifiers )
 TEUCHOS_UNIT_TEST( VectorTraits, SumIntoElement )
 {
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
+    typedef MCLS::VectorTraits<VectorType> VT;
     typedef VT::scalar_type scalar_type;
     typedef VT::local_ordinal_type local_ordinal_type;
     typedef VT::global_ordinal_type global_ordinal_type;
@@ -262,7 +262,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, SumIntoElement )
 TEUCHOS_UNIT_TEST( VectorTraits, ReplaceElement )
 {
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
+    typedef MCLS::VectorTraits<VectorType> VT;
     typedef VT::scalar_type scalar_type;
     typedef VT::local_ordinal_type local_ordinal_type;
     typedef VT::global_ordinal_type global_ordinal_type;
@@ -321,7 +321,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, ReplaceElement )
 TEUCHOS_UNIT_TEST( VectorTraits, DotProduct )
 {
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
+    typedef MCLS::VectorTraits<VectorType> VT;
     typedef VT::scalar_type scalar_type;
     typedef VT::local_ordinal_type local_ordinal_type;
     typedef VT::global_ordinal_type global_ordinal_type;
@@ -350,7 +350,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, DotProduct )
 TEUCHOS_UNIT_TEST( VectorTraits, Norms )
 {
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
+    typedef MCLS::VectorTraits<VectorType> VT;
     typedef VT::scalar_type scalar_type;
     typedef VT::local_ordinal_type local_ordinal_type;
     typedef VT::global_ordinal_type global_ordinal_type;
@@ -379,7 +379,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, Norms )
 TEUCHOS_UNIT_TEST( VectorTraits, MeanValue )
 {
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
+    typedef MCLS::VectorTraits<VectorType> VT;
     typedef VT::scalar_type scalar_type;
     typedef VT::local_ordinal_type local_ordinal_type;
     typedef VT::global_ordinal_type global_ordinal_type;
@@ -408,7 +408,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, MeanValue )
 TEUCHOS_UNIT_TEST( VectorTraits, AbsoluteVal )
 {
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
+    typedef MCLS::VectorTraits<VectorType> VT;
     typedef VT::scalar_type scalar_type;
     typedef VT::local_ordinal_type local_ordinal_type;
     typedef VT::global_ordinal_type global_ordinal_type;
@@ -454,7 +454,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, AbsoluteVal )
 TEUCHOS_UNIT_TEST( VectorTraits, Scale )
 {
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
+    typedef MCLS::VectorTraits<VectorType> VT;
     typedef VT::scalar_type scalar_type;
     typedef VT::local_ordinal_type local_ordinal_type;
     typedef VT::global_ordinal_type global_ordinal_type;
@@ -499,7 +499,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, Scale )
 TEUCHOS_UNIT_TEST( VectorTraits, Reciprocal )
 {
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
+    typedef MCLS::VectorTraits<VectorType> VT;
     typedef VT::scalar_type scalar_type;
     typedef VT::local_ordinal_type local_ordinal_type;
     typedef VT::global_ordinal_type global_ordinal_type;
@@ -546,7 +546,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, Reciprocal )
 TEUCHOS_UNIT_TEST( VectorTraits, Update )
 {
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
+    typedef MCLS::VectorTraits<VectorType> VT;
     typedef VT::scalar_type scalar_type;
     typedef VT::local_ordinal_type local_ordinal_type;
     typedef VT::global_ordinal_type global_ordinal_type;
@@ -599,7 +599,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, Update )
 TEUCHOS_UNIT_TEST( VectorTraits, ElementWiseMultiply )
 {
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<double,int,int,VectorType> VT;
+    typedef MCLS::VectorTraits<VectorType> VT;
     typedef VT::scalar_type scalar_type;
     typedef VT::local_ordinal_type local_ordinal_type;
     typedef VT::global_ordinal_type global_ordinal_type;

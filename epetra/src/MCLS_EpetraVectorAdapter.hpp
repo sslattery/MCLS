@@ -57,7 +57,7 @@ namespace MCLS
  * \brief Traits specialization for Epetra_Vector.
  */
 template<>
-class VectorTraits<double,int,int,Epetra_Vector>
+class VectorTraits<Epetra_Vector>
 {
   public:
 

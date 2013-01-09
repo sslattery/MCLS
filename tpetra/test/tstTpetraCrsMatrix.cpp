@@ -52,7 +52,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, Typedefs, LO, GO, Scalar )
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::MatrixTraits<Scalar,LO,GO,VectorType,MatrixType> MT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef typename MT::scalar_type scalar_type;
     typedef typename MT::local_ordinal_type local_ordinal_type;
     typedef typename MT::global_ordinal_type global_ordinal_type;
@@ -75,8 +75,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, RowVectorClone, LO, GO, Scalar 
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
-    typedef MCLS::MatrixTraits<Scalar,LO,GO,VectorType,MatrixType> MT;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef typename MT::scalar_type scalar_type;
     typedef typename MT::local_ordinal_type local_ordinal_type;
     typedef typename MT::global_ordinal_type global_ordinal_type;
@@ -113,8 +113,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, ColVectorClone, LO, GO, Scalar 
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
-    typedef MCLS::MatrixTraits<Scalar,LO,GO,VectorType,MatrixType> MT;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef typename MT::scalar_type scalar_type;
     typedef typename MT::local_ordinal_type local_ordinal_type;
     typedef typename MT::global_ordinal_type global_ordinal_type;
@@ -159,7 +159,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, Comm, LO, GO, Scalar )
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::MatrixTraits<Scalar,LO,GO,VectorType,MatrixType> MT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef typename MT::scalar_type scalar_type;
     typedef typename MT::local_ordinal_type local_ordinal_type;
     typedef typename MT::global_ordinal_type global_ordinal_type;
@@ -188,8 +188,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, GlobalNumRows, LO, GO, Scalar )
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
-    typedef MCLS::MatrixTraits<Scalar,LO,GO,VectorType,MatrixType> MT;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef typename MT::scalar_type scalar_type;
     typedef typename MT::local_ordinal_type local_ordinal_type;
     typedef typename MT::global_ordinal_type global_ordinal_type;
@@ -223,8 +223,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, LocalNumRows, LO, GO, Scalar )
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
-    typedef MCLS::MatrixTraits<Scalar,LO,GO,VectorType,MatrixType> MT;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef typename MT::scalar_type scalar_type;
     typedef typename MT::local_ordinal_type local_ordinal_type;
     typedef typename MT::global_ordinal_type global_ordinal_type;
@@ -258,8 +258,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, GlobalMaxEntries, LO, GO, Scala
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
-    typedef MCLS::MatrixTraits<Scalar,LO,GO,VectorType,MatrixType> MT;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef typename MT::scalar_type scalar_type;
     typedef typename MT::local_ordinal_type local_ordinal_type;
     typedef typename MT::global_ordinal_type global_ordinal_type;
@@ -293,8 +293,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, l2g_row, LO, GO, Scalar )
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
-    typedef MCLS::MatrixTraits<Scalar,LO,GO,VectorType,MatrixType> MT;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef typename MT::scalar_type scalar_type;
     typedef typename MT::local_ordinal_type local_ordinal_type;
     typedef typename MT::global_ordinal_type global_ordinal_type;
@@ -332,8 +332,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, g2l_row, LO, GO, Scalar )
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
-    typedef MCLS::MatrixTraits<Scalar,LO,GO,VectorType,MatrixType> MT;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef typename MT::scalar_type scalar_type;
     typedef typename MT::local_ordinal_type local_ordinal_type;
     typedef typename MT::global_ordinal_type global_ordinal_type;
@@ -371,8 +371,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, l2g_col, LO, GO, Scalar )
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
-    typedef MCLS::MatrixTraits<Scalar,LO,GO,VectorType,MatrixType> MT;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef typename MT::scalar_type scalar_type;
     typedef typename MT::local_ordinal_type local_ordinal_type;
     typedef typename MT::global_ordinal_type global_ordinal_type;
@@ -410,8 +410,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, g2l_col, LO, GO, Scalar )
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
-    typedef MCLS::MatrixTraits<Scalar,LO,GO,VectorType,MatrixType> MT;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef typename MT::scalar_type scalar_type;
     typedef typename MT::local_ordinal_type local_ordinal_type;
     typedef typename MT::global_ordinal_type global_ordinal_type;
@@ -449,8 +449,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, is_l_row, LO, GO, Scalar )
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
-    typedef MCLS::MatrixTraits<Scalar,LO,GO,VectorType,MatrixType> MT;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef typename MT::scalar_type scalar_type;
     typedef typename MT::local_ordinal_type local_ordinal_type;
     typedef typename MT::global_ordinal_type global_ordinal_type;
@@ -487,8 +487,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, is_g_row, LO, GO, Scalar )
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
-    typedef MCLS::MatrixTraits<Scalar,LO,GO,VectorType,MatrixType> MT;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef typename MT::scalar_type scalar_type;
     typedef typename MT::local_ordinal_type local_ordinal_type;
     typedef typename MT::global_ordinal_type global_ordinal_type;
@@ -526,8 +526,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, is_l_col, LO, GO, Scalar )
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
-    typedef MCLS::MatrixTraits<Scalar,LO,GO,VectorType,MatrixType> MT;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef typename MT::scalar_type scalar_type;
     typedef typename MT::local_ordinal_type local_ordinal_type;
     typedef typename MT::global_ordinal_type global_ordinal_type;
@@ -564,8 +564,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, is_g_col, LO, GO, Scalar )
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
-    typedef MCLS::MatrixTraits<Scalar,LO,GO,VectorType,MatrixType> MT;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef typename MT::scalar_type scalar_type;
     typedef typename MT::local_ordinal_type local_ordinal_type;
     typedef typename MT::global_ordinal_type global_ordinal_type;
@@ -603,8 +603,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, g_row_copy, LO, GO, Scalar )
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
-    typedef MCLS::MatrixTraits<Scalar,LO,GO,VectorType,MatrixType> MT;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef typename MT::scalar_type scalar_type;
     typedef typename MT::local_ordinal_type local_ordinal_type;
     typedef typename MT::global_ordinal_type global_ordinal_type;
@@ -647,8 +647,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, l_row_copy, LO, GO, Scalar )
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
-    typedef MCLS::MatrixTraits<Scalar,LO,GO,VectorType,MatrixType> MT;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef typename MT::scalar_type scalar_type;
     typedef typename MT::local_ordinal_type local_ordinal_type;
     typedef typename MT::global_ordinal_type global_ordinal_type;
@@ -691,8 +691,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, diag_copy, LO, GO, Scalar )
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
-    typedef MCLS::MatrixTraits<Scalar,LO,GO,VectorType,MatrixType> MT;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef typename MT::scalar_type scalar_type;
     typedef typename MT::local_ordinal_type local_ordinal_type;
     typedef typename MT::global_ordinal_type global_ordinal_type;
@@ -736,8 +736,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, apply, LO, GO, Scalar )
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
-    typedef MCLS::MatrixTraits<Scalar,LO,GO,VectorType,MatrixType> MT;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef typename MT::scalar_type scalar_type;
     typedef typename MT::local_ordinal_type local_ordinal_type;
     typedef typename MT::global_ordinal_type global_ordinal_type;
@@ -784,8 +784,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, transpose, LO, GO, Scalar )
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
-    typedef MCLS::MatrixTraits<Scalar,LO,GO,VectorType,MatrixType> MT;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef typename MT::scalar_type scalar_type;
     typedef typename MT::local_ordinal_type local_ordinal_type;
     typedef typename MT::global_ordinal_type global_ordinal_type;
@@ -835,8 +835,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, copy_neighbor, LO, GO, Scalar )
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<Scalar,LO,GO,VectorType> VT;
-    typedef MCLS::MatrixTraits<Scalar,LO,GO,VectorType,MatrixType> MT;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef typename MT::scalar_type scalar_type;
     typedef typename MT::local_ordinal_type local_ordinal_type;
     typedef typename MT::global_ordinal_type global_ordinal_type;
