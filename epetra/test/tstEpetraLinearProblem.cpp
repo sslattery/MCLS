@@ -157,11 +157,11 @@ TEUCHOS_UNIT_TEST( LinearProblem, Apply )
     A->FillComplete();
 
     Teuchos::RCP<VectorType> X = MT::cloneVectorFromMatrixRows( *A );
-    Scalar x_val = 2;
+    double x_val = 2;
     VT::putScalar( *X, x_val );
 
     Teuchos::RCP<VectorType> B = VT::clone( *X );
-    Scalar b_val = 5;
+    double b_val = 5;
     VT::putScalar( *B, b_val );
 
     MCLS::LinearProblem<VectorType,MatrixType> linear_problem( A, X, B );
@@ -169,8 +169,8 @@ TEUCHOS_UNIT_TEST( LinearProblem, Apply )
     Teuchos::RCP<VectorType> Y = VT::clone( *X );
     linear_problem.apply( *X, *Y );
 
-    Teuchos::ArrayRCP<const Scalar> Y_view = VT::view( *Y );
-    typename Teuchos::ArrayRCP<const Scalar>::const_iterator view_iterator;
+    Teuchos::ArrayRCP<const double> Y_view = VT::view( *Y );
+    typename Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
     for ( view_iterator = Y_view.begin();
 	  view_iterator != Y_view.end();
 	  ++view_iterator )
@@ -212,19 +212,19 @@ TEUCHOS_UNIT_TEST( LinearProblem, ResidualUpdate )
     A->FillComplete();
 
     Teuchos::RCP<VectorType> X = MT::cloneVectorFromMatrixRows( *A );
-    Scalar x_val = 2;
+    double x_val = 2;
     VT::putScalar( *X, x_val );
 
     Teuchos::RCP<VectorType> B = VT::clone( *X );
-    Scalar b_val = 5;
+    double b_val = 5;
     VT::putScalar( *B, b_val );
 
     MCLS::LinearProblem<VectorType,MatrixType> linear_problem( A, X, B );
     linear_problem.updateResidual();
 
     Teuchos::RCP<const VectorType> R = linear_problem.getResidual();
-    Teuchos::ArrayRCP<const Scalar> R_view = VT::view( *R );
-    typename Teuchos::ArrayRCP<const Scalar>::const_iterator view_iterator;
+    Teuchos::ArrayRCP<const double> R_view = VT::view( *R );
+    typename Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
     for ( view_iterator = R_view.begin();
 	  view_iterator != R_view.end();
 	  ++view_iterator )
