@@ -32,84 +32,67 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_LinearProblem.hpp
+ * \file MCLS_AdjointNeumannUlamProduct.hpp
  * \author Stuart R. Slattery
  * \brief Linear Problem declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_LINEARPROBLEM_HPP
-#define MCLS_LINEARPROBLEM_HPP
+#ifndef MCLS_ADJOINTNEUMANNULAMPRODUCT_HPP
+#define MCLS_ADJOINTNEUMANNULAMPRODUCT_HPP
 
-#include "MCLS_VectorTraits.hpp"
-#include "MCLS_MatrixTraits.hpp"
+#include <MCLS_History.hpp>
+#include <MCLS_SamplingTools.hpp>
 
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_Hashtable.hpp>
+#include <Teuchos_Array.hpp>
 
 namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class LinearProblem
- * \brief Linear system container for A*x = b.
+ * \class AdjointNeumannUlamProduct
+ * \brief Adjoint Neumann-Ulam Product of a matrix.
+ *
+ * H^T = I - A^T 
+ * H^T = (P) x (W)
  */
-template<class Vector, class Matrix>
-class LinearProblem
+template<class Scalar, class GO>
+class AdjointNeumannUlamProduct
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Vector                                      vector_type;
-    typedef Matrix                                      matrix_type;
-    typedef VectorTraits<Vector>                        VT;
-    typedef MatrixTraits<Vector,Matrix>                 MT;
+    typedef Scalar                                  scalar_type;
+    typedef GO                                      global_ordinal_type;
     //@}
 
     // Constructor.
-    LinearProblem( const Teuchos::RCP<const Matrix>& A,
-		   const Teuchos::RCP<Vector>& x,
-		   const Teuchos::RCP<const Vector>& b );
+    template<class Matrix>
+    AdjointNeumannUlamProduct( const Teuchos::RCP<const Matrix>& A );
 
     // Destructor.
-    ~LinearProblem();
+    ~AdjointNeumannUlamProduct();
 
-    //! Get the linear operator.
-    Teuchos::RCP<const Matrix> getOperator() const
-    { return d_A; }
+    // Given a history, process a transition to a new state.
+    inline void processTransition( History<Scalar,GO>& history );
 
-    //! Get the left-hand side.
-    Teuchos::RCP<Vector> getLHS() const
-    { return d_x; }
-
-    //! Get the right-hand side.
-    Teuchos::RCP<const Vector> getRHS() const
-    { return d_b; }
-
-    //! Get the residual.
-    Teuchos::RCP<const Vector> getResidual() const
-    { return d_r; }
-
-    // Apply the linear operator to a vector.
-    void applyOperator( const Vector& x, Vector& y );
-
-    // Update the residual.
-    void updateResidual();
+    // Determine if a given state is on-process.
+    inline bool isLocalState( const GO &state );
 
   private:
 
-    // Linear operator.
-    Teuchos::RCP<const Matrix> d_A;
+    // Local weight table.
+    Teuchos::Hashtable<GO,Scalar> d_weight_table;
 
-    // Left-hand side (solution vector).
-    Teuchos::RCP<Vector> d_x;
+    // Local CDF table.
+    Teuchos::Hashtable<GO,Teuchos::Array<GO> > d_cdf_table;
 
-    // Right-hand side.
-    Teuchos::RCP<const Vector> d_b;
-
-    // Residual r = b - A*x.
-    Teuchos::RCP<Vector> d_r;
+    // Local column table.
+    Teuchos::Hashtable<GO,GO> d_l2g_col;
 };
 
 //---------------------------------------------------------------------------//
@@ -117,16 +100,40 @@ class LinearProblem
 } // end namespace MCLS
 
 //---------------------------------------------------------------------------//
+// Inline functions.
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Given an initial state, process a transition to a new state.
+ */
+template<class Scalar, class GO>
+inline void AdjointNeumannUlamProduct<Scalar,GO>::processTransition( 
+    History<Scalar,GO>& history )
+{
+
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Determine if a given state is on-process.
+ */
+template<class Scalar, class GO>
+inline bool 
+AdjointNeumannUlamProduct<Scalar,GO>::isLocalState( const GO& state )
+{
+    return d_weight_table.containsKey( state );
+}
+
+//---------------------------------------------------------------------------//
 // Template includes.
 //---------------------------------------------------------------------------//
 
-#include "MCLS_LinearProblem_impl.hpp"
+#include "MCLS_AdjointNeumannUlamProduct_impl.hpp"
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_LINEARPROBLEM_HPP
+#endif // end MCLS_ADJOINTNEUMANNULAMPRODUCT_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_LinearProblem.hpp
+// end MCLS_AdjointNeumannUlamProduct.hpp
 // ---------------------------------------------------------------------------//
 

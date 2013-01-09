@@ -157,7 +157,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LinearProblem, Apply, LO, GO, Scalar )
     MCLS::LinearProblem<VectorType,MatrixType> linear_problem( A, X, B );
 
     Teuchos::RCP<VectorType> Y = VT::clone( *X );
-    linear_problem.apply( *X, *Y );
+    linear_problem.applyOperator( *X, *Y );
 
     Teuchos::ArrayRCP<const Scalar> Y_view = VT::view( *Y );
     typename Teuchos::ArrayRCP<const Scalar>::const_iterator view_iterator;

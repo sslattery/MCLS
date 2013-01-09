@@ -78,7 +78,7 @@ LinearProblem<Vector,Matrix>::~LinearProblem()
  * \brief Apply the linear operator to a vector.
  */
 template<class Vector, class Matrix>
-void LinearProblem<Vector,Matrix>::apply( const Vector& x, Vector& y )
+void LinearProblem<Vector,Matrix>::applyOperator( const Vector& x, Vector& y )
 {
     MT::apply( *d_A, x, y );
 }
@@ -90,7 +90,7 @@ void LinearProblem<Vector,Matrix>::apply( const Vector& x, Vector& y )
 template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::updateResidual()
 {
-    apply( *d_x, *d_r );
+    applyOperator( *d_x, *d_r );
     VT::update( *d_r, -1.0, *d_b, 1.0 );
 }
 
