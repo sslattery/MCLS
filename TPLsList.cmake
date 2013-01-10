@@ -6,7 +6,7 @@
 #   Trilinos/cmake/TrilinosTPLs.cmake
 #
 
-SET(DataTransferKit_TPLS_FINDMODS_CLASSIFICATIONS
+SET(MCLS_TPLS_FINDMODS_CLASSIFICATIONS
   SPRNG      "cmake/TPLs/"      SS
   )
 
