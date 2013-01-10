@@ -67,19 +67,19 @@ TEUCHOS_UNIT_TEST( LinearProblem, Typedefs )
     typedef MCLS::LinearProblem<VectorType,MatrixType> LinearProblemType;
 
     TEST_EQUALITY_CONST( 
-	(Teuchos::TypeTraits::is_same<typename LinearProblemType::vector_type,
+	(Teuchos::TypeTraits::is_same<LinearProblemType::vector_type,
 				      VectorType>::value) == true, true );
 
     TEST_EQUALITY_CONST( 
-	(Teuchos::TypeTraits::is_same<typename LinearProblemType::matrix_type,
+	(Teuchos::TypeTraits::is_same<LinearProblemType::matrix_type,
 				      MatrixType>::value) == true, true );
 
     TEST_EQUALITY_CONST( 
-	(Teuchos::TypeTraits::is_same<typename LinearProblemType::VT,VT>::value) 
+	(Teuchos::TypeTraits::is_same<LinearProblemType::VT,VT>::value) 
 	== true, true );
 
     TEST_EQUALITY_CONST( 
-	(Teuchos::TypeTraits::is_same<typename LinearProblemType::MT,MT>::value) 
+	(Teuchos::TypeTraits::is_same<LinearProblemType::MT,MT>::value) 
 	== true, true );
 }
 
@@ -170,7 +170,7 @@ TEUCHOS_UNIT_TEST( LinearProblem, Apply )
     linear_problem.applyOperator( *X, *Y );
 
     Teuchos::ArrayRCP<const double> Y_view = VT::view( *Y );
-    typename Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
     for ( view_iterator = Y_view.begin();
 	  view_iterator != Y_view.end();
 	  ++view_iterator )
@@ -224,7 +224,7 @@ TEUCHOS_UNIT_TEST( LinearProblem, ResidualUpdate )
 
     Teuchos::RCP<const VectorType> R = linear_problem.getResidual();
     Teuchos::ArrayRCP<const double> R_view = VT::view( *R );
-    typename Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
     for ( view_iterator = R_view.begin();
 	  view_iterator != R_view.end();
 	  ++view_iterator )
