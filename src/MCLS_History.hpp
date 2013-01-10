@@ -44,6 +44,8 @@
 #include <cmath>
 
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_OrdinalTraits.hpp>
 
 namespace MCLS
 {
@@ -53,7 +55,7 @@ namespace MCLS
  * \brief Encapsulation of a random walk history's state.
  */
 //---------------------------------------------------------------------------//
-template<class Scalar, class GO>
+template<class Scalar, class Ordinal>
 class History
 {
   public:
@@ -61,18 +63,18 @@ class History
     //@{
     //! Typedefs.
     typedef Scalar                                    scalar_type;
-    typedef GO                                        global_ordinal_type;
+    typedef Ordinal                                   ordinal_type;
     //@}
 
     //! Default constructor.
     History()
-	: d_weight( 1.0 )
-	, d_state( 0 )
+	: d_weight( Teuchos::ScalarTraits<Scalar>::one() )
+	, d_state( Teuchos::OrdinalTraits<Ordinal>::zero() )
     { /* ... */ }
 
     //! State constructor.
     */
-    History( Scalar weight, GO state )
+    History( Scalar weight, Ordinal state )
 	: d_weight( weight )
 	, d_state( state )
     { /* ... */ }
@@ -94,7 +96,7 @@ class History
     { d_weight *= weight; }
 
     //! Set the history state.
-    inline void setState( const GO state )
+    inline void setState( const Ordinal state )
     { d_state = state; }
 
     //! Get the history weight.
@@ -106,7 +108,7 @@ class History
     { return std::abs(d_weight); }
 
     //! Get the history state.
-    inline GO State() const 
+    inline Ordinal State() const 
     { return d_state; }
 
   private:
@@ -115,7 +117,7 @@ class History
     Scalar d_weight;
 
     //  history state.
-    GO d_state;
+    Ordinal d_state;
 
     // Random number generator (reference counted).
     RNG d_rng;
