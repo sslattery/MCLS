@@ -57,6 +57,8 @@ TEUCHOS_UNIT_TEST( SPRNG, random_test )
     
     MCLS::SPRNG ran1(id1, 0);	
     MCLS::SPRNG ran2(id2, 1);
+    TEST_EQUALITY( ran1.getIndex(), 0 );
+    TEST_EQUALITY( ran2.getIndex(), 1 );
 
     int num_rand = 10000;
 

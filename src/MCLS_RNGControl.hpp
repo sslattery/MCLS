@@ -32,7 +32,7 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_RNGCONTROL.hpp
+ * \file MCLS_RNGControl.hpp
  * \author Stuart R. Slattery
  * \brief RNGControl class declaration.
  */
@@ -73,7 +73,7 @@ class RNGControl
     // Create a SPRNG object.
     RNG rng();
 
-    // Create a SPRNG object with a specified stream.
+    // Create a SPRNG object with a specified stream index.
     RNG rng( int stream );
 
     // Spawn a SPRNG object.
@@ -91,7 +91,7 @@ class RNGControl
     }
 
     //! Get the size of the packed random number state.
-    std::size_t get_size const 
+    std::size_t getSize() const 
     {
 	return d_size;
     }
@@ -138,7 +138,7 @@ inline RNGControl::RNG RNGControl::createRNG() const
 {
     Require( d_stream <= d_number );
 
-    int *id init_sprng( d_stream, d_number, d_seed, d_parameter );
+    int *id = init_sprng( d_stream, d_number, d_seed, d_parameter );
     RNG random( id, d_stream );
 
     return random;
@@ -153,6 +153,6 @@ inline RNGControl::RNG RNGControl::createRNG() const
 #endif // end MCLS_RNGCONTROL_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_RNGCONTROL.hpp
+// end MCLS_RNGControl.hpp
 //---------------------------------------------------------------------------//
 

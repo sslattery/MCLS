@@ -122,8 +122,8 @@ class SPRNG
 	return d_stream_id->d_id;
     }
 
-    //! Get the stream number.
-    int getNumber() const
+    //! Get the stream number index.
+    int getIndex() const
     {
 	Require( !d_stream_id.is_null() );
 	return d_stream;

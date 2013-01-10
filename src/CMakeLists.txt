@@ -26,6 +26,7 @@ APPEND_SET(HEADERS
   MCLS_LinearProblem.hpp
   MCLS_LinearProblem_impl.hpp
   MCLS_MatrixTraits.hpp
+  MCLS_RNGControl.hpp
   MCLS_Serializer.hpp
   MCLS_SPRNG.hpp
   MCLS_VectorExport.hpp
@@ -34,6 +35,7 @@ APPEND_SET(HEADERS
 
 APPEND_SET(SOURCES
   MCLS_DBC.cpp
+  MCLS_RNGControl.cpp
   MCLS_SPRNG.cpp
   )
 

@@ -32,116 +32,76 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_RNGCONTROL.hpp
+ * \file MCLS_RNGControl.cpp
  * \author Stuart R. Slattery
- * \brief RNGControl class declaration.
+ * \brief RNGControl class implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_RNGCONTROL_HPP
-#define MCLS_RNGCONTROL_HPP
-
-#include "MCLS_DBC.hpp"
-#include "MCLS_SPRNG.hpp"
+#include "MCLS_RNGControl.hpp"
 
 namespace MCLS
 {
 //---------------------------------------------------------------------------//
 /*!
- * \class RNGControl
- * \brief Manager class for the SPRNG library. Identical to that developed by
- * Tom Evans. 
+ * \brief Constructor.
  */
-//---------------------------------------------------------------------------//
-class RNGControl
-{
-  public:
-
-    //@{
-    //! Typedefs.
-    typedef SPRNG RNG;
-    //@}
-
-    // Constructor.
-    RNGControl( int seed, int number = 1000000000, int stream = 0,
-		int parameter = 1 );
-
-    // Destructor.
-    ~RNGControl()
-    { /* ... */ }
-
-    // Create a SPRNG object.
-    RNG rng();
-
-    // Create a SPRNG object with a specified stream.
-    RNG rng( int stream );
-
-    // Spawn a SPRNG object.
-    RNG spawn( const RNG& random );
-
-    //! Get the current random number stream index.
-    int getIndex() const
-    { return d_stream; }
-
-    //! Set the current random number stream index.
-    void setIndex( int stream )
-    {
-	Require( stream < d_number );
-	d_stream = stream; 
-    }
-
-    //! Get the size of the packed random number state.
-    std::size_t get_size const 
-    {
-	return d_size;
-    }
-
-    //! Get the seed value for SPRNG.
-    int getSeed() const
-    { 
-	return d_seed;
-    }
-
-    //! Return the total number of current streams set.
-    int getNumber() const
-    { 
-	return d_number;
-    }
-
-  private:
-
-    // Make a SPRNG object.
-    inline RNG createRNG() const;
-
-  private:
-
-    // Seed for SPRNG stream initialization.
-    int d_seed;
-
-    // Total number of streams.
-    int d_number;
-    
-    // Index of current stream.
-    int d_stream;
-
-    // Control parameter for stream initialization.
-    int d_parameter;
-
-    // Size of packed stream state.
-    std::size_t d_size;
-};
-
-//---------------------------------------------------------------------------//
-// Inline functions.
-//---------------------------------------------------------------------------//
-inline RNGControl::RNG RNGControl::createRNG() const
+RNGControl::RNGControl( int seed, int number, int stream, int parameter )
+    : d_seed( seed )
+    , d_number( number )
+    , d_stream( stream )
+    , d_parameter( parameter )
 {
     Require( d_stream <= d_number );
 
-    int *id init_sprng( d_stream, d_number, d_seed, d_parameter );
-    RNG random( id, d_stream );
+    RNG temp = createRNG();
+    d_size = temp.getSize();
+
+    Ensure( d_size >= 0 );
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Create a SPRNG object.
+ */
+RNGControl::RNG RNGControl::rng()
+{
+    Require( d_stream <= d_number );
+
+    RNG random = createRNG();
+    ++d_stream;
 
     return random;
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Create a SPRNG object with a specified stream index.
+ */
+RNGControl::RNG RNGControl::rng( int stream )
+{
+    Require( stream <= d_number );
+
+    d_stream = stream;
+    RNG random = createRNG();
+    ++d_stream;
+
+    return random;
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Spawn a SPRNG object.
+ */
+RNGControl::RNG RNGControl::spawn( const RNG& random )
+{
+    int **new_stream;
+    spawn_sprng( random.getID(), 1, &new_stream );
+    RNG new_random( new_stream[0], random.getIndex() );
+
+    std::free( new_stream );
+
+    return new_random;
 }
 
 //---------------------------------------------------------------------------//
@@ -149,10 +109,6 @@ inline RNGControl::RNG RNGControl::createRNG() const
 } // end namespace MCLS
 
 //---------------------------------------------------------------------------//
-
-#endif // end MCLS_RNGCONTROL_HPP
-
-//---------------------------------------------------------------------------//
-// end MCLS_RNGCONTROL.hpp
+// end MCLS_RNGControl.cpp
 //---------------------------------------------------------------------------//
 
