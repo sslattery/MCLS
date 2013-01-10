@@ -106,12 +106,13 @@ class Serializer
 	else
 	{
 	    Require( d_begin );
-	    Ensure( d_ptr >= d_begin);
-	    Ensure( d_ptr + sizeof(T) <= d_end );
+	    Require( d_ptr >= d_begin);
+	    Require( d_ptr + sizeof(T) <= d_end );
 	
 	    std::memcpy( d_ptr, &data, sizeof(T) );
 	
 	    d_ptr += sizeof(T);
+	}
     }
 
     //! Get a pointer to the current position of the data stream.
@@ -140,7 +141,7 @@ class Serializer
     { 
 	return d_size; 
     }
-
+    
   private:
 
     // Size of buffer.
@@ -158,7 +159,7 @@ class Serializer
     // Boolean for size mode.
     bool d_size_mode;
 };
-
+    
 //---------------------------------------------------------------------------//
 /*!
  * \class Deserializer
@@ -201,11 +202,11 @@ class Deserializer
 
     //! Pack values into the buffer.
     template<class T>
-    inline void unpack( const T& data )
+    inline void unpack( T& data )
     {
 	Require( d_begin );
-	Ensure( d_ptr >= d_begin);
-	Ensure( d_ptr + sizeof(T) <= d_end );
+	Require( d_ptr >= d_begin);
+	Require( d_ptr + sizeof(T) <= d_end );
 	
 	std::memcpy( &data, d_ptr, sizeof(T) );
 	
