@@ -32,7 +32,7 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_Sprng.cpp
+ * \file MCLS_SPRNG.cpp
  * \author Stuart R. Slattery
  * \brief SPRNG wrapper class implementation.
  */
@@ -144,6 +144,6 @@ std::size_t SPRNG::getSize() const
 } // end namespace MCLS
 
 //---------------------------------------------------------------------------//
-// end MCLS_Sprng.cpp
+// end MCLS_SPRNG.cpp
 //---------------------------------------------------------------------------//
 

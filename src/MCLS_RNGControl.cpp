@@ -32,124 +32,117 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_SPRNG.hpp
+ * \file MCLS_RNGCONTROL.hpp
  * \author Stuart R. Slattery
- * \brief SPRNG wrapper class declaration.
+ * \brief RNGControl class declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_SPRNG_HPP
-#define MCLS_SPRNG_HPP
+#ifndef MCLS_RNGCONTROL_HPP
+#define MCLS_RNGCONTROL_HPP
 
 #include "MCLS_DBC.hpp"
-
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_ArrayView.hpp>
-#include <Teuchos_Array.hpp>
-
-#include <sprng.h>
+#include "MCLS_SPRNG.hpp"
 
 namespace MCLS
 {
 //---------------------------------------------------------------------------//
 /*!
- * \class SPRNG
- * \brief A wrapper class for managing the SPRNG library. This class is based
- * on that developed by Tom Evans.
+ * \class RNGControl
+ * \brief Manager class for the SPRNG library. Identical to that developed by
+ * Tom Evans. 
  */
 //---------------------------------------------------------------------------//
-class SPRNG
+class RNGControl
 {
-  private:
-
-    //! Container for SPRNG memory.
-    struct SPRNGValue
-    {
-        // SPRNG library id.
-        int *d_id;
-
-        // Constructor.
-        SPRNGValue( int *id ) 
-	    : d_id( id )
-	{ /* ... */ }
-
-        // Destructor.
-        ~SPRNGValue()
-	{ 
-	    free_sprng( d_id ); 
-	}
-    };
-
   public:
-    
-    //! Default constructor.
-    inline SPRNG()
-	: d_stream_id( Teuchos::null )
-	, d_stream( 0 )
+
+    //@{
+    //! Typedefs.
+    typedef SPRNG RNG;
+    //@}
+
+    // Constructor.
+    RNGControl( int seed, int number = 1000000000, int stream = 0,
+		int parameter = 1 );
+
+    // Destructor.
+    ~RNGControl()
     { /* ... */ }
 
-    //! State constructor.
-    inline SPRNG( int *id_val, int number )
-	: d_stream_id( Teuchos::rcp( new SPRNGValue(id_val) ) )
-	, d_stream( number )
-    { /* ... */ }
+    // Create a SPRNG object.
+    RNG rng();
 
-    // Deserializer constructor.
-    SPRNG( const Teuchos::ArrayView<char>& state_buffer );
+    // Create a SPRNG object with a specified stream.
+    RNG rng( int stream );
 
-    //! Desctructor.
-    ~SPRNG()
-    { /* ... */ }
+    // Spawn a SPRNG object.
+    RNG spawn( const RNG& random );
 
-    //! Check if this SPRNG object has been assigned a stream.
-    bool assigned() const
-    { return !d_stream_id.is_null(); }
+    //! Get the current random number stream index.
+    int getIndex() const
+    { return d_stream; }
 
-    // Pack the SPRNG state into a buffer.
-    Teuchos::Array<char> pack() const;
-
-    //! Get a random number.
-    double random() const
+    //! Set the current random number stream index.
+    void setIndex( int stream )
     {
-	Require( !d_stream_id.is_null() );
-	return sprng( d_stream_id->d_id );
+	Require( stream < d_number );
+	d_stream = stream; 
     }
 
-    //! Get the SPRNG ID pointer.
-    int* getID() const
+    //! Get the size of the packed random number state.
+    std::size_t get_size const 
     {
-	Require( !d_stream_id.is_null() );
-	return d_stream_id->d_id;
+	return d_size;
     }
 
-    //! Get the stream number.
+    //! Get the seed value for SPRNG.
+    int getSeed() const
+    { 
+	return d_seed;
+    }
+
+    //! Return the total number of current streams set.
     int getNumber() const
-    {
-	Require( !d_stream_id.is_null() );
-	return d_stream;
-    }
-
-    // Get the packed size.
-    std::size_t getSize() const;
-
-    //! Print diagnostics.
-    void print() const
-    {
-	Require( !d_stream_id.is_null() );
-	print_sprng( d_stream_id->d_id );
+    { 
+	return d_number;
     }
 
   private:
 
-    // SPRNG library memory.
-    Teuchos::RCP<SPRNGValue> d_stream_id;
+    // Make a SPRNG object.
+    inline RNG createRNG() const;
 
-    // Stream number.
+  private:
+
+    // Seed for SPRNG stream initialization.
+    int d_seed;
+
+    // Total number of streams.
+    int d_number;
+    
+    // Index of current stream.
     int d_stream;
 
-    // Size of SPRNG data in packed state.
-    static std::size_t d_packed_size;
+    // Control parameter for stream initialization.
+    int d_parameter;
+
+    // Size of packed stream state.
+    std::size_t d_size;
 };
+
+//---------------------------------------------------------------------------//
+// Inline functions.
+//---------------------------------------------------------------------------//
+inline RNGControl::RNG RNGControl::createRNG() const
+{
+    Require( d_stream <= d_number );
+
+    int *id init_sprng( d_stream, d_number, d_seed, d_parameter );
+    RNG random( id, d_stream );
+
+    return random;
+}
 
 //---------------------------------------------------------------------------//
 
@@ -157,9 +150,9 @@ class SPRNG
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_SPRNG_HPP
+#endif // end MCLS_RNGCONTROL_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_SPRNG.hpp
+// end MCLS_RNGCONTROL.hpp
 //---------------------------------------------------------------------------//
 
