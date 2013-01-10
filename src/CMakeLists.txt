@@ -26,6 +26,7 @@ APPEND_SET(HEADERS
   MCLS_LinearProblem.hpp
   MCLS_LinearProblem_impl.hpp
   MCLS_MatrixTraits.hpp
+  MCLS_Serializer.hpp
   MCLS_VectorExport.hpp
   MCLS_VectorTraits.hpp
   ) 

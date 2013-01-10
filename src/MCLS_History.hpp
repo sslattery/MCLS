@@ -41,8 +41,9 @@
 #ifndef MCLS_HISTORY_HPP
 #define MCLS_HISTORY_HPP
 
+#include <cmath>
+
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_SerializationTraits.hpp>
 
 namespace MCLS
 {
@@ -66,14 +67,14 @@ class History
     //! Default constructor.
     History()
 	: d_weight( 1.0 )
-	, d_global_state( 0 )
+	, d_state( 0 )
     { /* ... */ }
 
     //! State constructor.
     */
-    History( Scalar weight, GO global_state )
+    History( Scalar weight, GO state )
 	: d_weight( weight )
-	, d_global_state( global_state )
+	, d_state( state )
     { /* ... */ }
 
     // Destructor.
@@ -92,9 +93,9 @@ class History
     inline void multiplyWeight( const Scalar weight )
     { d_weight *= weight; }
 
-    //! Set the global history state.
-    inline void setGlobalState( const GO global_state )
-    { d_global_state = global_state; }
+    //! Set the history state.
+    inline void setState( const GO state )
+    { d_state = state; }
 
     //! Get the history weight.
     inline Scalar weight() const
@@ -104,66 +105,25 @@ class History
     inline Scalar weightAbs() const
     { return std::abs(d_weight); }
 
-    //! Get the global history state.
-    inline GO globalState() const 
-    { return d_global_state; }
+    //! Get the history state.
+    inline GO State() const 
+    { return d_state; }
 
   private:
 
     // History weight.
     Scalar d_weight;
 
-    // Global history state.
-    GO d_global_state;
+    //  history state.
+    GO d_state;
+
+    // Random number generator (reference counted).
+    RNG d_rng;
 };
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
-
-//---------------------------------------------------------------------------//
-// SerializationTraits specializations.
-//---------------------------------------------------------------------------//
-namespace Teuchos
-{
-typedef MCLS::History<float,int>                         flt_int;
-typedef MCLS::History<double,int>                        dbl_int;
-typedef MCLS::History<float,long int>                    flt_long;
-typedef MCLS::History<double,long int>                   dbl_long;
-typedef MCLS::History<float,long long int>               flt_ll;
-typedef MCLS::History<double,long long int>              dbl_ll;
-
-template<typename Ordinal>
-class SerializationTraits<Ordinal,flt_int>
-    : public DirectSerializationTraits<Ordinal,flt_int >
-{};
-
-template<typename Ordinal>
-class SerializationTraits<Ordinal,dbl_int>
-    : public DirectSerializationTraits<Ordinal,dbl_int >
-{};
-
-template<typename Ordinal>
-class SerializationTraits<Ordinal,flt_long>
-    : public DirectSerializationTraits<Ordinal,flt_long >
-{};
-
-template<typename Ordinal>
-class SerializationTraits<Ordinal,dbl_long>
-    : public DirectSerializationTraits<Ordinal,dbl_long >
-{};
-
-template<typename Ordinal>
-class SerializationTraits<Ordinal,flt_ll>
-    : public DirectSerializationTraits<Ordinal,flt_ll >
-{};
-
-template<typename Ordinal>
-class SerializationTraits<Ordinal,dbl_ll>
-    : public DirectSerializationTraits<Ordinal,dbl_ll >
-{};
-
-} // end namespace Teuchos
 
 //---------------------------------------------------------------------------//
 

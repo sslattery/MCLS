@@ -77,7 +77,7 @@ class AdjointNeumannUlamProduct
     // Destructor.
     ~AdjointNeumannUlamProduct();
 
-    // Given a history, process a transition to a new state.
+    // Process a history through a transition to a new state.
     inline void processTransition( History<Scalar,GO>& history );
 
     // Determine if a given state is on-process.
@@ -103,7 +103,7 @@ class AdjointNeumannUlamProduct
 // Inline functions.
 //---------------------------------------------------------------------------//
 /*!
- * \brief Given an initial state, process a transition to a new state.
+ * \brief Process a history through a transition to a new state.
  */
 template<class Scalar, class GO>
 inline void AdjointNeumannUlamProduct<Scalar,GO>::processTransition( 
