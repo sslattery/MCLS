@@ -1,0 +1,146 @@
+//---------------------------------------------------------------------------//
+/*!
+ * \file   tstSPRNG.cpp
+ * \author Stuart Slattery
+ * \brief  SPRNG class unit tests.
+ */
+//---------------------------------------------------------------------------//
+
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <sstream>
+#include <stdexcept>
+
+#include <MCLS_config.hpp>
+#include <MCLS_SPRNG.hpp>
+
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_Array.hpp"
+#include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_CommHelpers.hpp"
+#include "Teuchos_as.hpp"
+
+//---------------------------------------------------------------------------//
+// HELPER FUNCTIONS
+//---------------------------------------------------------------------------//
+
+// Get the default communicator.
+template<class Ordinal>
+Teuchos::RCP<const Teuchos::Comm<Ordinal> > getDefaultComm()
+{
+#ifdef HAVE_MPI
+    return Teuchos::DefaultComm<Ordinal>::getComm();
+#else
+    return Teuchos::rcp(new Teuchos::SerialComm<Ordinal>() );
+#endif
+}
+
+//---------------------------------------------------------------------------//
+// Random number seed.
+//---------------------------------------------------------------------------//
+
+int seed = 493875348;
+
+//---------------------------------------------------------------------------//
+// Tests.
+//---------------------------------------------------------------------------//
+TEUCHOS_UNIT_TEST( SPRNG, random_test )
+{
+    int *id1, *id2, *id3;
+    int num = 5;
+
+    id1 = init_sprng(0, num, seed, 1);
+    id2 = init_sprng(1, num, seed, 1);
+    id3 = init_sprng(0, num, seed, 1);
+    
+    MCLS::SPRNG ran1(id1, 0);	
+    MCLS::SPRNG ran2(id2, 1);
+
+    int num_rand = 10000;
+
+    double r1 = 0.0, r2 = 0.0;
+    for (int i = 0; i < num_rand; i++)
+    {
+        r1 += ran1.random();
+        r2 += ran2.random();
+    }
+    TEST_FLOATING_EQUALITY( r1/num_rand, 0.5, 0.01 );
+    TEST_FLOATING_EQUALITY( r2/num_rand, 0.5, 0.01 );
+
+    MCLS::SPRNG ran3(id3, 0);
+    
+    double r3 = 0.0;
+    for (int i = 0; i < num_rand; i++)
+    {
+        r3 += ran3.random();
+    }
+    TEST_FLOATING_EQUALITY( r1, r3, 1.0e-8 );
+    
+    double eps = 0.00001;
+    for (int i = 0; i < 10; i++)
+    {
+	TEST_FLOATING_EQUALITY( ran1.random(), ran3.random(), eps );
+    }
+}
+
+//---------------------------------------------------------------------------//
+TEUCHOS_UNIT_TEST( SPRNG, sprng_test )
+{
+    int num  = 5;
+
+    int *idr = init_sprng(0, num, seed, 1);
+    int *id1 = init_sprng(0, num, seed, 1);
+
+    MCLS::SPRNG ranr(idr, 0);
+    MCLS::SPRNG ran1(id1, 0);
+    MCLS::SPRNG ran2(ran1);
+    MCLS::SPRNG ran3(ran1);
+    MCLS::SPRNG empty;
+
+    TEST_ASSERT(ran1.assigned());
+    TEST_ASSERT(!empty.assigned());
+
+    Teuchos::Array<double> ref(80);
+    for (int i = 0; i < 80; i++)
+    {
+	ref[i] = ranr.random();
+    }
+
+    double eps = .00001;
+    for (int i = 0; i < 20; i++)
+    {
+       TEST_FLOATING_EQUALITY( ran1.random(), ref[i], eps );
+    }
+    for (int i = 20; i < 40; i++)
+    {
+	TEST_FLOATING_EQUALITY( ran2.random(), ref[i], eps );
+    }
+    for (int i = 40; i < 60; i++)
+    {
+       TEST_FLOATING_EQUALITY( ran3.random(), ref[i], eps );
+    }
+
+    TEST_EQUALITY( ran1.getID(), id1 );
+    TEST_EQUALITY( ran2.getID(), id1 );
+    TEST_EQUALITY( ran3.getID(), id1 );
+
+    ranr = ran2;
+    for (int i = 60; i < 80; i++)
+    {
+	TEST_FLOATING_EQUALITY( ranr.random(), ref[i], eps );
+    }
+
+    TEST_EQUALITY( ranr.getID(), id1 );
+
+    ran3 = empty;
+    TEST_ASSERT( !ran3.assigned() );
+
+    MCLS::SPRNG ran4(ran3);
+    TEST_ASSERT( !ran4.assigned() );
+}
+
+//---------------------------------------------------------------------------//
+// end tstSPRNG.cpp
+//---------------------------------------------------------------------------//

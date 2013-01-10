@@ -27,12 +27,14 @@ APPEND_SET(HEADERS
   MCLS_LinearProblem_impl.hpp
   MCLS_MatrixTraits.hpp
   MCLS_Serializer.hpp
+  MCLS_SPRNG.hpp
   MCLS_VectorExport.hpp
   MCLS_VectorTraits.hpp
   ) 
 
 APPEND_SET(SOURCES
   MCLS_DBC.cpp
+  MCLS_SPRNG.cpp
   )
 
 #

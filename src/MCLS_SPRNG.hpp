@@ -129,7 +129,7 @@ class SPRNG
 	return d_stream;
     }
 
-    //! Get the packed size.
+    // Get the packed size.
     std::size_t getSize() const;
 
     //! Print diagnostics.

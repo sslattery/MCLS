@@ -32,134 +32,118 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_Sprng.hpp
+ * \file MCLS_Sprng.cpp
  * \author Stuart R. Slattery
- * \brief SPRNG wrapper class declaration.
+ * \brief SPRNG wrapper class implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_SPRNG_HPP
-#define MCLS_SPRNG_HPP
+#include "MCLS_SPRNG.hpp"
+#include "MCLS_Serializer.hpp"
 
-#include "MCLS_DBC.hpp"
-
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_ArrayView.hpp>
-#include <Teuchos_Array.hpp>
-
-#include <sprng.h>
+#include <Teuchos_as.hpp>
 
 namespace MCLS
 {
 //---------------------------------------------------------------------------//
-/*!
- * \class SPRNG
- * \brief A wrapper class for managing the SPRNG library. This class is based
- * on that developed by Tom Evans.
- */
+// STATIC MEMBERS
 //---------------------------------------------------------------------------//
-class SPRNG
+
+std::size_t SPRNG::d_packed_size = 0;
+
+//---------------------------------------------------------------------------//
+// Members.
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Deserializer constructor. Unpack a SPRNG state from a buffer.
+ */
+SPRNG::SPRNG( const Teuchos::ArrayView<char>& state_buffer )
+    : d_stream_id( Teuchos::null )
+    , d_stream( 0 )
 {
-  private:
+    Require( Teuchos::as<std::size_t>(state_buffer.size()) >= 
+	     Teuchos::as<std::size_t>(2 * sizeof(int)) );
 
-    //! Container for SPRNG memory.
-    struct SPRNGValue
+    Deserializer ds;
+    ds.setBuffer( state_buffer );
+
+    int rng_size = 0;
+    ds >> d_stream >> rng_size;
+    Check( d_stream >= 0 );
+    Check( rng_size >= 0 );
+
+    char* prng = new char[rng_size];
+    for ( int i = 0; i < rng_size; ++i )
     {
-        // SPRNG library id.
-        int *d_id;
-
-        // Constructor.
-        SPRNGValue( int *id ) 
-	    : d_id( id )
-	{ /* ... */ }
-
-        // Destructor.
-        ~SPRNGValue()
-	{ 
-	    free_sprng( d_id ); 
-	}
-    };
-
-  public:
-    
-    //! Default constructor.
-    inline SPRNG()
-	: d_stream_id( Teuchos::null )
-	, d_stream( 0 )
-    { /* ... */ }
-
-    //! State constructor.
-    inline SPRNG( int *id_val, int number )
-	: d_stream_id( Teuchos::rcp( new SPRNGValue(id_val) ) )
-	, d_stream( number )
-    { /* ... */ }
-
-    // Deserializer constructor.
-    SPRNG( const Teuchos::ArrayView<char>& state_buffer );
-
-    //! Desctructor.
-    ~SPRNG()
-    { /* ... */ }
-
-    //! Check if this SPRNG object has been assigned a stream.
-    bool assigned() const
-    { return !d_stream_id.is_null(); }
-
-    // Pack the SPRNG state into a buffer.
-    Teuchos::Array<char> pack() const;
-
-    //! Get a random number.
-    double random() const
-    {
-	Require( !d_stream_id.is_null() );
-	return sprng( d_stream_id->d_id );
+	ds >> prng[i];
     }
 
-    //! Get the SPRNG ID pointer.
-    int* getID() const
+    int* rng_id = unpack_sprng( prng );
+
+    d_stream_id = Teuchos::rcp( new SPRNGValue( rng_id ) );
+
+    delete [] prng;
+    Ensure( ds.getPtr() == state_buffer.getRawPtr() + state_buffer.size() );
+    Ensure( !d_stream_id.is_null() );
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Pack the SPRNG state into a buffer.
+ */
+Teuchos::Array<char> SPRNG::pack() const
+{
+    Require( !d_stream_id.is_null() );
+
+    Serializer s;
+    char* prng = 0;
+    int rng_size = pack_sprng( d_stream_id->d_id, &prng );
+    int size = rng_size + 2 * sizeof(int);
+    Check( prng );
+
+    Teuchos::Array<char> state_buffer( size );
+    s.setBuffer( state_buffer() );
+
+    s << d_stream << rng_size;
+
+    for ( int i = 0; i < rng_size; ++i )
     {
-	Require( !d_stream_id.is_null() );
-	return d_stream_id->d_id;
+	s << prng[i];
     }
 
-    //! Get the stream number.
-    int getNumber() const
+    std::free( prng );
+
+    Ensure( s.getPtr() == state_buffer.getRawPtr() + size );
+    return state_buffer;
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Get the packed size.
+ */
+std::size_t SPRNG::getSize() const
+{
+    Require( !d_stream_id.is_null() );
+
+    if ( d_packed_size > 0 )
     {
-	Require( !d_stream_id.is_null() );
-	return d_stream;
+	return d_packed_size;
     }
 
-    //! Get the packed size.
-    std::size_t getSize() const;
+    char *prng = 0;
+    int rng_size = pack_sprng( d_stream_id->d_id, &prng );
+    d_packed_size = rng_size + 2 * sizeof(int);
 
-    //! Print diagnostics.
-    void print() const
-    {
-	Require( !d_stream_id.is_null() );
-	print_sprng( d_stream_id->d_id );
-    }
+    std::free( prng );
 
-  private:
-
-    // SPRNG library memory.
-    Teuchos::RCP<SPRNGValue> d_stream_id;
-
-    // Stream number.
-    int d_stream;
-
-    // Size of SPRNG data in packed state.
-    static std::size_t d_packed_size;
-};
+    return d_packed_size;
+}
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
 //---------------------------------------------------------------------------//
-
-#endif // end MCLS_SPRNG_HPP
-
-//---------------------------------------------------------------------------//
-// end MCLS_Sprng.hpp
+// end MCLS_Sprng.cpp
 //---------------------------------------------------------------------------//
 

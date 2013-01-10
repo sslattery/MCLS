@@ -45,6 +45,8 @@
 
 #include "MCLS_DBC.hpp"
 
+#include <Teuchos_ArrayView.hpp>
+
 namespace MCLS
 {
 
@@ -60,6 +62,7 @@ class Serializer
 
     //@{
     //! Typedefs.
+    typedef char               data_type;
     typedef char*              ptr_type;
     typedef const char*        const_ptr_type;
     //@}
@@ -87,6 +90,17 @@ class Serializer
 	d_size = size;
 	d_ptr = buffer;
 	d_begin = buffer;
+	d_end = d_begin + d_size;
+    }
+
+    //! Set the buffer and put into pack mode.
+    inline void setBuffer( const Teuchos::ArrayView<data_type>& buffer )
+    {
+	Require( buffer.getRawPtr() );
+	d_size_mode = false;
+	d_size = buffer.size();
+	d_ptr = buffer.getRawPtr();
+	d_begin = buffer.getRawPtr();
 	d_end = d_begin + d_size;
     }
 
@@ -171,7 +185,8 @@ class Deserializer
   public:
 
     //@{
-    //! Typedefs.
+    //! Typedefs.				
+    typedef char               data_type;
     typedef char*              ptr_type;
     typedef const char*        const_ptr_type;
     //@}
@@ -190,13 +205,23 @@ class Deserializer
     ~Deserializer()
     { /* ... */ }
 
-    //! Set the buffer and put into pack mode.
+    //! Set the buffer.
     inline void setBuffer( const std::size_t& size, ptr_type buffer )
     {
 	Require( buffer );
 	d_size = size;
 	d_ptr = buffer;
 	d_begin = buffer;
+	d_end = d_begin + d_size;
+    }
+
+    //! Set the buffer.
+    inline void setBuffer( const Teuchos::ArrayView<data_type>& buffer )
+    {
+	Require( buffer.getRawPtr() );
+	d_size = buffer.size();
+	d_ptr = buffer.getRawPtr();
+	d_begin = buffer.getRawPtr();
 	d_end = d_begin + d_size;
     }
 
