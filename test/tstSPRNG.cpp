@@ -142,5 +142,50 @@ TEUCHOS_UNIT_TEST( SPRNG, sprng_test )
 }
 
 //---------------------------------------------------------------------------//
+TEUCHOS_UNIT_TEST( SPRNG, pack_test )
+{
+    int num = 5;
+
+    Teuchos::Array<double> ref(80);
+    Teuchos::Array<char> buffer;
+
+    {
+	int *id1 = init_sprng(0, num, seed, 1);
+	int *idr = init_sprng(0, num, seed, 1);
+	
+	MCLS::SPRNG ran1(id1, 0);
+	MCLS::SPRNG ranr(idr, 0);
+
+	for (int i = 0; i < 80; i++)
+	{
+	    ref[i] = ranr.random();
+	}
+
+	for (int i = 0; i < 40; i++)
+	{
+	    ran1.random();
+	}
+
+	buffer = ran1.pack();
+
+	TEST_EQUALITY( Teuchos::as<std::size_t>( buffer.size() ),
+		       ran1.getSize() );
+    }
+
+    {
+	MCLS::SPRNG uran(buffer);
+
+	double r   = 0;
+	double rf  = 0;
+	for (int i = 0; i < 40; i++)
+	{
+	    r  = uran.random();
+	    rf = ref[i+40];
+	    TEST_FLOATING_EQUALITY( r, rf, 1.0e-8 );
+	}
+    }
+}
+
+//---------------------------------------------------------------------------//
 // end tstSPRNG.cpp
 //---------------------------------------------------------------------------//
