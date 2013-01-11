@@ -121,13 +121,13 @@ class CommHistoryBuffer
 
 //---------------------------------------------------------------------------//
 /*!
- * \class ReceiveCommHistoryBuffer
+ * \class ReceiveHistoryBuffer
  * \brief Data buffer for receiving histories. Tom Evans is responsible for
  * the design of this class and subsequent inheritance structure.
  */
 //---------------------------------------------------------------------------//
 template<class HT>
-class ReceiveCommHistoryBuffer : public CommHistoryBuffer<HT>
+class ReceiveHistoryBuffer : public CommHistoryBuffer<HT>
 {
   public:
 
@@ -140,12 +140,12 @@ class ReceiveCommHistoryBuffer : public CommHistoryBuffer<HT>
   public:
 
     //! Default constructor.
-    ReceiveCommHistoryBuffer( const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
+    ReceiveHistoryBuffer( const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
 	: Base( comm )
     { Ensure( Base::isEmpty() ); }
 
     //! Size constructor.
-    ReceiveCommHistoryBuffer( const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+    ReceiveHistoryBuffer( const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
 			      std::size_t size, int num_history )
 	: Base( comm, size, num_history )
     {
@@ -154,7 +154,7 @@ class ReceiveCommHistoryBuffer : public CommHistoryBuffer<HT>
     }
 
     //! Destructor.
-    ~ReceiveCommHistoryBuffer()
+    ~ReceiveHistoryBuffer()
     { /* ... */ }
 
     // Blocking receive.
@@ -172,13 +172,13 @@ class ReceiveCommHistoryBuffer : public CommHistoryBuffer<HT>
 
 //---------------------------------------------------------------------------//
 /*!
- * \class SendCommHistoryBuffer
+ * \class SendHistoryBuffer
  * \brief Data buffer for sending histories. Tom Evans is responsible for the
  * design of this class and subsequent inheritance structure.
  */
 //---------------------------------------------------------------------------//
 template<class HT>
-class SendCommHistoryBuffer : public CommHistoryBuffer<HT>
+class SendHistoryBuffer : public CommHistoryBuffer<HT>
 {
   public:
 
@@ -191,12 +191,12 @@ class SendCommHistoryBuffer : public CommHistoryBuffer<HT>
   public:
 
     //! Default constructor.
-    SendCommHistoryBuffer( const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
+    SendHistoryBuffer( const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
 	: Base( comm )
     { Ensure( Base::isEmpty() ); }
 
     //! Size constructor.
-    SendCommHistoryBuffer( const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+    SendHistoryBuffer( const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
 			   std::size_t size, int num_history )
 	: Base( comm, size, num_history )
     {
@@ -205,7 +205,7 @@ class SendCommHistoryBuffer : public CommHistoryBuffer<HT>
     }
 
     //! Destructor.
-    ~SendCommHistoryBuffer()
+    ~SendHistoryBuffer()
     { /* ... */ }
 
     // Blocking send.

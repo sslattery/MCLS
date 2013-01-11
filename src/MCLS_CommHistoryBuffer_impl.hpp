@@ -58,13 +58,13 @@ CommHistoryBuffer<HT>::~CommHistoryBuffer()
 { /* ... */ }
 
 //---------------------------------------------------------------------------//
-// ReceiveCommHistoryBuffer functions.
+// ReceiveHistoryBuffer functions.
 //---------------------------------------------------------------------------//
 /*!
  * \brief Blocking receive.
  */
 template<class HT>
-void ReceiveCommHistoryBuffer<HT>::receive( int rank )
+void ReceiveHistoryBuffer<HT>::receive( int rank )
 {
     Require( Root::isEmpty() );
     Require( Root::allocatedSize() > sizeof(int) );
@@ -81,7 +81,7 @@ void ReceiveCommHistoryBuffer<HT>::receive( int rank )
  * \brief Post non-blocking receives.
  */
 template<class HT>
-void ReceiveCommHistoryBuffer<HT>::post( int rank )
+void ReceiveHistoryBuffer<HT>::post( int rank )
 {
     Require( Root::isEmpty() );
     Require( Root::allocatedSize() > sizeof(int) );
@@ -95,7 +95,7 @@ void ReceiveCommHistoryBuffer<HT>::post( int rank )
  * \brief Wait on a non-blocking receive to finish.
  */
 template<class HT>
-void ReceiveCommHistoryBuffer<HT>::wait()
+void ReceiveHistoryBuffer<HT>::wait()
 {
     Teuchos::wait( *Base::d_comm, 
 		   Teuchos::Ptr<Teuchos::RCP<Base::Request>(&Base::d_handle) );
@@ -109,7 +109,7 @@ void ReceiveCommHistoryBuffer<HT>::wait()
  * \brief Check to see if a non-blocking send has finished.
  */
 template<class HT>
-bool ReceiveCommHistoryBuffer<HT>::check()
+bool ReceiveHistoryBuffer<HT>::check()
 {
     if ( Base::d_handle.is_null() )
     {
@@ -124,13 +124,13 @@ bool ReceiveCommHistoryBuffer<HT>::check()
 }
 
 //---------------------------------------------------------------------------//
-// SendCommHistoryBuffer functions.
+// SendHistoryBuffer functions.
 //---------------------------------------------------------------------------//
 /*!
  * \brief Blocking send.
  */
 template<class HT>
-void SendCommHistoryBuffer<HT>::send( int rank )
+void SendHistoryBuffer<HT>::send( int rank )
 {
     Require( Root::allocatedSize() > sizeof(int) );
 
@@ -148,7 +148,7 @@ void SendCommHistoryBuffer<HT>::send( int rank )
  * \brief Post non-blocking send.
  */
 template<class HT>
-void SendCommHistoryBuffer<HT>::post( int rank )
+void SendHistoryBuffer<HT>::post( int rank )
 {
     Require( Root::allocatedSize() > sizeof(int) );
 
@@ -162,7 +162,7 @@ void SendCommHistoryBuffer<HT>::post( int rank )
  * \brief Wait on a non-blocking send to finish.
  */
 template<class HT>
-void SendCommHistoryBuffer<HT>::wait()
+void SendHistoryBuffer<HT>::wait()
 {
     Teuchos::wait( *Base::d_comm, 
 		   Teuchos::Ptr<Teuchos::RCP<Base::Request>(&Base::d_handle) );
@@ -178,7 +178,7 @@ void SendCommHistoryBuffer<HT>::wait()
  * \brief Check to see if a non-blocking send has finished.
  */
 template<class HT>
-bool SendCommHistoryBuffer<HT>::check()
+bool SendHistoryBuffer<HT>::check()
 {
     if ( Base::d_handle.is_null() )
     {
