@@ -48,7 +48,7 @@ int seed = 2452423;
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST( SPRNG, control_test )
 {
-    typedef typename MCLS::RNGControl::RNG RNG;
+    typedef MCLS::RNGControl::RNG RNG;
 
     MCLS::RNGControl control( seed );
 

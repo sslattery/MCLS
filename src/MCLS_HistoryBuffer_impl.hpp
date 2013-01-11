@@ -114,10 +114,10 @@ void HistoryBuffer<HT>::bufferHistory( const HT& history )
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Add the histories in the buffer to a stack.
+ * \brief Add the histories in the buffer to a bank.
  */
 template<class HT>
-void HistoryBuffer<HT>::addToStack( std::stack<Teuchos::RCP<HT> >& stack )
+void HistoryBuffer<HT>::addToBank( std::stack<Teuchos::RCP<HT> >& bank )
 {
     Require( d_size_packed_history > 0 );
 
@@ -125,7 +125,7 @@ void HistoryBuffer<HT>::addToStack( std::stack<Teuchos::RCP<HT> >& stack )
     Buffer packed_history( d_size_packed_history );
     Teuchos::RCP<HT> history;
 
-    Remember( std::size_t stack_size = stack.size() );
+    Remember( std::size_t bank_size = bank.size() );
 
     for ( int n = 0; n < d_number; ++n )
     {
@@ -134,12 +134,12 @@ void HistoryBuffer<HT>::addToStack( std::stack<Teuchos::RCP<HT> >& stack )
 
 	history = Teuchos::rcp( new HT(packed_history) );
 	Check( !history.is_null() );
-	stack.push( history );
+	bank.push( history );
 
 	buffer_it += d_size_packed_history;
     }
 
-    Ensure( stack_size + d_number == stack.size() );
+    Ensure( bank_size + d_number == bank.size() );
     Ensure( d_number == d_max_num_histories ?
             buffer_it + sizeof(int) == d_buffer.end() :
             buffer_it + sizeof(int) != d_buffer.end() );

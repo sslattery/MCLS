@@ -114,8 +114,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( HistoryBuffer, buffering, Ordinal, Scalar )
     TEST_ASSERT( buffer.isEmpty() );
     TEST_EQUALITY( buffer.numHistories(), 0 );
 
-    std::stack<Teuchos::RCP<HT> > stack;
-    TEST_ASSERT( stack.empty() );
+    std::stack<Teuchos::RCP<HT> > bank;
+    TEST_ASSERT( bank.empty() );
 
     HT h1( 1, 1 );
     HT h2( 2, 2 );
@@ -142,35 +142,35 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( HistoryBuffer, buffering, Ordinal, Scalar )
     TEST_ASSERT( !buffer.isEmpty() );
     TEST_EQUALITY( buffer.numHistories(), 4 );
 
-    buffer.addToStack( stack );
+    buffer.addToBank( bank );
 
     Teuchos::RCP<HT> ph1, ph2, ph3, ph4;
 
-    TEST_EQUALITY( stack.size(), 4 );
-    ph4 = stack.top();
-    stack.pop();
+    TEST_EQUALITY( bank.size(), 4 );
+    ph4 = bank.top();
+    bank.pop();
     TEST_EQUALITY( ph4->state(), 4 );
     TEST_EQUALITY( ph4->weight(), 4 );
 
-    TEST_EQUALITY( stack.size(), 3 );
-    ph3 = stack.top();
-    stack.pop();
+    TEST_EQUALITY( bank.size(), 3 );
+    ph3 = bank.top();
+    bank.pop();
     TEST_EQUALITY( ph3->state(), 3 );
     TEST_EQUALITY( ph3->weight(), 3 );
 
-    TEST_EQUALITY( stack.size(), 2 );
-    ph2 = stack.top();
-    stack.pop();
+    TEST_EQUALITY( bank.size(), 2 );
+    ph2 = bank.top();
+    bank.pop();
     TEST_EQUALITY( ph2->state(), 2 );
     TEST_EQUALITY( ph2->weight(), 2 );
 
-    TEST_EQUALITY( stack.size(), 1 );
-    ph1 = stack.top();
-    stack.pop();
+    TEST_EQUALITY( bank.size(), 1 );
+    ph1 = bank.top();
+    bank.pop();
     TEST_EQUALITY( ph1->state(), 1 );
     TEST_EQUALITY( ph1->weight(), 1 );
 
-    TEST_ASSERT( stack.empty() );
+    TEST_ASSERT( bank.empty() );
 }
 
 UNIT_TEST_INSTANTIATION( HistoryBuffer, buffering )

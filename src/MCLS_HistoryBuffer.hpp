@@ -91,8 +91,8 @@ class HistoryBuffer
     // Write a history into the buffer.
     void bufferHistory( const HT& history );
 
-    // Add the histories in the buffer to a stack.
-    void addToStack( std::stack<Teuchos::RCP<HT> >& stack );
+    // Add the histories in the buffer to a bank.
+    void addToBank( std::stack<Teuchos::RCP<HT> >& bank );
 
     //! Get current number of histories in the buffer.
     int numHistories() const
