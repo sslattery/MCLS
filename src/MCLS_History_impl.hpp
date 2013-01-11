@@ -41,6 +41,8 @@
 #ifndef MCLS_HISTORY_IMPL_HPP
 #define MCLS_HISTORY_IMPL_HPP
 
+#include <algorithm>
+
 #include "MCLS_DBC.hpp"
 #include "MCLS_Serializer.hpp"
 

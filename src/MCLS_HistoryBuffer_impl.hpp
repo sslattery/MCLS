@@ -32,131 +32,193 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_HistoryBuffer.hpp
+ * \file MCLS_HistoryBuffer_impl.hpp
  * \author Stuart R. Slattery
- * \brief HistoryBuffer class declaration.
+ * \brief HistoryBuffer class implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_HISTORYBUFFER_HPP
-#define MCLS_HISTORYBUFFER_HPP
+#ifndef MCLS_HISTORYBUFFER_IMPL_HPP
+#define MCLS_HISTORYBUFFER_IMPL_HPP
 
-#include <stack>
+#include <algorithm>
 
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Array.hpp>
+#include "MCLS_DBC.hpp"
+#include "MCLS_Serializer.hpp"
 
 namespace MCLS
 {
 //---------------------------------------------------------------------------//
 /*!
- * \class HistoryBuffer
- * \brief Data buffer for histories. Tom Evans is responsible for the design
- * of this class and subsequent inheritance structure.
+ * \brief Size constructor.
  */
-//---------------------------------------------------------------------------//
-template<HT>
-class HistoryBuffer
+template<class HT>
+HistoryBuffer<HT>::HistoryBuffer( std::size size, int num_history )
+    : d_number( 0 )
 {
-  public:
+    setSizePackedHistory( size );
+    setMaxNumHistory( num_history );
+    allocate();
+    Ensure( !d_buffer.empty() );
+}
 
-    //@{
-    //! Typedefs.
-    typedef HT                                  history_type;
-    typedef Teuchos::Array<char>                Buffer;
-    //@}
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Allocate the buffer for the byte size of the maximum number of
+ * histories plus an additional integer for the actual number of the buffer.
+ */
+template<class HT>
+void HistoryBuffer<HT>::allocate()
+{
+    Require( d_number == 0 );
+    d_buffer.resize( 
+	d_max_num_histories*d_size_packed_history + sizeof(int), '\0' );
+    Ensure( d_number == 0 );
+}
 
-    //! Default constructor.
-    HistoryBuffer()
-	: d_number( 0 )
-    { /* ... */ }
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Deallocate the buffer.
+ */
+template<class HT>
+void HistoryBuffer<HT>::deallocate()
+{
+    Require( d_number == 0 );
+    d_buffer.clear();
+    Ensure( d_number == 0 );
+}
 
-    //! Size constructor.
-    HistoryBuffer( std::size size, int num_history );
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Write a history into the buffer.
+ */
+template<class HT>
+void HistoryBuffer<HT>::bufferHistory( const HT& history )
+{
+    Require( d_size_packed_history > 0 );
+    Require( d_number < d_max_num_history );
+    Require( d_number >= 0 );
+    Require( !d_buffer.empty() );
 
-    // Destructor.
-    virtual ~HistoryBuffer()
-    { /* ... */ }
+    Buffer packed_history = history.pack();
+    Check( packed_history.size() == d_size_packed_history );
 
-    // Clear the buffer.
-    void empty();
+    Buffer::iterator buffer_it = d_buffer.begin() + 
+				 d_size_packed_history*d_number;
+    Require( buffer_it != d_buffer.end() );
 
-    // Allocate the buffer.
-    void allocate();
+    std::copy( packed_history.begin(), packed_history.end(), buffer_it );
+    ++d_number;
+}
 
-    // Deallocate the buffer.
-    void deallocate();
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Add the histories in the buffer to a stack.
+ */
+template<class HT>
+void HistoryBuffer<HT>::addToStack( std::stack<Teuchos::RCP<HT> >& stack )
+{
+    Require( d_size_packed_history > 0 );
 
-    // Write a history into the buffer.
-    void bufferHistory( const HT& history );
+    Buffer::const_iterator buffer_it = d_buffer.begin();
+    Buffer packed_history( d_size_packed_history );
+    Teuchos::RCP<HT> history;
 
-    // Add the histories in the buffer to a stack.
-    void addToStack( std::stack<Teuchos::RCP<HT> >& stack );
+    Remember( std::size_t stack_size = stack.size() );
 
-    //! Get current number of histories in the buffer.
-    int numHistories() const
-    { return d_number; }
+    for ( int n = 0; n < d_number; ++n )
+    {
+	std::copy( buffer_it, buffer_it + d_size_stacked_history, 
+		   packed_history.begin() );
 
-    //! Check if the buffer is empty.
-    bool isEmpty() const
-    { return ( d_number == 0 ); }
+	history = Teuchos::rcp( new HT(packed_history) );
+	Check( !history.is_null() );
+	stack.push( history );
 
-    //! Check if the buffer is full.
-    bool isFull() const 
-    { return ( d_number == d_max_num_histories ); }
+	buffer_it += d_size_packed_history;
+    }
 
-    //! Get the current allocated size of the buffer.
-    std::size_t allocatedSize() const
-    { return d_buffer.size(); }
+    Ensure( stack_size + d_number == stack.size() );
+    Ensure( d_number == d_max_num_history ?
+            buffer_it + sizeof(int) == d_buffer.end() :
+            buffer_it + sizeof(int) != d_buffer.end() );
 
-  public:
+    empty();
+    Ensure( isEmpty() );
+}
 
-    // Set the maximum number of histories allowed in the buffer.
-    static void setMaxNumHistory( int num_history );
+//---------------------------------------------------------------------------//
+// Protected Members.
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Add the number of histories to the end of the buffer.
+ */
+template<class HT>
+void HistoryBuffer<HT>::writeNumToBuffer()
+{
+    Require( d_buffer.size() > sizeof(int) );
+    Serializer s;
+    s.setBuffer( sizeof(int), &d_buffer[d_buffer.size() - sizeof(int)] );
+    s << d_number;
+    Ensure( s.getPtr() == &d_buffer[d_buffer.size()] );
+}
 
-    // Set the byte size of a packed history.
-    static void setSizePackedHistory( std::size_t size );
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Read the number of histories from the end of the buffer.
+ */
+template<class HT>
+void HistoryBuffer<HT>::readNumFromBuffer()
+{
+    Deserializer ds;
+    ds.setBuffer( sizeof(int), &d_buffer[d_buffer.size() - sizeof(int)] );
+    ds >> d_number;
+    Ensure( s.getPtr() == &d_buffer[d_buffer.size()] );
+    Ensure( d_number >= 0 );
+}
 
-    //! Get the maximum number of histories allowed in the buffer.
-    static int maxNum()
-    { return d_max_num_histories; }
+//---------------------------------------------------------------------------//
+// Static Members.
+//---------------------------------------------------------------------------//
 
-    //! Get the size of a packed history.
-    static int sizePackedHistory()
-    { return d_size_packed_history; }
+//! Default maximum number of history allowed in a buffer.
+template<class HT>
+int HistoryBuffer<HT>::d_max_num_histories = 1000;
 
-  protected:
+//! Default size of a packed history.
+template<class HT>
+std::size_t HistoryBuffer<HT>::d_size_packed_history = 0;
 
-    // Packed history buffer.
-    Buffer d_buffer;
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Set the maximum number of histories allowed in the buffer.
+ */
+template<class HT>
+void HistoryBuffer<HT>::setMaxNumHistory( int num_history )
+{
+    Require( num_history > 0 );
+    Require( d_size_packed_history > 0 );
+    d_max_num_history = num_history;
+}
 
-    // Number of histories currently in the buffer.
-    int d_number;
-
-  private:
-
-    // Maximum number of histories allowed in the buffer.
-    static int d_max_num_histories;
-
-    // Size of a packed history in bytes.
-    static std::size_t d_size_packed_history; 
-};
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Set the byte size of a packed history.
+ */
+template<class HT>
+void HistoryBuffer<HT>::setSizePackedHistory( std::size_t size )
+{
+    Require( size > 0 );
+    d_size_packed_history = size;
+}
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
-//---------------------------------------------------------------------------//
-// Template includes.
-//---------------------------------------------------------------------------//
-
-#include "MCLS_HistoryBuffer_impl.hpp"
+#endif // end MCLS_HISTORYBUFFER_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-
-#endif // end MCLS_HISTORYBUFFER_HPP
-
-//---------------------------------------------------------------------------//
-// end MCLS_HistoryBuffer.hpp
+// end MCLS_HistoryBuffer_impl.hpp
 //---------------------------------------------------------------------------//
 

@@ -71,15 +71,16 @@ class HistoryBuffer
 	: d_number( 0 )
     { /* ... */ }
 
-    //! Size constructor.
+    // Size constructor.
     HistoryBuffer( std::size size, int num_history );
 
-    // Destructor.
+    //! Destructor.
     virtual ~HistoryBuffer()
     { /* ... */ }
 
-    // Clear the buffer.
-    void empty();
+    //! Set the number of histories in the buffer to zero.
+    void empty()
+    { d_number = 0; }
 
     // Allocate the buffer.
     void allocate();
@@ -124,6 +125,14 @@ class HistoryBuffer
     //! Get the size of a packed history.
     static int sizePackedHistory()
     { return d_size_packed_history; }
+
+  protected:
+
+    // Add the number of histories to the end of the buffer.
+    void writeNumToBuffer();
+
+    // Read the number of histories from the end of the buffer.
+    void readNumFromBuffer();
 
   protected:
 
