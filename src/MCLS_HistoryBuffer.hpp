@@ -113,7 +113,7 @@ class HistoryBuffer
   public:
 
     // Set the maximum number of histories allowed in the buffer.
-    static void setMaxNumHistory( int num_history );
+    static void setMaxNumHistories( int num_history );
 
     // Set the byte size of a packed history.
     static void setSizePackedHistory( std::size_t size );

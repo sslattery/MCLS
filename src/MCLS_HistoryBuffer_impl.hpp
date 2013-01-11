@@ -57,7 +57,7 @@ HistoryBuffer<HT>::HistoryBuffer( std::size_t size, int num_history )
     : d_number( 0 )
 {
     setSizePackedHistory( size );
-    setMaxNumHistory( num_history );
+    setMaxNumHistories( num_history );
     allocate();
     Ensure( !d_buffer.empty() );
 }
@@ -157,11 +157,11 @@ void HistoryBuffer<HT>::addToBank( std::stack<Teuchos::RCP<HT> >& bank )
 template<class HT>
 void HistoryBuffer<HT>::writeNumToBuffer()
 {
-    Require( d_buffer.size() > sizeof(int) );
+    Require( Teuchos::as<std::size_t>(d_buffer.size()) > sizeof(int) );
     Serializer s;
     s.setBuffer( sizeof(int), &d_buffer[d_buffer.size() - sizeof(int)] );
     s << d_number;
-    Ensure( s.getPtr() == &d_buffer[d_buffer.size()] );
+    Ensure( s.getPtr() == &d_buffer[0] + d_buffer.size() );
 }
 
 //---------------------------------------------------------------------------//
@@ -174,7 +174,7 @@ void HistoryBuffer<HT>::readNumFromBuffer()
     Deserializer ds;
     ds.setBuffer( sizeof(int), &d_buffer[d_buffer.size() - sizeof(int)] );
     ds >> d_number;
-    Ensure( ds.getPtr() == &d_buffer[d_buffer.size()] );
+    Ensure( ds.getPtr() == &d_buffer[0] + d_buffer.size() );
     Ensure( d_number >= 0 );
 }
 
@@ -195,7 +195,7 @@ std::size_t HistoryBuffer<HT>::d_size_packed_history = 0;
  * \brief Set the maximum number of histories allowed in the buffer.
  */
 template<class HT>
-void HistoryBuffer<HT>::setMaxNumHistory( int num_history )
+void HistoryBuffer<HT>::setMaxNumHistories( int num_history )
 {
     Require( num_history > 0 );
     Require( d_size_packed_history > 0 );

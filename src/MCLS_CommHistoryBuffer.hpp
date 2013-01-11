@@ -57,7 +57,7 @@ namespace MCLS
  */
 //---------------------------------------------------------------------------//
 template<class HT>
-class CommHistoryBuffer
+class CommHistoryBuffer : public HistoryBuffer<HT>
 {
   public:
 
@@ -66,19 +66,22 @@ class CommHistoryBuffer
     typedef HistoryBuffer<HT>                      Base;
     typedef typename Base::history_type            history_type;
     typedef Teuchos::CommRequest<int>              Request;
+    typedef Teuchos::Comm<int>                     Comm;
     //@}
 
   public:
 
     //! Default constructor.
-    CommHistoryBuffer( const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
-	: d_comm( comm )
+    CommHistoryBuffer( const Teuchos::RCP<const Comm>& comm )
+	: d_handle( Teuchos::null )
+	, d_comm( comm )
     { Ensure( Base::isEmpty() ); }
 
     //! Size constructor.
-    CommHistoryBuffer( const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+    CommHistoryBuffer( const Teuchos::RCP<const Comm>& comm,
 		       std::size_t size, int num_history )
-	: d_comm
+	: d_handle( Teuchos::null )
+	, d_comm( comm )
 	, Base( size, num_history )
     {
 	Ensure( Base::isEmpty() );
@@ -116,7 +119,7 @@ class CommHistoryBuffer
     Teuchos::RCP<Request> d_handle;
 
     // Communicator on which this buffer is defined.
-    Teuchos::RCP<const Teuchos::Comm<int> > d_comm;
+    Teuchos::RCP<const Comm> d_comm;
 };
 
 //---------------------------------------------------------------------------//
@@ -135,18 +138,19 @@ class ReceiveHistoryBuffer : public CommHistoryBuffer<HT>
     //! Typedefs.
     typedef HistoryBuffer<HT>                      Root;
     typedef CommHistoryBuffer<HT>                  Base;
+    typedef typename Base::Comm                    Comm;
     //@}
 
   public:
 
     //! Default constructor.
-    ReceiveHistoryBuffer( const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
+    ReceiveHistoryBuffer( const Teuchos::RCP<const Comm>& comm )
 	: Base( comm )
     { Ensure( Base::isEmpty() ); }
 
     //! Size constructor.
-    ReceiveHistoryBuffer( const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-			      std::size_t size, int num_history )
+    ReceiveHistoryBuffer( const Teuchos::RCP<const Comm>& comm,
+			  std::size_t size, int num_history )
 	: Base( comm, size, num_history )
     {
 	Ensure( Base::isEmpty() );
@@ -186,18 +190,19 @@ class SendHistoryBuffer : public CommHistoryBuffer<HT>
     //! Typedefs.
     typedef HistoryBuffer<HT>                      Root;
     typedef CommHistoryBuffer<HT>                  Base;
+    typedef typename Base::Comm                    Comm;
     //@}
 
   public:
 
     //! Default constructor.
-    SendHistoryBuffer( const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
+    SendHistoryBuffer( const Teuchos::RCP<const Comm>& comm )
 	: Base( comm )
     { Ensure( Base::isEmpty() ); }
 
     //! Size constructor.
-    SendHistoryBuffer( const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-			   std::size_t size, int num_history )
+    SendHistoryBuffer( const Teuchos::RCP<const Comm>& comm,
+		       std::size_t size, int num_history )
 	: Base( comm, size, num_history )
     {
 	Ensure( Base::isEmpty() );

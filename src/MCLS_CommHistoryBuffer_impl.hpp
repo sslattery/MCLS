@@ -69,8 +69,9 @@ void ReceiveHistoryBuffer<HT>::receive( int rank )
     Require( Root::isEmpty() );
     Require( Root::allocatedSize() > sizeof(int) );
 
-    Teuchos::receive( *Base::d_comm, rank, 
-		      Root::d_buffer.size(), &Root::d_buffer[0] );
+    Teuchos::receive<int,char>( 
+	*Base::d_comm, rank, 
+	Root::d_buffer.size(), Root::d_buffer.getRawPtr() );
     Root::readNumFromBuffer();
 
     Ensure( Root::d_number < Root::maxNum() );
@@ -86,7 +87,7 @@ void ReceiveHistoryBuffer<HT>::post( int rank )
     Require( Root::isEmpty() );
     Require( Root::allocatedSize() > sizeof(int) );
 
-    Base::d_handle = Teuchos::ireceive( 
+    Base::d_handle = Teuchos::ireceive<int,char>( 
 	*Base::d_comm, Teuchos::arcpFromArray(Root::d_buffer), rank );
 }
 
@@ -97,8 +98,10 @@ void ReceiveHistoryBuffer<HT>::post( int rank )
 template<class HT>
 void ReceiveHistoryBuffer<HT>::wait()
 {
-    Teuchos::wait( *Base::d_comm, 
-		   Teuchos::Ptr<Teuchos::RCP<Base::Request>(&Base::d_handle) );
+    Teuchos::Ptr<Teuchos::RCP<typename Base::Request> > 
+	request_ptr(&this->d_handle);
+
+    Teuchos::wait( *Base::d_comm, request_ptr );
     Root::readNumFromBuffer();
 
     Ensure( Base::d_handle.is_null() );
@@ -135,8 +138,9 @@ void SendHistoryBuffer<HT>::send( int rank )
     Require( Root::allocatedSize() > sizeof(int) );
 
     Root::writeNumToBuffer();
-    Teuchos::send( *Base::d_comm, Root::buffer.size(), 
-		   &Root::buffer[0], rank );
+    Teuchos::send<int,char>( *Base::d_comm, Root::d_buffer.size(), 
+			     Root::d_buffer.getRawPtr(), rank );
+
     Root::empty();
 
     Ensure( Root::isEmpty() );
@@ -153,7 +157,7 @@ void SendHistoryBuffer<HT>::post( int rank )
     Require( Root::allocatedSize() > sizeof(int) );
 
     Root::writeNumToBuffer();
-    Base::d_handle = Teuchos::isend( 
+    Base::d_handle = Teuchos::isend<int,char>( 
 	*Base::d_comm, Teuchos::arcpFromArray(Root::d_buffer), rank );
 }
 
@@ -164,8 +168,11 @@ void SendHistoryBuffer<HT>::post( int rank )
 template<class HT>
 void SendHistoryBuffer<HT>::wait()
 {
-    Teuchos::wait( *Base::d_comm, 
-		   Teuchos::Ptr<Teuchos::RCP<Base::Request>(&Base::d_handle) );
+    Teuchos::Ptr<Teuchos::RCP<typename Base::Request> > 
+	request_ptr(&this->d_handle);
+
+    Teuchos::wait( *Base::d_comm, request_ptr );
+
     Root::empty();
 
     Ensure( Base::d_handle.is_null() );

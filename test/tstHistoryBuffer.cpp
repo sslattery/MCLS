@@ -68,7 +68,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( HistoryBuffer, sizes, Ordinal, Scalar )
 
     HT::setByteSize( 0 );
     MCLS::HistoryBuffer<HT>::setSizePackedHistory( HT::getPackedBytes() );
-    MCLS::HistoryBuffer<HT>::setMaxNumHistory( 10 );
+    MCLS::HistoryBuffer<HT>::setMaxNumHistories( 10 );
     TEST_EQUALITY( MCLS::HistoryBuffer<HT>::maxNum(), 10 );
     TEST_EQUALITY( MCLS::HistoryBuffer<HT>::sizePackedHistory(),
 		  sizeof(Scalar) + sizeof(Ordinal) );
@@ -176,5 +176,5 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( HistoryBuffer, buffering, Ordinal, Scalar )
 UNIT_TEST_INSTANTIATION( HistoryBuffer, buffering )
 
 //---------------------------------------------------------------------------//
-// end HistoryBuffer.cpp
+// end tstHistoryBuffer.cpp
 //---------------------------------------------------------------------------//
