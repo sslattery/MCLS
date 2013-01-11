@@ -65,18 +65,21 @@ class CommHistoryBuffer
     //! Typedefs.
     typedef HistoryBuffer<HT>                      Base;
     typedef typename Base::history_type            history_type;
-    typedef typename Base::Buffer                  Buffer;
+    typedef Teuchos::CommRequest<int>              Request;
     //@}
 
   public:
 
     //! Default constructor.
-    CommHistoryBuffer()
+    CommHistoryBuffer( const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
+	: d_comm( comm )
     { Ensure( Base::isEmpty() ); }
 
     //! Size constructor.
-    CommHistoryBuffer( std::size_t size, int num_history )
-	: Base( size, num_history )
+    CommHistoryBuffer( const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+		       std::size_t size, int num_history )
+	: d_comm
+	, Base( size, num_history )
     {
 	Ensure( Base::isEmpty() );
 	Ensure( Base::allocatedSize() > 0 );
@@ -104,16 +107,16 @@ class CommHistoryBuffer
 
     //! Check the status of a non-blocking communication buffer.
     inline bool status() const
-    { 
-	Require( !d_handle.is_null() );
-	return ( d_handle->getSourceRank() >= 0 ); 
-    }
+    { return !d_handle.is_null(); }
 
   protected:
 
     // Non-blocking communication handles. This object's destructor will
     // cancel the request.
-    Teuchos::RCP<Teuchos::CommRequest<int> > d_handle;
+    Teuchos::RCP<Request> d_handle;
+
+    // Communicator on which this buffer is defined.
+    Teuchos::RCP<const Teuchos::Comm<int> > d_comm;
 };
 
 //---------------------------------------------------------------------------//
@@ -132,19 +135,19 @@ class ReceiveCommHistoryBuffer : public CommHistoryBuffer<HT>
     //! Typedefs.
     typedef HistoryBuffer<HT>                      Root;
     typedef CommHistoryBuffer<HT>                  Base;
-    typedef typename Base::history_type            history_type;
-    typedef typename Base::Buffer                  Buffer;
     //@}
 
   public:
 
     //! Default constructor.
-    ReceiveCommHistoryBuffer()
+    ReceiveCommHistoryBuffer( const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
+	: Base( comm )
     { Ensure( Base::isEmpty() ); }
 
     //! Size constructor.
-    ReceiveCommHistoryBuffer( std::size_t size, int num_history )
-	: Base( size, num_history )
+    ReceiveCommHistoryBuffer( const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+			      std::size_t size, int num_history )
+	: Base( comm, size, num_history )
     {
 	Ensure( Base::isEmpty() );
 	Ensure( Base::allocatedSize() > 0 );
@@ -183,19 +186,19 @@ class SendCommHistoryBuffer : public CommHistoryBuffer<HT>
     //! Typedefs.
     typedef HistoryBuffer<HT>                      Root;
     typedef CommHistoryBuffer<HT>                  Base;
-    typedef typename Base::history_type            history_type;
-    typedef typename Base::Buffer                  Buffer;
     //@}
 
   public:
 
     //! Default constructor.
-    SendCommHistoryBuffer()
+    SendCommHistoryBuffer( const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
+	: Base( comm )
     { Ensure( Base::isEmpty() ); }
 
     //! Size constructor.
-    SendCommHistoryBuffer( std::size_t size, int num_history )
-	: Base( size, num_history )
+    SendCommHistoryBuffer( const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+			   std::size_t size, int num_history )
+	: Base( comm, size, num_history )
     {
 	Ensure( Base::isEmpty() );
 	Ensure( Base::allocatedSize() > 0 );

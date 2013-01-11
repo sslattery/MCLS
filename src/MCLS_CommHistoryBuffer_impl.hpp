@@ -32,207 +32,175 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_CommHistoryBuffer.hpp
+ * \file MCLS_CommHistoryBuffer_impl.hpp
  * \author Stuart R. Slattery
- * \brief CommHistoryBuffer class declaration.
+ * \brief CommHistoryBuffer class implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_COMMHISTORYBUFFER_HPP
-#define MCLS_COMMHISTORYBUFFER_HPP
+#ifndef MCLS_COMMHISTORYBUFFER_IMPL_HPP
+#define MCLS_COMMHISTORYBUFFER_IMPL_HPP
 
-#include "MCLS_DBC.hpp"
-#include "MCLS_HistoryBuffer.hpp"
-
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Comm.hpp>
+#include <Teuchos_CommHelpers.hpp>
+#include <Teuchos_Ptr.hpp>
 
 namespace MCLS
 {
 //---------------------------------------------------------------------------//
-/*!
- * \class CommHistoryBuffer
- * \brief Data buffer for histories. Tom Evans is responsible for the design
- * of this class and subsequent inheritance structure.
- */
+// CommHistoryBuffer functions.
 //---------------------------------------------------------------------------//
+/*!
+ * \brief Pure virtual destructor. Prevents direct instantiation of
+ * CommHistoryBuffer.
+ */
 template<class HT>
-class CommHistoryBuffer
+CommHistoryBuffer<HT>::~CommHistoryBuffer()
+{ /* ... */ }
+
+//---------------------------------------------------------------------------//
+// ReceiveCommHistoryBuffer functions.
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Blocking receive.
+ */
+template<class HT>
+void ReceiveCommHistoryBuffer<HT>::receive( int rank )
 {
-  public:
+    Require( Root::isEmpty() );
+    Require( Root::allocatedSize() > sizeof(int) );
 
-    //@{
-    //! Typedefs.
-    typedef HistoryBuffer<HT>                      Base;
-    typedef typename Base::history_type            history_type;
-    typedef typename Base::Buffer                  Buffer;
-    //@}
+    Teuchos::receive( *Base::d_comm, rank, 
+		      Root::d_buffer.size(), &Root::d_buffer[0] );
+    Root::readNumFromBuffer();
 
-  public:
-
-    //! Default constructor.
-    CommHistoryBuffer()
-    { Ensure( Base::isEmpty() ); }
-
-    //! Size constructor.
-    CommHistoryBuffer( std::size_t size, int num_history )
-	: Base( size, num_history )
-    {
-	Ensure( Base::isEmpty() );
-	Ensure( Base::allocatedSize() > 0 );
-    }
-
-    // Pure virtual destructor.
-    virtual ~CommHistoryBuffer() = 0;
-
-    //! Asynchronous post.
-    virtual void post( int rank ) = 0;
-
-    //! Asynchronous wait.
-    virtual void wait() = 0;
-
-    //! Asynchronous check.
-    virtual bool check() = 0;
-
-    //! Free non-blocking communication buffer handles.
-    inline void free()
-    {
-	d_handle = Teuchos::null;
-	Base::empty();
-	Ensure( Base::isEmpty() );
-    }
-
-    //! Check the status of a non-blocking communication buffer.
-    inline bool status() const
-    { 
-	Require( !d_handle.is_null() );
-	return ( d_handle->getSourceRank() >= 0 ); 
-    }
-
-  protected:
-
-    // Non-blocking communication handles. This object's destructor will
-    // cancel the request.
-    Teuchos::RCP<Teuchos::CommRequest<int> > d_handle;
-};
+    Ensure( Root::d_number < Root::maxNum() );
+}
 
 //---------------------------------------------------------------------------//
 /*!
- * \class ReceiveCommHistoryBuffer
- * \brief Data buffer for receiving histories. Tom Evans is responsible for
- * the design of this class and subsequent inheritance structure.
+ * \brief Post non-blocking receives.
  */
-//---------------------------------------------------------------------------//
 template<class HT>
-class ReceiveCommHistoryBuffer : public CommHistoryBuffer<HT>
+void ReceiveCommHistoryBuffer<HT>::post( int rank )
 {
-  public:
+    Require( Root::isEmpty() );
+    Require( Root::allocatedSize() > sizeof(int) );
 
-    //@{
-    //! Typedefs.
-    typedef HistoryBuffer<HT>                      Root;
-    typedef CommHistoryBuffer<HT>                  Base;
-    typedef typename Base::history_type            history_type;
-    typedef typename Base::Buffer                  Buffer;
-    //@}
-
-  public:
-
-    //! Default constructor.
-    ReceiveCommHistoryBuffer()
-    { Ensure( Base::isEmpty() ); }
-
-    //! Size constructor.
-    ReceiveCommHistoryBuffer( std::size_t size, int num_history )
-	: Base( size, num_history )
-    {
-	Ensure( Base::isEmpty() );
-	Ensure( Base::allocatedSize() > 0 );
-    }
-
-    //! Destructor.
-    ~ReceiveCommHistoryBuffer()
-    { /* ... */ }
-
-    // Blocking receive.
-    void receive( int rank );
-
-    // Asynchronous post.
-    void post( int rank );
-
-    // Asynchronous wait.
-    void wait();
-
-    // Asynchronous check.
-    bool check();
-};
+    Base::d_handle = Teuchos::ireceive( 
+	*Base::d_comm, Teuchos::arcpFromArray(Root::d_buffer), rank );
+}
 
 //---------------------------------------------------------------------------//
 /*!
- * \class SendCommHistoryBuffer
- * \brief Data buffer for sending histories. Tom Evans is responsible for the
- * design of this class and subsequent inheritance structure.
+ * \brief Wait on a non-blocking receive to finish.
  */
-//---------------------------------------------------------------------------//
 template<class HT>
-class SendCommHistoryBuffer : public CommHistoryBuffer<HT>
+void ReceiveCommHistoryBuffer<HT>::wait()
 {
-  public:
+    Teuchos::wait( *Base::d_comm, 
+		   Teuchos::Ptr<Teuchos::RCP<Base::Request>(&Base::d_handle) );
+    Root::readNumFromBuffer();
 
-    //@{
-    //! Typedefs.
-    typedef HistoryBuffer<HT>                      Root;
-    typedef CommHistoryBuffer<HT>                  Base;
-    typedef typename Base::history_type            history_type;
-    typedef typename Base::Buffer                  Buffer;
-    //@}
+    Ensure( Base::d_handle.is_null() );
+}
 
-  public:
-
-    //! Default constructor.
-    SendCommHistoryBuffer()
-    { Ensure( Base::isEmpty() ); }
-
-    //! Size constructor.
-    SendCommHistoryBuffer( std::size_t size, int num_history )
-	: Base( size, num_history )
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Check to see if a non-blocking send has finished.
+ */
+template<class HT>
+bool ReceiveCommHistoryBuffer<HT>::check()
+{
+    if ( Base::d_handle.is_null() )
     {
-	Ensure( Base::isEmpty() );
-	Ensure( Base::allocatedSize() > 0 );
+	Root::readNumFromBuffer();
+
+	Ensure( Base::d_handle.is_null() );
+	Ensure( Root::numHistories() >= 0 );
+	return true;
     }
 
-    //! Destructor.
-    ~SendCommHistoryBuffer()
-    { /* ... */ }
+    return false;
+}
 
-    // Blocking send.
-    void send( int rank );
+//---------------------------------------------------------------------------//
+// SendCommHistoryBuffer functions.
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Blocking send.
+ */
+template<class HT>
+void SendCommHistoryBuffer<HT>::send( int rank )
+{
+    Require( Root::allocatedSize() > sizeof(int) );
 
-    // Asynchronous post.
-    void post( int rank );
+    Root::writeNumToBuffer();
+    Teuchos::send( *Base::d_comm, Root::buffer.size(), 
+		   &Root::buffer[0], rank );
+    Root::empty();
 
-    // Asynchronous wait.
-    void wait();
+    Ensure( Root::isEmpty() );
+    Ensure( Root::allocatedSize() > sizeof(int) );
+}
 
-    // Asynchronous check.
-    bool check();
-};
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Post non-blocking send.
+ */
+template<class HT>
+void SendCommHistoryBuffer<HT>::post( int rank )
+{
+    Require( Root::allocatedSize() > sizeof(int) );
+
+    Root::writeNumToBuffer();
+    Base::d_handle = Teuchos::isend( 
+	*Base::d_comm, Teuchos::arcpFromArray(Root::d_buffer), rank );
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Wait on a non-blocking send to finish.
+ */
+template<class HT>
+void SendCommHistoryBuffer<HT>::wait()
+{
+    Teuchos::wait( *Base::d_comm, 
+		   Teuchos::Ptr<Teuchos::RCP<Base::Request>(&Base::d_handle) );
+    Root::empty();
+
+    Ensure( Base::d_handle.is_null() );
+    Ensure( Root::isEmpty() );
+    Ensure( Root::allocatedSize() > sizeof(int) );
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Check to see if a non-blocking send has finished.
+ */
+template<class HT>
+bool SendCommHistoryBuffer<HT>::check()
+{
+    if ( Base::d_handle.is_null() )
+    {
+	Root::empty();
+
+	Ensure( Base::d_handle.is_null() );
+	Ensure( Root::isEmpty() );
+	return true;
+    }
+
+    return false;
+}
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
 //---------------------------------------------------------------------------//
-// Template includes.
-//---------------------------------------------------------------------------//
 
-#include "MCLS_CommHistoryBuffer_impl.hpp"
+#endif // end MCLS_COMMHISTORYBUFFER_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-
-#endif // end MCLS_COMMHISTORYBUFFER_HPP
-
-//---------------------------------------------------------------------------//
-// end MCLS_CommHistoryBuffer.hpp
+// end MCLS_CommHistoryBuffer_impl.hpp
 //---------------------------------------------------------------------------//
 
