@@ -201,5 +201,5 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( History, broadcast, Ordinal, Scalar )
 UNIT_TEST_INSTANTIATION( History, broadcast )
 
 //---------------------------------------------------------------------------//
-// end History.cpp
+// end tstHistory.cpp
 //---------------------------------------------------------------------------//

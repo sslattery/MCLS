@@ -33,6 +33,7 @@ APPEND_SET(HEADERS
   MCLS_LinearProblem_impl.hpp
   MCLS_MatrixTraits.hpp
   MCLS_RNGControl.hpp
+  MCLS_SamplingTools.hpp
   MCLS_Serializer.hpp
   MCLS_SPRNG.hpp
   MCLS_VectorExport.hpp

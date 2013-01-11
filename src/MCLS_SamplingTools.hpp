@@ -32,46 +32,51 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_AdjointNeumannUlamProduct.hpp
+ * \file MCLS_SamplingTools.hpp
  * \author Stuart R. Slattery
  * \brief Linear Problem declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_ADJOINTNEUMANNULAMPRODUCT_HPP
-#define MCLS_ADJOINTNEUMANNULAMPRODUCT_HPP
+#ifndef MCLS_SAMPLINGTOOLS_HPP
+#define MCLS_SAMPLINGTOOLS_HPP
 
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Hashtable.hpp>
+#include <algorithm>
+#include <cmath>
+
+#include "MCLS_DBC.hpp"
+
+#include <Teuchos_ArrayView.hpp>
 
 namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class AdjointNeumannUlamProduct
- * \brief Adjoint Neumann-Ulam Product of a matrix.
- *
- * H^T = I - A^T 
- * H^T = (P) x (W)
+ * \class SamplingTools
+ * \brief Tools for sampling distributions.
  */
-template<class Scalar, class GO>
-class AdjointNeumannUlamProduct
+class SamplingTools
 {
-  public:
+    // Given a discrete CDF and random numuber, sample it to get the output
+    // state. 
+    static Teuchos::ArrayView<double>::size_type
+    sampleDiscreteCDF( const Teuchos::ArrayView<double>& cdf, 
+		       const double& random )
+    {
+	Require( cdf.size() > 0 );
+	Require( std::abs( cdf[cdf.size()-1] - 1.0 ) < 1.0e-6 );
+	Require( random >= 0.0 && random <= 1.0 );
 
-    //@{
-    //! Typedefs.
-    typedef Scalar                                  scalar_type;
-    typedef GO                                      global_ordinal_type;
-    //@}
+	Teuchos::ArrayView<double>::iterator bin_iterator =
+	    std::lower_bound( cdf.begin(), cdf.end(), random );
 
-    // Constructor.
-    template<class Matrix>
-    AdjointNeumannUlamProduct( const Teuchos::RCP<const Matrix>& A );
+	Teuchos::ArrayView<double>::size_type bin =
+	    std::distance( cdf.begin(), bin_iterator );
 
-    // Destructor.
-    ~AdjointNeumannUlamProduct();
+	Ensure( bin >= 0 && bin < cdf.size() );
+	return bin;
+    }
 };
 
 //---------------------------------------------------------------------------//
@@ -79,16 +84,10 @@ class AdjointNeumannUlamProduct
 } // end namespace MCLS
 
 //---------------------------------------------------------------------------//
-// Template includes.
-//---------------------------------------------------------------------------//
 
-#include "MCLS_AdjointNeumannUlamProduct_impl.hpp"
+#endif // end MCLS_SAMPLINGTOOLS_HPP
 
 //---------------------------------------------------------------------------//
-
-#endif // end MCLS_ADJOINTNEUMANNULAMPRODUCT_HPP
-
-//---------------------------------------------------------------------------//
-// end MCLS_AdjointNeumannUlamProduct.hpp
+// end MCLS_SamplingTools.hpp
 // ---------------------------------------------------------------------------//
 
