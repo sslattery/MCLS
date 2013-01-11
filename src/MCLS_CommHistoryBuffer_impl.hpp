@@ -114,9 +114,29 @@ void ReceiveHistoryBuffer<HT>::wait()
 template<class HT>
 bool ReceiveHistoryBuffer<HT>::check()
 {
-    if ( Base::d_handle.is_null() )
+    bool is_complete = false;
+
+#ifdef HAVE_MPI
+    Require( !Base::d_handle.is_null() );
+    Teuchos::ArrayView<char>::size_type num_bytes = 
+	Teuchos::rcp_dynamic_cast<Teuchos::MpiCommRequest<int> >( 
+	    Base::d_handle )->numBytes();
+    MPI_Request raw_request = 
+	Teuchos::rcp_dynamic_cast<Teuchos::MpiCommRequest<int> >( 
+	    Base::d_handle )->releaseRawMpiRequest();
+    MPI_Status raw_status;
+    int flag = 0;
+    MPI_Test( &raw_request, &flag, &raw_status );
+    is_complete = ( flag != 0 );
+    Base::d_handle = Teuchos::mpiCommRequest<int>( raw_request, num_bytes );
+#else
+    is_complete = true;
+#endif
+
+    if ( is_complete )
     {
 	Root::readNumFromBuffer();
+	Base::d_handle = Teuchos::null;
 
 	Ensure( Base::d_handle.is_null() );
 	Ensure( Root::numHistories() >= 0 );
@@ -187,9 +207,29 @@ void SendHistoryBuffer<HT>::wait()
 template<class HT>
 bool SendHistoryBuffer<HT>::check()
 {
-    if ( Base::d_handle.is_null() )
+    bool is_complete = false;
+
+#ifdef HAVE_MPI
+    Require( !Base::d_handle.is_null() );
+    Teuchos::ArrayView<char>::size_type num_bytes = 
+	Teuchos::rcp_dynamic_cast<Teuchos::MpiCommRequest<int> >( 
+	    Base::d_handle )->numBytes();
+    MPI_Request raw_request = 
+	Teuchos::rcp_dynamic_cast<Teuchos::MpiCommRequest<int> >( 
+	    Base::d_handle )->releaseRawMpiRequest();
+    MPI_Status raw_status;
+    int flag = 0;
+    MPI_Test( &raw_request, &flag, &raw_status );
+    is_complete = ( flag != 0 );
+    Base::d_handle = Teuchos::mpiCommRequest<int>( raw_request, num_bytes );
+#else
+    is_complete = true;
+#endif
+
+    if ( is_complete )
     {
 	Root::empty();
+	Base::d_handle = Teuchos::null;
 
 	Ensure( Base::d_handle.is_null() );
 	Ensure( Root::isEmpty() );

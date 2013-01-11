@@ -80,9 +80,9 @@ class CommHistoryBuffer : public HistoryBuffer<HT>
     //! Size constructor.
     CommHistoryBuffer( const Teuchos::RCP<const Comm>& comm,
 		       std::size_t size, int num_history )
-	: d_handle( Teuchos::null )
+	: Base( size, num_history )
+	, d_handle( Teuchos::null )
 	, d_comm( comm )
-	, Base( size, num_history )
     {
 	Ensure( Base::isEmpty() );
 	Ensure( Base::allocatedSize() > 0 );
@@ -106,6 +106,7 @@ class CommHistoryBuffer : public HistoryBuffer<HT>
 	d_handle = Teuchos::null;
 	Base::empty();
 	Ensure( Base::isEmpty() );
+	Ensure( d_handle.is_null() );
     }
 
     //! Check the status of a non-blocking communication buffer.
@@ -115,7 +116,7 @@ class CommHistoryBuffer : public HistoryBuffer<HT>
   protected:
 
     // Non-blocking communication handles. This object's destructor will
-    // cancel the request.
+    // cancel the request. A handle is in use if it is non-null.
     Teuchos::RCP<Request> d_handle;
 
     // Communicator on which this buffer is defined.
