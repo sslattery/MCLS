@@ -55,7 +55,7 @@ namespace MCLS
  * of this class and subsequent inheritance structure.
  */
 //---------------------------------------------------------------------------//
-template<HT>
+template<class HT>
 class HistoryBuffer
 {
   public:
@@ -72,7 +72,7 @@ class HistoryBuffer
     { /* ... */ }
 
     // Size constructor.
-    HistoryBuffer( std::size size, int num_history );
+    HistoryBuffer( std::size_t size, int num_history );
 
     //! Destructor.
     virtual ~HistoryBuffer()

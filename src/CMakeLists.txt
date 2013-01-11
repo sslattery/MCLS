@@ -25,6 +25,8 @@ APPEND_SET(HEADERS
   MCLS_DBC.hpp
   MCLS_History.hpp
   MCLS_History_impl.hpp
+  MCLS_HistoryBuffer.hpp
+  MCLS_HistoryBuffer_impl.hpp
   MCLS_LinearProblem.hpp
   MCLS_LinearProblem_impl.hpp
   MCLS_MatrixTraits.hpp

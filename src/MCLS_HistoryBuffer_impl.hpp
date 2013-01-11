@@ -53,7 +53,7 @@ namespace MCLS
  * \brief Size constructor.
  */
 template<class HT>
-HistoryBuffer<HT>::HistoryBuffer( std::size size, int num_history )
+HistoryBuffer<HT>::HistoryBuffer( std::size_t size, int num_history )
     : d_number( 0 )
 {
     setSizePackedHistory( size );
@@ -96,7 +96,7 @@ template<class HT>
 void HistoryBuffer<HT>::bufferHistory( const HT& history )
 {
     Require( d_size_packed_history > 0 );
-    Require( d_number < d_max_num_history );
+    Require( d_number < d_max_num_histories );
     Require( d_number >= 0 );
     Require( !d_buffer.empty() );
 
@@ -128,7 +128,7 @@ void HistoryBuffer<HT>::addToStack( std::stack<Teuchos::RCP<HT> >& stack )
 
     for ( int n = 0; n < d_number; ++n )
     {
-	std::copy( buffer_it, buffer_it + d_size_stacked_history, 
+	std::copy( buffer_it, buffer_it + d_size_packed_history, 
 		   packed_history.begin() );
 
 	history = Teuchos::rcp( new HT(packed_history) );
@@ -139,7 +139,7 @@ void HistoryBuffer<HT>::addToStack( std::stack<Teuchos::RCP<HT> >& stack )
     }
 
     Ensure( stack_size + d_number == stack.size() );
-    Ensure( d_number == d_max_num_history ?
+    Ensure( d_number == d_max_num_histories ?
             buffer_it + sizeof(int) == d_buffer.end() :
             buffer_it + sizeof(int) != d_buffer.end() );
 
@@ -173,7 +173,7 @@ void HistoryBuffer<HT>::readNumFromBuffer()
     Deserializer ds;
     ds.setBuffer( sizeof(int), &d_buffer[d_buffer.size() - sizeof(int)] );
     ds >> d_number;
-    Ensure( s.getPtr() == &d_buffer[d_buffer.size()] );
+    Ensure( ds.getPtr() == &d_buffer[d_buffer.size()] );
     Ensure( d_number >= 0 );
 }
 
@@ -198,7 +198,7 @@ void HistoryBuffer<HT>::setMaxNumHistory( int num_history )
 {
     Require( num_history > 0 );
     Require( d_size_packed_history > 0 );
-    d_max_num_history = num_history;
+    d_max_num_histories = num_history;
 }
 
 //---------------------------------------------------------------------------//
