@@ -2,7 +2,7 @@
 /*!
  * \file   tstRNGControl.cpp
  * \author Stuart Slattery
- * \brief  SPRNG class unit tests.
+ * \brief  RNGControl class unit tests.
  */
 //---------------------------------------------------------------------------//
 

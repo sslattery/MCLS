@@ -92,21 +92,15 @@ class RNGControl
 
     //! Get the size of the packed random number state.
     std::size_t getSize() const 
-    {
-	return d_size;
-    }
+    { return d_size; }
 
     //! Get the seed value for SPRNG.
     int getSeed() const
-    { 
-	return d_seed;
-    }
+    { return d_seed; }
 
     //! Return the total number of current streams set.
     int getNumber() const
-    { 
-	return d_number;
-    }
+    { return d_number; }
 
   private:
 

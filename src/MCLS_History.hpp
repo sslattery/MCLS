@@ -43,9 +43,12 @@
 
 #include <cmath>
 
-#include <Teuchos_RCP.hpp>
+#include "MCLS_RNGControl.hpp"
+
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_ArrayView.hpp>
+#include <Teuchos_Array.hpp>
 
 namespace MCLS
 {
@@ -64,24 +67,38 @@ class History
     //! Typedefs.
     typedef Scalar                                    scalar_type;
     typedef Ordinal                                   ordinal_type;
+    typedef RNGControl::RNG                           RNG;
     //@}
 
     //! Default constructor.
     History()
-	: d_weight( Teuchos::ScalarTraits<Scalar>::one() )
-	, d_state( Teuchos::OrdinalTraits<Ordinal>::zero() )
+	: d_state( Teuchos::OrdinalTraits<Ordinal>::zero() )
+	, d_weight( Teuchos::ScalarTraits<Scalar>::one() )
     { /* ... */ }
 
     //! State constructor.
-    */
-    History( Scalar weight, Ordinal state )
-	: d_weight( weight )
-	, d_state( state )
+    History( Ordinal state, Scalar weight )
+	: d_state( state )
+	, d_weight( weight )
     { /* ... */ }
+
+    // Deserializer constructor.
+    explicit History( const Teuchos::ArrayView<char>& buffer );
 
     // Destructor.
     ~History()
     { /* ... */ }
+
+    // Pack the history into a buffer.
+    Teuchos::Array<char> pack() const;
+
+    //! Set the history state.
+    inline void setState( const Ordinal state )
+    { d_state = state; }
+
+    //! Get the history state.
+    inline Ordinal state() const 
+    { return d_state; }
 
     //! Set the history weight.
     inline void setWeight( const Scalar weight )
@@ -95,10 +112,6 @@ class History
     inline void multiplyWeight( const Scalar weight )
     { d_weight *= weight; }
 
-    //! Set the history state.
-    inline void setState( const Ordinal state )
-    { d_state = state; }
-
     //! Get the history weight.
     inline Scalar weight() const
     { return d_weight; }
@@ -107,25 +120,51 @@ class History
     inline Scalar weightAbs() const
     { return std::abs(d_weight); }
 
-    //! Get the history state.
-    inline Ordinal State() const 
-    { return d_state; }
+    //! Set a new random number generator.
+    void setRNG( const RNG& rng )
+    { d_rng = rng; }
+
+    //! Get the random number generator.
+    const RNG& rng() const
+    { return d_rng; }
+
+  public:
+
+    // Set the byte size of the packed history state.
+    static void setByteSize( std::size_t size_rng_state );
+
+    // Get the number of bytes in the packed history state.
+    static std::size_t getPackedBytes();
 
   private:
-
-    // History weight.
-    Scalar d_weight;
 
     //  history state.
     Ordinal d_state;
 
-    // Random number generator (reference counted).
+    // History weight.
+    Scalar d_weight;
+
+    // Random number generator.
     RNG d_rng;
+
+  private:
+
+    // Packed size of history in bytes.
+    static std::size_t d_packed_bytes;
+
+    // Packed size of the RNG in bytes.
+    static std::size_t d_packed_rng;
 };
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
+
+//---------------------------------------------------------------------------//
+// Template includes.
+//---------------------------------------------------------------------------//
+
+#include "MCLS_History_impl.hpp"
 
 //---------------------------------------------------------------------------//
 
