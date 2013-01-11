@@ -35,22 +35,32 @@ TEUCHOS_UNIT_TEST( SamplingTools, multi_bin )
     cdf[3] = 0.69;
     cdf[4] = 1.00;
 
-    TEST_EQUALITY( 0, MCLS::SamplingTools::SampleDiscreteCDF( cdf(), 0.13 ) );
-    TEST_EQUALITY( 1, MCLS::SamplingTools::SampleDiscreteCDF( cdf(), 0.27 ) );
-    TEST_EQUALITY( 2, MCLS::SamplingTools::SampleDiscreteCDF( cdf(), 0.44 ) );
-    TEST_EQUALITY( 3, MCLS::SamplingTools::SampleDiscreteCDF( cdf(), 0.69 ) );
-    TEST_EQUALITY( 4, MCLS::SamplingTools::SampleDiscreteCDF( cdf(), 1.00 ) );
+    TEST_EQUALITY( 0, MCLS::SamplingTools::sampleDiscreteCDF( cdf(), 0.13 ) );
+    TEST_EQUALITY( 1, MCLS::SamplingTools::sampleDiscreteCDF( cdf(), 0.27 ) );
+    TEST_EQUALITY( 2, MCLS::SamplingTools::sampleDiscreteCDF( cdf(), 0.44 ) );
+    TEST_EQUALITY( 3, MCLS::SamplingTools::sampleDiscreteCDF( cdf(), 0.69 ) );
+    TEST_EQUALITY( 4, MCLS::SamplingTools::sampleDiscreteCDF( cdf(), 1.00 ) );
 
-    TEST_EQUALITY( 0, MCLS::SamplingTools::SampleDiscreteCDF( cdf(), 0.00 ) );
-    TEST_EQUALITY( 0, MCLS::SamplingTools::SampleDiscreteCDF( cdf(), 0.12999999 ) );
-    TEST_EQUALITY( 1, MCLS::SamplingTools::SampleDiscreteCDF( cdf(), 0.13000001 ) );
-    TEST_EQUALITY( 1, MCLS::SamplingTools::SampleDiscreteCDF( cdf(), 0.26999999 ) );
-    TEST_EQUALITY( 2, MCLS::SamplingTools::SampleDiscreteCDF( cdf(), 0.27000001 ) );
-    TEST_EQUALITY( 2, MCLS::SamplingTools::SampleDiscreteCDF( cdf(), 0.43999999 ) );
-    TEST_EQUALITY( 3, MCLS::SamplingTools::SampleDiscreteCDF( cdf(), 0.44000001 ) );
-    TEST_EQUALITY( 3, MCLS::SamplingTools::SampleDiscreteCDF( cdf(), 0.68999999 ) );
-    TEST_EQUALITY( 4, MCLS::SamplingTools::SampleDiscreteCDF( cdf(), 0.69000001 ) );
-    TEST_EQUALITY( 4, MCLS::SamplingTools::SampleDiscreteCDF( cdf(), 0.99999999 ) );
+    TEST_EQUALITY( 0, MCLS::SamplingTools::sampleDiscreteCDF( cdf(), 0.00 ) );
+    TEST_EQUALITY( 0, MCLS::SamplingTools::sampleDiscreteCDF( cdf(), 0.12999999 ) );
+    TEST_EQUALITY( 1, MCLS::SamplingTools::sampleDiscreteCDF( cdf(), 0.13000001 ) );
+    TEST_EQUALITY( 1, MCLS::SamplingTools::sampleDiscreteCDF( cdf(), 0.26999999 ) );
+    TEST_EQUALITY( 2, MCLS::SamplingTools::sampleDiscreteCDF( cdf(), 0.27000001 ) );
+    TEST_EQUALITY( 2, MCLS::SamplingTools::sampleDiscreteCDF( cdf(), 0.43999999 ) );
+    TEST_EQUALITY( 3, MCLS::SamplingTools::sampleDiscreteCDF( cdf(), 0.44000001 ) );
+    TEST_EQUALITY( 3, MCLS::SamplingTools::sampleDiscreteCDF( cdf(), 0.68999999 ) );
+    TEST_EQUALITY( 4, MCLS::SamplingTools::sampleDiscreteCDF( cdf(), 0.69000001 ) );
+    TEST_EQUALITY( 4, MCLS::SamplingTools::sampleDiscreteCDF( cdf(), 0.99999999 ) );
+}
+
+TEUCHOS_UNIT_TEST( SamplingTools, one_bin )
+{
+    Teuchos::Array<double> cdf( 1, 1.0 );
+    TEST_EQUALITY( 0, MCLS::SamplingTools::sampleDiscreteCDF( cdf(), 0.13 ) );
+    TEST_EQUALITY( 0, MCLS::SamplingTools::sampleDiscreteCDF( cdf(), 0.27 ) );
+    TEST_EQUALITY( 0, MCLS::SamplingTools::sampleDiscreteCDF( cdf(), 0.44 ) );
+    TEST_EQUALITY( 0, MCLS::SamplingTools::sampleDiscreteCDF( cdf(), 0.69 ) );
+    TEST_EQUALITY( 0, MCLS::SamplingTools::sampleDiscreteCDF( cdf(), 1.00 ) );
 }
 
 //---------------------------------------------------------------------------//

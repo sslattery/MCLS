@@ -58,8 +58,12 @@ namespace MCLS
  */
 class SamplingTools
 {
-    // Given a discrete CDF and random numuber, sample it to get the output
-    // state. 
+  public:
+
+    /*
+     * \brief Given a discrete CDF and random number, sample it to get the
+     * output state. 
+     */
     static Teuchos::ArrayView<double>::size_type
     sampleDiscreteCDF( const Teuchos::ArrayView<double>& cdf, 
 		       const double& random )
