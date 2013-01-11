@@ -101,7 +101,8 @@ void HistoryBuffer<HT>::bufferHistory( const HT& history )
     Require( !d_buffer.empty() );
 
     Buffer packed_history = history.pack();
-    Check( packed_history.size() == d_size_packed_history );
+    Check( Teuchos::as<std::size_t>(packed_history.size()) == 
+	   d_size_packed_history );
 
     Buffer::iterator buffer_it = d_buffer.begin() + 
 				 d_size_packed_history*d_number;
