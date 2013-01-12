@@ -63,6 +63,7 @@ class HistoryBuffer
     //@{
     //! Typedefs.
     typedef HT                                  history_type;
+    typedef std::stack<Teuchos::RCP<HT> >       Bank;
     typedef Teuchos::Array<char>                Buffer;
     //@}
 
@@ -92,7 +93,7 @@ class HistoryBuffer
     void bufferHistory( const HT& history );
 
     // Add the histories in the buffer to a bank.
-    void addToBank( std::stack<Teuchos::RCP<HT> >& bank );
+    void addToBank( Bank& bank );
 
     //! Get current number of histories in the buffer.
     int numHistories() const
