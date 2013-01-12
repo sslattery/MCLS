@@ -74,12 +74,14 @@ class History
     History()
 	: d_state( Teuchos::OrdinalTraits<Ordinal>::zero() )
 	, d_weight( Teuchos::ScalarTraits<Scalar>::one() )
+	, d_alive( false )
     { /* ... */ }
 
     //! State constructor.
     History( Ordinal state, Scalar weight )
 	: d_state( state )
 	, d_weight( weight )
+	, d_alive( false )
     { /* ... */ }
 
     // Deserializer constructor.
@@ -128,6 +130,26 @@ class History
     const RNG& rng() const
     { return d_rng; }
 
+    //! Kill the history.
+    void kill()
+    { d_alive = false; }
+
+    //! Set the history alive.
+    void live()
+    { d_alive = true; }
+
+    //! Get the history live/dead status.
+    bool alive() const
+    { return d_alive(); }
+
+    //! Set the event flag.
+    void setEvent( int event )
+    { d_event = event; }
+
+    //! Get the last event.
+    int event() const
+    { return d_event; }
+
   public:
 
     // Set the byte size of the packed history state.
@@ -146,6 +168,12 @@ class History
 
     // Random number generator.
     RNG d_rng;
+
+    // Alive/dead status.
+    bool d_alive;
+
+    // Latest history event.
+    int d_event;
 
   private:
 

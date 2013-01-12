@@ -25,6 +25,7 @@ APPEND_SET(HEADERS
   MCLS_DBC.hpp
   MCLS_CommHistoryBuffer.hpp
   MCLS_CommHistoryBuffer_impl.hpp
+  MCLS_Events.hpp
   MCLS_History.hpp
   MCLS_History_impl.hpp
   MCLS_HistoryBuffer.hpp

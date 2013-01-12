@@ -68,7 +68,9 @@ History<Scalar,Ordinal>::History( const Teuchos::ArrayView<char>& buffer )
 
     Deserializer ds;
     ds.setBuffer( d_packed_bytes - d_packed_rng, &buffer[d_packed_rng] );
-    ds >> d_state >> d_weight;
+    int balive;
+    ds >> d_state >> d_weight >> balive >> d_event;
+    d_alive = static_cast<bool>(b_alive);
 
     Ensure( ds.getPtr() == ds.end() );
 }
@@ -95,7 +97,7 @@ Teuchos::Array<char> History<Scalar,Ordinal>::pack() const
 
     Serializer s;
     s.setBuffer( d_packed_bytes - d_packed_rng, &buffer[d_packed_rng] );
-    s << d_state << d_weight;
+    s << d_state << d_weight << static_cast<int>(d_alive) << d_event;
 
     Ensure( s.getPtr() == s.end() );
     return buffer;
@@ -118,7 +120,8 @@ template<class Scalar, class Ordinal>
 void History<Scalar,Ordinal>::setByteSize( std::size_t size_rng_state )
 {
     d_packed_rng = size_rng_state;
-    d_packed_bytes = d_packed_rng + sizeof(Ordinal) + sizeof(Scalar);
+    d_packed_bytes = d_packed_rng + sizeof(Ordinal) + sizeof(Scalar)
+		     + 2*sizeof(int);
 }
 
 //---------------------------------------------------------------------------//

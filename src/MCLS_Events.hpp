@@ -32,66 +32,31 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_SamplingTools.hpp
+ * \file MCLS_Events.hpp
  * \author Stuart R. Slattery
- * \brief SamplingTools definition.
+ * \brief Monte Carlo events.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_SAMPLINGTOOLS_HPP
-#define MCLS_SAMPLINGTOOLS_HPP
-
-#include <algorithm>
-#include <cmath>
-
-#include "MCLS_DBC.hpp"
-
-#include <Teuchos_ArrayView.hpp>
+#ifndef MCLS_EVENTS_HPP
+#define MCLS_EVENTS_HPP
 
 namespace MCLS
 {
 
-//---------------------------------------------------------------------------//
-/*!
- * \class SamplingTools
- * \brief Tools for sampling distributions.
- */
-class SamplingTools
-{
-  public:
-
-    /*
-     * \brief Given a discrete CDF and random number, sample it to get the
-     * output state. 
-     */
-    static inline Teuchos::ArrayView<double>::size_type
-    sampleDiscreteCDF( const Teuchos::ArrayView<double>& cdf, 
-		       const double& random )
-    {
-	Require( cdf.size() > 0 );
-	Require( std::abs( cdf[cdf.size()-1] - 1.0 ) < 1.0e-6 );
-	Require( random >= 0.0 && random <= 1.0 );
-
-	Teuchos::ArrayView<double>::iterator bin_iterator =
-	    std::lower_bound( cdf.begin(), cdf.end(), random );
-
-	Teuchos::ArrayView<double>::size_type bin =
-	    std::distance( cdf.begin(), bin_iterator );
-
-	Ensure( bin >= 0 && bin < cdf.size() );
-	return bin;
-    }
+//! Monte Carlo events.
+enum Event {
+    CUTOFF = 0,
+    BOUNDARY = 1
 };
-
-//---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_SAMPLINGTOOLS_HPP
+#endif // end MCLS_EVENTS_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_SamplingTools.hpp
+// end MCLS_Events.hpp
 // ---------------------------------------------------------------------------//
 

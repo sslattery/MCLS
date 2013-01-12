@@ -41,6 +41,7 @@
 #ifndef MCLS_ADJOINTNEUMANNULAMPRODUCT_HPP
 #define MCLS_ADJOINTNEUMANNULAMPRODUCT_HPP
 
+#include <MCLS_DBC.hpp>
 #include <MCLS_History.hpp>
 #include <MCLS_SamplingTools.hpp>
 
@@ -58,8 +59,11 @@ namespace MCLS
  *
  * H^T = I - A^T 
  * H^T = (P) x (W)
+ *
+ * This product contains data for all local states in the system, including
+ * the overlap.
  */
-template<class Scalar, class GO>
+template<class Scalar, class Ordinal>
 class AdjointNeumannUlamProduct
 {
   public:
@@ -67,10 +71,10 @@ class AdjointNeumannUlamProduct
     //@{
     //! Typedefs.
     typedef Scalar                                  scalar_type;
-    typedef GO                                      global_ordinal_type;
+    typedef Ordinal                                 ordinal_type;
     //@}
 
-    // Constructor.
+    // Matrix constructor.
     template<class Matrix>
     AdjointNeumannUlamProduct( const Teuchos::RCP<const Matrix>& A );
 
@@ -78,21 +82,21 @@ class AdjointNeumannUlamProduct
     ~AdjointNeumannUlamProduct();
 
     // Process a history through a transition to a new state.
-    inline void processTransition( History<Scalar,GO>& history );
+    inline void transition( History<Scalar,Ordinal>& history );
 
     // Determine if a given state is on-process.
-    inline bool isLocalState( const GO &state );
+    inline bool isLocalState( const Ordinal &state );
 
   private:
 
     // Local weight table.
-    Teuchos::Hashtable<GO,Scalar> d_weight_table;
+    Teuchos::Hashtable<Ordinal,Scalar> d_weight_table;
 
     // Local CDF table.
-    Teuchos::Hashtable<GO,Teuchos::Array<GO> > d_cdf_table;
+    Teuchos::Hashtable<Ordinal,Teuchos::Array<double> > d_cdf_table;
 
-    // Local column table.
-    Teuchos::Hashtable<GO,GO> d_l2g_col;
+    // Local to global column indexer.
+    Teuchos::Hashtable<Ordinal,Ordinal> d_l2g_col;
 };
 
 //---------------------------------------------------------------------------//
@@ -105,20 +109,30 @@ class AdjointNeumannUlamProduct
 /*!
  * \brief Process a history through a transition to a new state.
  */
-template<class Scalar, class GO>
-inline void AdjointNeumannUlamProduct<Scalar,GO>::processTransition( 
-    History<Scalar,GO>& history )
+template<class Scalar, class Ordinal>
+inline void AdjointNeumannUlamProduct<Scalar,Ordinal>::transition( 
+    History<Scalar,Ordinal>& history )
 {
+    Require( d_cdf_table.containsKey( history.state() ) );
+    Require( d_weight_table.containsKey( history.state() ) );
 
+    int new_state = SamplingTools::sampleDiscreteCDF( 
+	d_cdf_table.get( history.state() )(),
+	history.rng.random() );
+
+    Check( d_l2g_col.containsKey( new_state ) );
+
+    history.setState( d_l2g_col.get(new_state) );
+    history.multiplyWeight( d_weight_table.get(history.state()) );
 }
 
 //---------------------------------------------------------------------------//
 /*!
  * \brief Determine if a given state is on-process.
  */
-template<class Scalar, class GO>
+template<class Scalar, class Ordinal>
 inline bool 
-AdjointNeumannUlamProduct<Scalar,GO>::isLocalState( const GO& state )
+AdjointNeumannUlamProduct<Scalar,Ordinal>::isLocalState( const Ordinal& state )
 {
     return d_weight_table.containsKey( state );
 }
