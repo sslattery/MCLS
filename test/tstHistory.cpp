@@ -68,6 +68,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( History, history, Ordinal, Scalar )
     TEST_EQUALITY( h_1.weight(), Teuchos::ScalarTraits<Scalar>::one() );
     TEST_EQUALITY( h_1.state(), Teuchos::OrdinalTraits<Ordinal>::zero() );
     TEST_ASSERT( !h_1.alive() );
+    TEST_EQUALITY( h_1.event(), MCLS::NO_EVENT );
 
     h_1.live();
     TEST_ASSERT( h_1.alive() );
@@ -101,6 +102,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( History, history, Ordinal, Scalar )
     MCLS::History<Scalar,Ordinal> h_2( 5, 6 );
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
+    TEST_ASSERT( !h_2.alive() );
+    TEST_EQUALITY( h_2.event(), MCLS::NO_EVENT );
 }
 
 UNIT_TEST_INSTANTIATION( History, history )

@@ -46,8 +46,10 @@ namespace MCLS
 
 //! Monte Carlo events.
 enum Event {
-    CUTOFF = 0,
-    BOUNDARY = 1
+    NO_EVENT = 0,
+    TRANSITION = 1,
+    CUTOFF = 2,
+    BOUNDARY = 3
 };
 
 } // end namespace MCLS

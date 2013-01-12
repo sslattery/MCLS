@@ -75,6 +75,7 @@ class History
 	: d_state( Teuchos::OrdinalTraits<Ordinal>::zero() )
 	, d_weight( Teuchos::ScalarTraits<Scalar>::one() )
 	, d_alive( false )
+	, d_event( 0 )
     { /* ... */ }
 
     //! State constructor.
@@ -82,6 +83,7 @@ class History
 	: d_state( state )
 	, d_weight( weight )
 	, d_alive( false )
+	, d_event( 0 )
     { /* ... */ }
 
     // Deserializer constructor.
