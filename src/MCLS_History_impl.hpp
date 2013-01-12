@@ -70,7 +70,7 @@ History<Scalar,Ordinal>::History( const Teuchos::ArrayView<char>& buffer )
     ds.setBuffer( d_packed_bytes - d_packed_rng, &buffer[d_packed_rng] );
     int balive;
     ds >> d_state >> d_weight >> balive >> d_event;
-    d_alive = static_cast<bool>(b_alive);
+    d_alive = static_cast<bool>(balive);
 
     Ensure( ds.getPtr() == ds.end() );
 }

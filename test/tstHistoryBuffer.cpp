@@ -71,7 +71,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( HistoryBuffer, sizes, Ordinal, Scalar )
     MCLS::HistoryBuffer<HT>::setMaxNumHistories( 10 );
     TEST_EQUALITY( MCLS::HistoryBuffer<HT>::maxNum(), 10 );
     TEST_EQUALITY( MCLS::HistoryBuffer<HT>::sizePackedHistory(),
-		  sizeof(Scalar) + sizeof(Ordinal) );
+		   sizeof(Scalar)+sizeof(Ordinal)+2*sizeof(int) );
 
     MCLS::HistoryBuffer<HT> buffer_2;
     TEST_EQUALITY( buffer_2.allocatedSize(), 0 );
@@ -81,7 +81,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( HistoryBuffer, sizes, Ordinal, Scalar )
     buffer_2.allocate();
 
     TEST_EQUALITY( buffer_2.allocatedSize(),
-		   10 * (sizeof(Scalar) + sizeof(Ordinal)) + 3*sizeof(int) );
+		   10 * MCLS::HistoryBuffer<HT>::sizePackedHistory()
+		   + sizeof(int) );
     TEST_ASSERT( buffer_2.isEmpty() );
     TEST_ASSERT( !buffer_2.isFull() );
 
@@ -107,10 +108,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( HistoryBuffer, buffering, Ordinal, Scalar )
     MCLS::HistoryBuffer<HT> buffer( HT::getPackedBytes(), num_history );
     TEST_EQUALITY( MCLS::HistoryBuffer<HT>::maxNum(), 4 );
     TEST_EQUALITY( MCLS::HistoryBuffer<HT>::sizePackedHistory(),
-		   sizeof(Scalar) + sizeof(Ordinal) );
+		   sizeof(Scalar)+sizeof(Ordinal)+2*sizeof(int) );
 
     TEST_EQUALITY( buffer.allocatedSize(),
-		   num_history*(sizeof(Scalar)+sizeof(Ordinal)) + 3*sizeof(int) );
+		   num_history*MCLS::HistoryBuffer<HT>::sizePackedHistory() 
+		   + sizeof(int) );
     TEST_ASSERT( buffer.isEmpty() );
     TEST_EQUALITY( buffer.numHistories(), 0 );
 

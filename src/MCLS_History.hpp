@@ -140,7 +140,7 @@ class History
 
     //! Get the history live/dead status.
     bool alive() const
-    { return d_alive(); }
+    { return d_alive; }
 
     //! Set the event flag.
     void setEvent( int event )
