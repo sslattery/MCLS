@@ -32,14 +32,14 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_Tally.hpp
+ * \file MCLS_AdjointTally.hpp
  * \author Stuart R. Slattery
- * \brief Tally declaration.
+ * \brief AdjointTally declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_TALLY_HPP
-#define MCLS_TALLY_HPP
+#ifndef MCLS_ADJOINTTALLY_HPP
+#define MCLS_ADJOINTTALLY_HPP
 
 #include <MCLS_History.hpp>
 #include <MCLS_VectorExport.hpp>
@@ -52,11 +52,12 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 /*!
- * \class Tally
- * \brief Monte Carlo tally for the linear system solution vector.
+ * \class AdjointTally
+ * \brief Monte Carlo tally for the linear system solution vector for adjoint
+ * problems. 
  */
 template<class Vector>
-class Tally
+class AdjointTally
 {
   public:
 
@@ -68,11 +69,11 @@ class Tally
     //@}
 
     // Constructor.
-    Tally( const Teuchos::RCP<Vector>& x, 
-	   const Teuchos::RCP<Vector>& x_overlap );
+    AdjointTally( const Teuchos::RCP<Vector>& x, 
+		  const Teuchos::RCP<Vector>& x_overlap );
 
     // Destructor.
-    ~Tally()
+    ~AdjointTally()
     { /* ... */ }
 
     // Add a history's contribution to the tally.
@@ -105,13 +106,13 @@ class Tally
 // Template includes.
 //---------------------------------------------------------------------------//
 
-#include "MCLS_Tally_impl.hpp"
+#include "MCLS_AdjointTally_impl.hpp"
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_TALLY_HPP
+#endif // end MCLS_ADJOINTTALLY_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_Tally.hpp
+// end MCLS_AdjointTally.hpp
 // ---------------------------------------------------------------------------//
 

@@ -45,7 +45,7 @@
 
 #include <MCLS_DBC.hpp>
 #include <MCLS_History.hpp>
-#include <MCLS_Tally.hpp>
+#include <MCLS_AdjointTally.hpp>
 #include <MCLS_SamplingTools.hpp>
 #include <MCLS_VectorTraits.hpp>
 #include <MCLS_Events.hpp>

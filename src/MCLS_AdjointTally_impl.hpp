@@ -32,14 +32,14 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_Tally_impl.hpp
+ * \file MCLS_AdjointTally_impl.hpp
  * \author Stuart R. Slattery
- * \brief Tally implementation.
+ * \brief AdjointTally implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_TALLY_IMPL_HPP
-#define MCLS_TALLY_IMPL_HPP
+#ifndef MCLS_ADJOINTTALLY_IMPL_HPP
+#define MCLS_ADJOINTTALLY_IMPL_HPP
 
 #include <MCLS_DBC.hpp>
 
@@ -51,8 +51,8 @@ namespace MCLS
  * \brief Constructor.
  */
 template<class Vector>
-Tally<Vector>::Tally( const Teuchos::RCP<Vector>& x, 
-		      const Teuchos::RCP<Vector>& x_overlap )
+AdjointTally<Vector>::AdjointTally( const Teuchos::RCP<Vector>& x, 
+				    const Teuchos::RCP<Vector>& x_overlap )
     : d_x( x )
     , d_x_overlap( x_overlap )
     , d_export( d_x_overlap, d_x )
@@ -66,7 +66,7 @@ Tally<Vector>::Tally( const Teuchos::RCP<Vector>& x,
  * \brief Add a history's contribution to the tally.
  */
 template<class Vector>
-void Tally<Vector>::tallyHistory( const HistoryType& history )
+void AdjointTally<Vector>::tallyHistory( const HistoryType& history )
 {
     Require( VT::isGlobalRow( *d_x, history.state() ) ||
 	     VT::isGlobalRow( *d_x_overlap, history.state() ) );
@@ -95,7 +95,7 @@ void Tally<Vector>::tallyHistory( const HistoryType& history )
  * \brief Combine the overlap tally with the base decomposition tally.
  */
 template<class Vector>
-void Tally<Vector>::combineTallies()
+void AdjointTally<Vector>::combineTallies()
 {
     d_export.doExportAdd();
 }
@@ -106,10 +106,10 @@ void Tally<Vector>::combineTallies()
  * histories.
  */
 template<class Vector>
-void Tally<Vector>::normalize( const int& nh )
+void AdjointTally<Vector>::normalize( const int& nh )
 {
     VT::scale( *d_x, 1.0 / nh )
-}
+	}
 
 //---------------------------------------------------------------------------//
 
@@ -117,9 +117,9 @@ void Tally<Vector>::normalize( const int& nh )
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_TALLY_IMPL_HPP
+#endif // end MCLS_ADJOINTTALLY_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_Tally_impl.hpp
+// end MCLS_AdjointTally_impl.hpp
 // ---------------------------------------------------------------------------//
 
