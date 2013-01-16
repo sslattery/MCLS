@@ -52,8 +52,8 @@ namespace MCLS
 //---------------------------------------------------------------------------//
 /*!
  * \class CommHistoryBuffer
- * \brief Data buffer for histories. Tom Evans is responsible for the design
- * of this class and subsequent inheritance structure.
+ * \brief Data buffer for communicating histories. Tom Evans is responsible
+ * for the design of this class and subsequent inheritance structure.
  */
 //---------------------------------------------------------------------------//
 template<class HT>

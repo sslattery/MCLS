@@ -99,7 +99,7 @@ template<class HT>
 void ReceiveHistoryBuffer<HT>::wait()
 {
     Teuchos::Ptr<Teuchos::RCP<typename Base::Request> > 
-	request_ptr(&this->d_handle);
+	request_ptr( &this->d_handle );
 
     Teuchos::wait( *Base::d_comm, request_ptr );
     Root::readNumFromBuffer();
@@ -189,7 +189,7 @@ template<class HT>
 void SendHistoryBuffer<HT>::wait()
 {
     Teuchos::Ptr<Teuchos::RCP<typename Base::Request> > 
-	request_ptr(&this->d_handle);
+	request_ptr( &this->d_handle );
 
     Teuchos::wait( *Base::d_comm, request_ptr );
 

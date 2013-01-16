@@ -46,6 +46,8 @@
 #include "MCLS_DBC.hpp"
 #include "MCLS_Serializer.hpp"
 
+#include <Teuchos_as.hpp>
+
 namespace MCLS
 {
 //---------------------------------------------------------------------------//
@@ -117,7 +119,7 @@ void HistoryBuffer<HT>::bufferHistory( const HT& history )
  * \brief Add the histories in the buffer to a bank.
  */
 template<class HT>
-void HistoryBuffer<HT>::addToBank( std::stack<Teuchos::RCP<HT> >& bank )
+void HistoryBuffer<HT>::addToBank( Bank& bank )
 {
     Require( d_size_packed_history > 0 );
 

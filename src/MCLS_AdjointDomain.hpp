@@ -32,39 +32,43 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_AdjointNeumannUlamProduct.hpp
+ * \file MCLS_AdjointDomain.hpp
  * \author Stuart R. Slattery
- * \brief Linear Problem declaration.
+ * \brief AdjointDomain declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_ADJOINTNEUMANNULAMPRODUCT_HPP
-#define MCLS_ADJOINTNEUMANNULAMPRODUCT_HPP
+#ifndef MCLS_ADJOINTDOMAIN_HPP
+#define MCLS_ADJOINTDOMAIN_HPP
+
+#include <algorithm>
 
 #include <MCLS_DBC.hpp>
 #include <MCLS_History.hpp>
 #include <MCLS_SamplingTools.hpp>
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Hashtable.hpp>
 #include <Teuchos_Array.hpp>
+#include <Teuchos_Hashtable.hpp>
 
 namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class AdjointNeumannUlamProduct
- * \brief Adjoint Neumann-Ulam Product of a matrix.
+ * \class AdjointDomain
+ * \brief Adjoint transport domain.
+ *
+ * Derived from the adjoint Neumann-Ulam product of a matrix.
  *
  * H^T = I - A^T 
  * H^T = (P) x (W)
  *
- * This product contains data for all local states in the system, including
- * the overlap.
+ * This domain contains data for all local states in the system, including
+ * the overlap and neighboring domains.
  */
 template<class Scalar, class Ordinal>
-class AdjointNeumannUlamProduct
+class AdjointDomain
 {
   public:
 
@@ -72,31 +76,52 @@ class AdjointNeumannUlamProduct
     //! Typedefs.
     typedef Scalar                                  scalar_type;
     typedef Ordinal                                 ordinal_type;
+    typedef History<Scalar,Ordinal>                 history_type;
     //@}
 
     // Matrix constructor.
     template<class Matrix>
-    AdjointNeumannUlamProduct( const Teuchos::RCP<const Matrix>& A );
+    AdjointDomain( const Teuchos::RCP<const Matrix>& A );
 
     // Destructor.
-    ~AdjointNeumannUlamProduct();
+    ~AdjointDomain();
 
     // Process a history through a transition to a new state.
-    inline void transition( History<Scalar,Ordinal>& history );
+    inline void processTransition( history_type& history );
 
     // Determine if a given state is on-process.
-    inline bool isLocalState( const Ordinal &state );
+    inline bool isLocalState( const Ordinal& state );
+
+    //! Get the number of neighboring domains.
+    int numNeighbors() const
+    { return d_neighbor_ranks.size(); }
+
+    //! Get the neighbor domain process rank.
+    inline int neighborRank( int n ) const;
+
+    //! Get the neighbor domain that owns a boundary state (local neighbor
+    //! id).
+    inline int owningNeighbor( const Ordinal& state );
 
   private:
 
-    // Local weight table.
-    Teuchos::Hashtable<Ordinal,Scalar> d_weight_table;
+    // Neighboring domain process ranks.
+    Teuchos::Array<int> d_neighbor_ranks;
 
-    // Local CDF table.
-    Teuchos::Hashtable<Ordinal,Teuchos::Array<double> > d_cdf_table;
+    // Local row indexer.
+    Teuchos::Hashtable<Ordinal,int> d_row_indexer;
 
-    // Local to global column indexer.
-    Teuchos::Hashtable<Ordinal,Ordinal> d_l2g_col;
+    // Local columns.
+    Teuchos::Array<Teuchos::Array<Ordinal> > d_columns;
+
+    // Local CDFs.
+    Teuchos::Array<Teuchos::Array<double> > d_cdfs;
+
+    // Local weights.
+    Teuchos::Array<Scalar> d_weights;
+
+    // Boundary state to owning neighbor local ID table.
+    Teuchos::Hashtable<Ordinal,int> d_bnd_to_neighbor;
 };
 
 //---------------------------------------------------------------------------//
@@ -110,20 +135,18 @@ class AdjointNeumannUlamProduct
  * \brief Process a history through a transition to a new state.
  */
 template<class Scalar, class Ordinal>
-inline void AdjointNeumannUlamProduct<Scalar,Ordinal>::transition( 
-    History<Scalar,Ordinal>& history )
+inline void AdjointDomain<Scalar,Ordinal>::processTransition( 
+    history_type& history )
 {
-    Require( d_cdf_table.containsKey( history.state() ) );
-    Require( d_weight_table.containsKey( history.state() ) );
+    Require( isLocalState( history.state() ) );
 
-    int new_state = SamplingTools::sampleDiscreteCDF( 
-	d_cdf_table.get( history.state() )(),
-	history.rng.random() );
+    history.setState( 
+	d_columns[d_row_indexer.get(history.state())][ 
+	    SamplingTools::sampleDiscreteCDF( 
+		d_cdfs[d_row_indexer.get(history.state()) ](),
+		history.rng.random() )] );
 
-    Check( d_l2g_col.containsKey( new_state ) );
-
-    history.setState( d_l2g_col.get(new_state) );
-    history.multiplyWeight( d_weight_table.get(history.state()) );
+    history.multiplyWeight( d_weights[d_row_indexer.get(history.state())] );
 }
 
 //---------------------------------------------------------------------------//
@@ -132,22 +155,22 @@ inline void AdjointNeumannUlamProduct<Scalar,Ordinal>::transition(
  */
 template<class Scalar, class Ordinal>
 inline bool 
-AdjointNeumannUlamProduct<Scalar,Ordinal>::isLocalState( const Ordinal& state )
+AdjointDomain<Scalar,Ordinal>::isLocalState( const Ordinal& state )
 {
-    return d_weight_table.containsKey( state );
+    return d_row_indexer.containsKey( state );
 }
 
 //---------------------------------------------------------------------------//
 // Template includes.
 //---------------------------------------------------------------------------//
 
-#include "MCLS_AdjointNeumannUlamProduct_impl.hpp"
+#include "MCLS_AdjointDomain_impl.hpp"
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_ADJOINTNEUMANNULAMPRODUCT_HPP
+#endif // end MCLS_ADJOINTDOMAIN_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_AdjointNeumannUlamProduct.hpp
+// end MCLS_AdjointDomain.hpp
 // ---------------------------------------------------------------------------//
 
