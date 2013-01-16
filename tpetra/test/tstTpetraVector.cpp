@@ -220,6 +220,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, SumIntoElement, LO, GO, Scalar 
 	  element_iterator != global_elements.end();
 	  ++element_iterator )
     {
+	TEST_ASSERT( VT::isGlobalRow( *A, *element_iterator ) );
 	VT::sumIntoGlobalValue( *A, *element_iterator, 2.0 );
     }
 
@@ -237,6 +238,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, SumIntoElement, LO, GO, Scalar 
 	  ++element_iterator )
     {
 	LO local_element = A->getMap()->getLocalElement( *element_iterator );
+	TEST_ASSERT( VT::isLocalRow( *A, local_element ) );
 	VT::sumIntoLocalValue( *A, local_element, 2.0 );
     }
 
@@ -278,6 +280,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, ReplaceElement, LO, GO, Scalar 
 	  element_iterator != global_elements.end();
 	  ++element_iterator )
     {
+	TEST_ASSERT( VT::isGlobalRow( *A, *element_iterator ) );
 	VT::replaceGlobalValue( *A, *element_iterator, 2.0 );
     }
 
@@ -295,6 +298,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, ReplaceElement, LO, GO, Scalar 
 	  ++element_iterator )
     {
 	LO local_element = A->getMap()->getLocalElement( *element_iterator );
+	TEST_ASSERT( VT::isLocalRow( *A, local_element ) );
 	VT::replaceLocalValue( *A, local_element, 5.0 );
     }
 

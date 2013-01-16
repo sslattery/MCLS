@@ -124,6 +124,26 @@ class VectorTraits
     }
 
     /*!
+     * \brief Determine whether or not a given global row is on-process.
+     */
+    static bool isGlobalRow( const Vector& vector,
+			     const global_ordinal_type& global_row )
+    {
+	UndefinedVectorTraits<Vector>::notDefined(); 
+	return false; 
+    }
+
+    /*!
+     * \brief Determine whether or not a given local row is on-process.
+     */
+    static bool isLocalRow( const Vector& vector,
+			    const local_ordinal_type& local_row )
+    {
+	UndefinedVectorTraits<Vector>::notDefined(); 
+	return false; 
+    }
+
+    /*!
      * \brief Replace value at the global row index. The global index must
      * exist on process.
      */
@@ -162,7 +182,7 @@ class VectorTraits
     /*!
      * \brief Set all values in the vector to a given value.
      */
-    static void putscalar_type( Vector& vector, const scalar_type& value )
+    static void putScalar( Vector& vector, const scalar_type& value )
     { UndefinedVectorTraits<Vector>::notDefined(); }
 
     /*!

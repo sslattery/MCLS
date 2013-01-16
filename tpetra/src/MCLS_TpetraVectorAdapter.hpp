@@ -104,6 +104,24 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     }
 
     /*!
+     * \brief Determine whether or not a given global row is on-process.
+     */
+    static bool isGlobalRow( const Vector& vector,
+			     const global_ordinal_type& global_row )
+    {
+	return vector.getMap()->isNodeGlobalElement( global_row );
+    }
+
+    /*!
+     * \brief Determine whether or not a given local row is on-process.
+     */
+    static bool isLocalRow( const Vector& vector,
+			    const local_ordinal_type& local_row )
+    {
+	return vector.getMap()->isNodeLocalElement( local_row );
+    }
+
+    /*!
      * \brief Replace value at the global row index. The global index must
      * exist on process.
      */

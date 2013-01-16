@@ -38,10 +38,9 @@
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_ADJOINTDOMAIN_HPP
-#define MCLS_ADJOINTDOMAIN_HPP
+#ifndef MCLS_TALLY_HPP
+#define MCLS_TALLY_HPP
 
-#include <MCLS_DBC.hpp>
 #include <MCLS_History.hpp>
 #include <MCLS_VectorExport.hpp>
 #include <MCLS_VectorTraits.hpp>
@@ -80,7 +79,11 @@ class Tally
     void tallyHistory( const HistoryType& history );
 
     // Combine the overlap tally with the base decomposition tally.
-    void 
+    void combineTallies();
+
+    // Normalize base decomposition tallies with the number of specified
+    // histories.
+    void normalize( const int& np );
 
   private:
 
@@ -96,63 +99,6 @@ class Tally
 
 //---------------------------------------------------------------------------//
 
-//---------------------------------------------------------------------------//
-// Inline functions.
-//---------------------------------------------------------------------------//
-/*!
- * \brief Process a history through a transition to a new state.
- */
-template<class Scalar, class Ordinal>
-inline void Tally<Scalar,Ordinal>::processTransition( 
-    history_type& history )
-{
-    Require( isLocalState( history.state() ) );
-
-    history.setState( 
-	d_columns[d_row_indexer.get(history.state())][ 
-	    SamplingTools::sampleDiscreteCDF( 
-		d_cdfs[d_row_indexer.get(history.state()) ](),
-		history.rng.random() )] );
-
-    history.multiplyWeight( d_weights[d_row_indexer.get(history.state())] );
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Determine if a given state is on-process.
- */
-template<class Scalar, class Ordinal>
-inline bool 
-Tally<Scalar,Ordinal>::isLocalState( const Ordinal& state )
-{
-    return d_row_indexer.containsKey( state );
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Get the neighbor domain process rank.
- */
-template<class Scalar, class Ordinal>
-inline int Tally<Scalar,Ordinal>::neighborRank( int n ) const
-{
-    Require( n >= 0 && n < d_neighbor_ranks.size() );
-    return d_neighbor_ranks[n];
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Get the neighbor domain that owns a boundary state (local neighbor
- * id).
- */
-template<class Scalar, class Ordinal>
-inline int Tally<Scalar,Ordinal>::owningNeighbor( const Ordinal& state )
-{
-    Require( d_bnd_to_neighbor.containsKey(state) );
-    return d_bnd_to_neighbor.get(state);
-}
-
-//---------------------------------------------------------------------------//
-
 } // end namespace MCLS
 
 //---------------------------------------------------------------------------//
@@ -163,7 +109,7 @@ inline int Tally<Scalar,Ordinal>::owningNeighbor( const Ordinal& state )
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_ADJOINTDOMAIN_HPP
+#endif // end MCLS_TALLY_HPP
 
 //---------------------------------------------------------------------------//
 // end MCLS_Tally.hpp

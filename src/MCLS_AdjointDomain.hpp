@@ -67,10 +67,10 @@ namespace MCLS
  * H^T = I - A^T 
  * H^T = (P) x (W)
  *
- * This domain contains data for all local states in the system, including
- * the overlap and neighboring domains. This object is responsible for
- * generating the tally for the solution vector over the domain as it has
- * ownership of the parallel decomposition of the domain.
+ * This domain contains data for all local states in the system, including the
+ * overlap and neighboring domains. This object is responsible for creating
+ * the tally for the solution vector over the domain as it has ownership of
+ * the parallel decomposition of the domain.
  */
 template<class Vector>
 class AdjointDomain
