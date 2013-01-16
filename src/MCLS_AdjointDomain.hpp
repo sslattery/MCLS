@@ -84,7 +84,7 @@ class AdjointDomain
     typedef VectorTraits<Vector>                        VT;
     typedef typename VT::global_ordinal_type            Ordinal;
     typedef typename VT::scalar_type                    Scalar;
-    typedef Tally<Vector>                               TallyType;
+    typedef AdjointTally<Vector>                        TallyType;
     typedef typename TallyType::HistoryType             HistoryType;
     //@}
 
