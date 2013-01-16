@@ -106,7 +106,7 @@ class VectorTraits<Epetra_Vector>
     /*!
      * \brief Determine whether or not a given global row is on-process.
      */
-    static bool isGlobalRow( const Vector& vector,
+    static bool isGlobalRow( const vector_type& vector,
 			     const global_ordinal_type& global_row )
     {
 	return vector.Map().MyGID( global_row );
@@ -115,7 +115,7 @@ class VectorTraits<Epetra_Vector>
     /*!
      * \brief Determine whether or not a given local row is on-process.
      */
-    static bool isLocalRow( const Vector& vector,
+    static bool isLocalRow( const vector_type& vector,
 			    const local_ordinal_type& local_row )
     {
 	return vector.Map().MyLID( local_row );

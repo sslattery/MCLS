@@ -48,6 +48,7 @@
 #include <MCLS_Tally.hpp>
 #include <MCLS_SamplingTools.hpp>
 #include <MCLS_VectorTraits.hpp>
+#include <MCLS_Events.hpp>
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
@@ -142,8 +143,6 @@ class AdjointDomain
 };
 
 //---------------------------------------------------------------------------//
-
-//---------------------------------------------------------------------------//
 // Inline functions.
 //---------------------------------------------------------------------------//
 /*!
@@ -154,6 +153,7 @@ inline void AdjointDomain<Scalar,Ordinal>::processTransition(
     HistoryType& history )
 {
     Require( isLocalState( history.state() ) );
+    Require( TRANSITION == history.state() );
 
     history.setState( 
 	d_columns[d_row_indexer.get(history.state())][ 

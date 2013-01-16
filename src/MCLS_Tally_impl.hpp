@@ -32,86 +32,94 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_Tally.hpp
+ * \file MCLS_Tally_impl.hpp
  * \author Stuart R. Slattery
- * \brief Tally declaration.
+ * \brief Tally implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_TALLY_HPP
-#define MCLS_TALLY_HPP
+#ifndef MCLS_TALLY_IMPL_HPP
+#define MCLS_TALLY_IMPL_HPP
 
-#include <MCLS_History.hpp>
-#include <MCLS_VectorExport.hpp>
-#include <MCLS_VectorTraits.hpp>
-
-#include <Teuchos_RCP.hpp>
+#include <MCLS_DBC.hpp>
 
 namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class Tally
- * \brief Monte Carlo tally for the linear system solution vector.
+ * \brief Constructor.
  */
 template<class Vector>
-class Tally
+Tally<Vector>::Tally( const Teuchos::RCP<Vector>& x, 
+		      const Teuchos::RCP<Vector>& x_overlap )
+    : d_x( x )
+    , d_x_overlap( x_overlap )
+    , d_export( d_x_overlap, d_x )
+{ 
+    Ensure( !d_x.is_null() );
+    Ensure( !d_x_overlap.is_null() );
+}
+
+//---------------------------------------------------------------------------//
+/*
+ * \brief Add a history's contribution to the tally.
+ */
+template<class Vector>
+void Tally<Vector>::tallyHistory( const HistoryType& history )
 {
-  public:
+    Require( VT::isGlobalRow( *d_x, history.state() ) ||
+	     VT::isGlobalRow( *d_x_overlap, history.state() ) );
 
-    //@{
-    //! Typedefs.
-    typedef Vector                                               vector_type;
-    typedef VectorTraits<Vector>                                 VT;
-    typedef History<VT::scalar_type,VT::global_ordinal_type>     HistoryType;
-    //@}
+    if ( VT::isGlobalRow( *d_x, history.state() ) )
+    {
+	VT::sumIntoGlobalValue( *d_x, history.state(), history.weight() );
+    }
 
-    // Constructor.
-    Tally( const Teuchos::RCP<Vector>& x, 
-	   const Teuchos::RCP<Vector>& x_overlap );
+    else if ( VT::isGlobalRow( *d_x_overlap, history.state() ) )
+    {
+	VT::sumIntoGlobalValue( 
+	    *d_x_overlap, history.state(), history.weight() );
+    }
 
-    // Destructor.
-    ~Tally()
-    { /* ... */ }
+    else
+    {
+	Insist( VT::isGlobalRow( *d_x, history.state() ) ||
+		VT::isGlobalRow( *d_x_overlap, history.state() ),
+		"History state is not local to tally!" );
+    }
+}
 
-    // Add a history's contribution to the tally.
-    void tallyHistory( const HistoryType& history );
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Combine the overlap tally with the base decomposition tally.
+ */
+template<class Vector>
+void Tally<Vector>::combineTallies()
+{
+    d_export.doExportAdd();
+}
 
-    // Combine the overlap tally with the base decomposition tally.
-    void combineTallies();
-
-    // Normalize base decomposition tallies with the number of specified
-    // histories.
-    void normalize( const int& nh );
-
-  private:
-
-    // Solution vector in original decomposition.
-    Teuchos::RCP<Vector>& d_x;
-
-    // Solution vector in overlap decomposition.
-    Teuchos::RCP<Vector>& d_x_overlap;
-
-    // Overlap to original decomposition vector export.
-    VectorExport<Vector> d_export;
-};
+//---------------------------------------------------------------------------//
+/*
+ * \brief Normalize base decomposition tallies with the number of specified
+ * histories.
+ */
+template<class Vector>
+void Tally<Vector>::normalize( const int& nh )
+{
+    VT::scale( *d_x, 1.0 / nh )
+}
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
 //---------------------------------------------------------------------------//
-// Template includes.
-//---------------------------------------------------------------------------//
 
-#include "MCLS_Tally_impl.hpp"
+#endif // end MCLS_TALLY_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-
-#endif // end MCLS_TALLY_HPP
-
-//---------------------------------------------------------------------------//
-// end MCLS_Tally.hpp
+// end MCLS_Tally_impl.hpp
 // ---------------------------------------------------------------------------//
 
