@@ -22,6 +22,8 @@ SET(HEADERS ${HEADERS}
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
+  MCLS_AdjointTally.hpp
+  MCLS_AdjointTally_impl.hpp
   MCLS_DBC.hpp
   MCLS_CommHistoryBuffer.hpp
   MCLS_CommHistoryBuffer_impl.hpp
