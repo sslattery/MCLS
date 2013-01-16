@@ -32,113 +32,66 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_AdjointDomain.hpp
+ * \file MCLS_Tally.hpp
  * \author Stuart R. Slattery
- * \brief AdjointDomain declaration.
+ * \brief Tally declaration.
  */
 //---------------------------------------------------------------------------//
 
 #ifndef MCLS_ADJOINTDOMAIN_HPP
 #define MCLS_ADJOINTDOMAIN_HPP
 
-#include <algorithm>
-
 #include <MCLS_DBC.hpp>
 #include <MCLS_History.hpp>
-#include <MCLS_Tally.hpp>
-#include <MCLS_SamplingTools.hpp>
+#include <MCLS_VectorExport.hpp>
 #include <MCLS_VectorTraits.hpp>
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_Hashtable.hpp>
-#include <Teuchos_ParameterList.hpp>
 
 namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class AdjointDomain
- * \brief Adjoint transport domain.
- *
- * Derived from the adjoint Neumann-Ulam product of a matrix.
- *
- * H^T = I - A^T 
- * H^T = (P) x (W)
- *
- * This domain contains data for all local states in the system, including
- * the overlap and neighboring domains. This object is responsible for
- * generating the tally for the solution vector over the domain as it has
- * ownership of the parallel decomposition of the domain.
+ * \class Tally
+ * \brief Monte Carlo tally for the linear system solution vector.
  */
 template<class Vector>
-class AdjointDomain
+class Tally
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Vector                                      vector_type;
-    typedef VectorTraits<Vector>                        VT;
-    typedef typename VT::global_ordinal_type            Ordinal;
-    typedef typename VT::scalar_type                    Scalar;
-    typedef Tally<Vector>                               TallyType;
-    typedef typename TallyType::HistoryType             HistoryType;
+    typedef Vector                                               vector_type;
+    typedef VectorTraits<Vector>                                 VT;
+    typedef History<VT::scalar_type,VT::global_ordinal_type>     HistoryType;
     //@}
 
-    // Matrix constructor.
-    template<class Matrix>
-    AdjointDomain( const Teuchos::RCP<const Matrix>& A,
-		   const Teuchos::RCP<Vector>& x,
-		   const Teuchos::RCP<const Teuchos::ParameterList>& plist );
+    // Constructor.
+    Tally( const Teuchos::RCP<Vector>& x, 
+	   const Teuchos::RCP<Vector>& x_overlap );
 
     // Destructor.
-    ~AdjointDomain()
+    ~Tally()
     { /* ... */ }
 
-    // Process a history through a transition to a new state.
-    inline void processTransition( HistoryType& history );
+    // Add a history's contribution to the tally.
+    void tallyHistory( const HistoryType& history );
 
-    // Get the domain tally.
-    Teuchos::RCP<TallyType> domainTally() const
-    { return d_tally; }
-
-    // Determine if a given state is on-process.
-    inline bool isLocalState( const Ordinal& state );
-
-    //! Get the number of neighboring domains.
-    int numNeighbors() const
-    { return d_neighbor_ranks.size(); }
-
-    // Get the neighbor domain process rank.
-    inline int neighborRank( int n ) const;
-
-    // Get the neighbor domain that owns a boundary state (local neighbor id).
-    inline int owningNeighbor( const Ordinal& state );
+    // Combine the overlap tally with the base decomposition tally.
+    void 
 
   private:
 
-    // Domain tally.
-    Teuchos::RCP<TallyType> d_tally;
+    // Solution vector in original decomposition.
+    Teuchos::RCP<Vector>& d_x;
 
-    // Neighboring domain process ranks.
-    Teuchos::Array<int> d_neighbor_ranks;
+    // Solution vector in overlap decomposition.
+    Teuchos::RCP<Vector>& d_x_overlap;
 
-    // Local row indexer.
-    Teuchos::Hashtable<Ordinal,int> d_row_indexer;
-
-    // Local columns.
-    Teuchos::Array<Teuchos::Array<Ordinal> > d_columns;
-
-    // Local CDFs.
-    Teuchos::Array<Teuchos::Array<double> > d_cdfs;
-
-    // Local weights.
-    Teuchos::Array<Scalar> d_weights;
-
-    // Boundary state to owning neighbor local id table.
-    Teuchos::Hashtable<Ordinal,int> d_bnd_to_neighbor;
+    // Overlap to original decomposition vector export.
+    VectorExport<Vector> d_export;
 };
 
 //---------------------------------------------------------------------------//
@@ -150,8 +103,8 @@ class AdjointDomain
  * \brief Process a history through a transition to a new state.
  */
 template<class Scalar, class Ordinal>
-inline void AdjointDomain<Scalar,Ordinal>::processTransition( 
-    HistoryType& history )
+inline void Tally<Scalar,Ordinal>::processTransition( 
+    history_type& history )
 {
     Require( isLocalState( history.state() ) );
 
@@ -170,7 +123,7 @@ inline void AdjointDomain<Scalar,Ordinal>::processTransition(
  */
 template<class Scalar, class Ordinal>
 inline bool 
-AdjointDomain<Scalar,Ordinal>::isLocalState( const Ordinal& state )
+Tally<Scalar,Ordinal>::isLocalState( const Ordinal& state )
 {
     return d_row_indexer.containsKey( state );
 }
@@ -180,7 +133,7 @@ AdjointDomain<Scalar,Ordinal>::isLocalState( const Ordinal& state )
  * \brief Get the neighbor domain process rank.
  */
 template<class Scalar, class Ordinal>
-inline int AdjointDomain<Scalar,Ordinal>::neighborRank( int n ) const
+inline int Tally<Scalar,Ordinal>::neighborRank( int n ) const
 {
     Require( n >= 0 && n < d_neighbor_ranks.size() );
     return d_neighbor_ranks[n];
@@ -192,7 +145,7 @@ inline int AdjointDomain<Scalar,Ordinal>::neighborRank( int n ) const
  * id).
  */
 template<class Scalar, class Ordinal>
-inline int AdjointDomain<Scalar,Ordinal>::owningNeighbor( const Ordinal& state )
+inline int Tally<Scalar,Ordinal>::owningNeighbor( const Ordinal& state )
 {
     Require( d_bnd_to_neighbor.containsKey(state) );
     return d_bnd_to_neighbor.get(state);
@@ -206,13 +159,13 @@ inline int AdjointDomain<Scalar,Ordinal>::owningNeighbor( const Ordinal& state )
 // Template includes.
 //---------------------------------------------------------------------------//
 
-#include "MCLS_AdjointDomain_impl.hpp"
+#include "MCLS_Tally_impl.hpp"
 
 //---------------------------------------------------------------------------//
 
 #endif // end MCLS_ADJOINTDOMAIN_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_AdjointDomain.hpp
+// end MCLS_Tally.hpp
 // ---------------------------------------------------------------------------//
 

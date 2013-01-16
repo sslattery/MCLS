@@ -32,145 +32,38 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_AdjointDomain.hpp
+ * \file MCLS_AdjointDomain_impl.hpp
  * \author Stuart R. Slattery
- * \brief AdjointDomain declaration.
+ * \brief AdjointDomain implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_ADJOINTDOMAIN_HPP
-#define MCLS_ADJOINTDOMAIN_HPP
+#ifndef MCLS_ADJOINTDOMAIN_IMPL_HPP
+#define MCLS_ADJOINTDOMAIN_IMPL_HPP
 
-#include <algorithm>
-
-#include <MCLS_DBC.hpp>
-#include <MCLS_History.hpp>
-#include <MCLS_SamplingTools.hpp>
-
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_Hashtable.hpp>
+#include <MCLS_VectorTraits.hpp>
+#include <MCLS_MatrixTraits.hpp>
 
 namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class AdjointDomain
- * \brief Adjoint transport domain.
- *
- * Derived from the adjoint Neumann-Ulam product of a matrix.
- *
- * H^T = I - A^T 
- * H^T = (P) x (W)
- *
- * This domain contains data for all local states in the system, including
- * the overlap and neighboring domains.
+ * \brief Constructor.
  */
-template<class Scalar, class Ordinal>
-class AdjointDomain
+template<class Scalar, class Ordinal, class Matrix>
+AdjointDomain( const Teuchos::RCP<const Matrix>& A )
 {
-  public:
-
-    //@{
-    //! Typedefs.
-    typedef Scalar                                  scalar_type;
-    typedef Ordinal                                 ordinal_type;
-    typedef History<Scalar,Ordinal>                 history_type;
-    //@}
-
-    // Matrix constructor.
-    template<class Matrix>
-    AdjointDomain( const Teuchos::RCP<const Matrix>& A );
-
-    // Destructor.
-    ~AdjointDomain();
-
-    // Process a history through a transition to a new state.
-    inline void processTransition( history_type& history );
-
-    // Determine if a given state is on-process.
-    inline bool isLocalState( const Ordinal& state );
-
-    //! Get the number of neighboring domains.
-    int numNeighbors() const
-    { return d_neighbor_ranks.size(); }
-
-    //! Get the neighbor domain process rank.
-    inline int neighborRank( int n ) const;
-
-    //! Get the neighbor domain that owns a boundary state (local neighbor
-    //! id).
-    inline int owningNeighbor( const Ordinal& state );
-
-  private:
-
-    // Neighboring domain process ranks.
-    Teuchos::Array<int> d_neighbor_ranks;
-
-    // Local row indexer.
-    Teuchos::Hashtable<Ordinal,int> d_row_indexer;
-
-    // Local columns.
-    Teuchos::Array<Teuchos::Array<Ordinal> > d_columns;
-
-    // Local CDFs.
-    Teuchos::Array<Teuchos::Array<double> > d_cdfs;
-
-    // Local weights.
-    Teuchos::Array<Scalar> d_weights;
-
-    // Boundary state to owning neighbor local ID table.
-    Teuchos::Hashtable<Ordinal,int> d_bnd_to_neighbor;
-};
+    
+}
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
-//---------------------------------------------------------------------------//
-// Inline functions.
-//---------------------------------------------------------------------------//
-/*!
- * \brief Process a history through a transition to a new state.
- */
-template<class Scalar, class Ordinal>
-inline void AdjointDomain<Scalar,Ordinal>::processTransition( 
-    history_type& history )
-{
-    Require( isLocalState( history.state() ) );
-
-    history.setState( 
-	d_columns[d_row_indexer.get(history.state())][ 
-	    SamplingTools::sampleDiscreteCDF( 
-		d_cdfs[d_row_indexer.get(history.state()) ](),
-		history.rng.random() )] );
-
-    history.multiplyWeight( d_weights[d_row_indexer.get(history.state())] );
-}
+#endif // end MCLS_ADJOINTDOMAIN_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-/*!
- * \brief Determine if a given state is on-process.
- */
-template<class Scalar, class Ordinal>
-inline bool 
-AdjointDomain<Scalar,Ordinal>::isLocalState( const Ordinal& state )
-{
-    return d_row_indexer.containsKey( state );
-}
-
-//---------------------------------------------------------------------------//
-// Template includes.
-//---------------------------------------------------------------------------//
-
-#include "MCLS_AdjointDomain_impl.hpp"
-
-//---------------------------------------------------------------------------//
-
-#endif // end MCLS_ADJOINTDOMAIN_HPP
-
-//---------------------------------------------------------------------------//
-// end MCLS_AdjointDomain.hpp
+// end MCLS_AdjointDomain_impl.hpp
 // ---------------------------------------------------------------------------//
 
