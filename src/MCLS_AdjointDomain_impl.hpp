@@ -113,6 +113,8 @@ template<class Vector, class Matrix>
 void AdjointDomain<Vector>::addMatrixToDomain( 
     const Teuchos::RCP<const Matrix>& A )
 {
+    Require( !A.is_null() );
+
     // Typedef for MatrixTraits.
     typedef MatrixTraits<Matrix> MT;
 
@@ -193,6 +195,8 @@ void AdjointDomain<Vector>::addMatrixToDomain(
 template<class Vector, class Matrix>
 void AdjointDomain<Vector>::buildBoundary( const Teuchos::RCP<const Matrix>& A )
 {
+    Require( !A.is_null() );
+
     // Typedef for MatrixTraits.
     typedef MatrixTraits<Matrix> MT;
 
