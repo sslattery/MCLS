@@ -175,6 +175,17 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
     }
 
     /*!
+     * \brief Get the owning process rank for the given global rows.
+     */
+    static void getGlobalRowRanks( 
+	const matrix_type& matrix,
+	const Teuchos::ArrayView<global_ordinal_type>& global_rows,
+	const Teuchos::ArrayView<int>& ranks )
+    {
+	matrix.getRowMap()->getRemoteIndexList( global_rows, ranks );
+    }
+
+    /*!
      * \brief Determine whether or not a given global row is on-process.
      */
     static bool isGlobalRow( const matrix_type& matrix, const GO& global_row )

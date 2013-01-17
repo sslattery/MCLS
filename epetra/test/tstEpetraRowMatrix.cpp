@@ -487,6 +487,52 @@ TEUCHOS_UNIT_TEST( MatrixTraits, g2l_col )
 }
 
 //---------------------------------------------------------------------------//
+TEUCHOS_UNIT_TEST( MatrixTraits, GlobalRowRanks )
+{
+    typedef Epetra_RowMatrix MatrixType;
+    typedef Epetra_Vector VectorType;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+	Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
+
+    int comm_size = comm->getSize();
+    int local_num_rows = 10;
+    int global_num_rows = local_num_rows*comm_size;
+
+    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
+	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
+
+    Teuchos::RCP<Epetra_CrsMatrix> A = 
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
+
+    Teuchos::Array<int> rows( global_num_rows );
+    for ( int i = 0; i < global_num_rows; ++i )
+    {
+	rows[i] = i;
+    }
+
+    Teuchos::Array<int> ranks( global_num_rows );
+    MT::getGlobalRowRanks( *A, rows(), ranks() );
+
+    for ( int i = 0; i < global_num_rows; ++i )
+    {
+	for ( int n = 0; n < comm_size; ++n )
+	{
+	    if ( i >= local_num_rows*n && i < local_num_rows*(n+1) )
+	    {
+		TEST_EQUALITY( ranks[i], n );
+	    }
+	}
+    }
+}
+
+//---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST( MatrixTraits, is_l_row )
 {
     typedef Epetra_RowMatrix MatrixType;

@@ -189,6 +189,18 @@ class MatrixTraits
     }
 
     /*!
+     * \brief Get the owning process rank for the given global rows.
+     */
+    static void getGlobalRowRanks( 
+	const Matrix& matrix,
+	const Teuchos::ArrayView<global_ordinal_type>& global_rows,
+	const Teuchos::ArrayView<int>& ranks )
+    {
+	UndefinedMatrixTraits<Vector,Matrix>::notDefined(); 
+	return 0; 
+    }
+
+    /*!
      * \brief Determine whether or not a given global row is on-process.
      */
     static bool isGlobalRow( const Matrix& matrix,

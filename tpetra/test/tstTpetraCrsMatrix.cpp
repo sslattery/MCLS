@@ -445,6 +445,51 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, g2l_col, LO, GO, Scalar )
 UNIT_TEST_INSTANTIATION( MatrixTraits, g2l_col )
 
 //---------------------------------------------------------------------------//
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, GlobalRowRanks, LO, GO, Scalar )
+{
+    typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
+    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
+    typedef typename MT::scalar_type scalar_type;
+    typedef typename MT::local_ordinal_type local_ordinal_type;
+    typedef typename MT::global_ordinal_type global_ordinal_type;
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+	Teuchos::DefaultComm<int>::getComm();
+    int comm_size = comm->getSize();
+
+    int local_num_rows = 10;
+    int global_num_rows = local_num_rows*comm_size;
+    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
+	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
+
+    Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
+
+    Teuchos::Array<GO> rows( global_num_rows );
+    for ( int i = 0; i < global_num_rows; ++i )
+    {
+	rows[i] = i;
+    }
+
+    Teuchos::Array<int> ranks( global_num_rows );
+    MT::getGlobalRowRanks( *A, rows(), ranks() );
+
+    for ( int i = 0; i < global_num_rows; ++i )
+    {
+	for ( int n = 0; n < comm_size; ++n )
+	{
+	    if ( i >= local_num_rows*n && i < local_num_rows*(n+1) )
+	    {
+		TEST_EQUALITY( ranks[i], n );
+	    }
+	}
+    }
+}
+
+UNIT_TEST_INSTANTIATION( MatrixTraits, GlobalRowRanks )
+
+//---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, is_l_row, LO, GO, Scalar )
 {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;

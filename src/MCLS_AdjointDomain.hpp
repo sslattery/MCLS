@@ -41,8 +41,6 @@
 #ifndef MCLS_ADJOINTDOMAIN_HPP
 #define MCLS_ADJOINTDOMAIN_HPP
 
-#include <algorithm>
-
 #include <MCLS_DBC.hpp>
 #include <MCLS_History.hpp>
 #include <MCLS_AdjointTally.hpp>
@@ -92,7 +90,7 @@ class AdjointDomain
     template<class Matrix>
     AdjointDomain( const Teuchos::RCP<const Matrix>& A,
 		   const Teuchos::RCP<Vector>& x,
-		   const Teuchos::RCP<const Teuchos::ParameterList>& plist );
+		   const Teuchos::ParameterList& plist );
 
     // Destructor.
     ~AdjointDomain()
@@ -120,11 +118,18 @@ class AdjointDomain
 
   private:
 
+    // Add matrix data to the local domain.
+    template<class Matrix>
+    void addMatrixToDomain( const Teuchos::RCP<const Matrix>& A );
+
+    // Build boundary data.
+    template<class Matrix>
+    void buildBoundary( const Teuchos::RCP<const Matrix>& A );
+
+  private:
+
     // Domain tally.
     Teuchos::RCP<TallyType> d_tally;
-
-    // Neighboring domain process ranks.
-    Teuchos::Array<int> d_neighbor_ranks;
 
     // Local row indexer.
     Teuchos::Hashtable<Ordinal,int> d_row_indexer;
@@ -138,6 +143,9 @@ class AdjointDomain
     // Local weights.
     Teuchos::Array<Scalar> d_weights;
 
+    // Neighboring domain process ranks.
+    Teuchos::Array<int> d_neighbor_ranks;
+
     // Boundary state to owning neighbor local id table.
     Teuchos::Hashtable<Ordinal,int> d_bnd_to_neighbor;
 };
@@ -148,18 +156,19 @@ class AdjointDomain
 /*!
  * \brief Process a history through a transition to a new state.
  */
-template<class Scalar, class Ordinal>
-inline void AdjointDomain<Scalar,Ordinal>::processTransition( 
+template<class Vector>
+inline void AdjointDomain<Vector>::processTransition( 
     HistoryType& history )
 {
-    Require( isLocalState( history.state() ) );
-    Require( TRANSITION == history.state() );
+    Require( history.alive() );
+    Require( TRANSITION == history.event() );
+    Require( isLocalState(history.state()) );
 
     history.setState( 
 	d_columns[d_row_indexer.get(history.state())][ 
 	    SamplingTools::sampleDiscreteCDF( 
 		d_cdfs[d_row_indexer.get(history.state()) ](),
-		history.rng.random() )] );
+		history.rng.random() ) ] );
 
     history.multiplyWeight( d_weights[d_row_indexer.get(history.state())] );
 }
@@ -168,9 +177,9 @@ inline void AdjointDomain<Scalar,Ordinal>::processTransition(
 /*!
  * \brief Determine if a given state is on-process.
  */
-template<class Scalar, class Ordinal>
+template<class Vector>
 inline bool 
-AdjointDomain<Scalar,Ordinal>::isLocalState( const Ordinal& state )
+AdjointDomain<Vector>::isLocalState( const Ordinal& state )
 {
     return d_row_indexer.containsKey( state );
 }
@@ -179,8 +188,8 @@ AdjointDomain<Scalar,Ordinal>::isLocalState( const Ordinal& state )
 /*!
  * \brief Get the neighbor domain process rank.
  */
-template<class Scalar, class Ordinal>
-inline int AdjointDomain<Scalar,Ordinal>::neighborRank( int n ) const
+template<class Vector>
+inline int AdjointDomain<Vector>::neighborRank( int n ) const
 {
     Require( n >= 0 && n < d_neighbor_ranks.size() );
     return d_neighbor_ranks[n];
@@ -191,8 +200,8 @@ inline int AdjointDomain<Scalar,Ordinal>::neighborRank( int n ) const
  * \brief Get the neighbor domain that owns a boundary state (local neighbor
  * id).
  */
-template<class Scalar, class Ordinal>
-inline int AdjointDomain<Scalar,Ordinal>::owningNeighbor( const Ordinal& state )
+template<class Vector>
+inline int AdjointDomain<Vector>::owningNeighbor( const Ordinal& state )
 {
     Require( d_bnd_to_neighbor.containsKey(state) );
     return d_bnd_to_neighbor.get(state);
