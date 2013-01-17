@@ -17,7 +17,7 @@
 
 #include <MCLS_AdjointTally.hpp>
 #include <MCLS_VectorTraits.hpp>
-#include <MCLS_TpetraAdapter.hpp>
+#include <MCLS_EpetraAdapter.hpp>
 #include <MCLS_History.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
@@ -58,8 +58,8 @@ TEUCHOS_UNIT_TEST( AdjointTally, Typedefs )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef MCLS::AdjointTally<VectorType> TallyType;
-    typedef MCLS::History<Scalar,int> HistoryType;
-    typedef typename TallyType::HistoryType history_type;
+    typedef MCLS::History<double,int> HistoryType;
+    typedef TallyType::HistoryType history_type;
 
     TEST_EQUALITY_CONST( 
 	(Teuchos::TypeTraits::is_same<HistoryType, history_type>::value)
@@ -117,7 +117,7 @@ TEUCHOS_UNIT_TEST( AdjointTally, TallyHistory )
     }
     
     Teuchos::ArrayRCP<const double> A_view = VT::view( *A );
-    typename Teuchos::ArrayRCP<const double>::const_iterator a_view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator a_view_iterator;
     for ( a_view_iterator = A_view.begin();
 	  a_view_iterator != A_view.end();
 	  ++a_view_iterator )
@@ -133,7 +133,7 @@ TEUCHOS_UNIT_TEST( AdjointTally, TallyHistory )
     }
 
     Teuchos::ArrayRCP<const double> B_view = VT::view( *B );
-    typename Teuchos::ArrayRCP<const double>::const_iterator b_view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator b_view_iterator;
     for ( b_view_iterator = B_view.begin();
 	  b_view_iterator != B_view.end();
 	  ++b_view_iterator )
@@ -155,11 +155,6 @@ TEUCHOS_UNIT_TEST( AdjointTally, Combine )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef MCLS::History<double,int> HistoryType;
-
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
-	Teuchos::DefaultComm<int>::getComm();
-    int comm_size = comm->getSize();
-    int comm_rank = comm->getRank();
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -208,16 +203,23 @@ TEUCHOS_UNIT_TEST( AdjointTally, Combine )
     tally.combineTallies();
 
     Teuchos::ArrayRCP<const double> A_view = VT::view( *A );
-    typename Teuchos::ArrayRCP<const double>::const_iterator a_view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator a_view_iterator;
     for ( a_view_iterator = A_view.begin();
 	  a_view_iterator != A_view.end();
 	  ++a_view_iterator )
     {
-	TEST_EQUALITY( *a_view_iterator, a_val + b_val );
+	if ( comm_size == 1 )
+	{
+	    TEST_EQUALITY( *a_view_iterator, 0 );
+	}
+	else
+	{
+	    TEST_EQUALITY( *a_view_iterator, a_val + b_val );
+	}
     }
 
     Teuchos::ArrayRCP<const double> B_view = VT::view( *B );
-    typename Teuchos::ArrayRCP<const double>::const_iterator b_view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator b_view_iterator;
     for ( b_view_iterator = B_view.begin();
 	  b_view_iterator != B_view.end();
 	  ++b_view_iterator )
@@ -239,11 +241,6 @@ TEUCHOS_UNIT_TEST( AdjointTally, Normalize )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef MCLS::History<double,int> HistoryType;
-
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
-	Teuchos::DefaultComm<int>::getComm();
-    int comm_size = comm->getSize();
-    int comm_rank = comm->getRank();
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -293,16 +290,23 @@ TEUCHOS_UNIT_TEST( AdjointTally, Normalize )
     tally.normalize( nh );
 
     Teuchos::ArrayRCP<const double> A_view = VT::view( *A );
-    typename Teuchos::ArrayRCP<const double>::const_iterator a_view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator a_view_iterator;
     for ( a_view_iterator = A_view.begin();
 	  a_view_iterator != A_view.end();
 	  ++a_view_iterator )
     {
-	TEST_EQUALITY( *a_view_iterator, (a_val + b_val) / nh );
+	if ( comm_size == 1 )
+	{
+	    TEST_EQUALITY( *a_view_iterator, 0 );
+	}
+	else
+	{
+	    TEST_EQUALITY( *a_view_iterator, (a_val + b_val) / nh );
+	}
     }
 
     Teuchos::ArrayRCP<const double> B_view = VT::view( *B );
-    typename Teuchos::ArrayRCP<const double>::const_iterator b_view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator b_view_iterator;
     for ( b_view_iterator = B_view.begin();
 	  b_view_iterator != B_view.end();
 	  ++b_view_iterator )

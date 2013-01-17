@@ -197,7 +197,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, Combine, LO, GO, Scalar )
 	  a_view_iterator != A_view.end();
 	  ++a_view_iterator )
     {
-	TEST_EQUALITY( *a_view_iterator, a_val + b_val );
+	if ( comm_size == 1 )
+	{
+	    TEST_EQUALITY( *a_view_iterator, 0 );
+	}
+	else
+	{
+	    TEST_EQUALITY( *a_view_iterator, a_val + b_val );
+	}
     }
 
     Teuchos::ArrayRCP<const Scalar> B_view = VT::view( *B );
@@ -274,7 +281,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, Normalize, LO, GO, Scalar )
 	  a_view_iterator != A_view.end();
 	  ++a_view_iterator )
     {
-	TEST_EQUALITY( *a_view_iterator, (a_val + b_val) / nh );
+	if ( comm_size == 1 )
+	{
+	    TEST_EQUALITY( *a_view_iterator, 0 );
+	}
+	else
+	{
+	    TEST_EQUALITY( *a_view_iterator, (a_val + b_val) / nh );
+	}
     }
 
     Teuchos::ArrayRCP<const Scalar> B_view = VT::view( *B );
