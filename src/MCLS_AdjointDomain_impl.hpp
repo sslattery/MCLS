@@ -54,7 +54,7 @@ namespace MCLS
 /*!
  * \brief Constructor.
  */
-template<class Vector, class Matrix>
+template<class Vector>
 AdjointDomain<Vector>::AdjointDomain( const Teuchos::RCP<const Matrix>& A,
 				      const Teuchos::RCP<Vector>& x,
 				      const Teuchos::ParameterList& plist )
@@ -62,14 +62,11 @@ AdjointDomain<Vector>::AdjointDomain( const Teuchos::RCP<const Matrix>& A,
     Require( !A.is_null() );
     Require( !x.is_null() );
 
-    // Typedef for MatrixTraits.
-    typedef MatrixTraits<Matrix> MT;
-
     // Generate the transpose of the operator.
     Teuchos::RCP<Matrix> A_T = MT::copyTranspose( *A );
 
     // Generate the overlap for the transpose operator.
-    int num_overlap = plist.get<int>( "Overlap States" );
+    int num_overlap = plist.get<int>( "Overlap Size" );
     Require( num_overlap >= 0 );
     Teuchos::RCP<Matrix> A_T_overlap = 
 	MT::copyNearestNeighbors( *A_T, num_overlap );
@@ -109,14 +106,11 @@ AdjointDomain<Vector>::AdjointDomain( const Teuchos::RCP<const Matrix>& A,
 /*
  * \brief Add matrix data to the local domain.
  */
-template<class Vector, class Matrix>
+template<class Vector>
 void AdjointDomain<Vector>::addMatrixToDomain( 
     const Teuchos::RCP<const Matrix>& A )
 {
     Require( !A.is_null() );
-
-    // Typedef for MatrixTraits.
-    typedef MatrixTraits<Matrix> MT;
 
     Ordinal local_num_rows = MT::getLocalNumRows( *A );
     Ordinal global_row = 0;
@@ -192,13 +186,10 @@ void AdjointDomain<Vector>::addMatrixToDomain(
 /*
  * \brief Build boundary data.
  */
-template<class Vector, class Matrix>
+template<class Vector>
 void AdjointDomain<Vector>::buildBoundary( const Teuchos::RCP<const Matrix>& A )
 {
     Require( !A.is_null() );
-
-    // Typedef for MatrixTraits.
-    typedef MatrixTraits<Matrix> MT;
 
     // Get the next set of off-process rows. This is the boundary. If we
     // transition to these then we have left the local domain.
@@ -218,17 +209,17 @@ void AdjointDomain<Vector>::buildBoundary( const Teuchos::RCP<const Matrix>& A )
 
     // Get the owning ranks for the boundary rows.
     Teuchos::Array<int> boundary_ranks( boundary_rows.size() );
-    MT::getGlobalRowRanks( *A_boundary, boundar_rows(), boundary_ranks() );
+    MT::getGlobalRowRanks( *A_boundary, boundary_rows(), boundary_ranks() );
 
     // Process the boundary data.
     int neighbor_rank = 0;
     Teuchos::Array<int>::const_iterator neighbor_rank_it;
     Teuchos::Array<int>::const_iterator bnd_rank_it;
-    Teuchos::Array<Ordinal>::const_iterator bnd_row_it;
+    typename Teuchos::Array<Ordinal>::const_iterator bnd_row_it;
     for ( bnd_row_it = boundary_rows.begin(), 
 	  bnd_rank_it = boundary_ranks.begin();
 	  bnd_row_it != boundary_rows.end();
-	  ++bnd_row_it, ++bnd_ranks_it )
+	  ++bnd_row_it, ++bnd_rank_it )
     {
 	Check( *bnd_rank_it != -1 );
 	Check( *bnd_rank_it != MT::getComm( *A )->getRank() );
@@ -249,8 +240,9 @@ void AdjointDomain<Vector>::buildBoundary( const Teuchos::RCP<const Matrix>& A )
 	else
 	{
 	    d_bnd_to_neighbor.put(
-		*bnd_row_it, 
-		std::distance(d_neighbor_ranks.begin(), neighbor_rank_it) );
+		*bnd_row_it, std::distance(
+		    Teuchos::as<typename Teuchos::Array<Ordinal>::const_iterator>(
+			d_neighbor_ranks.begin()), neighbor_rank_it) );
 	}
     }
 

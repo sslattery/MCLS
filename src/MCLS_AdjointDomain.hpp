@@ -45,8 +45,9 @@
 #include <MCLS_History.hpp>
 #include <MCLS_AdjointTally.hpp>
 #include <MCLS_SamplingTools.hpp>
-#include <MCLS_VectorTraits.hpp>
 #include <MCLS_Events.hpp>
+#include <MCLS_VectorTraits.hpp>
+#include <MCLS_MatrixTraits.hpp>
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
@@ -71,7 +72,7 @@ namespace MCLS
  * the tally for the solution vector over the domain as it has ownership of
  * the parallel decomposition of the domain.
  */
-template<class Vector>
+template<class Vector, class Matrix>
 class AdjointDomain
 {
   public:
@@ -80,6 +81,8 @@ class AdjointDomain
     //! Typedefs.
     typedef Vector                                      vector_type;
     typedef VectorTraits<Vector>                        VT;
+    typedef Matrix                                      matrix_type;
+    typedef MatrixTraits<Vector,Matrix>                 MT;
     typedef typename VT::global_ordinal_type            Ordinal;
     typedef typename VT::scalar_type                    Scalar;
     typedef AdjointTally<Vector>                        TallyType;
@@ -87,7 +90,6 @@ class AdjointDomain
     //@}
 
     // Matrix constructor.
-    template<class Matrix>
     AdjointDomain( const Teuchos::RCP<const Matrix>& A,
 		   const Teuchos::RCP<Vector>& x,
 		   const Teuchos::ParameterList& plist );
@@ -119,11 +121,9 @@ class AdjointDomain
   private:
 
     // Add matrix data to the local domain.
-    template<class Matrix>
     void addMatrixToDomain( const Teuchos::RCP<const Matrix>& A );
 
     // Build boundary data.
-    template<class Matrix>
     void buildBoundary( const Teuchos::RCP<const Matrix>& A );
 
   private:
@@ -156,8 +156,8 @@ class AdjointDomain
 /*!
  * \brief Process a history through a transition to a new state.
  */
-template<class Vector>
-inline void AdjointDomain<Vector>::processTransition( 
+template<class Vector, class Matrix>
+inline void AdjointDomain<Vector,Matrix>::processTransition( 
     HistoryType& history )
 {
     Require( history.alive() );
@@ -177,9 +177,9 @@ inline void AdjointDomain<Vector>::processTransition(
 /*!
  * \brief Determine if a given state is on-process.
  */
-template<class Vector>
+template<class Vector, class Matrix>
 inline bool 
-AdjointDomain<Vector>::isLocalState( const Ordinal& state )
+AdjointDomain<Vector,Matrix>::isLocalState( const Ordinal& state )
 {
     return d_row_indexer.containsKey( state );
 }
@@ -188,8 +188,8 @@ AdjointDomain<Vector>::isLocalState( const Ordinal& state )
 /*!
  * \brief Get the neighbor domain process rank.
  */
-template<class Vector>
-inline int AdjointDomain<Vector>::neighborRank( int n ) const
+template<class Vector, class Matrix>
+inline int AdjointDomain<Vector,Matrix>::neighborRank( int n ) const
 {
     Require( n >= 0 && n < d_neighbor_ranks.size() );
     return d_neighbor_ranks[n];
@@ -200,8 +200,8 @@ inline int AdjointDomain<Vector>::neighborRank( int n ) const
  * \brief Get the neighbor domain that owns a boundary state (local neighbor
  * id).
  */
-template<class Vector>
-inline int AdjointDomain<Vector>::owningNeighbor( const Ordinal& state )
+template<class Vector, class Matrix>
+inline int AdjointDomain<Vector,Matrix>::owningNeighbor( const Ordinal& state )
 {
     Require( d_bnd_to_neighbor.containsKey(state) );
     return d_bnd_to_neighbor.get(state);
