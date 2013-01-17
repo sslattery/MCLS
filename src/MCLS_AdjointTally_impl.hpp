@@ -41,8 +41,6 @@
 #ifndef MCLS_ADJOINTTALLY_IMPL_HPP
 #define MCLS_ADJOINTTALLY_IMPL_HPP
 
-#include <MCLS_DBC.hpp>
-
 namespace MCLS
 {
 
@@ -59,35 +57,6 @@ AdjointTally<Vector>::AdjointTally( const Teuchos::RCP<Vector>& x,
 { 
     Ensure( !d_x.is_null() );
     Ensure( !d_x_overlap.is_null() );
-}
-
-//---------------------------------------------------------------------------//
-/*
- * \brief Add a history's contribution to the tally.
- */
-template<class Vector>
-void AdjointTally<Vector>::tallyHistory( const HistoryType& history )
-{
-    Require( VT::isGlobalRow( *d_x, history.state() ) ||
-	     VT::isGlobalRow( *d_x_overlap, history.state() ) );
-
-    if ( VT::isGlobalRow( *d_x, history.state() ) )
-    {
-	VT::sumIntoGlobalValue( *d_x, history.state(), history.weight() );
-    }
-
-    else if ( VT::isGlobalRow( *d_x_overlap, history.state() ) )
-    {
-	VT::sumIntoGlobalValue( 
-	    *d_x_overlap, history.state(), history.weight() );
-    }
-
-    else
-    {
-	Insist( VT::isGlobalRow( *d_x, history.state() ) ||
-		VT::isGlobalRow( *d_x_overlap, history.state() ),
-		"History state is not local to tally!" );
-    }
 }
 
 //---------------------------------------------------------------------------//
@@ -108,8 +77,8 @@ void AdjointTally<Vector>::combineTallies()
 template<class Vector>
 void AdjointTally<Vector>::normalize( const int& nh )
 {
-    VT::scale( *d_x, 1.0 / nh )
-	}
+    VT::scale( *d_x, 1.0 / nh );
+}
 
 //---------------------------------------------------------------------------//
 

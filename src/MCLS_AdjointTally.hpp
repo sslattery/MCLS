@@ -41,6 +41,7 @@
 #ifndef MCLS_ADJOINTTALLY_HPP
 #define MCLS_ADJOINTTALLY_HPP
 
+#include <MCLS_DBC.hpp>
 #include <MCLS_History.hpp>
 #include <MCLS_VectorExport.hpp>
 #include <MCLS_VectorTraits.hpp>
@@ -63,9 +64,11 @@ class AdjointTally
 
     //@{
     //! Typedefs.
-    typedef Vector                                               vector_type;
-    typedef VectorTraits<Vector>                                 VT;
-    typedef History<VT::scalar_type,VT::global_ordinal_type>     HistoryType;
+    typedef Vector                                              vector_type;
+    typedef VectorTraits<Vector>                                VT;
+    typedef typename VT::scalar_type                            Scalar;
+    typedef typename VT::global_ordinal_type                    Ordinal;
+    typedef History<Scalar,Ordinal>                             HistoryType;
     //@}
 
     // Constructor.
@@ -77,7 +80,7 @@ class AdjointTally
     { /* ... */ }
 
     // Add a history's contribution to the tally.
-    void tallyHistory( const HistoryType& history );
+    inline void tallyHistory( const HistoryType& history );
 
     // Combine the overlap tally with the base decomposition tally.
     void combineTallies();
@@ -88,15 +91,47 @@ class AdjointTally
 
   private:
 
-    // Solution vector in original decomposition.
-    Teuchos::RCP<Vector>& d_x;
+    // Solution vector in base decomposition.
+    Teuchos::RCP<Vector> d_x;
 
     // Solution vector in overlap decomposition.
-    Teuchos::RCP<Vector>& d_x_overlap;
+    Teuchos::RCP<Vector> d_x_overlap;
 
-    // Overlap to original decomposition vector export.
+    // Overlap to base decomposition vector export.
     VectorExport<Vector> d_export;
 };
+
+//---------------------------------------------------------------------------//
+// Inline functions.
+//---------------------------------------------------------------------------//
+/*
+ * \brief Add a history's contribution to the tally.
+ */
+template<class Vector>
+inline void AdjointTally<Vector>::tallyHistory( const HistoryType& history )
+{
+    Require( history.alive() );
+    Require( VT::isGlobalRow( *d_x, history.state() ) ||
+	     VT::isGlobalRow( *d_x_overlap, history.state() ) );
+
+    if ( VT::isGlobalRow( *d_x, history.state() ) )
+    {
+	VT::sumIntoGlobalValue( *d_x, history.state(), history.weight() );
+    }
+
+    else if ( VT::isGlobalRow( *d_x_overlap, history.state() ) )
+    {
+	VT::sumIntoGlobalValue( 
+	    *d_x_overlap, history.state(), history.weight() );
+    }
+
+    else
+    {
+	Insist( VT::isGlobalRow( *d_x, history.state() ) ||
+		VT::isGlobalRow( *d_x_overlap, history.state() ),
+		"History state is not local to tally!" );
+    }
+}
 
 //---------------------------------------------------------------------------//
 
