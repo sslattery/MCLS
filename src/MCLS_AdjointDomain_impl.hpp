@@ -49,15 +49,15 @@
 
 namespace MCLS
 {
-
 //---------------------------------------------------------------------------//
 /*!
  * \brief Constructor.
  */
-template<class Vector>
-AdjointDomain<Vector>::AdjointDomain( const Teuchos::RCP<const Matrix>& A,
-				      const Teuchos::RCP<Vector>& x,
-				      const Teuchos::ParameterList& plist )
+template<class Vector, class Matrix>
+AdjointDomain<Vector,Matrix>::AdjointDomain( 
+    const Teuchos::RCP<const Matrix>& A,
+    const Teuchos::RCP<Vector>& x,
+    const Teuchos::ParameterList& plist )
 {
     Require( !A.is_null() );
     Require( !x.is_null() );
@@ -106,8 +106,8 @@ AdjointDomain<Vector>::AdjointDomain( const Teuchos::RCP<const Matrix>& A,
 /*
  * \brief Add matrix data to the local domain.
  */
-template<class Vector>
-void AdjointDomain<Vector>::addMatrixToDomain( 
+template<class Vector, class Matrix>
+void AdjointDomain<Vector,Matrix>::addMatrixToDomain( 
     const Teuchos::RCP<const Matrix>& A )
 {
     Require( !A.is_null() );
@@ -150,8 +150,9 @@ void AdjointDomain<Vector>::addMatrixToDomain(
 				       global_row );
 	if ( diagonal_iterator != d_columns[i+offset].end() )
 	{
-	    d_cdfs[i+offset][ std::distance(d_columns[i+offset].begin(),
-					    diagonal_iterator) ] -= 1;
+	    d_cdfs[i+offset][ std::distance(
+		    Teuchos::as<typename Teuchos::Array<Ordinal>::const_iterator>(
+			d_columns[i+offset].begin()), diagonal_iterator) ] -= 1;
 	}
 
 	// Accumulate the absolute value of the PDF values to get a
@@ -186,8 +187,9 @@ void AdjointDomain<Vector>::addMatrixToDomain(
 /*
  * \brief Build boundary data.
  */
-template<class Vector>
-void AdjointDomain<Vector>::buildBoundary( const Teuchos::RCP<const Matrix>& A )
+template<class Vector, class Matrix>
+void AdjointDomain<Vector,Matrix>::buildBoundary( 
+    const Teuchos::RCP<const Matrix>& A )
 {
     Require( !A.is_null() );
 
@@ -212,7 +214,6 @@ void AdjointDomain<Vector>::buildBoundary( const Teuchos::RCP<const Matrix>& A )
     MT::getGlobalRowRanks( *A_boundary, boundary_rows(), boundary_ranks() );
 
     // Process the boundary data.
-    int neighbor_rank = 0;
     Teuchos::Array<int>::const_iterator neighbor_rank_it;
     Teuchos::Array<int>::const_iterator bnd_rank_it;
     typename Teuchos::Array<Ordinal>::const_iterator bnd_row_it;
@@ -241,7 +242,7 @@ void AdjointDomain<Vector>::buildBoundary( const Teuchos::RCP<const Matrix>& A )
 	{
 	    d_bnd_to_neighbor.put(
 		*bnd_row_it, std::distance(
-		    Teuchos::as<typename Teuchos::Array<Ordinal>::const_iterator>(
+		    Teuchos::as<Teuchos::Array<int>::const_iterator>(
 			d_neighbor_ranks.begin()), neighbor_rank_it) );
 	}
     }

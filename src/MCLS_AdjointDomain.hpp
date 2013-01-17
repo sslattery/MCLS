@@ -178,8 +178,7 @@ inline void AdjointDomain<Vector,Matrix>::processTransition(
  * \brief Determine if a given state is on-process.
  */
 template<class Vector, class Matrix>
-inline bool 
-AdjointDomain<Vector,Matrix>::isLocalState( const Ordinal& state )
+inline bool AdjointDomain<Vector,Matrix>::isLocalState( const Ordinal& state )
 {
     return d_row_indexer.containsKey( state );
 }
