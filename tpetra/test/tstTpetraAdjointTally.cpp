@@ -96,7 +96,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, TallyHistory, LO, GO, Scalar )
     Scalar b_val = 3;
     for ( int i = 0; i < local_num_rows; ++i )
     {
-	HistoryType history( i, a_val );
+	GO state = i + local_num_rows*comm_rank;
+	HistoryType history( state, a_val );
 	history.live();
 	tally.tallyHistory( history );
 
@@ -171,11 +172,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, Combine, LO, GO, Scalar )
     Teuchos::RCP<VectorType> B = Tpetra::createVector<Scalar,LO,GO>( map_b );
 
     MCLS::AdjointTally<VectorType> tally( A, B );
+
     Scalar a_val = 2;
     Scalar b_val = 3;
     for ( int i = 0; i < local_num_rows; ++i )
     {
-	HistoryType history( i, a_val );
+	GO state = i + local_num_rows*comm_rank;
+	HistoryType history( state, a_val );
 	history.live();
 	tally.tallyHistory( history );
 
@@ -185,7 +188,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, Combine, LO, GO, Scalar )
 	history.live();
 	tally.tallyHistory( history );
     }
-    
+
     tally.combineTallies();
 
     Teuchos::ArrayRCP<const Scalar> A_view = VT::view( *A );
@@ -249,7 +252,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, Normalize, LO, GO, Scalar )
     Scalar b_val = 3;
     for ( int i = 0; i < local_num_rows; ++i )
     {
-	HistoryType history( i, a_val );
+	GO state = i + local_num_rows*comm_rank;
+	HistoryType history( state, a_val );
 	history.live();
 	tally.tallyHistory( history );
 

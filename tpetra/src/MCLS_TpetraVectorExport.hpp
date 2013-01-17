@@ -105,14 +105,6 @@ class VectorExport<Tpetra::Vector<Scalar,LO,GO> >
 	d_target_vector->doExport( *d_source_vector, *d_export, Tpetra::INSERT );
     }
 
-    /*!
-     * \brief Do the export. Replace existing values with new values.
-     */
-    void doExportReplace()
-    {
-	d_target_vector->doExport( *d_source_vector, *d_export, Tpetra::REPLACE );
-    }
-
   private:
 
     // Source vector.
