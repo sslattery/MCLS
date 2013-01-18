@@ -89,14 +89,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, NoOverlap, LO, GO, Scalar )
     Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
 	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
 
-    // Build the domain.
+    // Build the linear operator and solution vector.
     Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
     Teuchos::Array<GO> global_columns( 2 );
     Teuchos::Array<Scalar> values( 2 );
-    for ( int i = 0; i < global_num_rows-1; ++i )
+    for ( int i = 1; i < global_num_rows; ++i )
     {
-	global_columns[0] = i;
-	global_columns[1] = i+1;
+	global_columns[0] = i-1;
+	global_columns[1] = i;
 	values[0] = 2;
 	values[1] = 3;
 	A->insertGlobalValues( i, global_columns(), values() );
@@ -105,9 +105,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, NoOverlap, LO, GO, Scalar )
 
     Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *A );
 
+    // Build the adjoint domain.
     Teuchos::ParameterList plist;
     plist.set<int>( "Overlap Size", 0 );
-
     MCLS::AdjointDomain<VectorType,MatrixType> domain( A, x, plist );
 
     // Check the tally.
@@ -122,6 +122,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, NoOverlap, LO, GO, Scalar )
 	    tally->tallyHistory( history );
 	}
     }
+
     tally->combineTallies();
 
     Teuchos::ArrayRCP<const Scalar> x_view = VT::view( *x );

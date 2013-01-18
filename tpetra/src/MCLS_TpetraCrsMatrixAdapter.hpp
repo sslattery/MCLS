@@ -228,7 +228,7 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
 				  const Teuchos::ArrayView<Scalar>& values,
 				  std::size_t& num_entries )
     {
-	Require( !matrix.isFillComplete() );
+	Require( matrix.isFillComplete() );
 	Require( matrix.getRowMap()->isNodeGlobalElement( global_row ) );
 	matrix.getGlobalRowCopy( global_row, indices, values, num_entries );
     }

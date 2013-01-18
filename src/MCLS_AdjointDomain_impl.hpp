@@ -92,11 +92,11 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     // Get the boundary states and their owning process ranks.
     if ( num_overlap == 0 )
     {
-	buildBoundary( A_T );
+	buildBoundary( A_T, A );
     }
     else
     {
-	buildBoundary( A_T_overlap );
+	buildBoundary( A_T_overlap, A );
     }
 
     Ensure( !d_tally.is_null() );
@@ -189,7 +189,8 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
  */
 template<class Vector, class Matrix>
 void AdjointDomain<Vector,Matrix>::buildBoundary( 
-    const Teuchos::RCP<const Matrix>& A )
+    const Teuchos::RCP<const Matrix>& A,
+    const Teuchos::RCP<const Matrix>& base_A )
 {
     Require( !A.is_null() );
 
@@ -211,7 +212,7 @@ void AdjointDomain<Vector,Matrix>::buildBoundary(
 
     // Get the owning ranks for the boundary rows.
     Teuchos::Array<int> boundary_ranks( boundary_rows.size() );
-    MT::getGlobalRowRanks( *A_boundary, boundary_rows(), boundary_ranks() );
+    MT::getGlobalRowRanks( *base_A, boundary_rows(), boundary_ranks() );
 
     // Process the boundary data.
     Teuchos::Array<int>::const_iterator neighbor_rank_it;

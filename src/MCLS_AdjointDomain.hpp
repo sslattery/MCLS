@@ -125,7 +125,8 @@ class AdjointDomain
     void addMatrixToDomain( const Teuchos::RCP<const Matrix>& A );
 
     // Build boundary data.
-    void buildBoundary( const Teuchos::RCP<const Matrix>& A );
+    void buildBoundary( const Teuchos::RCP<const Matrix>& A,
+			const Teuchos::RCP<const Matrix>& base_A );
 
   private:
 
