@@ -51,8 +51,9 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
-#include <Teuchos_Hashtable.hpp>
 #include <Teuchos_ParameterList.hpp>
+
+#include <boost/tr1/unordered_map.hpp>
 
 namespace MCLS
 {
@@ -132,7 +133,7 @@ class AdjointDomain
     Teuchos::RCP<TallyType> d_tally;
 
     // Local row indexer.
-    Teuchos::Hashtable<Ordinal,int> d_row_indexer;
+    std::tr1::unordered_map<Ordinal,int> d_row_indexer;
 
     // Local columns.
     Teuchos::Array<Teuchos::Array<Ordinal> > d_columns;
@@ -147,7 +148,7 @@ class AdjointDomain
     Teuchos::Array<int> d_neighbor_ranks;
 
     // Boundary state to owning neighbor local id table.
-    Teuchos::Hashtable<Ordinal,int> d_bnd_to_neighbor;
+    std::tr1::unordered_map<Ordinal,int> d_bnd_to_neighbor;
 };
 
 //---------------------------------------------------------------------------//
@@ -162,15 +163,17 @@ inline void AdjointDomain<Vector,Matrix>::processTransition(
 {
     Require( history.alive() );
     Require( TRANSITION == history.event() );
-    Require( isLocalState(history.state()) );
+
+    typename std::tr1::unordered_map<Ordinal,int>::const_iterator index =
+	d_row_indexer.find( history.state() );
+    Require( index != d_row_indexer.end() );
 
     history.setState( 
-	d_columns[d_row_indexer.get(history.state())][ 
-	    SamplingTools::sampleDiscreteCDF( 
-		d_cdfs[d_row_indexer.get(history.state()) ](),
-		history.rng.random() ) ] );
+	d_columns[index->second][ 
+	    SamplingTools::sampleDiscreteCDF( d_cdfs[index->second](),
+					      history.rng.random() ) ] );
 
-    history.multiplyWeight( d_weights[d_row_indexer.get(history.state())] );
+    history.multiplyWeight( d_weights[index->second] );
 }
 
 //---------------------------------------------------------------------------//
@@ -180,7 +183,9 @@ inline void AdjointDomain<Vector,Matrix>::processTransition(
 template<class Vector, class Matrix>
 inline bool AdjointDomain<Vector,Matrix>::isLocalState( const Ordinal& state )
 {
-    return d_row_indexer.containsKey( state );
+   typename std::tr1::unordered_map<Ordinal,int>::const_iterator index =
+       d_row_indexer.find( state );
+   return ( index != d_row_indexer.end() );
 }
 
 //---------------------------------------------------------------------------//
@@ -202,8 +207,10 @@ inline int AdjointDomain<Vector,Matrix>::neighborRank( int n ) const
 template<class Vector, class Matrix>
 inline int AdjointDomain<Vector,Matrix>::owningNeighbor( const Ordinal& state )
 {
-    Require( d_bnd_to_neighbor.containsKey(state) );
-    return d_bnd_to_neighbor.get(state);
+    typename std::tr1::unordered_map<Ordinal,int>::const_iterator neighbor =
+	d_bnd_to_neighbor.find( state );
+    Require( neighbor != d_bnd_to_neighbor.end() );
+    return neighbor->second;
 }
 
 //---------------------------------------------------------------------------//

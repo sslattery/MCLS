@@ -124,7 +124,7 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
     {
 	// Add the global row id and local row id to the indexer.
 	global_row = MT::getGlobalRow(*A, i);
-	d_row_indexer.put( global_row, i+offset );
+	d_row_indexer[global_row] = i+offset;
 
 	// Allocate column and CDF memory for this row.
 	d_columns[i+offset].resize( max_entries );
@@ -179,7 +179,7 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
 	    Check( *cdf_iterator >= 0.0 );
 	}
 
-	Ensure( std::abs(1.0 - d_cdfs[i+offset].back()) < 1.0e-6 );
+	Check( std::abs(1.0 - d_cdfs[i+offset].back()) < 1.0e-6 );
     }
 }
 
@@ -234,20 +234,21 @@ void AdjointDomain<Vector,Matrix>::buildBoundary(
 	if ( neighbor_rank_it == d_neighbor_ranks.end() )
 	{
 	    d_neighbor_ranks.push_back( *bnd_rank_it );
-	    d_bnd_to_neighbor.put( *bnd_row_it, d_neighbor_ranks.size()-1 );
+	    d_bnd_to_neighbor[*bnd_row_it] = d_neighbor_ranks.size()-1;
 	}
 
 	// Otherwise, just add it to the boundary state to local id table.
 	else
 	{
-	    d_bnd_to_neighbor.put(
-		*bnd_row_it, std::distance(
+	    d_bnd_to_neighbor[*bnd_row_it] =
+		std::distance( 
 		    Teuchos::as<Teuchos::Array<int>::const_iterator>(
-			d_neighbor_ranks.begin()), neighbor_rank_it) );
+			d_neighbor_ranks.begin()), neighbor_rank_it);
 	}
     }
 
-    Ensure( d_bnd_to_neighbor.size() == boundary_rows.size() );
+    Ensure( d_bnd_to_neighbor.size() == 
+	    Teuchos::as<std::size_t>(boundary_rows.size()) );
 }
 
 //---------------------------------------------------------------------------//
