@@ -137,6 +137,7 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
 			      d_cdfs[i+offset](), 
 			      num_entries );
 
+	// Check for degeneracy.
 	Check( num_entries > 0 );
 
 	// Resize local column and CDF arrays for this row.
@@ -167,15 +168,15 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
 
 	// The final value in the non-normalized CDF is the weight for this
 	// row. This is the absolute value row sum of the iteration matrix.
-	d_weights[i] = d_cdfs[i+offset].back();
-	Check( d_weights[i] >= 0 );
+	d_weights[i+offset] = d_cdfs[i+offset].back();
+	Check( d_weights[i+offset] >= 0 );
 
 	// Normalize the CDF for the row.
 	for ( cdf_iterator = d_cdfs[i+offset].begin();
 	      cdf_iterator != d_cdfs[i+offset].end();
 	      ++cdf_iterator )
 	{
-	    *cdf_iterator /= d_weights[i];
+	    *cdf_iterator /= d_weights[i+offset];
 	    Check( *cdf_iterator >= 0.0 );
 	}
 

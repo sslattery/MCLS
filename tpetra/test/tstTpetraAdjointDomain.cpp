@@ -20,6 +20,8 @@
 #include <MCLS_TpetraAdapter.hpp>
 #include <MCLS_History.hpp>
 #include <MCLS_AdjointTally.hpp>
+#include <MCLS_Events.hpp>
+#include <MCLS_RNGControl.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -273,6 +275,87 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, SomeOverlap, LO, GO, Scalar )
 }
 
 UNIT_TEST_INSTANTIATION( AdjointDomain, SomeOverlap )
+
+//---------------------------------------------------------------------------//
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, Transition, LO, GO, Scalar )
+{
+    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
+    typedef MCLS::History<Scalar,GO> HistoryType;
+    typedef MCLS::AdjointTally<VectorType> TallyType;
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+	Teuchos::DefaultComm<int>::getComm();
+    int comm_size = comm->getSize();
+    int comm_rank = comm->getRank();
+
+    int local_num_rows = 10;
+    int global_num_rows = local_num_rows*comm_size;
+    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
+	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
+
+    // Build the linear operator and solution vector.
+    Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
+    Teuchos::Array<GO> global_columns( 2 );
+    Teuchos::Array<Scalar> values( 2 );
+    for ( int i = 1; i < global_num_rows; ++i )
+    {
+	global_columns[0] = i-1;
+	values[0] = -0.5;
+	A->insertGlobalValues( i, global_columns(), values() );
+    }
+    global_columns[0] = global_num_rows-1;
+    values[0] = -0.5;
+    A->insertGlobalValues( global_num_rows-1, global_columns(), values() );
+    A->fillComplete();
+
+    Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *A );
+
+    // Build the adjoint domain.
+    Teuchos::ParameterList plist;
+    plist.set<int>( "Overlap Size", 2 );
+    MCLS::AdjointDomain<VectorType,MatrixType> domain( A, x, plist );
+
+    // Process a history transition in the domain.
+    MCLS::RNGControl control( 2394723 );
+    MCLS::RNGControl::RNG rng = control.rng( 4 );
+    double weight = 3.0; 
+    for ( int i = 0; i < global_num_rows-1; ++i )
+    {
+	if ( comm_rank == comm_size - 1 )
+	{
+	    if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
+	    {
+		HistoryType history( i, weight );
+		history.live();
+		history.setEvent( MCLS::TRANSITION );
+		history.setRNG( rng );
+		domain.processTransition( history );
+
+		TEST_EQUALITY( history.state(), i+1 );
+		TEST_EQUALITY( history.weight(), weight*comm_size / 2 );
+	    }
+	}
+	else
+	{
+	    if ( i >= local_num_rows*comm_rank && i < 2+local_num_rows*(comm_rank+1) )
+	    {
+		HistoryType history( i, weight );
+		history.live();
+		history.setEvent( MCLS::TRANSITION );
+		history.setRNG( rng );
+		domain.processTransition( history );
+
+		TEST_EQUALITY( history.state(), i+1 );
+		TEST_EQUALITY( history.weight(), weight*comm_size / 2 );
+	    }
+	}
+    }
+}
+
+UNIT_TEST_INSTANTIATION( AdjointDomain, Transition )
 
 //---------------------------------------------------------------------------//
 // end tstTpetraAdjointDomain.cpp

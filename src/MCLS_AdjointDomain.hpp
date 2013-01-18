@@ -172,7 +172,7 @@ inline void AdjointDomain<Vector,Matrix>::processTransition(
     history.setState( 
 	d_columns[index->second][ 
 	    SamplingTools::sampleDiscreteCDF( d_cdfs[index->second](),
-					      history.rng.random() ) ] );
+					      history.rng().random() ) ] );
 
     history.multiplyWeight( d_weights[index->second] );
 }
