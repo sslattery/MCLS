@@ -671,6 +671,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, g_row_copy, LO, GO, Scalar )
 	global_columns[0] = i;
 	A->insertGlobalValues( i, global_columns(), values() );
     }
+    A->fillComplete();
 
     Teuchos::Array<GO> view_columns(1);
     Teuchos::Array<Scalar> view_values(1);
@@ -681,7 +682,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, g_row_copy, LO, GO, Scalar )
 	MT::getGlobalRowCopy( *A, i, view_columns(), view_values(), num_entries );
 	TEST_EQUALITY( num_entries, 1 );
 	TEST_EQUALITY( view_columns[0], i );
-	TEST_EQUALITY( view_values[0], 1 );
+	TEST_EQUALITY( view_values[0], comm_size );
     }
 }
 
