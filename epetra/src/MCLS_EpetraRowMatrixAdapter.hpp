@@ -261,6 +261,12 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
 				 num_entries_int,
 				 values.getRawPtr(), indices.getRawPtr() );
 	num_entries = num_entries_int;
+
+	Teuchos::ArrayView<global_ordinal_type>::iterator col_it;
+	for ( col_it = indices.begin(); col_it != indices.end(); ++col_it )
+	{
+	    *col_it = matrix.RowMatrixColMap().GID( *col_it );
+	}
     }
 
     /*!

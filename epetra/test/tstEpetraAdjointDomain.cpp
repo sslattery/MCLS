@@ -92,6 +92,12 @@ TEUCHOS_UNIT_TEST( AdjointDomain, NoOverlap )
     typedef MCLS::History<double,int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
 
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+	Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
+    int comm_size = comm->getSize();
+    int comm_rank = comm->getRank();
+
     int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
     Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
@@ -180,6 +186,12 @@ TEUCHOS_UNIT_TEST( AdjointDomain, SomeOverlap )
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::History<double,int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+	Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
+    int comm_size = comm->getSize();
+    int comm_rank = comm->getRank();
 
     int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
@@ -290,6 +302,12 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Transition )
     typedef MCLS::History<double,int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
 
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+	Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
+    int comm_size = comm->getSize();
+    int comm_rank = comm->getRank();
+
     int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
     Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
@@ -298,8 +316,8 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Transition )
     // Build the linear operator and solution vector.
     Teuchos::RCP<Epetra_CrsMatrix> A = 	
 	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
-    Teuchos::Array<int> global_columns( 2 );
-    Teuchos::Array<double> values( 2 );
+    Teuchos::Array<int> global_columns( 1 );
+    Teuchos::Array<double> values( 1 );
     for ( int i = 1; i < global_num_rows; ++i )
     {
 	global_columns[0] = i-1;
@@ -338,7 +356,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Transition )
 		domain.processTransition( history );
 
 		TEST_EQUALITY( history.state(), i+1 );
-		TEST_EQUALITY( history.weight(), weight*comm_size / 2 );
+		TEST_EQUALITY( history.weight(), weight / 2 );
 	    }
 	}
 	else
@@ -352,7 +370,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Transition )
 		domain.processTransition( history );
 
 		TEST_EQUALITY( history.state(), i+1 );
-		TEST_EQUALITY( history.weight(), weight*comm_size / 2 );
+		TEST_EQUALITY( history.weight(), weight / 2 );
 	    }
 	}
     }
@@ -368,6 +386,12 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Diagonal )
     typedef MCLS::History<double,int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
 
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+	Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
+    int comm_size = comm->getSize();
+    int comm_rank = comm->getRank();
+
     int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
     Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
@@ -376,8 +400,8 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Diagonal )
     // Build the linear operator and solution vector.
     Teuchos::RCP<Epetra_CrsMatrix> A = 	
 	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
-    Teuchos::Array<int> global_columns( 2 );
-    Teuchos::Array<double> values( 2 );
+    Teuchos::Array<int> global_columns( 1 );
+    Teuchos::Array<double> values( 1 );
     for ( int i = 0; i < global_num_rows; ++i )
     {
 	global_columns[0] = i;
@@ -412,7 +436,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Diagonal )
 		domain.processTransition( history );
 
 		TEST_EQUALITY( history.state(), i );
-		TEST_EQUALITY( history.weight(), weight*(comm_size*3-1) );
+		TEST_EQUALITY( history.weight(), weight*2 );
 	    }
 	}
 	else
@@ -426,7 +450,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Diagonal )
 		domain.processTransition( history );
 
 		TEST_EQUALITY( history.state(), i );
-		TEST_EQUALITY( history.weight(), weight*(comm_size*3-1) );
+		TEST_EQUALITY( history.weight(), weight*2 );
 	    }
 	}
     }
