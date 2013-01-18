@@ -37,14 +37,11 @@
 //---------------------------------------------------------------------------//
 // Instantiation macro. 
 // 
-// These types are those enabled by Tpetra under explicit instantiation.
+// These types are those enabled by Tpetra under explicit instantiation. I
+// have removed scalar types that are not floating point
 //---------------------------------------------------------------------------//
 #define UNIT_TEST_INSTANTIATION( type, name )			           \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, int )      \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, long )     \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, double )   \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, int )     \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, long )    \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
 
 //---------------------------------------------------------------------------//
