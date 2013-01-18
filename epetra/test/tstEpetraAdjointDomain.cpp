@@ -425,33 +425,16 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Diagonal )
     double weight = 3.0; 
     for ( int i = 0; i < global_num_rows; ++i )
     {
-	if ( comm_rank == comm_size - 1 )
+	if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
 	{
-	    if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
-	    {
-		HistoryType history( i, weight );
-		history.live();
-		history.setEvent( MCLS::TRANSITION );
-		history.setRNG( rng );
-		domain.processTransition( history );
+	    HistoryType history( i, weight );
+	    history.live();
+	    history.setEvent( MCLS::TRANSITION );
+	    history.setRNG( rng );
+	    domain.processTransition( history );
 
-		TEST_EQUALITY( history.state(), i );
-		TEST_EQUALITY( history.weight(), weight*2 );
-	    }
-	}
-	else
-	{
-	    if ( i >= local_num_rows*comm_rank && i < 2+local_num_rows*(comm_rank+1) )
-	    {
-		HistoryType history( i, weight );
-		history.live();
-		history.setEvent( MCLS::TRANSITION );
-		history.setRNG( rng );
-		domain.processTransition( history );
-
-		TEST_EQUALITY( history.state(), i );
-		TEST_EQUALITY( history.weight(), weight*2 );
-	    }
+	    TEST_EQUALITY( history.state(), i );
+	    TEST_EQUALITY( history.weight(), weight*2 );
 	}
     }
 }

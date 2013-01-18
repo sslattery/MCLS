@@ -298,8 +298,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, Transition, LO, GO, Scalar )
 
     // Build the linear operator and solution vector.
     Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
-    Teuchos::Array<GO> global_columns( 2 );
-    Teuchos::Array<Scalar> values( 2 );
+    Teuchos::Array<GO> global_columns( 1 );
+    Teuchos::Array<Scalar> values( 1 );
     for ( int i = 1; i < global_num_rows; ++i )
     {
 	global_columns[0] = i-1;
@@ -379,8 +379,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, Diagonal, LO, GO, Scalar )
 
     // Build the linear operator and solution vector.
     Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
-    Teuchos::Array<GO> global_columns( 2 );
-    Teuchos::Array<Scalar> values( 2 );
+    Teuchos::Array<GO> global_columns( 1 );
+    Teuchos::Array<Scalar> values( 1 );
     for ( int i = 0; i < global_num_rows; ++i )
     {
 	global_columns[0] = i;
@@ -402,33 +402,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, Diagonal, LO, GO, Scalar )
     double weight = 3.0; 
     for ( int i = 0; i < global_num_rows; ++i )
     {
-	if ( comm_rank == comm_size - 1 )
+	if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
 	{
-	    if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
-	    {
-		HistoryType history( i, weight );
-		history.live();
-		history.setEvent( MCLS::TRANSITION );
-		history.setRNG( rng );
-		domain.processTransition( history );
+	    HistoryType history( i, weight );
+	    history.live();
+	    history.setEvent( MCLS::TRANSITION );
+	    history.setRNG( rng );
+	    domain.processTransition( history );
 
-		TEST_EQUALITY( history.state(), i );
-		TEST_EQUALITY( history.weight(), weight*(comm_size*3-1) );
-	    }
-	}
-	else
-	{
-	    if ( i >= local_num_rows*comm_rank && i < 2+local_num_rows*(comm_rank+1) )
-	    {
-		HistoryType history( i, weight );
-		history.live();
-		history.setEvent( MCLS::TRANSITION );
-		history.setRNG( rng );
-		domain.processTransition( history );
-
-		TEST_EQUALITY( history.state(), i );
-		TEST_EQUALITY( history.weight(), weight*(comm_size*3-1) );
-	    }
+	    TEST_EQUALITY( history.state(), i );
+	    TEST_EQUALITY( history.weight(), weight*(comm_size*3-1) );
 	}
     }
 }
