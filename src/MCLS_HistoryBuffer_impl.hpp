@@ -119,7 +119,7 @@ void HistoryBuffer<HT>::bufferHistory( const HT& history )
  * \brief Add the histories in the buffer to a bank.
  */
 template<class HT>
-void HistoryBuffer<HT>::addToBank( Bank& bank )
+void HistoryBuffer<HT>::addToBank( BankType& bank )
 {
     Require( d_size_packed_history > 0 );
 

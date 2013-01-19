@@ -54,8 +54,8 @@ namespace MCLS
 /*!
  * \brief Deserializer constructor.
  */
-template<class Scalar, class Ordinal>
-History<Scalar,Ordinal>::History( const Teuchos::ArrayView<char>& buffer )
+template<class Ordinal>
+History<Ordinal>::History( const Teuchos::ArrayView<char>& buffer )
 {
     Require( Teuchos::as<std::size_t>(buffer.size()) == d_packed_bytes );
 
@@ -79,8 +79,8 @@ History<Scalar,Ordinal>::History( const Teuchos::ArrayView<char>& buffer )
 /*!
  * \brief Pack the history into a buffer.
  */
-template<class Scalar, class Ordinal>
-Teuchos::Array<char> History<Scalar,Ordinal>::pack() const
+template<class Ordinal>
+Teuchos::Array<char> History<Ordinal>::pack() const
 {
     Require( d_packed_bytes );
     Require( d_packed_bytes - d_packed_rng > 0 );
@@ -106,21 +106,21 @@ Teuchos::Array<char> History<Scalar,Ordinal>::pack() const
 //---------------------------------------------------------------------------//
 // Static members.
 //---------------------------------------------------------------------------//
-template<class Scalar, class Ordinal>
-std::size_t History<Scalar,Ordinal>::d_packed_bytes = 0;
+template<class Ordinal>
+std::size_t History<Ordinal>::d_packed_bytes = 0;
 
-template<class Scalar, class Ordinal>
-std::size_t History<Scalar,Ordinal>::d_packed_rng = 0;
+template<class Ordinal>
+std::size_t History<Ordinal>::d_packed_rng = 0;
 
 //---------------------------------------------------------------------------//
 /*!
  * \brief Set the byte size of the packed history state.
  */
-template<class Scalar, class Ordinal>
-void History<Scalar,Ordinal>::setByteSize( std::size_t size_rng_state )
+template<class Ordinal>
+void History<Ordinal>::setByteSize( std::size_t size_rng_state )
 {
     d_packed_rng = size_rng_state;
-    d_packed_bytes = d_packed_rng + sizeof(Ordinal) + sizeof(Scalar)
+    d_packed_bytes = d_packed_rng + sizeof(Ordinal) + sizeof(double)
 		     + 2*sizeof(int);
 }
 
@@ -128,8 +128,8 @@ void History<Scalar,Ordinal>::setByteSize( std::size_t size_rng_state )
 /*!
  * \brief Get the number of bytes in the packed history state.
  */
-template<class Scalar, class Ordinal>
-std::size_t History<Scalar,Ordinal>::getPackedBytes()
+template<class Ordinal>
+std::size_t History<Ordinal>::getPackedBytes()
 {
     Require( d_packed_bytes );
     return d_packed_bytes;

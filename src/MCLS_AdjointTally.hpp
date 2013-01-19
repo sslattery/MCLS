@@ -66,9 +66,8 @@ class AdjointTally
     //! Typedefs.
     typedef Vector                                              vector_type;
     typedef VectorTraits<Vector>                                VT;
-    typedef typename VT::scalar_type                            Scalar;
     typedef typename VT::global_ordinal_type                    Ordinal;
-    typedef History<Scalar,Ordinal>                             HistoryType;
+    typedef History<Ordinal>                                    HistoryType;
     //@}
 
     // Constructor.

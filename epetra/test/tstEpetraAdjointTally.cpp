@@ -58,7 +58,7 @@ TEUCHOS_UNIT_TEST( AdjointTally, Typedefs )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef MCLS::AdjointTally<VectorType> TallyType;
-    typedef MCLS::History<double,int> HistoryType;
+    typedef MCLS::History<int> HistoryType;
     typedef TallyType::HistoryType history_type;
 
     TEST_EQUALITY_CONST( 
@@ -71,7 +71,7 @@ TEUCHOS_UNIT_TEST( AdjointTally, TallyHistory )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef MCLS::History<double,int> HistoryType;
+    typedef MCLS::History<int> HistoryType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -154,7 +154,7 @@ TEUCHOS_UNIT_TEST( AdjointTally, Combine )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef MCLS::History<double,int> HistoryType;
+    typedef MCLS::History<int> HistoryType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -240,7 +240,7 @@ TEUCHOS_UNIT_TEST( AdjointTally, Normalize )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef MCLS::History<double,int> HistoryType;
+    typedef MCLS::History<int> HistoryType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();

@@ -41,6 +41,8 @@
 #ifndef MCLS_ADJOINTDOMAIN_HPP
 #define MCLS_ADJOINTDOMAIN_HPP
 
+#include <stack>
+
 #include <MCLS_DBC.hpp>
 #include <MCLS_History.hpp>
 #include <MCLS_AdjointTally.hpp>
@@ -85,9 +87,9 @@ class AdjointDomain
     typedef Matrix                                      matrix_type;
     typedef MatrixTraits<Vector,Matrix>                 MT;
     typedef typename VT::global_ordinal_type            Ordinal;
-    typedef typename VT::scalar_type                    Scalar;
     typedef AdjointTally<Vector>                        TallyType;
     typedef typename TallyType::HistoryType             HistoryType;
+    typedef std::stack<Teuchos::RCP<HistoryType> >      BankType;
     //@}
 
     // Matrix constructor.
@@ -143,7 +145,7 @@ class AdjointDomain
     Teuchos::Array<Teuchos::Array<double> > d_cdfs;
 
     // Local weights.
-    Teuchos::Array<Scalar> d_weights;
+    Teuchos::Array<double> d_weights;
 
     // Neighboring domain process ranks.
     Teuchos::Array<int> d_neighbor_ranks;

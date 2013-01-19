@@ -69,7 +69,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Typedefs )
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
-    typedef MCLS::History<double,int> HistoryType;
+    typedef MCLS::History<int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
     typedef typename DomainType::HistoryType history_type;
     typedef typename DomainType::TallyType tally_type;
@@ -89,7 +89,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, NoOverlap )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<double,int> HistoryType;
+    typedef MCLS::History<int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -184,7 +184,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, SomeOverlap )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<double,int> HistoryType;
+    typedef MCLS::History<int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -299,7 +299,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Transition )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<double,int> HistoryType;
+    typedef MCLS::History<int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -383,7 +383,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Diagonal )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<double,int> HistoryType;
+    typedef MCLS::History<int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 

@@ -29,12 +29,8 @@
 // Instantiation macro. 
 //---------------------------------------------------------------------------//
 #define UNIT_TEST_INSTANTIATION( type, name )	                      \
-    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( type, name, int, int )      \
-    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( type, name, int, long )     \
-    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( type, name, int, double )   \
-    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( type, name, long, int )     \
-    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( type, name, long, long )    \
-    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( type, name, long, double )
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( type, name, int )           \
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( type, name, long )
 
 //---------------------------------------------------------------------------//
 // HELPER FUNCTIONS
@@ -60,12 +56,12 @@ int seed = 2394723;
 //---------------------------------------------------------------------------//
 // Tests.
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( History, history, Ordinal, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( History, history, Ordinal )
 {
     MCLS::RNGControl control( seed );
 
-    MCLS::History<Scalar,Ordinal> h_1;
-    TEST_EQUALITY( h_1.weight(), Teuchos::ScalarTraits<Scalar>::one() );
+    MCLS::History<Ordinal> h_1;
+    TEST_EQUALITY( h_1.weight(), Teuchos::ScalarTraits<double>::one() );
     TEST_EQUALITY( h_1.state(), Teuchos::OrdinalTraits<Ordinal>::zero() );
     TEST_ASSERT( !h_1.alive() );
     TEST_EQUALITY( h_1.event(), MCLS::NO_EVENT );
@@ -99,7 +95,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( History, history, Ordinal, Scalar )
     h_1.setRNG( rng );
     TEST_EQUALITY( h_1.rng().getIndex(), 4 );
 
-    MCLS::History<Scalar,Ordinal> h_2( 5, 6 );
+    MCLS::History<Ordinal> h_2( 5, 6 );
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
     TEST_ASSERT( !h_2.alive() );
@@ -109,7 +105,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( History, history, Ordinal, Scalar )
 UNIT_TEST_INSTANTIATION( History, history )
 
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( History, pack_unpack, Ordinal, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( History, pack_unpack, Ordinal )
 {
     MCLS::RNGControl control( seed );
     MCLS::RNGControl::RNG ranr = control.rng( 4 );
@@ -126,13 +122,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( History, pack_unpack, Ordinal, Scalar )
     }
 
     std::size_t byte_size = 
-	control.getSize() + sizeof(Ordinal) + sizeof(Scalar) + 2*sizeof(int);
-    MCLS::History<Scalar,Ordinal>::setByteSize( control.getSize() );
+	control.getSize() + sizeof(Ordinal) + sizeof(double) + 2*sizeof(int);
+    MCLS::History<Ordinal>::setByteSize( control.getSize() );
     std::size_t packed_bytes =
-	MCLS::History<Scalar,Ordinal>::getPackedBytes();
+	MCLS::History<Ordinal>::getPackedBytes();
     TEST_EQUALITY( packed_bytes, byte_size );
 
-    MCLS::History<Scalar,Ordinal> h_1( 5, 6 );
+    MCLS::History<Ordinal> h_1( 5, 6 );
     h_1.setRNG( rng );
     h_1.live();
     h_1.setEvent( MCLS::BOUNDARY );
@@ -140,7 +136,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( History, pack_unpack, Ordinal, Scalar )
     TEST_EQUALITY( Teuchos::as<std::size_t>( packed_history.size() ), 
 		   byte_size );
 
-    MCLS::History<Scalar,Ordinal> h_2( packed_history );
+    MCLS::History<Ordinal> h_2( packed_history );
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
     TEST_ASSERT( h_2.alive() );
@@ -156,18 +152,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( History, pack_unpack, Ordinal, Scalar )
 UNIT_TEST_INSTANTIATION( History, pack_unpack )
 
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( History, pack_unpack_no_rng, Ordinal, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( History, pack_unpack_no_rng, Ordinal )
 {
-    std::size_t byte_size = sizeof(Ordinal) + sizeof(Scalar) + 2*sizeof(int);
-    MCLS::History<Scalar,Ordinal>::setByteSize( 0 );
+    std::size_t byte_size = sizeof(Ordinal) + sizeof(double) + 2*sizeof(int);
+    MCLS::History<Ordinal>::setByteSize( 0 );
 
-    MCLS::History<Scalar,Ordinal> h_1( 5, 6 );
+    MCLS::History<Ordinal> h_1( 5, 6 );
     h_1.live();
     Teuchos::Array<char> packed_history = h_1.pack();
     TEST_EQUALITY( Teuchos::as<std::size_t>( packed_history.size() ), 
 		   byte_size );
 
-    MCLS::History<Scalar,Ordinal> h_2( packed_history );
+    MCLS::History<Ordinal> h_2( packed_history );
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
     TEST_ASSERT( h_2.alive() );
@@ -176,7 +172,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( History, pack_unpack_no_rng, Ordinal, Scalar 
 UNIT_TEST_INSTANTIATION( History, pack_unpack_no_rng )
 
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( History, broadcast, Ordinal, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( History, broadcast, Ordinal )
 {
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -190,9 +186,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( History, broadcast, Ordinal, Scalar )
 	ref[i] = ranr.random();
     }
 
-    MCLS::History<Scalar,Ordinal>::setByteSize( control.getSize() );
+    MCLS::History<Ordinal>::setByteSize( control.getSize() );
     std::size_t packed_bytes =
-	MCLS::History<Scalar,Ordinal>::getPackedBytes();
+	MCLS::History<Ordinal>::getPackedBytes();
     Teuchos::Array<char> packed_history( packed_bytes );
 
     if ( comm_rank == 0 )
@@ -203,7 +199,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( History, broadcast, Ordinal, Scalar )
 	    rng.random();
 	}
 
-	MCLS::History<Scalar,Ordinal> h_1( 5, 6 );
+	MCLS::History<Ordinal> h_1( 5, 6 );
 	h_1.setRNG( rng );
 	h_1.live();
 	h_1.setEvent( MCLS::BOUNDARY );
@@ -212,7 +208,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( History, broadcast, Ordinal, Scalar )
 
     Teuchos::broadcast( *comm, 0, packed_history() );
 
-    MCLS::History<Scalar,Ordinal> h_2( packed_history );
+    MCLS::History<Ordinal> h_2( packed_history );
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
     TEST_ASSERT( h_2.alive() );

@@ -58,14 +58,13 @@ namespace MCLS
  * \brief Encapsulation of a random walk history's state.
  */
 //---------------------------------------------------------------------------//
-template<class Scalar, class Ordinal>
+template<class Ordinal>
 class History
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Scalar                                    scalar_type;
     typedef Ordinal                                   ordinal_type;
     typedef RNGControl::RNG                           RNG;
     //@}
@@ -73,13 +72,13 @@ class History
     //! Default constructor.
     History()
 	: d_state( Teuchos::OrdinalTraits<Ordinal>::zero() )
-	, d_weight( Teuchos::ScalarTraits<Scalar>::one() )
+	, d_weight( Teuchos::ScalarTraits<double>::one() )
 	, d_alive( false )
 	, d_event( 0 )
     { /* ... */ }
 
     //! State constructor.
-    History( Ordinal state, Scalar weight )
+    History( Ordinal state, double weight )
 	: d_state( state )
 	, d_weight( weight )
 	, d_alive( false )
@@ -105,23 +104,23 @@ class History
     { return d_state; }
 
     //! Set the history weight.
-    inline void setWeight( const Scalar weight )
+    inline void setWeight( const double weight )
     { d_weight = weight; }
 
     //! Add to the history weight.
-    inline void addWeight( const Scalar weight )
+    inline void addWeight( const double weight )
     { d_weight += weight; }
 
     //! Multiply the history weight.
-    inline void multiplyWeight( const Scalar weight )
+    inline void multiplyWeight( const double weight )
     { d_weight *= weight; }
 
     //! Get the history weight.
-    inline Scalar weight() const
+    inline double weight() const
     { return d_weight; }
 
     //! Get the absolute value of the history weight.
-    inline Scalar weightAbs() const
+    inline double weightAbs() const
     { return std::abs(d_weight); }
 
     //! Set a new random number generator.
@@ -166,7 +165,7 @@ class History
     Ordinal d_state;
 
     // History weight.
-    Scalar d_weight;
+    double d_weight;
 
     // Random number generator.
     RNG d_rng;

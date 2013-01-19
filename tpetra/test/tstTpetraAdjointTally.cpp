@@ -53,7 +53,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, Typedefs, LO, GO, Scalar )
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef MCLS::AdjointTally<VectorType> TallyType;
-    typedef MCLS::History<Scalar,GO> HistoryType;
+    typedef MCLS::History<GO> HistoryType;
     typedef typename TallyType::HistoryType history_type;
 
     TEST_EQUALITY_CONST( 
@@ -68,7 +68,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, TallyHistory, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef MCLS::History<Scalar,GO> HistoryType;
+    typedef MCLS::History<GO> HistoryType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -148,7 +148,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, Combine, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef MCLS::History<Scalar,GO> HistoryType;
+    typedef MCLS::History<GO> HistoryType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -231,7 +231,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, Normalize, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef MCLS::History<Scalar,GO> HistoryType;
+    typedef MCLS::History<GO> HistoryType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
