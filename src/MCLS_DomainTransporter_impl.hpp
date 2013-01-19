@@ -32,79 +32,87 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_DomainTransporter.hpp
+ * \file MCLS_DomainTransporter_impl.hpp
  * \author Stuart R. Slattery
- * \brief DomainTransporter declaration.
+ * \brief DomainTransporter implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_DOMAINTRANSPORTER_HPP
-#define MCLS_DOMAINTRANSPORTER_HPP
+#ifndef MCLS_DOMAINTRANSPORTER_IMPL_HPP
+#define MCLS_DOMAINTRANSPORTER_IMPL_HPP
 
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_ParameterList.hpp>
+#include <MCLS_DBC.hpp>
+#include <MCLS_Events.hpp>
 
 namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class DomainTransporter
- * \brief Local domain transport kernel.
- *
- * This class does no communication.
+ * \brief Constructor.
  */
 template<class Domain>
-class DomainTransporter
+DomainTransporter<Domain>::DomainTransporter( 
+    const Teuchos::RCP<Domain>& domain, const Teuchos::ParameterList& plist )
+    : d_domain( domain )
+    , d_tally( d_domain->domainTally() )
 {
-  public:
+    Require( !d_domain.is_null() );
+    Require( !d_tally.is_null() );
 
-    //@{
-    //! Typedefs.
-    typedef Domain                                    domain_type;
-    typedef typename Domain::TallyType                TallyType;
-    typedef typename Domain::HistoryType              HistoryType;
-    typedef typename Domain::BankType                 BankType;
-    //@}
+    d_weight_cutoff = plist.get<double>("Relative Weight Cutoff");
+    Ensure( d_weight_cutoff > 0.0 );
+}
 
-    // Matrix constructor.
-    DomainTransporter( const Teuchos::RCP<Domain>& domain,
-		       const Teuchos::ParameterList& plist );
+//---------------------------------------------------------------------------//
+/*
+ * \brief Transport a history through the domain.
+ */
+void transport( HistoryType& history )
+{
+    Require( history.alive() );
+    Require( history.rng().assigned() );
+    Require( history.weightAbs() >= d_weight_cutoff );
+    Require( d_domain->isLocalState(history.state()) );
 
-    // Destructor.
-    ~DomainTransporter()
-    { /* ... */ }
+    // Set the history to transition.
+    history.setEvent( TRANSITION );
 
-    // Transport a history through the domain.
-    void transport( HistoryType& history );
+    // While the history is alive inside of this domain, transport it. If the
+    // history leaves this domain, it is not alive with respect to this
+    // domain. 
+    while ( history.alive() )
+    {
+	// Tally the history.
+	d_tally->tallyHistory( history );
 
-  private:
+	// Transition the history one step.
+	d_domain->processTransition( history );
 
-    // Local domain.
-    Teuchos::RCP<Domain> d_domain;
+	// If the history's weight is less than the cutoff, kill it.
+	if ( history.weightAbs() < d_weight_cutoff )
+	{
+	    history.setEvent( CUTOFF );
+	    history.kill();
+	}
 
-    // Domain tally.
-    Teuchos::RCP<TallyType> d_tally;
-
-    // Weight cutoff.
-    double d_weight_cutoff;
-};
+	// If the history has left the domain, kill it.
+	if ( !d_domain->isLocalState(history.state()) )
+	{
+	    history.setEvent( BOUNDARY );
+	    history.kill();
+	}
+    }
+}
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
-//---------------------------------------------------------------------------//
-// Template includes.
-//---------------------------------------------------------------------------//
 
-#include "MCLS_DomainTransporter_impl.hpp"
+#endif // end MCLS_DOMAINTRANSPORTER_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-
-#endif // end MCLS_DOMAINTRANSPORTER_HPP
-
-//---------------------------------------------------------------------------//
-// end MCLS_DomainTransporter.hpp
+// end MCLS_DomainTransporter_impl.hpp
 // ---------------------------------------------------------------------------//
 
