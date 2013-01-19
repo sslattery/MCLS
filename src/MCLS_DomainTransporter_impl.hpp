@@ -68,7 +68,8 @@ DomainTransporter<Domain>::DomainTransporter(
 /*
  * \brief Transport a history through the domain.
  */
-void transport( HistoryType& history )
+template<class Domain>
+void DomainTransporter<Domain>::transport( HistoryType& history )
 {
     Require( history.alive() );
     Require( history.rng().assigned() );
@@ -83,6 +84,10 @@ void transport( HistoryType& history )
     // domain. 
     while ( history.alive() )
     {
+	Check( history.event() == TRANSITION );
+	Check( history.weightAbs() >= d_weight_cutoff );
+	Check( d_domain->isLocalState(history.state()) );
+
 	// Tally the history.
 	d_tally->tallyHistory( history );
 
@@ -97,12 +102,15 @@ void transport( HistoryType& history )
 	}
 
 	// If the history has left the domain, kill it.
-	if ( !d_domain->isLocalState(history.state()) )
+	else if ( !d_domain->isLocalState(history.state()) )
 	{
 	    history.setEvent( BOUNDARY );
 	    history.kill();
 	}
     }
+
+    Ensure( !history.alive() );
+    Ensure( history.event() != TRANSITION );
 }
 
 //---------------------------------------------------------------------------//
