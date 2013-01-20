@@ -104,6 +104,7 @@ DomainCommunicator<Domain>::communicate(
 
     // Update the result destination.
     d_result.destination = d_domain->neighborRank(neighbor_id);
+    Check( d_result.destination < d_comm->getSize() );
 
     // If the buffer is full send it.
     if ( d_sends[neighbor_id].isFull() )
@@ -131,17 +132,56 @@ DomainCommunicator<Domain>::communicate(
 template<class Domain>
 int DomainCommunicator<Domain>::send()
 {
+    int num_sent = 0;
 
+    for ( int n = 0; n < d_num_neighbors; ++n )
+    {
+	Check( d_sends[n].allocatedSize() > 0 );
+	Check( d_domain->neighborRank(n) < d_comm->getSize() );
+
+	if( !d_sends[n].isEmpty() )
+	{
+	    Check( d_sends[n].numHistories() > 0 );
+
+	    num_sent += d_sends.numHistories();
+	    d_sends[n].post( d_domain->neighborRank(n) );
+	    d_sends[n].wait();
+
+	    Check( num_sent > 0 );
+	}
+
+	Ensure( d_sends[n].isEmpty() );
+	Ensure( d_sends[n].allocatedSize() > 0 );
+	Ensure( !d_sends[n].status() );
+    }
+
+    return num_sent;
 }
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Flush all buffers whether they are empty or not.
+ * \brief Send all buffers whether they are empty or not.
  */
 template<class Domain>
 int DomainCommunicator<Domain>::flush()
 {
+    int num_sent = 0;
 
+    for ( int n = 0; n < d_num_neighbors; ++n )
+    {
+	Check( d_sends[n].allocatedSize() > 0 );
+	Check( d_domain->neighborRank(n) < d_comm->getSize() );
+
+	num_sent += d_sends.numHistories();
+	d_sends[n].post( d_domain->neighborRank(n) );
+	d_sends[n].wait();
+
+	Ensure( d_sends[n].isEmpty() );
+	Ensure( d_sends[n].allocatedSize() > 0 );
+	Ensure( !d_sends[n].status() );
+    }
+
+    return num_sent;
 }
 
 //---------------------------------------------------------------------------//
@@ -151,7 +191,17 @@ int DomainCommunicator<Domain>::flush()
 template<class Domain>
 void DomainCommunicator<Domain>::post()
 {
+    for ( int n = 0; n < d_num_neighbors; ++n )
+    {
+	Check( !d_receives[n].status() );
+	Check( d_receives[n].allocateSize() > 0 );
+	Check( d_receives[n].isEmpty() );
+	Check( d_domain->neighborRank(n) < d_comm->getSize() );
 
+	d_receives[n].post( d_domain->neighborRank(n) );
+
+	Ensure( d_receives[n].status() );
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -161,7 +211,21 @@ void DomainCommunicator<Domain>::post()
 template<class Domain>
 int DomainCommunicator<Domain>::wait( BankType& bank )
 {
+    int num_received = 0;
 
+    for ( int n = 0; n < d_num_neighbors; ++n )
+    {
+	Check( d_receives[n].allocateSize() > 0 );
+
+	d_receives[n].wait();
+	num_received += d_receives[n].numHistories();
+	d_receives[n].addToBank( bank );
+
+	Ensure( !d_receives[n].status() );
+	Ensure( d_receives[n].isEmpty() );
+    }
+
+    return num_received;
 }
 
 //---------------------------------------------------------------------------//
@@ -171,37 +235,104 @@ int DomainCommunicator<Domain>::wait( BankType& bank )
 template<class Domain>
 int DomainCommunicator<Domain>::checkAndPost( BankType& bank )
 {
+    int num_received = 0;
 
+    for ( int n = 0; n < d_num_neighbors; ++n )
+    {
+	Check( d_receives[n].allocatedSize() > 0 );
+	Check( d_domain->neighborRank(n) < d_comm->getSize() );
+
+	if( d_receives[n].check() )
+	{
+	    num_received += d_receives[n].numHistories();
+	    d_receives[n].addToBank( bank );
+
+	    Check( d_receives[n].isEmpty() );
+	    Check( !d_receives[n].status() );
+
+	    d_receives[n].post( d_domain->neighborRank(n) );
+
+	    Ensure( d_receives[n].status() );
+	}
+    }
+
+    return num_received;
 }
 
 //---------------------------------------------------------------------------//
 /*!
  * \brief Status of send buffers.
+ *
+ * Return true only if all send buffers are on.
  */
 template<class Domain>
 bool DomainCommunicator<Domain>::sendStatus()
 {
+    if ( d_num_neighbors == 0 ) return false;
+      
+    for ( int n = 0; n < d_num_neighbors; ++n )
+    {
+	Check( d_sends[n].allocated_size() > 0 );
 
+	if ( !d_sends[n].status() ) 
+	{
+	    return false;
+	}
+    }
+
+    return true;
 }
 
 //---------------------------------------------------------------------------//
 /*!
  * \brief Status of receive buffers.
+ *
+ * Return true only if all send buffers are on.
  */
 template<class Domain>
 bool DomainCommunicator<Domain>::receiveStatus()
 {
+    if ( d_num_neighbors == 0 ) return false;
 
+    for ( int n = 0; n < d_num_neighbors; ++n )
+    {
+	Check( d_receives[n].allocated_size() > 0 );
+
+	if ( !d_receives[n].status() ) 
+	{
+	    return false;
+	}
+    }
+
+    return true;
 }
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief End communication.
+ * \brief End communication. Send all buffers and receive them.
+ *
+ * This will clear all communication requests. All buffers will be emptied and
+ * therefore all data they contain lost.
+ *
+ * All receives must be posted or the flush will hang.
  */
 template<class Domain>
 void DomainCommunicator<Domain>::end()
 {
+    flush();
 
+    for ( int n = 0; n < d_num_neighbors; ++n )
+    {
+	Check( d_receives[n].allocatedSize() > 0 );
+
+	d_receives[n].wait();
+	d_receives[n].empty();
+
+	Ensure( d_receives[n].isEmpty() );
+    }
+
+    Ensure( !send_status() );
+    Ensure( !receive_status() );
 }
 
 //---------------------------------------------------------------------------//
@@ -211,7 +342,16 @@ void DomainCommunicator<Domain>::end()
 template<class Domain>
 std::size_t DomainCommunicator<Domain>::sendBufferSize() const
 {
+    int send_num = 0;
 
+    for ( int n = 0; n < d_num_neighbors; ++n )
+    {
+	Check( d_sends[n].allocatedSize() > 0 );
+
+	send_num += d_send[n].numHistories();
+    }
+
+    return send_num;
 }
 
 //---------------------------------------------------------------------------//
