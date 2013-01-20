@@ -62,12 +62,12 @@ DomainCommunicator<Domain>::DomainCommunicator(
     , d_receives( d_domain->numNeighbors() )
     , d_num_neighbors( d_domain->numNeighbors() )
 {
-    Require( !d_domain.isNull() );
-    Require( !d_comm.isNull() );
+    Require( !d_domain.is_null() );
+    Require( !d_comm.is_null() );
     Require( d_num_neighbors >= 0 );
 
-    Insist( HistoryType::packedBytes(), "Packed history size not set." );
-    HistoryBufferType::setSizePackedHistory( HistoryType::packedBytes() );
+    Insist( HistoryType::getPackedBytes(), "Packed history size not set." );
+    HistoryBufferType::setSizePackedHistory( HistoryType::getPackedBytes() );
 
     // Get the max number of histories that will be stored in each buffer.
     if ( plist.isParameter("History Buffer Size") )
@@ -76,10 +76,12 @@ DomainCommunicator<Domain>::DomainCommunicator(
 	    plist.get<int>("History Buffer Size") );
     }
 
-    // Allocate the send and receive buffers.
+    // Allocate the send and receive buffers and set their communicators.
     for ( int n = 0; n < d_num_neighbors; ++n )
     {
+	d_sends[n].setComm( d_comm );
 	d_sends[n].allocate();
+	d_receives[n].setComm( d_comm );
 	d_receives[n].allocate();
     }
 }
@@ -89,7 +91,7 @@ DomainCommunicator<Domain>::DomainCommunicator(
  * \brief Buffer and send a history.
  */
 template<class Domain>
-const DomainCommunicator<Domain>::Result& 
+const typename DomainCommunicator<Domain>::Result& 
 DomainCommunicator<Domain>::communicate( 
     const Teuchos::RCP<HistoryType>& history )
 {
@@ -333,8 +335,8 @@ void DomainCommunicator<Domain>::end()
 	Ensure( d_receives[n].isEmpty() );
     }
 
-    Ensure( !send_status() );
-    Ensure( !receive_status() );
+    Ensure( !sendStatus() );
+    Ensure( !receiveStatus() );
 }
 
 //---------------------------------------------------------------------------//
@@ -350,7 +352,7 @@ std::size_t DomainCommunicator<Domain>::sendBufferSize() const
     {
 	Check( d_sends[n].allocatedSize() > 0 );
 
-	send_num += d_send[n].numHistories();
+	send_num += d_sends[n].numHistories();
     }
 
     return send_num;

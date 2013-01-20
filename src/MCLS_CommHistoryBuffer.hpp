@@ -72,6 +72,11 @@ class CommHistoryBuffer : public HistoryBuffer<HT>
   public:
 
     //! Default constructor.
+    CommHistoryBuffer()
+	: d_handle( Teuchos::null )
+    { Ensure( Base::isEmpty() ); }
+
+    //! Comm constructor.
     CommHistoryBuffer( const Teuchos::RCP<const Comm>& comm )
 	: d_handle( Teuchos::null )
 	, d_comm( comm )
@@ -113,6 +118,13 @@ class CommHistoryBuffer : public HistoryBuffer<HT>
     inline bool status() const
     { return !d_handle.is_null(); }
 
+    //! Set the communicator for this buffer.
+    void setComm( const Teuchos::RCP<const Comm>& comm )
+    { 
+	d_comm = comm; 
+	Ensure( !d_comm.is_null() );
+    }
+
   protected:
 
     // Non-blocking communication handles. This object's destructor will
@@ -145,6 +157,10 @@ class ReceiveHistoryBuffer : public CommHistoryBuffer<HT>
   public:
 
     //! Default constructor.
+    ReceiveHistoryBuffer()
+    { Ensure( Base::isEmpty() ); }
+
+    //! Comm constructor.
     ReceiveHistoryBuffer( const Teuchos::RCP<const Comm>& comm )
 	: Base( comm )
     { Ensure( Base::isEmpty() ); }
@@ -197,6 +213,10 @@ class SendHistoryBuffer : public CommHistoryBuffer<HT>
   public:
 
     //! Default constructor.
+    SendHistoryBuffer()
+    { Ensure( Base::isEmpty() ); }
+
+    //! Comm constructor.
     SendHistoryBuffer( const Teuchos::RCP<const Comm>& comm )
 	: Base( comm )
     { Ensure( Base::isEmpty() ); }

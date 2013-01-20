@@ -66,6 +66,7 @@ CommHistoryBuffer<HT>::~CommHistoryBuffer()
 template<class HT>
 void ReceiveHistoryBuffer<HT>::receive( int rank )
 {
+    Require( !Base::d_comm.is_null() );
     Require( Root::isEmpty() );
     Require( Root::allocatedSize() > sizeof(int) );
 
@@ -84,6 +85,7 @@ void ReceiveHistoryBuffer<HT>::receive( int rank )
 template<class HT>
 void ReceiveHistoryBuffer<HT>::post( int rank )
 {
+    Require( !Base::d_comm.is_null() );
     Require( Root::isEmpty() );
     Require( Root::allocatedSize() > sizeof(int) );
 
@@ -98,6 +100,8 @@ void ReceiveHistoryBuffer<HT>::post( int rank )
 template<class HT>
 void ReceiveHistoryBuffer<HT>::wait()
 {
+    Require( !Base::d_comm.is_null() );
+
     Teuchos::Ptr<Teuchos::RCP<typename Base::Request> > 
 	request_ptr( &this->d_handle );
 
@@ -114,6 +118,8 @@ void ReceiveHistoryBuffer<HT>::wait()
 template<class HT>
 bool ReceiveHistoryBuffer<HT>::check()
 {
+    Require( !Base::d_comm.is_null() );
+
     bool is_complete = false;
 
 #ifdef HAVE_MPI
@@ -155,6 +161,7 @@ bool ReceiveHistoryBuffer<HT>::check()
 template<class HT>
 void SendHistoryBuffer<HT>::send( int rank )
 {
+    Require( !Base::d_comm.is_null() );
     Require( Root::allocatedSize() > sizeof(int) );
 
     Root::writeNumToBuffer();
@@ -174,6 +181,7 @@ void SendHistoryBuffer<HT>::send( int rank )
 template<class HT>
 void SendHistoryBuffer<HT>::post( int rank )
 {
+    Require( !Base::d_comm.is_null() );
     Require( Root::allocatedSize() > sizeof(int) );
 
     Root::writeNumToBuffer();
@@ -188,6 +196,8 @@ void SendHistoryBuffer<HT>::post( int rank )
 template<class HT>
 void SendHistoryBuffer<HT>::wait()
 {
+    Require( !Base::d_comm.is_null() );
+
     Teuchos::Ptr<Teuchos::RCP<typename Base::Request> > 
 	request_ptr( &this->d_handle );
 
@@ -207,6 +217,8 @@ void SendHistoryBuffer<HT>::wait()
 template<class HT>
 bool SendHistoryBuffer<HT>::check()
 {
+    Require( !Base::d_comm.is_null() );
+
     bool is_complete = false;
 
 #ifdef HAVE_MPI
