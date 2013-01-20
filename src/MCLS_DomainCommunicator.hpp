@@ -41,7 +41,6 @@
 #ifndef MCLS_DOMAINCOMMUNICATOR_HPP
 #define MCLS_DOMAINCOMMUNICATOR_HPP
 
-#include "MCLS_DBC.hpp"
 #include "MCLS_HistoryBuffer.hpp"
 #include "MCLS_CommHistoryBuffer.hpp"
 
@@ -94,6 +93,9 @@ class DomainCommunicator
     ~DomainCommunicator()
     { /* ... */ }
 
+    // Buffer and send a history.
+    const Result& communicate( const Teuchos::RCP<HistoryType>& history );
+
     // Send all buffers that are not empty.
     int send();
 
@@ -138,15 +140,15 @@ class DomainCommunicator
     // Local domain.
     Teuchos::RCP<Domain> d_domain;
 
+    // Set-constant communicator for domain-to-domain communcation within a
+    // set. 
+    Teuchos::RCP<const Comm> d_comm;
+
     // Send buffers.
     Teuchos::Array<SendBuffer> d_sends;
 
     // Receive buffers.
     Teuchos::Array<ReceiveBuffer> d_receives;
-
-    // Set-constant communicator for domain-to-domain communcation within a
-    // set. 
-    Teuchos::RCP<const Comm> d_comm;
 
     // Number of communicating neighbors.
     int d_num_neighbors;

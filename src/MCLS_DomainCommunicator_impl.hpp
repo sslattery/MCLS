@@ -32,144 +32,195 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_DomainCommunicator.hpp
+ * \file MCLS_DomainCommunicator_impl.hpp
  * \author Stuart R. Slattery
- * \brief DomainCommunicator class declaration.
+ * \brief DomainCommunicator class implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_DOMAINCOMMUNICATOR_HPP
-#define MCLS_DOMAINCOMMUNICATOR_HPP
+#ifndef MCLS_DOMAINCOMMUNICATOR_IMPL_HPP
+#define MCLS_DOMAINCOMMUNICATOR_IMPL_HPP
 
 #include "MCLS_DBC.hpp"
-#include "MCLS_HistoryBuffer.hpp"
-#include "MCLS_CommHistoryBuffer.hpp"
-
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Comm.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_ParameterList.hpp>
 
 namespace MCLS
 {
 //---------------------------------------------------------------------------//
 /*!
- * \class DomainCommunicator 
- * \brief Structure for communicating histories amongst domains in a set. 
- *
- * Tom Evans is responsible for the design of this class.
+ * \brief Constructor.
  */
 //---------------------------------------------------------------------------//
 template<class Domain>
-class DomainCommunicator
+DomainCommunicator<Domain>::DomainCommunicator( 
+    const Teuchos::RCP<Domain>& domain,
+    const Teuchos::RCP<const Comm>& set_const_comm,
+    const Teuchos::ParameterList& plist )
+    : d_domain( domain )
+    , d_comm( set_const_comm )
+    , d_sends( d_domain->numNeighbors() )
+    , d_receives( d_domain->numNeighbors() )
+    , d_num_neighbors( d_domain->numNeighbors() )
 {
-  public:
+    Require( !d_domain.isNull() );
+    Require( !d_comm.isNull() );
+    Require( d_num_neighbors >= 0 );
 
-    //@{
-    //! Typedefs.
-    typedef Domain                                       domain_type;
-    typedef typename Domain::HistoryType                 HistoryType;
-    typedef typename Domain::BankType                    BankType;
-    typedef HistoryBuffer<HistoryType>                   HistoryBufferType;
-    typedef SendHistoryBuffer<HistoryType>               SendBuffer;
-    typedef ReceiveHistoryBuffer<HistoryType>            ReceiveBuffer;
-    typedef Teuchos::Comm<int>                           Comm;
-    //@}
+    Insist( HistoryType::packedBytes(), "Packed history size not set." );
+    HistoryBufferType::setSizePackedHistory( HistoryType::packedBytes() );
 
-    //! Communication result.
-    struct Result
+    // Get the max number of histories that will be stored in each buffer.
+    if ( plist.isParameter("History Buffer Size") )
     {
-        bool sent;
-        int  destination;
-    };
+	HistoryBufferType::setMaxNumHistories( 
+	    plist.get<int>("History Buffer Size") );
+    }
 
-  public:
+    // Allocate the send and receive buffers.
+    for ( int n = 0; n < d_num_neighbors; ++n )
+    {
+	d_sends[n].allocate();
+	d_receives[n].allocate();
+    }
+}
 
-    // Constructor.
-    DomainCommunicator( const Teuchos::RCP<Domain>& domain,
-			const Teuchos::RCP<const Comm>& set_const_comm,
-			const Teuchos::ParameterList& plist );
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Buffer and send a history.
+ */
+template<class Domain>
+const DomainCommunicator<Domain>::Result& 
+DomainCommunicator<Domain>::communicate( 
+    const Teuchos::RCP<HistoryType>& history )
+{
+    Require( !history.is_null() );
 
-    // Destructor.
-    ~DomainCommunicator()
-    { /* ... */ }
+    // Initialize result status.
+    d_result.sent = false;
+    d_result.destination = 0;
 
-    // Send all buffers that are not empty.
-    int send();
+    // Add the history to the appropriate buffer.
+    int neighbor_id = d_domain->owningNeighbor( history->state() );
+    d_sends[neighbor_id].bufferHistory( *history );
 
-    // Flush all buffers whether they are empty or not.
-    int flush();
+    // Update the result destination.
+    d_result.destination = d_domain->neighborRank(neighbor_id);
 
-    // Post receives.
-    void post();
+    // If the buffer is full send it.
+    if ( d_sends[neighbor_id].isFull() )
+    {
+	Check( d_sends[neighbor_id].numHistories() == maxBufferSize() );
 
-    // Wait on receive buffers.
-    int wait( BankType& bank );
+	d_sends[neighbor_id].post( d_result.destination );
+	d_sends[neighbor_id].wait();
 
-    // Receive buffers and repost.
-    int checkAndPost( BankType& bank );
+	Check( d_sends[neighbor_id].isEmpty() );
+	Check( d_sends[neighbor_id].allocatedSize() > 0 );
+	Check( !d_sends[neighbor_id].status() );
 
-    // Status of send buffers.
-    bool sendStatus();
+	d_result.sent = true;
+    }
 
-    // Status of receive buffers.
-    bool receiveStatus();
+    // Return the result.
+    return d_result;
+}
 
-    // End communication.
-    void end();
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Send all buffers that are not empty.
+ */
+template<class Domain>
+int DomainCommunicator<Domain>::send()
+{
 
-    //! Particle buffer size.
-    std::size_t maxBufferSize() const
-    { return HistoryBufferType::maxNum(); }
+}
 
-    // Number of particles in all buffers.
-    std::size_t sendBufferSize() const;
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Flush all buffers whether they are empty or not.
+ */
+template<class Domain>
+int DomainCommunicator<Domain>::flush()
+{
 
-    // Get a send buffer by local id.
-    const SendBuffer& sendBuffer( int n ) const
-    { return d_sends[n]; }
+}
 
-    // Get a receive buffer by local id.
-    const ReceiveBuffer& receiveBuffer( int n ) const
-    { return d_receives[n]; }
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Post receives.
+ */
+template<class Domain>
+void DomainCommunicator<Domain>::post()
+{
 
-  private:
+}
 
-    // Local domain.
-    Teuchos::RCP<Domain> d_domain;
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Wait on receive buffers.
+ */
+template<class Domain>
+int DomainCommunicator<Domain>::wait( BankType& bank )
+{
 
-    // Send buffers.
-    Teuchos::Array<SendBuffer> d_sends;
+}
 
-    // Receive buffers.
-    Teuchos::Array<ReceiveBuffer> d_receives;
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Receive buffers and repost.
+ */
+template<class Domain>
+int DomainCommunicator<Domain>::checkAndPost( BankType& bank )
+{
 
-    // Set-constant communicator for domain-to-domain communcation within a
-    // set. 
-    Teuchos::RCP<const Comm> d_comm;
+}
 
-    // Number of communicating neighbors.
-    int d_num_neighbors;
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Status of send buffers.
+ */
+template<class Domain>
+bool DomainCommunicator<Domain>::sendStatus()
+{
 
-    // Result of a history communication.
-    Result d_result;
-};
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Status of receive buffers.
+ */
+template<class Domain>
+bool DomainCommunicator<Domain>::receiveStatus()
+{
+
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief End communication.
+ */
+template<class Domain>
+void DomainCommunicator<Domain>::end()
+{
+
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Number of particles in all buffers.
+ */
+template<class Domain>
+std::size_t DomainCommunicator<Domain>::sendBufferSize() const
+{
+
+}
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
-//---------------------------------------------------------------------------//
-// Template includes.
-//---------------------------------------------------------------------------//
-
-#include "MCLS_DomainCommunicator_impl.hpp"
+#endif // end MCLS_DOMAINCOMMUNICATOR_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-
-#endif // end MCLS_DOMAINCOMMUNICATOR_HPP
-
-//---------------------------------------------------------------------------//
-// end MCLS_DomainCommunicator.hpp
+// end MCLS_DomainCommunicator_impl.hpp
 //---------------------------------------------------------------------------//
 
