@@ -42,6 +42,7 @@
 #define MCLS_DOMAINCOMMUNICATOR_IMPL_HPP
 
 #include "MCLS_DBC.hpp"
+#include "MCLS_Events.hpp"
 
 namespace MCLS
 {
@@ -93,6 +94,7 @@ DomainCommunicator<Domain>::communicate(
     const Teuchos::RCP<HistoryType>& history )
 {
     Require( !history.is_null() );
+    Require( history->event() == BOUNDARY );
 
     // Initialize result status.
     d_result.sent = false;
