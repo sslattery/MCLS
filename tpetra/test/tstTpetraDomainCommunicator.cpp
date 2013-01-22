@@ -112,73 +112,73 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Communicate, LO, GO, Scal
     int comm_size = comm->getSize();
     int comm_rank = comm->getRank();
 
-    int local_num_rows = 10;
-    int global_num_rows = local_num_rows*comm_size;
-    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
-	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
-
-    // Build the linear operator and solution vector.
-    Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
-    Teuchos::Array<GO> global_columns( 1 );
-    Teuchos::Array<Scalar> values( 1 );
-    for ( int i = 1; i < global_num_rows; ++i )
-    {
-	global_columns[0] = i-1;
-	values[0] = -0.5/comm_size;
-	A->insertGlobalValues( i, global_columns(), values() );
-    }
-    global_columns[0] = global_num_rows-1;
-    values[0] = -0.5/comm_size;
-    A->insertGlobalValues( global_num_rows-1, global_columns(), values() );
-    A->fillComplete();
-
-    Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *A );
-
-    // Build the adjoint domain.
-    Teuchos::ParameterList plist;
-    plist.set<int>( "Overlap Size", 0 );
-    Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( A, x, plist ) );
-
-    // History setup.
-    HistoryType::setByteSize( control.getSize() );
-
-    // Build the domain communicator.
-    typename MCLS::DomainCommunicator<DomainType>::BankType bank;
-    int buffer_size = 3;
-    plist.set<int>( "History Buffer Size", buffer_size );
-    MCLS::DomainCommunicator<DomainType> communicator( domain, comm, plist );
-
-    // Test initialization.
-    TEST_EQUALITY( Teuchos::as<int>(communicator.maxBufferSize()), buffer_size );
-    TEST_ASSERT( !communicator.sendStatus() );
-    TEST_ASSERT( !communicator.receiveStatus() );
-
-    // Post receives.
-    communicator.post();
-    TEST_ASSERT( communicator.receiveStatus() );
-
-    // End communication.
-    communicator.end();
-    TEST_ASSERT( !communicator.receiveStatus() );
-
-    // Post new receives.
-    communicator.post();
-    TEST_ASSERT( communicator.receiveStatus() );
-    TEST_EQUALITY( communicator.sendBufferSize(), 0 );
-
-    // Flush with zero histories.
-    TEST_EQUALITY( communicator.flush(), 0 );
-    TEST_ASSERT( communicator.receiveStatus() );
-    TEST_ASSERT( communicator.sendStatus() );
-
-    // Receive empty flushed buffers.
-    communicator.wait( bank );
-    TEST_ASSERT( !communicator.receiveStatus() );
-    TEST_ASSERT( bank.empty() );
-
-    // This part of the test is for 4 processes.
+    // This test is for 4 processes.
     if ( comm_size == 4 )
     {
+	int local_num_rows = 10;
+	int global_num_rows = local_num_rows*comm_size;
+	Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
+	    Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
+
+	// Build the linear operator and solution vector.
+	Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
+	Teuchos::Array<GO> global_columns( 1 );
+	Teuchos::Array<Scalar> values( 1 );
+	for ( int i = 1; i < global_num_rows; ++i )
+	{
+	    global_columns[0] = i-1;
+	    values[0] = -0.5/comm_size;
+	    A->insertGlobalValues( i, global_columns(), values() );
+	}
+	global_columns[0] = global_num_rows-1;
+	values[0] = -0.5/comm_size;
+	A->insertGlobalValues( global_num_rows-1, global_columns(), values() );
+	A->fillComplete();
+
+	Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *A );
+
+	// Build the adjoint domain.
+	Teuchos::ParameterList plist;
+	plist.set<int>( "Overlap Size", 0 );
+	Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( A, x, plist ) );
+
+	// History setup.
+	HistoryType::setByteSize( control.getSize() );
+
+	// Build the domain communicator.
+	typename MCLS::DomainCommunicator<DomainType>::BankType bank;
+	int buffer_size = 3;
+	plist.set<int>( "History Buffer Size", buffer_size );
+	MCLS::DomainCommunicator<DomainType> communicator( domain, comm, plist );
+
+	// Test initialization.
+	TEST_EQUALITY( Teuchos::as<int>(communicator.maxBufferSize()), buffer_size );
+	TEST_ASSERT( !communicator.sendStatus() );
+	TEST_ASSERT( !communicator.receiveStatus() );
+
+	// Post receives.
+	communicator.post();
+	TEST_ASSERT( communicator.receiveStatus() );
+
+	// End communication.
+	communicator.end();
+	TEST_ASSERT( !communicator.receiveStatus() );
+
+	// Post new receives.
+	communicator.post();
+	TEST_ASSERT( communicator.receiveStatus() );
+	TEST_EQUALITY( communicator.sendBufferSize(), 0 );
+
+	// Flush with zero histories.
+	TEST_EQUALITY( communicator.flush(), 0 );
+	TEST_ASSERT( communicator.receiveStatus() );
+	TEST_ASSERT( communicator.sendStatus() );
+
+	// Receive empty flushed buffers.
+	communicator.wait( bank );
+	TEST_ASSERT( !communicator.receiveStatus() );
+	TEST_ASSERT( bank.empty() );
+
 	// Repost receives.
 	communicator.post();
 	TEST_ASSERT( communicator.receiveStatus() );

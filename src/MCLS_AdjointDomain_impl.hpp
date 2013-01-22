@@ -47,6 +47,8 @@
 
 #include <Teuchos_as.hpp>
 
+#include <Tpetra_Distributor.hpp>
+
 namespace MCLS
 {
 //---------------------------------------------------------------------------//
@@ -99,7 +101,52 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 	buildBoundary( A_T_overlap, A );
     }
 
+    // By building the boundary data, now we know where we are sending
+    // data. Use the distributor to find out who we are receiving from.
+    Tpetra::Distributor distributor( MT::getComm( *A ) );
+    distributor.createFromSends( d_send_ranks() );
+    d_receive_ranks = Teuchos::Array<int>( distributor.getImagesFrom() );
+
+    Check( !distributor.hasSelfMessage() );
+    Check( Teuchos::Array<int>( distributor.getImagesTo() ) == d_send_ranks );
+
     Ensure( !d_tally.is_null() );
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Get the neighbor domain process rank from which we will receive.
+ */
+template<class Vector, class Matrix>
+int AdjointDomain<Vector,Matrix>::receiveNeighborRank( int n ) const
+{
+    Require( n >= 0 && n < d_receive_ranks.size() );
+    return d_receive_ranks[n];
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Get the neighbor domain process rank to which we will send.
+ */
+template<class Vector, class Matrix>
+int AdjointDomain<Vector,Matrix>::sendNeighborRank( int n ) const
+{
+    Require( n >= 0 && n < d_send_ranks.size() );
+    return d_send_ranks[n];
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Get the neighbor domain that owns a boundary state (local neighbor
+ * id).
+ */
+template<class Vector, class Matrix>
+int AdjointDomain<Vector,Matrix>::owningNeighbor( const Ordinal& state )
+{
+    typename std::tr1::unordered_map<Ordinal,int>::const_iterator neighbor =
+	d_bnd_to_neighbor.find( state );
+    Require( neighbor != d_bnd_to_neighbor.end() );
+    return neighbor->second;
 }
 
 //---------------------------------------------------------------------------//
@@ -216,27 +263,27 @@ void AdjointDomain<Vector,Matrix>::buildBoundary(
     MT::getGlobalRowRanks( *base_A, boundary_rows(), boundary_ranks() );
 
     // Process the boundary data.
-    Teuchos::Array<int>::const_iterator neighbor_rank_it;
+    Teuchos::Array<int>::const_iterator send_rank_it;
     Teuchos::Array<int>::const_iterator bnd_rank_it;
     typename Teuchos::Array<Ordinal>::const_iterator bnd_row_it;
     for ( bnd_row_it = boundary_rows.begin(), 
-	  bnd_rank_it = boundary_ranks.begin();
+	 bnd_rank_it = boundary_ranks.begin();
 	  bnd_row_it != boundary_rows.end();
 	  ++bnd_row_it, ++bnd_rank_it )
     {
 	Check( *bnd_rank_it != -1 );
 	Check( *bnd_rank_it != MT::getComm( *A )->getRank() );
 
-	// Look for the owning process in the neighbor rank array.
-	neighbor_rank_it = std::find( d_neighbor_ranks.begin(), 
-				      d_neighbor_ranks.end(),
-				      *bnd_rank_it );
+	// Look for the owning process in the send rank array.
+	send_rank_it = std::find( d_send_ranks.begin(), 
+				  d_send_ranks.end(),
+				  *bnd_rank_it );
 
-	// If it is new, add it to the neighbor rank array.
-	if ( neighbor_rank_it == d_neighbor_ranks.end() )
+	// If it is new, add it to the send rank array.
+	if ( send_rank_it == d_send_ranks.end() )
 	{
-	    d_neighbor_ranks.push_back( *bnd_rank_it );
-	    d_bnd_to_neighbor[*bnd_row_it] = d_neighbor_ranks.size()-1;
+	    d_send_ranks.push_back( *bnd_rank_it );
+	    d_bnd_to_neighbor[*bnd_row_it] = d_send_ranks.size()-1;
 	}
 
 	// Otherwise, just add it to the boundary state to local id table.
@@ -245,7 +292,7 @@ void AdjointDomain<Vector,Matrix>::buildBoundary(
 	    d_bnd_to_neighbor[*bnd_row_it] =
 		std::distance( 
 		    Teuchos::as<Teuchos::Array<int>::const_iterator>(
-			d_neighbor_ranks.begin()), neighbor_rank_it);
+			d_send_ranks.begin()), send_rank_it);
 	}
     }
 

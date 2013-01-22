@@ -111,15 +111,22 @@ class AdjointDomain
     // Determine if a given state is on-process.
     inline bool isLocalState( const Ordinal& state );
 
-    //! Get the number of neighboring domains.
-    int numNeighbors() const
-    { return d_neighbor_ranks.size(); }
+    //! Get the number of neighboring domains from which we will receive.
+    int numReceiveNeighbors() const
+    { return d_receive_ranks.size(); }
 
-    // Get the neighbor domain process rank.
-    inline int neighborRank( int n ) const;
+    // Get the neighbor domain process rank from which we will receive.
+    int receiveNeighborRank( int n ) const;
+
+    //! Get the number of neighboring domains to which we will send.
+    int numSendNeighbors() const
+    { return d_send_ranks.size(); }
+
+    // Get the neighbor domain process rank to which we will send.
+    int sendNeighborRank( int n ) const;
 
     // Get the neighbor domain that owns a boundary state (local neighbor id).
-    inline int owningNeighbor( const Ordinal& state );
+    int owningNeighbor( const Ordinal& state );
 
   private:
 
@@ -147,8 +154,11 @@ class AdjointDomain
     // Local weights.
     Teuchos::Array<double> d_weights;
 
-    // Neighboring domain process ranks.
-    Teuchos::Array<int> d_neighbor_ranks;
+    // Neighboring domain process ranks from which we will receive.
+    Teuchos::Array<int> d_receive_ranks;
+
+    // Neighboring domain process ranks to which we will send.
+    Teuchos::Array<int> d_send_ranks;
 
     // Boundary state to owning neighbor local id table.
     std::tr1::unordered_map<Ordinal,int> d_bnd_to_neighbor;
@@ -189,31 +199,6 @@ inline bool AdjointDomain<Vector,Matrix>::isLocalState( const Ordinal& state )
    typename std::tr1::unordered_map<Ordinal,int>::const_iterator index =
        d_row_indexer.find( state );
    return ( index != d_row_indexer.end() );
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Get the neighbor domain process rank.
- */
-template<class Vector, class Matrix>
-inline int AdjointDomain<Vector,Matrix>::neighborRank( int n ) const
-{
-    Require( n >= 0 && n < d_neighbor_ranks.size() );
-    return d_neighbor_ranks[n];
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Get the neighbor domain that owns a boundary state (local neighbor
- * id).
- */
-template<class Vector, class Matrix>
-inline int AdjointDomain<Vector,Matrix>::owningNeighbor( const Ordinal& state )
-{
-    typename std::tr1::unordered_map<Ordinal,int>::const_iterator neighbor =
-	d_bnd_to_neighbor.find( state );
-    Require( neighbor != d_bnd_to_neighbor.end() );
-    return neighbor->second;
 }
 
 //---------------------------------------------------------------------------//

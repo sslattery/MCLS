@@ -150,8 +150,11 @@ class DomainCommunicator
     // Receive buffers.
     Teuchos::Array<ReceiveBuffer> d_receives;
 
-    // Number of communicating neighbors.
-    int d_num_neighbors;
+    // Number of neighbors we are sending to.
+    int d_num_send_neighbors;
+
+    // Number of neighbors we are receiving from.
+    int d_num_receive_neighbors;
 
     // Result of a history communication.
     Result d_result;

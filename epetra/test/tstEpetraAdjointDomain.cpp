@@ -153,15 +153,31 @@ TEUCHOS_UNIT_TEST( AdjointDomain, NoOverlap )
     }
 
     // Check the boundary.
-    if ( comm_rank == comm_size-1 )
+    if ( comm_rank == 0 && comm_size == 1 )
     {
-	TEST_EQUALITY( domain.numNeighbors(), 0 );
+	TEST_EQUALITY( domain.numSendNeighbors(), 0 );
+	TEST_EQUALITY( domain.numReceiveNeighbors(), 0 );
+    }
+    else if ( comm_rank == 0 && comm_size > 1 )
+    {
+	TEST_EQUALITY( domain.numSendNeighbors(), 1 );
+	TEST_EQUALITY( domain.sendNeighborRank(0), comm_rank+1 );
+	TEST_EQUALITY( domain.owningNeighbor(local_num_rows*(comm_rank+1)), 0 );
+	TEST_EQUALITY( domain.numReceiveNeighbors(), 0 );
+    }
+    else if ( comm_rank == comm_size - 1 )
+    {
+	TEST_EQUALITY( domain.numSendNeighbors(), 0 );
+	TEST_EQUALITY( domain.numReceiveNeighbors(), 1 );
+	TEST_EQUALITY( domain.receiveNeighborRank(0), comm_rank-1 );
     }
     else
     {
-	TEST_EQUALITY( domain.numNeighbors(), 1 );
-	TEST_EQUALITY( domain.neighborRank(0), comm_rank+1 );
+	TEST_EQUALITY( domain.numSendNeighbors(), 1 );
+	TEST_EQUALITY( domain.sendNeighborRank(0), comm_rank+1 );
 	TEST_EQUALITY( domain.owningNeighbor(local_num_rows*(comm_rank+1)), 0 );
+	TEST_EQUALITY( domain.numReceiveNeighbors(), 1 );
+	TEST_EQUALITY( domain.receiveNeighborRank(0), comm_rank-1 );
     }
 
     for ( int i = 0; i < global_num_rows; ++i )
@@ -251,15 +267,31 @@ TEUCHOS_UNIT_TEST( AdjointDomain, SomeOverlap )
     }
 
     // Check the boundary.
-    if ( comm_rank == comm_size-1 )
+    if ( comm_rank == 0 && comm_size == 1 )
     {
-	TEST_EQUALITY( domain.numNeighbors(), 0 );
+	TEST_EQUALITY( domain.numSendNeighbors(), 0 );
+	TEST_EQUALITY( domain.numReceiveNeighbors(), 0 );
+    }
+    else if ( comm_rank == 0 && comm_size > 1 )
+    {
+	TEST_EQUALITY( domain.numSendNeighbors(), 1 );
+	TEST_EQUALITY( domain.sendNeighborRank(0), comm_rank+1 );
+	TEST_EQUALITY( domain.owningNeighbor(2+local_num_rows*(comm_rank+1)), 0 );
+	TEST_EQUALITY( domain.numReceiveNeighbors(), 0 );
+    }
+    else if ( comm_rank == comm_size - 1 )
+    {
+	TEST_EQUALITY( domain.numSendNeighbors(), 0 );
+	TEST_EQUALITY( domain.numReceiveNeighbors(), 1 );
+	TEST_EQUALITY( domain.receiveNeighborRank(0), comm_rank-1 );
     }
     else
     {
-	TEST_EQUALITY( domain.numNeighbors(), 1 );
-	TEST_EQUALITY( domain.neighborRank(0), comm_rank+1 );
+	TEST_EQUALITY( domain.numSendNeighbors(), 1 );
+	TEST_EQUALITY( domain.sendNeighborRank(0), comm_rank+1 );
 	TEST_EQUALITY( domain.owningNeighbor(2+local_num_rows*(comm_rank+1)), 0 );
+	TEST_EQUALITY( domain.numReceiveNeighbors(), 1 );
+	TEST_EQUALITY( domain.receiveNeighborRank(0), comm_rank-1 );
     }
 
     if ( comm_rank == comm_size-1 )
