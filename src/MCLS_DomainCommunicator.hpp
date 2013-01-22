@@ -140,8 +140,7 @@ class DomainCommunicator
     // Local domain.
     Teuchos::RCP<Domain> d_domain;
 
-    // Set-constant communicator for domain-to-domain communcation within a
-    // set. 
+    // Set-constant communicator for domain-to-domain communcation.
     Teuchos::RCP<const Comm> d_comm;
 
     // Send buffers.

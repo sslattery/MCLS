@@ -104,7 +104,6 @@ void ReceiveHistoryBuffer<HT>::wait()
 
     Teuchos::Ptr<Teuchos::RCP<typename Base::Request> > 
 	request_ptr( &this->d_handle );
-
     Teuchos::wait( *Base::d_comm, request_ptr );
     Root::readNumFromBuffer();
 
