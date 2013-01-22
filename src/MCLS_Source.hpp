@@ -32,35 +32,33 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_DomainCommunicator.hpp
+ * \file MCLS_Source.hpp
  * \author Stuart R. Slattery
- * \brief DomainCommunicator class declaration.
+ * \brief Source class declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_DOMAINCOMMUNICATOR_HPP
-#define MCLS_DOMAINCOMMUNICATOR_HPP
+#ifndef MCLS_SOURCE_HPP
+#define MCLS_SOURCE_HPP
 
-#include "MCLS_HistoryBuffer.hpp"
-#include "MCLS_CommHistoryBuffer.hpp"
+#include "MCLS_RNGControl.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
-#include <Teuchos_Array.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 namespace MCLS
 {
 //---------------------------------------------------------------------------//
 /*!
- * \class DomainCommunicator 
+ * \class Source 
  * \brief Structure for communicating histories amongst domains in a set. 
  *
  * Tom Evans is responsible for the design of this class.
  */
 //---------------------------------------------------------------------------//
 template<class Domain>
-class DomainCommunicator
+class Source
 {
   public:
 
@@ -68,95 +66,31 @@ class DomainCommunicator
     //! Typedefs.
     typedef Domain                                       domain_type;
     typedef typename Domain::HistoryType                 HistoryType;
-    typedef typename Domain::BankType                    BankType;
-    typedef HistoryBuffer<HistoryType>                   HistoryBufferType;
-    typedef SendHistoryBuffer<HistoryType>               SendBuffer;
-    typedef ReceiveHistoryBuffer<HistoryType>            ReceiveBuffer;
+    typedef typename Domain::VectorType                  VectorType;
     typedef Teuchos::Comm<int>                           Comm;
     //@}
-
-    //! Communication result.
-    struct Result
-    {
-        bool sent;
-        int  destination;
-    };
-
   public:
 
     // Constructor.
-    DomainCommunicator( const Teuchos::RCP<Domain>& domain,
-			const Teuchos::RCP<const Comm>& set_const_comm,
-			const Teuchos::ParameterList& plist );
+    Source( const Teuchos::RCP<VectorType>& b,
+	    const Teuchos::RCP<Domain>& domain,
+	    const Teuchos::RCP<const Comm>& set_const_comm,
+	    const Teuchos::ParameterList& plist );
 
     // Destructor.
-    ~DomainCommunicator()
+    ~Source()
     { /* ... */ }
 
-    // Buffer and send a history.
-    const Result& communicate( const Teuchos::RCP<HistoryType>& history );
-
-    // Send all buffers that are not empty.
-    int send();
-
-    // Flush all buffers whether they are empty or not.
-    int flush();
-
-    // Post receives.
-    void post();
-
-    // Wait on receive buffers.
-    int wait( BankType& bank );
-
-    // Receive buffers and repost.
-    int checkAndPost( BankType& bank );
-
-    // Status of send buffers.
-    bool sendStatus();
-
-    // Status of receive buffers.
-    bool receiveStatus();
-
-    // End communication.
-    void end();
-
-    //! Particle buffer size.
-    std::size_t maxBufferSize() const
-    { return HistoryBufferType::maxNum(); }
-
-    // Number of particles in all buffers.
-    std::size_t sendBufferSize() const;
-
-    // Get a send buffer by local id.
-    const SendBuffer& sendBuffer( int n ) const
-    { return d_sends[n]; }
-
-    // Get a receive buffer by local id.
-    const ReceiveBuffer& receiveBuffer( int n ) const
-    { return d_receives[n]; }
-
   private:
+
+    // Source vector.
+    Teuchos::RCP<VectorType> d_b;
 
     // Local domain.
     Teuchos::RCP<Domain> d_domain;
 
     // Set-constant communicator for domain-to-domain communcation.
     Teuchos::RCP<const Comm> d_comm;
-
-    // Send buffers.
-    Teuchos::Array<SendBuffer> d_sends;
-
-    // Receive buffers.
-    Teuchos::Array<ReceiveBuffer> d_receives;
-
-    // Number of neighbors we are sending to.
-    int d_num_send_neighbors;
-
-    // Number of neighbors we are receiving from.
-    int d_num_receive_neighbors;
-
-    // Result of a history communication.
-    Result d_result;
 };
 
 //---------------------------------------------------------------------------//
@@ -167,13 +101,13 @@ class DomainCommunicator
 // Template includes.
 //---------------------------------------------------------------------------//
 
-#include "MCLS_DomainCommunicator_impl.hpp"
+#include "MCLS_Source_impl.hpp"
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_DOMAINCOMMUNICATOR_HPP
+#endif // end MCLS_SOURCE_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_DomainCommunicator.hpp
+// end MCLS_Source.hpp
 //---------------------------------------------------------------------------//
 
