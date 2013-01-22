@@ -95,8 +95,8 @@ TEUCHOS_UNIT_TEST( DomainCommunicator, Typedefs )
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     typedef MCLS::DomainTransporter<DomainType> TransportType;
-    typedef typename TransportType::HistoryType history_type;
-    typedef typename TransportType::BankType bank_type;
+    typedef TransportType::HistoryType history_type;
+    typedef TransportType::BankType bank_type;
 
     TEST_EQUALITY_CONST( 
 	(Teuchos::TypeTraits::is_same<HistoryType, history_type>::value)
@@ -163,7 +163,7 @@ TEUCHOS_UNIT_TEST( DomainCommunicator, Communicate )
 	HistoryType::setByteSize( control.getSize() );
 
 	// Build the domain communicator.
-	typename MCLS::DomainCommunicator<DomainType>::BankType bank;
+	MCLS::DomainCommunicator<DomainType>::BankType bank;
 	int buffer_size = 3;
 	plist.set<int>( "History Buffer Size", buffer_size );
 	MCLS::DomainCommunicator<DomainType> communicator( domain, comm, plist );
@@ -235,22 +235,22 @@ TEUCHOS_UNIT_TEST( DomainCommunicator, Communicate )
 	    TEST_ASSERT( !domain->isLocalState(10) );
 
 	    Teuchos::RCP<HistoryType> h1 = 
-		makeHistory<int>( 10, 1.1, comm_rank*4 + 1 );
-	    const typename MCLS::DomainCommunicator<DomainType>::Result
+		makeHistory( 10, 1.1, comm_rank*4 + 1 );
+	    const MCLS::DomainCommunicator<DomainType>::Result
 		r1 = communicator.communicate( h1 );
 	    TEST_ASSERT( !r1.sent );
 	    TEST_EQUALITY( communicator.sendBufferSize(), 1 );
 
 	    Teuchos::RCP<HistoryType> h2 = 
-		makeHistory<int>( 10, 2.1, comm_rank*4 + 2 );
-	    const typename MCLS::DomainCommunicator<DomainType>::Result
+		makeHistory( 10, 2.1, comm_rank*4 + 2 );
+	    const MCLS::DomainCommunicator<DomainType>::Result
 		r2 = communicator.communicate( h2 );
 	    TEST_ASSERT( !r2.sent );
 	    TEST_EQUALITY( communicator.sendBufferSize(), 2 );
 
 	    Teuchos::RCP<HistoryType> h3 = 
-		makeHistory<int>( 10, 3.1, comm_rank*4 + 3 );
-	    const typename MCLS::DomainCommunicator<DomainType>::Result
+		makeHistory( 10, 3.1, comm_rank*4 + 3 );
+	    const MCLS::DomainCommunicator<DomainType>::Result
 		r3 = communicator.communicate( h3 );
 	    TEST_ASSERT( r3.sent );
 	    TEST_EQUALITY( r3.destination, 1 );
@@ -265,22 +265,22 @@ TEUCHOS_UNIT_TEST( DomainCommunicator, Communicate )
 	    TEST_ASSERT( !domain->isLocalState((comm_rank+1)*10) );
 
 	    Teuchos::RCP<HistoryType> h1 = 
-		makeHistory<int>( (comm_rank+1)*10, 1.1, comm_rank*4 + 1 );
-	    const typename MCLS::DomainCommunicator<DomainType>::Result
+		makeHistory( (comm_rank+1)*10, 1.1, comm_rank*4 + 1 );
+	    const MCLS::DomainCommunicator<DomainType>::Result
 		r1 = communicator.communicate( h1 );
 	    TEST_ASSERT( !r1.sent );
 	    TEST_EQUALITY( communicator.sendBufferSize(), 1 );
 
 	    Teuchos::RCP<HistoryType> h2 = 
-		makeHistory<int>( (comm_rank+1)*10, 2.1, comm_rank*4 + 2 );
-	    const typename MCLS::DomainCommunicator<DomainType>::Result
+		makeHistory( (comm_rank+1)*10, 2.1, comm_rank*4 + 2 );
+	    const MCLS::DomainCommunicator<DomainType>::Result
 		r2 = communicator.communicate( h2 );
 	    TEST_ASSERT( !r2.sent );
 	    TEST_EQUALITY( communicator.sendBufferSize(), 2 );
 
 	    Teuchos::RCP<HistoryType> h3 = 
-		makeHistory<int>( (comm_rank+1)*10, 3.1, comm_rank*4 + 3 );
-	    const typename MCLS::DomainCommunicator<DomainType>::Result
+		makeHistory( (comm_rank+1)*10, 3.1, comm_rank*4 + 3 );
+	    const MCLS::DomainCommunicator<DomainType>::Result
 		r3 = communicator.communicate( h3 );
 	    TEST_ASSERT( r3.sent );
 	    TEST_EQUALITY( r3.destination, comm_rank+1 );
