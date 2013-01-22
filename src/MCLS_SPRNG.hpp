@@ -54,56 +54,70 @@ namespace MCLS
 //---------------------------------------------------------------------------//
 /*!
  * \class SPRNG
- * \brief A wrapper class for managing the SPRNG library. This class is based
- * on that developed by Tom Evans.
+ * \brief A wrapper class for managing the SPRNG library. This class was
+ * developed by Tom Evans. 
  */
 //---------------------------------------------------------------------------//
 class SPRNG
 {
   private:
 
-    //! Container for SPRNG memory.
+    //! Reference counting container for SPRNG memory.
     struct SPRNGValue
     {
         // SPRNG library id.
         int *d_id;
 
+	// Reference counter.
+	int d_refcount;
+
         // Constructor.
         SPRNGValue( int *id ) 
 	    : d_id( id )
+	    , d_refcount( 1 )
 	{ /* ... */ }
 
         // Destructor.
         ~SPRNGValue()
-	{ 
-	    free_sprng( d_id ); 
-	}
+	{ free_sprng( d_id ); }
     };
 
   public:
     
     //! Default constructor.
     inline SPRNG()
-	: d_stream_id( Teuchos::null )
+	: d_stream_id( 0 )
 	, d_stream( 0 )
     { /* ... */ }
 
     //! State constructor.
     inline SPRNG( int *id_val, int number )
-	: d_stream_id( Teuchos::rcp( new SPRNGValue(id_val) ) )
+	: d_stream_id( new SPRNGValue(id_val) )
 	, d_stream( number )
     { /* ... */ }
 
     // Deserializer constructor.
     SPRNG( const Teuchos::ArrayView<char>& state_buffer );
 
+    //! Copy constructor.
+    inline SPRNG( const SPRNG& rhs )
+	: d_stream_id( rhs.d_stream_id )
+	, d_stream( rhs.d_stream )
+    { if ( d_stream_id ) ++ d_stream_id->d_refcount; }
+    
     //! Desctructor.
-    ~SPRNG()
-    { /* ... */ }
+    inline ~SPRNG()
+    {
+	if ( d_stream_id && --d_stream_id->d_refcount == 0 )
+	    delete d_stream_id;
+    }
+
+    // Assignment operator.
+    SPRNG& operator=(const SPRNG &);
 
     //! Check if this SPRNG object has been assigned a stream.
     bool assigned() const
-    { return !d_stream_id.is_null(); }
+    { return (d_stream_id != 0); }
 
     // Pack the SPRNG state into a buffer.
     Teuchos::Array<char> pack() const;
@@ -111,21 +125,21 @@ class SPRNG
     //! Get a random number.
     double random() const
     {
-	Require( !d_stream_id.is_null() );
+	Require( d_stream_id );
 	return sprng( d_stream_id->d_id );
     }
 
     //! Get the SPRNG ID pointer.
     int* getID() const
     {
-	Require( !d_stream_id.is_null() );
+	Require( d_stream_id );
 	return d_stream_id->d_id;
     }
 
     //! Get the stream number index.
     int getIndex() const
     {
-	Require( !d_stream_id.is_null() );
+	Require( d_stream_id );
 	return d_stream;
     }
 
@@ -135,14 +149,14 @@ class SPRNG
     //! Print diagnostics.
     void print() const
     {
-	Require( !d_stream_id.is_null() );
+	Require( d_stream_id );
 	print_sprng( d_stream_id->d_id );
     }
 
   private:
 
     // SPRNG library memory.
-    Teuchos::RCP<SPRNGValue> d_stream_id;
+    SPRNGValue* d_stream_id;
 
     // Stream number.
     int d_stream;

@@ -41,12 +41,11 @@
 
 //---------------------------------------------------------------------------//
 // Instantiation macro. 
-// 
+//     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, double )   
 // These types are those enabled by Tpetra under explicit instantiation. I
 // have removed scalar types that are not floating point
 //---------------------------------------------------------------------------//
 #define UNIT_TEST_INSTANTIATION( type, name )			           \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, double )   \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
 
 //---------------------------------------------------------------------------//
@@ -64,6 +63,7 @@ Teuchos::RCP<MCLS::History<GO> > makeHistory(
     Teuchos::RCP<MCLS::History<GO> > history = Teuchos::rcp(
 	new MCLS::History<GO>( state, weight ) );
     history->setRNG( control.rng(streamid) );
+    history->setEvent( MCLS::BOUNDARY );
     return history;
 }
 
@@ -158,7 +158,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Communicate, LO, GO, Scal
 
 	// Post receives.
 	communicator.post();
-	TEST_ASSERT( communicator.receiveStatus() );
+	if ( comm_rank == 0 )
+	{
+	    TEST_ASSERT( !communicator.receiveStatus() );
+	}
+	else
+	{
+	    TEST_ASSERT( communicator.receiveStatus() );
+	}
 
 	// End communication.
 	communicator.end();
@@ -166,13 +173,27 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Communicate, LO, GO, Scal
 
 	// Post new receives.
 	communicator.post();
-	TEST_ASSERT( communicator.receiveStatus() );
+	if ( comm_rank == 0 )
+	{
+	    TEST_ASSERT( !communicator.receiveStatus() );
+	}
+	else
+	{
+	    TEST_ASSERT( communicator.receiveStatus() );
+	}
 	TEST_EQUALITY( communicator.sendBufferSize(), 0 );
 
 	// Flush with zero histories.
 	TEST_EQUALITY( communicator.flush(), 0 );
-	TEST_ASSERT( communicator.receiveStatus() );
-	TEST_ASSERT( communicator.sendStatus() );
+	if ( comm_rank == 0 )
+	{
+	    TEST_ASSERT( !communicator.receiveStatus() );
+	}
+	else
+	{
+	    TEST_ASSERT( communicator.receiveStatus() );
+	}
+	TEST_ASSERT( !communicator.sendStatus() );
 
 	// Receive empty flushed buffers.
 	communicator.wait( bank );
@@ -181,26 +202,36 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Communicate, LO, GO, Scal
 
 	// Repost receives.
 	communicator.post();
-	TEST_ASSERT( communicator.receiveStatus() );
+	if ( comm_rank == 0 )
+	{
+	    TEST_ASSERT( !communicator.receiveStatus() );
+	}
+	else
+	{
+	    TEST_ASSERT( communicator.receiveStatus() );
+	}
 
 	// Proc 0 will send to proc 1.
 	if ( comm_rank == 0 )
 	{
 	    TEST_ASSERT( !domain->isLocalState(10) );
 
-	    Teuchos::RCP<HistoryType> h1 = makeHistory<GO>( 10, 1.1, 1 );
+	    Teuchos::RCP<HistoryType> h1 = 
+		makeHistory<GO>( 10, 1.1, comm_rank*3 + 1 );
 	    const typename MCLS::DomainCommunicator<DomainType>::Result
 		r1 = communicator.communicate( h1 );
 	    TEST_ASSERT( !r1.sent );
 	    TEST_EQUALITY( communicator.sendBufferSize(), 1 );
 
-	    Teuchos::RCP<HistoryType> h2 = makeHistory<GO>( 10, 2.1, 2 );
+	    Teuchos::RCP<HistoryType> h2 = 
+		makeHistory<GO>( 10, 2.1, comm_rank*3 + 2 );
 	    const typename MCLS::DomainCommunicator<DomainType>::Result
 		r2 = communicator.communicate( h2 );
 	    TEST_ASSERT( !r2.sent );
 	    TEST_EQUALITY( communicator.sendBufferSize(), 2 );
 
-	    Teuchos::RCP<HistoryType> h3 = makeHistory<GO>( 10, 3.1, 3 );
+	    Teuchos::RCP<HistoryType> h3 = 
+		makeHistory<GO>( 10, 3.1, comm_rank*3 + 3 );
 	    const typename MCLS::DomainCommunicator<DomainType>::Result
 		r3 = communicator.communicate( h3 );
 	    TEST_ASSERT( r3.sent );
@@ -214,29 +245,34 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Communicate, LO, GO, Scal
 	    // Send to proc 2.
 	    TEST_ASSERT( !domain->isLocalState(20) );
 
-	    Teuchos::RCP<HistoryType> h1 = makeHistory<GO>( 20, 1.1, 1 );
+	    Teuchos::RCP<HistoryType> h1 = 
+		makeHistory<GO>( 20, 1.1, comm_rank*4 + 1 );
 	    const typename MCLS::DomainCommunicator<DomainType>::Result
 		r1 = communicator.communicate( h1 );
 	    TEST_ASSERT( !r1.sent );
 	    TEST_EQUALITY( communicator.sendBufferSize(), 1 );
 
-	    Teuchos::RCP<HistoryType> h2 = makeHistory<GO>( 20, 2.1, 2 );
+	    Teuchos::RCP<HistoryType> h2 = 
+		makeHistory<GO>( 20, 2.1, comm_rank*4 + 2 );
 	    const typename MCLS::DomainCommunicator<DomainType>::Result
 		r2 = communicator.communicate( h2 );
 	    TEST_ASSERT( !r2.sent );
 	    TEST_EQUALITY( communicator.sendBufferSize(), 2 );
 
-	    Teuchos::RCP<HistoryType> h3 = makeHistory<GO>( 20, 3.1, 3 );
+	    Teuchos::RCP<HistoryType> h3 = 
+		makeHistory<GO>( 20, 3.1, comm_rank*4 + 3 );
 	    const typename MCLS::DomainCommunicator<DomainType>::Result
 		r3 = communicator.communicate( h3 );
 	    TEST_ASSERT( r3.sent );
 	    TEST_EQUALITY( r3.destination, 2 );
 	    TEST_EQUALITY( communicator.sendBufferSize(), 0 );
 
-	    // Receive from proc 1.
-	    communicator.wait( bank );
+	    // Receive from proc 0.
+	    TEST_EQUALITY( communicator.wait( bank ), 3 );
 	    TEST_ASSERT( !communicator.receiveStatus() );
 	    TEST_EQUALITY( bank.size(), 3 );
+	    std::cout << "HERE " << comm_rank << " " << bank.size() << std::endl;
+
 	    Teuchos::RCP<HistoryType> rp3 = bank.top();
 	    bank.pop();
 	    Teuchos::RCP<HistoryType> rp2 = bank.top();
@@ -263,19 +299,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Communicate, LO, GO, Scal
 	    // Send to proc 3.
 	    TEST_ASSERT( !domain->isLocalState(30) );
 
-	    Teuchos::RCP<HistoryType> h1 = makeHistory<GO>( 30, 1.1, 1 );
+	    Teuchos::RCP<HistoryType> h1 = 
+		makeHistory<GO>( 30, 1.1, comm_rank*4 + 1 );
 	    const typename MCLS::DomainCommunicator<DomainType>::Result
 		r1 = communicator.communicate( h1 );
 	    TEST_ASSERT( !r1.sent );
 	    TEST_EQUALITY( communicator.sendBufferSize(), 1 );
 
-	    Teuchos::RCP<HistoryType> h2 = makeHistory<GO>( 30, 2.1, 2 );
+	    Teuchos::RCP<HistoryType> h2 = 
+		makeHistory<GO>( 30, 2.1, comm_rank*4 + 2 );
 	    const typename MCLS::DomainCommunicator<DomainType>::Result
 		r2 = communicator.communicate( h2 );
 	    TEST_ASSERT( !r2.sent );
 	    TEST_EQUALITY( communicator.sendBufferSize(), 2 );
 
-	    Teuchos::RCP<HistoryType> h3 = makeHistory<GO>( 30, 3.1, 3 );
+	    Teuchos::RCP<HistoryType> h3 = 
+		makeHistory<GO>( 30, 3.1, comm_rank*4 + 3 );
 	    const typename MCLS::DomainCommunicator<DomainType>::Result
 		r3 = communicator.communicate( h3 );
 	    TEST_ASSERT( r3.sent );
@@ -283,9 +322,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Communicate, LO, GO, Scal
 	    TEST_EQUALITY( communicator.sendBufferSize(), 0 );
 
 	    // Receive from proc 1.
-	    communicator.wait( bank );
+	    TEST_EQUALITY( communicator.wait( bank ), 3 );
 	    TEST_ASSERT( !communicator.receiveStatus() );
 	    TEST_EQUALITY( bank.size(), 3 );
+	    std::cout << "HERE " << comm_rank << " " << bank.size() << std::endl;
+
 	    Teuchos::RCP<HistoryType> rp3 = bank.top();
 	    bank.pop();
 	    Teuchos::RCP<HistoryType> rp2 = bank.top();
@@ -317,6 +358,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Communicate, LO, GO, Scal
 
 	    TEST_ASSERT( !communicator.receiveStatus() );
 	    TEST_EQUALITY( bank.size(), 3 );
+
 	    Teuchos::RCP<HistoryType> rp3 = bank.top();
 	    bank.pop();
 	    Teuchos::RCP<HistoryType> rp2 = bank.top();
@@ -341,6 +383,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Communicate, LO, GO, Scal
 	communicator.end();
 	TEST_ASSERT( !communicator.receiveStatus() );
     }
+
+    // Barrier before exiting to make sure memory deallocation happened
+    // correctly. 
+    comm->barrier();
 }
 
 UNIT_TEST_INSTANTIATION( DomainCommunicator, Communicate )

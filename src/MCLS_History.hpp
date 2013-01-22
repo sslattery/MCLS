@@ -167,7 +167,7 @@ class History
     // History weight.
     double d_weight;
 
-    // Random number generator.
+    // Random number generator (reference counted).
     RNG d_rng;
 
     // Alive/dead status.

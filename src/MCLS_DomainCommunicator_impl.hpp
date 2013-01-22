@@ -106,6 +106,7 @@ DomainCommunicator<Domain>::communicate(
 {
     Require( !history.is_null() );
     Require( history->event() == BOUNDARY );
+    Require( !history->alive() );
 
     // Initialize result status.
     d_result.sent = false;
@@ -116,7 +117,7 @@ DomainCommunicator<Domain>::communicate(
     d_sends[neighbor_id].bufferHistory( *history );
 
     // Update the result destination.
-    d_result.destination = d_domain->sendNeighborRank(neighbor_id);
+    d_result.destination = d_domain->sendNeighborRank( neighbor_id );
     Check( d_result.destination < d_comm->getSize() );
 
     // If the buffer is full send it.
@@ -301,7 +302,7 @@ bool DomainCommunicator<Domain>::sendStatus()
 /*!
  * \brief Status of receive buffers.
  *
- * Return true only if all send buffers are on.
+ * Return true only if all receive buffers are on.
  */
 template<class Domain>
 bool DomainCommunicator<Domain>::receiveStatus()
