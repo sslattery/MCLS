@@ -71,8 +71,8 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Typedefs )
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::History<int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
-    typedef typename DomainType::HistoryType history_type;
-    typedef typename DomainType::TallyType tally_type;
+    typedef DomainType::HistoryType history_type;
+    typedef DomainType::TallyType tally_type;
 
     TEST_EQUALITY_CONST( 
 	(Teuchos::TypeTraits::is_same<HistoryType, history_type>::value)
@@ -144,7 +144,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, NoOverlap )
     tally->combineTallies();
 
     Teuchos::ArrayRCP<const double> x_view = VT::view( *x );
-    typename Teuchos::ArrayRCP<const double>::const_iterator x_view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator x_view_iterator;
     for ( x_view_iterator = x_view.begin();
 	  x_view_iterator != x_view.end();
 	  ++x_view_iterator )

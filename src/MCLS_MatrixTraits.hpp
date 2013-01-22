@@ -44,6 +44,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_ArrayView.hpp>
+#include <Teuchos_Array.hpp>
 
 namespace MCLS
 {
@@ -297,7 +298,20 @@ class MatrixTraits
 	UndefinedMatrixTraits<Vector,Matrix>::notDefined(); 
 	return Teuchos::null; 
     }
-};
+
+    /*!
+     * \brief Given a list of ranks to which we will send data, get the list
+     * of ranks from which we will receive.
+     */
+    static Teuchos::Array<int>
+    getReceivesFromSends( const Matrix& matrix,
+			  const Teuchos::ArrayView<int>& sends )
+    { 
+	UndefinedMatrixTraits<Vector,Matrix>::notDefined(); 
+	return Teuchos::Array<int>(0);
+    }
+
+  };
 
 //---------------------------------------------------------------------------//
 

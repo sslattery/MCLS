@@ -56,6 +56,7 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Import.hpp>
 #include <Tpetra_RowMatrixTransposer.hpp>
+#include <Tpetra_Distributor.hpp>
 
 namespace MCLS
 {
@@ -348,6 +349,20 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
 	Ensure( neighbor_matrix->isFillComplete() );
 	return neighbor_matrix;
     }
+
+    /*!
+     * \brief Given a list of ranks to which we will send data, get the list
+     * of ranks from which we will receive.
+     */
+    static Teuchos::Array<int>
+    getReceivesFromSends( const matrix_type& matrix,
+			  const Teuchos::ArrayView<int>& sends )
+    { 
+	Tpetra::Distributor distributor( matrix.getComm() );
+	distributor.createFromSends( sends );
+	return Teuchos::Array<int>( distributor.getImagesFrom() );
+    }
+
 };
 
 //---------------------------------------------------------------------------//

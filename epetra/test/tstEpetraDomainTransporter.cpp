@@ -75,8 +75,8 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Typedefs )
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     typedef MCLS::DomainTransporter<DomainType> TransportType;
-    typedef typename TransportType::HistoryType history_type;
-    typedef typename TransportType::TallyType tally_type;
+    typedef TransportType::HistoryType history_type;
+    typedef TransportType::TallyType tally_type;
 
     TEST_EQUALITY_CONST( 
 	(Teuchos::TypeTraits::is_same<HistoryType, history_type>::value)

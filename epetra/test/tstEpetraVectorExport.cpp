@@ -31,6 +31,8 @@
 #include <Epetra_Map.h>
 #include <Epetra_Vector.h>
 #include <Epetra_Export.h>
+#include <Epetra_MpiComm.h>
+#include <Epetra_SerialComm.h>
 
 //---------------------------------------------------------------------------//
 // Helper functions.

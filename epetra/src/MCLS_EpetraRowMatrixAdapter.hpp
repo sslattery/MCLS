@@ -51,12 +51,15 @@
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_Comm.hpp>
-#include <Teuchos_DefaultMpiComm.hpp>
+#include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_TypeTraits.hpp>
 
+#include <Epetra_Comm.h>
+#include <Epetra_MpiComm.h>
+#include <Epetra_SerialComm.h>
+#include <Epetra_MpiDistributor.h>
 #include <Epetra_Vector.h>
 #include <Epetra_RowMatrix.h>
-#include <Epetra_MpiComm.h>
 
 namespace MCLS
 {
@@ -326,6 +329,37 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
 	    return EpetraMatrixHelpers<matrix_type>::copyNearestNeighbors( 
 		matrix, num_neighbors );
     }
+
+    /*!
+     * \brief Given a list of ranks to which we will send data, get the list
+     * of ranks from which we will receive.
+     */
+    static Teuchos::Array<int>
+    getReceivesFromSends( const matrix_type& matrix,
+			  const Teuchos::ArrayView<int>& sends )
+    { 
+#ifdef HAVE_MPI
+	Epetra_Comm* epetra_comm = matrix.Comm().Clone();
+	Epetra_MpiComm* epetra_mpi_comm = 
+	    dynamic_cast<Epetra_MpiComm*>( epetra_comm );
+	Epetra_MpiDistributor distributor( *epetra_mpi_comm );
+	int num_receives = 0;
+	distributor.CreateFromSends( sends.size(),
+				     sends.getRawPtr(),
+				     true,
+				     num_receives );
+
+	Check( distributor.NumReceives() == num_receives );
+	Check( distributor.NumSends() == sends.size() );
+
+	return Teuchos::Array<int>( 
+	    Teuchos::ArrayView<const int>( distributor.ProcsFrom(), 
+					   num_receives ) );
+#else
+	return Teuchos::Array<int>(0);
+#endif
+    }
+
 };
 
 //---------------------------------------------------------------------------//
