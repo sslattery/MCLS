@@ -42,6 +42,7 @@
 #define MCLS_UNIFORMSOURCE_HPP
 
 #include "MCLS_Source.hpp"
+#include "MCLS_VectorTraits.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
@@ -68,7 +69,9 @@ class UniformSource : public Source<Domain>
     typedef Source<Domain>                               Base;
     typedef Domain                                       domain_type;
     typedef typename Domain::HistoryType                 HistoryType;
+    typedef typename HistoryType::Ordinal                Ordinal;
     typedef typename Domain::VectorType                  VectorType;
+    typedef VectorTraits<VectorType>                     VT;
     typedef Teuchos::Comm<int>                           Comm;
     typedef RNGControl::RNG                              RNG;
     //@}
@@ -83,17 +86,17 @@ class UniformSource : public Source<Domain>
     // Destructor.
     ~UniformSource() { /* ... */ }
 
-    //! Get a history from the source.
+    // Build the source.
+    void buildSource();
+
+    // Get a history from the source.
     Teuchos::RCP<HistoryType> getHistory();
 
-    //! Return whether the source has emitted all histories.
-    bool empty() const;
+    // Return whether the source has emitted all histories.
+    bool empty() const { return (d_nh_left == 0); }
 
-    //! Get the number of source histories left in the local domain
-    int numToTransport() const;
-
-    //! Get the number of source histories left in the set.
-    int numToTransportInSet() const;
+    // Get the number of source histories left in the local domain
+    int numToTransport() const { return d_nh_domain; }
 
   private:
 
