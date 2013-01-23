@@ -104,9 +104,9 @@ void UniformAdjointSource<Domain>::buildSource()
     Teuchos::ArrayRCP<const Scalar> local_source = VT::view( *Base::b_b );
     Check( local_source.size() > 0 );
 
-    // Build a cdf from the local source data.
-    Teuchos::ArrayRCP<double> d_cdf( local_source.size(), 
-				     std::abs(local_source[0]) );
+    // Build a non-normalized CDF from the local source data.
+    d_cdf = Teuchos::ArrayRCP<double>( local_source.size(), 
+				       std::abs(local_source[0]) );
     typename Teuchos::ArrayRCP<const Scalar>::const_iterator src_it;
     Teuchos::ArrayRCP<double>::iterator cdf_it;
     for ( src_it = local_source.begin()+1, cdf_it = d_cdf.begin()+1;
@@ -125,6 +125,14 @@ void UniformAdjointSource<Domain>::buildSource()
     Teuchos::reduceAll( *d_comm, Teuchos::REDUCE_SUM, 
 			d_nh_domain, Teuchos::Ptr<int>(&d_nh_total) );
     Check( d_nh_total > 0 );
+
+    // Normalize the CDF.
+    for ( cdf_it = d_cdf.begin(); cdf_it != d_cdf.end(); ++cdf_it )
+    {
+	*cdf_it /= d_cdf().back();
+	Check( *cdf_it >= 0 );
+    }
+    Check( std::abs(d_cdf().back()-1) < 1.0e-6 );
 
     // Set counters.
     d_nh_left = d_nh_domain;
