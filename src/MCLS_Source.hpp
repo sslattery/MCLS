@@ -66,7 +66,7 @@ class Source
     //! Typedefs.
     typedef Domain                                       domain_type;
     typedef typename Domain::HistoryType                 HistoryType;
-    typedef typename Domain::VectorType                  VectorType;
+    typedef typename Domain::vector_type                 VectorType;
     typedef RNGControl::RNG                              RNG;
     //@}
 
@@ -91,7 +91,7 @@ class Source
     virtual int numToTransportInSet() const = 0;
 
     //! Get the source vector.
-    const sourceVector& const { return *b_b; }
+    const VectorType& sourceVector() const { return *b_b; }
 
     //! Get the domain.
     const Domain& domain() const { return *b_domain; }
@@ -108,12 +108,8 @@ class Source
     Teuchos::RCP<Domain> b_domain;
 
     // Random number controller.
-    Teuchos::RCP<RNGControl> b_comm;
+    Teuchos::RCP<RNGControl> b_rng_control;
 };
-
-//---------------------------------------------------------------------------//
-
-} // end namespace MCLS
 
 //---------------------------------------------------------------------------//
 // Implementation.
@@ -135,6 +131,8 @@ Source<Domain>::Source( const Teuchos::RCP<VectorType>& b,
 }
 
 //---------------------------------------------------------------------------//
+
+} // end namespace MCLS
 
 #endif // end MCLS_SOURCE_HPP
 

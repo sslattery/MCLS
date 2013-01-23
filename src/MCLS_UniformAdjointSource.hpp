@@ -67,23 +67,24 @@ class UniformAdjointSource : public Source<Domain>
 
     //@{
     //! Typedefs.
-    typedef Source<Domain>                               Base;
     typedef Domain                                       domain_type;
-    typedef typename Domain::HistoryType                 HistoryType;
-    typedef typename HistoryType::Ordinal                Ordinal;
-    typedef typename Domain::VectorType                  VectorType;
+    typedef Source<Domain>                               Base;
+    typedef typename Base::HistoryType                   HistoryType;
+    typedef typename HistoryType::ordinal_type           Ordinal;
+    typedef typename Base::VectorType                    VectorType;
     typedef VectorTraits<VectorType>                     VT;
     typedef typename VT::scalar_type                     Scalar;
+    typedef typename Base::RNG                           RNG;
     typedef Teuchos::Comm<int>                           Comm;
-    typedef RNGControl::RNG                              RNG;
+
     //@}
 
     // Constructor.
     UniformAdjointSource( const Teuchos::RCP<VectorType>& b,
-		   const Teuchos::RCP<Domain>& domain,
-		   const Teuchos::RCP<RNGControl>& rng_control,
-		   const Teuchos::RCP<const Comm>& comm,
-		   const Teuchos::ParameterList& plist );
+			  const Teuchos::RCP<Domain>& domain,
+			  const Teuchos::RCP<RNGControl>& rng_control,
+			  const Teuchos::RCP<const Comm>& comm,
+			  Teuchos::ParameterList& plist );
 
     // Destructor.
     ~UniformAdjointSource() { /* ... */ }
@@ -101,7 +102,7 @@ class UniformAdjointSource : public Source<Domain>
     int numToTransport() const { return d_nh_domain; }
 
     //! Get the total number of histories in the set.
-    int numToTransportSet() const { return d_nh_total; }
+    int numToTransportInSet() const { return d_nh_total; }
 
     //! Get the total number of requested histories.
     int numRequested() const { return d_nh_requested; }
@@ -139,7 +140,7 @@ class UniformAdjointSource : public Source<Domain>
     int d_nh_domain;
 
     // History weight.
-    double d_source_weight;
+    double d_weight;
 
     // Number of histories left in the local domain.
     int d_nh_left;

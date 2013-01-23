@@ -2,7 +2,7 @@
 /*!
  * \file tstTpetraDomainCommunicator.cpp
  * \author Stuart R. Slattery
- * \brief Tpetra AdjointDomain tests.
+ * \brief Tpetra DomainCommunicator tests.
  */
 //---------------------------------------------------------------------------//
 
@@ -80,7 +80,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Typedefs, LO, GO, Scalar 
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::History<GO> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     typedef MCLS::DomainTransporter<DomainType> TransportType;
     typedef typename TransportType::HistoryType history_type;
