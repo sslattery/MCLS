@@ -122,6 +122,24 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     }
 
     /*!
+     * \brief Given a local row on-process, provide the global ordinal.
+     */
+    static global_ordinal_type getGlobalRow( const vector_type& vector, 
+					     const local_ordinal_type& local_row )
+    { 
+	return vector.getMap()->getGlobalElement( local_row );
+    }
+
+    /*!
+     * \brief Given a global row on-process, provide the local ordinal.
+     */
+    static local_ordinal_type getLocalRow( const vector_type& vector,
+					   const global_ordinal_type& global_row )
+    { 
+	return vector.getMap()->getLocalElement( global_row );
+    }
+
+    /*!
      * \brief Replace value at the global row index. The global index must
      * exist on process.
      */

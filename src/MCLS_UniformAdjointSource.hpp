@@ -32,9 +32,9 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_UniformSource.hpp
+ * \file MCLS_UniformAdjointSource.hpp
  * \author Stuart R. Slattery
- * \brief UniformSource class declaration.
+ * \brief UniformAdjointSource class declaration.
  */
 //---------------------------------------------------------------------------//
 
@@ -47,20 +47,21 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_ArrayRCP.hpp>
 
 namespace MCLS
 {
 //---------------------------------------------------------------------------//
 /*!
- * \class UniformSource 
- * \brief Uniform sampling history source.
+ * \class UniformAdjointSource 
+ * \brief Uniform sampling history source for adjoint problems.
  *
  * This class and inheritance structure is based on that developed by Tom
  * Evans. 
  */
 //---------------------------------------------------------------------------//
 template<class Domain>
-class UniformSource : public Source<Domain>
+class UniformAdjointSource : public Source<Domain>
 {
   public:
 
@@ -72,19 +73,20 @@ class UniformSource : public Source<Domain>
     typedef typename HistoryType::Ordinal                Ordinal;
     typedef typename Domain::VectorType                  VectorType;
     typedef VectorTraits<VectorType>                     VT;
+    typedef typename VT::scalar_type                     Scalar;
     typedef Teuchos::Comm<int>                           Comm;
     typedef RNGControl::RNG                              RNG;
     //@}
 
     // Constructor.
-    UniformSource( const Teuchos::RCP<VectorType>& b,
+    UniformAdjointSource( const Teuchos::RCP<VectorType>& b,
 		   const Teuchos::RCP<Domain>& domain,
 		   const Teuchos::RCP<RNGControl>& rng_control,
 		   const Teuchos::RCP<const Comm>& comm,
 		   const Teuchos::ParameterList& plist );
 
     // Destructor.
-    ~UniformSource() { /* ... */ }
+    ~UniformAdjointSource() { /* ... */ }
 
     // Build the source.
     void buildSource();
@@ -92,11 +94,27 @@ class UniformSource : public Source<Domain>
     // Get a history from the source.
     Teuchos::RCP<HistoryType> getHistory();
 
-    // Return whether the source has emitted all histories.
+    //! Return whether the source has emitted all histories.
     bool empty() const { return (d_nh_left == 0); }
 
-    // Get the number of source histories left in the local domain
+    //! Get the number of source histories to transport in the local domain.
     int numToTransport() const { return d_nh_domain; }
+
+    //! Get the total number of histories in the set.
+    int numToTransportSet() const { return d_nh_total; }
+
+    //! Get the total number of requested histories.
+    int numRequested() const { return d_nh_requested; }
+
+    //! Get the total number of histories emitted to this point from the
+    //! domain. 
+    int numEmitted() const { return d_nh_emitted; }
+
+    //! Get the number of histories left to emit in this domain.
+    int numLeft() const { return d_nh_left; }
+
+    //! Get the number of random number streams generated to this point. 
+    int numStreams() const { return d_rng_stream; }
 
   private:
 
@@ -128,6 +146,9 @@ class UniformSource : public Source<Domain>
 
     // Number of histories emitted in the local domain.
     int d_nh_emitted;
+
+    // Local source cdf.
+    Teuchos::ArrayRCP<double> d_cdf;
 };
 
 //---------------------------------------------------------------------------//
@@ -138,13 +159,13 @@ class UniformSource : public Source<Domain>
 // Template includes.
 //---------------------------------------------------------------------------//
 
-#include "MCLS_UniformSource_impl.hpp"
+#include "MCLS_UniformAdjointSource_impl.hpp"
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_UNIFORMSOURCE_HPP
+#endif // end MCLS_UNIFORMADJOINTSOURCE_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_UniformSource.hpp
+// end MCLS_UniformAdjointSource.hpp
 //---------------------------------------------------------------------------//
 

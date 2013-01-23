@@ -230,8 +230,10 @@ TEUCHOS_UNIT_TEST( VectorTraits, SumIntoElement )
 	  element_iterator != global_elements.end();
 	  ++element_iterator )
     {
-	TEST_ASSERT( VT::isGlobalRow( *A, *element_iterator ) );
-	VT::sumIntoGlobalValue( *A, *element_iterator, 2.0 );
+	int local_element = VT::getLocalRow( *A, *element_iterator );
+	int global_row = VT::getGlobalRow( *A, local_element );
+	TEST_ASSERT( VT::isGlobalRow( *A, global_row ) );
+	VT::sumIntoGlobalValue( *A, global_row, 2.0 );
     }
 
     Teuchos::ArrayRCP<const double> A_view = VT::view( *A );
@@ -247,7 +249,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, SumIntoElement )
 	  element_iterator != global_elements.end();
 	  ++element_iterator )
     {
-	int local_element = A->Map().LID( *element_iterator );
+	int local_element = VT::getLocalRow( *A, *element_iterator );
 	TEST_ASSERT( VT::isLocalRow( *A, local_element ) );
 	VT::sumIntoLocalValue( *A, local_element, 2.0 );
     }
@@ -291,8 +293,10 @@ TEUCHOS_UNIT_TEST( VectorTraits, ReplaceElement )
 	  element_iterator != global_elements.end();
 	  ++element_iterator )
     {
-	TEST_ASSERT( VT::isGlobalRow( *A, *element_iterator ) );
-	VT::replaceGlobalValue( *A, *element_iterator, 2.0 );
+	int local_element = VT::getLocalRow( *A, *element_iterator );
+	int global_row = VT::getGlobalRow( *A, local_element );
+	TEST_ASSERT( VT::isGlobalRow( *A, global_row ) );
+	VT::replaceGlobalValue( *A, global_row, 2.0 );
     }
 
     Teuchos::ArrayRCP<const double> A_view = VT::view( *A );
@@ -308,7 +312,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, ReplaceElement )
 	  element_iterator != global_elements.end();
 	  ++element_iterator )
     {
-	int local_element = A->Map().LID( *element_iterator );
+	int local_element = VT::getLocalRow( *A, *element_iterator );
 	TEST_ASSERT( VT::isLocalRow( *A, local_element ) );
 	VT::replaceLocalValue( *A, local_element, 5.0 );
     }

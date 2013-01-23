@@ -46,6 +46,8 @@ APPEND_SET(HEADERS
   MCLS_Serializer.hpp
   MCLS_Source.hpp
   MCLS_SPRNG.hpp
+  MCLS_UniformAdjointSource.hpp
+  MCLS_UniformAdjointSource_impl.hpp
   MCLS_VectorExport.hpp
   MCLS_VectorTraits.hpp
   ) 
