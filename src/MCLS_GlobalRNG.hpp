@@ -32,51 +32,47 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_UniformSource_impl.hpp
+ * \file MCLS_GlobalRNG.hpp
  * \author Stuart R. Slattery
- * \brief UniformSource class declaration.
+ * \brief GlobalRNG class declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_UNIFORMSOURCE_IMPL_HPP
-#define MCLS_UNIFORMSOURCE_IMPL_HPP
+#ifndef MCLS_GLOBALRNG_HPP
+#define MCLS_GLOBALRNG_HPP
 
-#include "MCLS_DBC.hpp"
-#include "MCLS_GlobalRNG.hpp"
+#include "MCLS_RNGControl.hpp"
 
 namespace MCLS
 {
-// Constructor.
-UniformSource( const Teuchos::RCP<VectorType>& b,
-	       const Teuchos::RCP<Domain>& domain,
-	       const Teuchos::RCP<RNGControl>& rng_control,
-	       const Teuchos::RCP<const Comm>& comm,
-	       const Teuchos::ParameterList& plist );
+//---------------------------------------------------------------------------//
+/*!
+ * \class GlobalRNG 
+ * \brief Static, globally accessible RNG cotroller.
+ *
+ * This class was developed by Tom Evans.
+ */
+//---------------------------------------------------------------------------//
+class GlobalRNG
+{
+  public:
 
-//! Get a history from the source.
-Teuchos::RCP<HistoryType> getHistory();
+    //@{
+    //! Typedefs.
+    typedef RNGControl::RNG RNG;
+    //@}
 
-//! Return whether the source has emitted all histories.
-bool empty() const;
-
-//! Get the number of source histories left in the local domain
-int numToTransport() const;
-
-//! Get the number of source histories left in the set.
-int numToTransportInSet() const;
-
-// Make a globally unique random number generator for this proc.
-void makeRNG();
+    //! Globally available RNG.
+    static RNG d_rng;
+};
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
-//---------------------------------------------------------------------------//
-
-#endif // end MCLS_UNIFORMSOURCE_IMPL_HPP
+#endif // end MCLS_GLOBALRNG_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_UniformSource_impl.hpp
+// end MCLS_GlobalRNG.hpp
 //---------------------------------------------------------------------------//
 

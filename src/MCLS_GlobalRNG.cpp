@@ -32,51 +32,27 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_UniformSource_impl.hpp
+ * \file MCLS_GlobalRNG.cpp
  * \author Stuart R. Slattery
- * \brief UniformSource class declaration.
+ * \brief GlobalRNG class definition.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_UNIFORMSOURCE_IMPL_HPP
-#define MCLS_UNIFORMSOURCE_IMPL_HPP
-
-#include "MCLS_DBC.hpp"
 #include "MCLS_GlobalRNG.hpp"
 
 namespace MCLS
 {
-// Constructor.
-UniformSource( const Teuchos::RCP<VectorType>& b,
-	       const Teuchos::RCP<Domain>& domain,
-	       const Teuchos::RCP<RNGControl>& rng_control,
-	       const Teuchos::RCP<const Comm>& comm,
-	       const Teuchos::ParameterList& plist );
 
-//! Get a history from the source.
-Teuchos::RCP<HistoryType> getHistory();
+// Static RNG.
+GlobalRNG::RNG GlobalRNG::d_rng;
 
-//! Return whether the source has emitted all histories.
-bool empty() const;
-
-//! Get the number of source histories left in the local domain
-int numToTransport() const;
-
-//! Get the number of source histories left in the set.
-int numToTransportInSet() const;
-
-// Make a globally unique random number generator for this proc.
-void makeRNG();
+};
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
 //---------------------------------------------------------------------------//
-
-#endif // end MCLS_UNIFORMSOURCE_IMPL_HPP
-
-//---------------------------------------------------------------------------//
-// end MCLS_UniformSource_impl.hpp
+// end MCLS_GlobalRNG.hpp
 //---------------------------------------------------------------------------//
 
