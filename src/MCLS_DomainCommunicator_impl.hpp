@@ -56,10 +56,10 @@ namespace MCLS
 template<class Domain>
 DomainCommunicator<Domain>::DomainCommunicator( 
     const Teuchos::RCP<Domain>& domain,
-    const Teuchos::RCP<const Comm>& set_const_comm,
+    const Teuchos::RCP<const Comm>& comm,
     const Teuchos::ParameterList& plist )
     : d_domain( domain )
-    , d_comm( set_const_comm )
+    , d_comm( comm )
     , d_sends( d_domain->numSendNeighbors() )
     , d_receives( d_domain->numReceiveNeighbors() )
     , d_num_send_neighbors( d_domain->numSendNeighbors() )

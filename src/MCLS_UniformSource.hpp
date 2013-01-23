@@ -32,83 +32,99 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_Source.hpp
+ * \file MCLS_UniformSource.hpp
  * \author Stuart R. Slattery
- * \brief Source class declaration.
+ * \brief UniformSource class declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_SOURCE_HPP
-#define MCLS_SOURCE_HPP
+#ifndef MCLS_UNIFORMSOURCE_HPP
+#define MCLS_UNIFORMSOURCE_HPP
 
-#include "MCLS_DBC.hpp"
-#include "MCLS_RNGControl.hpp"
+#include "MCLS_Source.hpp"
 
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_Comm.hpp>
+#include <Teuchos_ParameterList.hpp>
 
 namespace MCLS
 {
 //---------------------------------------------------------------------------//
 /*!
- * \class Source 
- * \brief Base class for Monte Carlo history sources.
+ * \class UniformSource 
+ * \brief Uniform sampling history source.
  *
  * This class and inheritance structure is based on that developed by Tom
  * Evans. 
  */
 //---------------------------------------------------------------------------//
 template<class Domain>
-class Source
+class UniformSource : public Source<Domain>
 {
   public:
 
     //@{
     //! Typedefs.
+    typedef Source<Domain>                               Base;
     typedef Domain                                       domain_type;
     typedef typename Domain::HistoryType                 HistoryType;
     typedef typename Domain::VectorType                  VectorType;
+    typedef Teuchos::Comm<int>                           Comm;
     typedef RNGControl::RNG                              RNG;
     //@}
 
     // Constructor.
-    Source( const Teuchos::RCP<VectorType>& b,
-	    const Teuchos::RCP<Domain>& domain,
-	    const Teuchos::RCP<RNGControl>& rng_control );
+    UniformSource( const Teuchos::RCP<VectorType>& b,
+		   const Teuchos::RCP<Domain>& domain,
+		   const Teuchos::RCP<RNGControl>& rng_control,
+		   const Teuchos::RCP<const Comm>& comm,
+		   const Teuchos::ParameterList& plist );
 
     // Destructor.
-    virtual ~Source() = 0;
+    ~UniformSource() { /* ... */ }
 
     //! Get a history from the source.
-    virtual Teuchos::RCP<HistoryType> getHistory() = 0;
+    Teuchos::RCP<HistoryType> getHistory();
 
     //! Return whether the source has emitted all histories.
-    virtual bool empty() const = 0;
+    bool empty() const;
 
     //! Get the number of source histories left in the local domain
-    virtual int numToTransport() const = 0;
+    int numToTransport() const;
 
     //! Get the number of source histories left in the set.
-    virtual int numToTransportInSet() const = 0;
+    int numToTransportInSet() const;
 
-    //! Get the source vector.
-    const sourceVector& const { return *b_b; }
+  private:
 
-    //! Get the domain.
-    const Domain& domain() const { return *b_domain; }
+    // Make a globally unique random number generator for this proc.
+    void makeRNG();
 
-    // Get the RNG controller.
-    const RNGControl& rngControl() const { return *b_rng_control; }
+  private:
 
-  protected:
+    // Communicator for this set.
+    Teuchos::RCP<const Comm> d_comm;
 
-    // Source vector.
-    Teuchos::RCP<VectorType> b_b;
+    // RNG stream offset.
+    int d_rng_stream;
 
-    // Local domain.
-    Teuchos::RCP<Domain> b_domain;
+    // Number of requested histories.
+    int d_nh_requested;
 
-    // Random number controller.
-    Teuchos::RCP<RNGControl> b_comm;
+    // Number of total histories.
+    int d_nh_total;
+    
+    // Local number of histories.
+    int d_nh_domain;
+
+    // History weight.
+    double d_source_weight;
+
+    // Number of histories left in the local domain.
+    int d_nh_left;
+
+    // Number of histories emitted in the local domain.
+    int d_nh_emitted;
 };
 
 //---------------------------------------------------------------------------//
@@ -116,29 +132,16 @@ class Source
 } // end namespace MCLS
 
 //---------------------------------------------------------------------------//
-// Implementation.
+// Template includes.
 //---------------------------------------------------------------------------//
-/*!
- * \brief Constructor.
- */
-template<class Domain>
-Source<Domain>::Source( const Teuchos::RCP<VectorType>& b,
-			const Teuchos::RCP<Domain>& domain,
-			const Teuchos::RCP<RNGControl>& rng_control )
-    : b_b( b )
-    , b_domain( domain )
-    , b_rng_control( rng_control )
-{
-    Require( !b_b.is_null() );
-    Require( !b_domain.is_null() );
-    Require( !b_rng_control.is_null() );
-}
+
+#include "MCLS_UniformSource_impl.hpp"
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_SOURCE_HPP
+#endif // end MCLS_UNIFORMSOURCE_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_Source.hpp
+// end MCLS_UniformSource.hpp
 //---------------------------------------------------------------------------//
 

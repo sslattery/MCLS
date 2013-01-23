@@ -44,6 +44,7 @@ APPEND_SET(HEADERS
   MCLS_RNGControl.hpp
   MCLS_SamplingTools.hpp
   MCLS_Serializer.hpp
+  MCLS_Source.hpp
   MCLS_SPRNG.hpp
   MCLS_VectorExport.hpp
   MCLS_VectorTraits.hpp

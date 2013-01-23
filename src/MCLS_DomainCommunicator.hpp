@@ -86,7 +86,7 @@ class DomainCommunicator
 
     // Constructor.
     DomainCommunicator( const Teuchos::RCP<Domain>& domain,
-			const Teuchos::RCP<const Comm>& set_const_comm,
+			const Teuchos::RCP<const Comm>& comm, 
 			const Teuchos::ParameterList& plist );
 
     // Destructor.
