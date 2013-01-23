@@ -146,8 +146,9 @@ class VectorTraits
     /*!
      * \brief Given a local row on-process, provide the global ordinal.
      */
-    static global_ordinal_type getGlobalRow( const Vector& vector, 
-					     const local_ordinal_type& local_row )
+    static global_ordinal_type 
+    getGlobalRow( const Vector& vector, 
+		  const local_ordinal_type& local_row )
     { 
 	UndefinedVectorTraits<Vector>::notDefined(); 
 	return 0;
@@ -156,8 +157,9 @@ class VectorTraits
     /*!
      * \brief Given a global row on-process, provide the local ordinal.
      */
-    static local_ordinal_type getLocalRow( const Vector& vector,
-					   const global_ordinal_type& global_row )
+    static local_ordinal_type 
+    getLocalRow( const Vector& vector,
+		 const global_ordinal_type& global_row )
     { 
 	UndefinedVectorTraits<Vector>::notDefined(); 
 	return 0; 

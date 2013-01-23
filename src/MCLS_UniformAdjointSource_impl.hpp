@@ -154,9 +154,9 @@ UniformAdjointSource<Domain>::getHistory()
     // Sample the local source cdf to get a starting state.
     Teuchos::ArrayView<double>::size_type local_state =
 	SamplingTools::sampleDiscreteCDF( d_cdf(), rng.random() );
-    Ordinal starting_state = VT::getGlobalRow( local_state );
+    Ordinal starting_state = VT::getGlobalRow( *Base::b_b, local_state );
 
-    Check( d_domain->isLocalState( starting_state ) );
+    Check( d_domain->isLocalState(starting_state) );
 
     // Set the history state.
     history->setState( starting_state );
@@ -169,6 +169,7 @@ UniformAdjointSource<Domain>::getHistory()
 
     Ensure( !history.is_null() );
     Ensure( history->alive() );
+
     return history;
 }
 
