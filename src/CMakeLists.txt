@@ -34,6 +34,7 @@ APPEND_SET(HEADERS
   MCLS_DomainTransporter.hpp
   MCLS_DomainTransporter_impl.hpp
   MCLS_Events.hpp
+  MCLS_GlobalRNG.hpp
   MCLS_History.hpp
   MCLS_History_impl.hpp
   MCLS_HistoryBuffer.hpp
@@ -54,6 +55,7 @@ APPEND_SET(HEADERS
 
 APPEND_SET(SOURCES
   MCLS_DBC.cpp
+  MCLS_GlobalRNG.cpp
   MCLS_RNGControl.cpp
   MCLS_SPRNG.cpp
   )

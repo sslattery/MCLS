@@ -131,6 +131,15 @@ Source<Domain>::Source( const Teuchos::RCP<VectorType>& b,
 }
 
 //---------------------------------------------------------------------------//
+/*!
+ * \brief Destructur. Pure virtual to prohibit direct generation of this
+ * class. 
+ */
+template<class Domain>
+Source<Domain>::~Source()
+{ /* ... */ }
+
+//---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
