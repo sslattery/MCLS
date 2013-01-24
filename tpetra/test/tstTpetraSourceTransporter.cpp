@@ -61,7 +61,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SourceTransporter, Typedefs, LO, GO, Scalar )
     typedef MCLS::AdjointTally<VectorType> TallyType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::History<GO> HistoryType;
-    typedef MCLS::UniformAdjointSource<DomainType> SourceType;
+    typedef MCLS::Source<DomainType> SourceType;
     typedef std::stack<Teuchos::RCP<HistoryType> > BankType;
 
     typedef MCLS::SourceTransporter<DomainType> SourceTransporterType;
@@ -95,6 +95,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SourceTransporter, transport, LO, GO, Scalar 
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::History<GO> HistoryType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
+    typedef MCLS::UniformAdjointSource<DomainType> SourceType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -105,22 +106,40 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SourceTransporter, transport, LO, GO, Scalar 
     Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
 	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
 
-    // Build the linear system.
+    // Build the linear system. This operator will be assymetric so we quickly
+    // move the histories out of the domain before they hit the low weight
+    // cutoff.
     Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
-    Teuchos::Array<GO> global_columns( 1 );
-    Teuchos::Array<Scalar> values( 1 );
-    for ( int i = 1; i < global_num_rows; ++i )
+    Teuchos::Array<GO> global_columns( 3 );
+    Teuchos::Array<Scalar> values( 3 );
+    global_columns[0] = 0;
+    global_columns[1] = 1;
+    global_columns[2] = 2;
+    values[0] = 0.24/comm_size;
+    values[1] = 0.24/comm_size;
+    values[2] = 1.0/comm_size;
+    A->insertGlobalValues( 0, global_columns(), values() );
+    for ( int i = 1; i < global_num_rows-1; ++i )
     {
 	global_columns[0] = i-1;
-	values[0] = -0.5/comm_size;
+	global_columns[1] = i;
+	global_columns[2] = i+1;
+	values[0] = 0.24/comm_size;
+	values[1] = 1.0/comm_size;
+	values[2] = 0.24/comm_size;
 	A->insertGlobalValues( i, global_columns(), values() );
     }
-    global_columns[0] = global_num_rows-1;
-    values[0] = -0.5/comm_size;
+    global_columns[0] = global_num_rows-3;
+    global_columns[1] = global_num_rows-2;
+    global_columns[2] = global_num_rows-1;
+    values[0] = 0.24/comm_size;
+    values[1] = 0.24/comm_size;
+    values[2] = 1.0/comm_size;
     A->insertGlobalValues( global_num_rows-1, global_columns(), values() );
     A->fillComplete();
 
     Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *A );
+    VT::putScalar( *x, 0.0 );
     Teuchos::RCP<VectorType> b = MT::cloneVectorFromMatrixRows( *A );
     VT::putScalar( *b, -1.0 );
 
@@ -136,49 +155,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SourceTransporter, transport, LO, GO, Scalar 
 
     // Create the adjoint source with a set number of histories.
     int mult = 10;
-    double cutoff = 1.0e-8;
+    double cutoff = 1.0e-4;
     plist.set<int>("Set Number of Histories", mult*global_num_rows);
     plist.set<double>("Weight Cutoff", cutoff);
-    MCLS::UniformAdjointSource<DomainType> 
-	source( b, domain, control, comm, plist );
-    TEST_ASSERT( source.empty() );
-    TEST_EQUALITY( source.numToTransport(), 0 );
-    TEST_EQUALITY( source.numToTransportInSet(), mult*global_num_rows );
-    TEST_EQUALITY( source.numRequested(), mult*global_num_rows );
-    TEST_EQUALITY( source.numLeft(), 0 );
-    TEST_EQUALITY( source.numEmitted(), 0 );
-    TEST_EQUALITY( source.numStreams(), 0 );
-    TEST_ASSERT( plist.isParameter("Relative Weight Cutoff") );
-    TEST_EQUALITY( plist.get<double>("Relative Weight Cutoff"),
-		   global_num_rows*cutoff );
+    Teuchos::RCP<SourceType> source = Teuchos::rcp(
+	new SourceType( b, domain, control, comm, plist ) );
+    source->buildSource();
 
-    // Build the source.
-    source.buildSource();
-    TEST_ASSERT( !source.empty() );
-    TEST_EQUALITY( source.numToTransport(), mult*local_num_rows );
-    TEST_EQUALITY( source.numToTransportInSet(), mult*global_num_rows );
-    TEST_EQUALITY( source.numRequested(), mult*global_num_rows );
-    TEST_EQUALITY( source.numLeft(), mult*local_num_rows );
-    TEST_EQUALITY( source.numEmitted(), 0 );
-    TEST_EQUALITY( source.numStreams(), comm->getSize() );
+    // Create the source transporter.
+    plist.set<int>("MC Check Frequency", 10);
+    MCLS::SourceTransporter<DomainType> source_transporter( comm, domain, plist );
+    source_transporter.assignSource( source );
 
-    // Sample the source.
-    for ( int i = 0; i < mult*local_num_rows; ++i )
-    {
-	TEST_ASSERT( !source.empty() );
-	TEST_EQUALITY( source.numLeft(), mult*local_num_rows-i );
-	TEST_EQUALITY( source.numEmitted(), i );
-
-	Teuchos::RCP<HistoryType> history = source.getHistory();
-
-	TEST_EQUALITY( history->weight(), -global_num_rows );
-	TEST_ASSERT( domain->isLocalState( history->state() ) );
-	TEST_ASSERT( history->alive() );
-	TEST_ASSERT( VT::isGlobalRow( *x, history->state() ) );
-    }
-    TEST_ASSERT( source.empty() );
-    TEST_EQUALITY( source.numLeft(), 0 );
-    TEST_EQUALITY( source.numEmitted(), mult*local_num_rows );
+    // Do transport.
+    source_transporter.transport();
 }
 
 UNIT_TEST_INSTANTIATION( SourceTransporter, transport )

@@ -64,6 +64,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CommHistoryBuffer, ping_pong, Ordinal, Scalar
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<const Teuchos::Comm<int> > comm_dup = comm->duplicate();
     int comm_rank = comm->getRank();
     int comm_size = comm->getSize();
 
@@ -82,7 +83,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CommHistoryBuffer, ping_pong, Ordinal, Scalar
     {
 	if ( comm_rank == 0 )
 	{
-	    SendBuffer buffer( comm );
+	    SendBuffer buffer( comm, comm_dup );
 	    buffer.allocate();
 	    TEST_EQUALITY( buffer.allocatedSize(), byte_size );
 	    TEST_ASSERT( !buffer.status() );
@@ -102,7 +103,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CommHistoryBuffer, ping_pong, Ordinal, Scalar
 	    TEST_ASSERT( buffer.isEmpty() );
 	    TEST_ASSERT( !buffer.status() );
 
-	    ReceiveBuffer receiver( comm );
+	    ReceiveBuffer receiver( comm, comm_dup );
 	    receiver.allocate();
 	    TEST_ASSERT( receiver.isEmpty() );
 
@@ -112,7 +113,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CommHistoryBuffer, ping_pong, Ordinal, Scalar
 
 	if ( comm_rank == 1 )
 	{
-	    ReceiveBuffer buffer( comm );
+	    ReceiveBuffer buffer( comm, comm_dup );
 	    buffer.allocate();
 	    TEST_EQUALITY( buffer.allocatedSize(), byte_size );
 	    TEST_ASSERT( !buffer.status() );
@@ -147,7 +148,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CommHistoryBuffer, ping_pong, Ordinal, Scalar
 
 	    TEST_ASSERT( bank.empty() );
 
-	    SendBuffer sender( comm );
+	    SendBuffer sender( comm, comm_dup );
 	    sender.allocate();
 	    TEST_EQUALITY( sender.numHistories(), 0 );
 	    TEST_ASSERT( sender.isEmpty() );
@@ -172,6 +173,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CommHistoryBuffer, non_blocking, Ordinal, Sca
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<const Teuchos::Comm<int> > comm_dup = comm->duplicate();
     int comm_rank = comm->getRank();
     int comm_size = comm->getSize();
 
@@ -187,223 +189,225 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CommHistoryBuffer, non_blocking, Ordinal, Sca
 	//    2 -> 0,3
 	//    3 -> 1,2
 	Teuchos::Array<ReceiveBuffer> 
-	    receives( 2, ReceiveBuffer( comm, HT::getPackedBytes(), num_histories ) );
+	    receives( 2, ReceiveBuffer( comm, comm_dup,
+					HT::getPackedBytes(), num_histories ) );
 
 	Teuchos::Array<SendBuffer> 
-	    sends( 2, SendBuffer( comm, HT::getPackedBytes(), num_histories ) );
+	    sends( 2, SendBuffer( comm, comm_dup,
+				  HT::getPackedBytes(), num_histories ) );
 
-	// post the receives
-	if ( comm_rank == 0 )
-	{
-	    receives[0].post(1);
-	    receives[1].post(2);
-	}
-	else if ( comm_rank == 1 )
-	{
-	    receives[0].post(0);
-	    receives[1].post(3);
-	}
-	else if ( comm_rank == 2 )
-	{
-	    receives[0].post(0);
-	    receives[1].post(3);
-	}
-	else if ( comm_rank == 3 )
-	{
-	    receives[0].post(1);
-	    receives[1].post(2);
-	}
+	 // post the receives
+	 if ( comm_rank == 0 )
+	 {
+	     receives[0].post(1);
+	     receives[1].post(2);
+	 }
+	 else if ( comm_rank == 1 )
+	 {
+	     receives[0].post(0);
+	     receives[1].post(3);
+	 }
+	 else if ( comm_rank == 2 )
+	 {
+	     receives[0].post(0);
+	     receives[1].post(3);
+	 }
+	 else if ( comm_rank == 3 )
+	 {
+	     receives[0].post(1);
+	     receives[1].post(2);
+	 }
 
-	HT h1( 1, 1 );
-	HT h2( 2, 2 );
-	HT h3( 3, 3 );
-	HT h4( 4, 4 );
-	sends[0].bufferHistory( h1 );
-	sends[1].bufferHistory( h2 );
-	sends[1].bufferHistory( h3 );
-	sends[1].bufferHistory( h4 );
-	TEST_EQUALITY( sends[0].numHistories(), 1 );
-	TEST_EQUALITY( sends[1].numHistories(), 3 );
+	 HT h1( 1, 1 );
+	 HT h2( 2, 2 );
+	 HT h3( 3, 3 );
+	 HT h4( 4, 4 );
+	 sends[0].bufferHistory( h1 );
+	 sends[1].bufferHistory( h2 );
+	 sends[1].bufferHistory( h3 );
+	 sends[1].bufferHistory( h4 );
+	 TEST_EQUALITY( sends[0].numHistories(), 1 );
+	 TEST_EQUALITY( sends[1].numHistories(), 3 );
 
-	TEST_ASSERT( !receives[0].check() );
-	TEST_ASSERT( !receives[1].check() );
+	 TEST_ASSERT( !receives[0].check() );
+	 TEST_ASSERT( !receives[1].check() );
 
-	TEST_ASSERT( receives[0].status() );
-	TEST_ASSERT( receives[1].status() );
+	 TEST_ASSERT( receives[0].status() );
+	 TEST_ASSERT( receives[1].status() );
 
-	TEST_ASSERT( !sends[0].isEmpty() );
-	TEST_ASSERT( !sends[1].isEmpty() );
+	 TEST_ASSERT( !sends[0].isEmpty() );
+	 TEST_ASSERT( !sends[1].isEmpty() );
 
-	comm->barrier();
+	 comm->barrier();
 
-	if ( comm_rank == 0 )
-	{
-	    sends[0].post(1);
-	    sends[1].post(2);
-	}
-	else if ( comm_rank == 1 )
-	{
-	    sends[0].post(0);
-	    sends[1].post(3);
-	}
-	else if ( comm_rank == 2 )
-	{
-	    sends[0].post(0);
-	    sends[1].post(3);
-	}
-	else if ( comm_rank == 3 )
-	{
-	    sends[0].post(1);
-	    sends[1].post(2);
-	}
+	 if ( comm_rank == 0 )
+	 {
+	     sends[0].post(1);
+	     sends[1].post(2);
+	 }
+	 else if ( comm_rank == 1 )
+	 {
+	     sends[0].post(0);
+	     sends[1].post(3);
+	 }
+	 else if ( comm_rank == 2 )
+	 {
+	     sends[0].post(0);
+	     sends[1].post(3);
+	 }
+	 else if ( comm_rank == 3 )
+	 {
+	     sends[0].post(1);
+	     sends[1].post(2);
+	 }
 
-	TEST_ASSERT( sends[0].status() );
-	TEST_ASSERT( sends[1].status() );
+	 TEST_ASSERT( sends[0].status() );
+	 TEST_ASSERT( sends[1].status() );
 
-	sends[0].wait();
-	sends[1].wait();
+	 sends[0].wait();
+	 sends[1].wait();
 
-	comm->barrier();
+	 comm->barrier();
 
-	TEST_ASSERT( !sends[0].status() );
-	TEST_ASSERT( !sends[1].status() );
-	TEST_ASSERT( sends[0].isEmpty() );
-	TEST_ASSERT( sends[1].isEmpty() );
+	 TEST_ASSERT( !sends[0].status() );
+	 TEST_ASSERT( !sends[1].status() );
+	 TEST_ASSERT( sends[0].isEmpty() );
+	 TEST_ASSERT( sends[1].isEmpty() );
 
-	receives[0].wait();
-	while( !receives[1].check() );
+	 receives[0].wait();
+	 while( !receives[1].check() );
 
-	TEST_ASSERT( !receives[0].status() );
-	TEST_ASSERT( !receives[1].status() );
+	 TEST_ASSERT( !receives[0].status() );
+	 TEST_ASSERT( !receives[1].status() );
 
-	std::stack<Teuchos::RCP<HT> > bank;
+	 std::stack<Teuchos::RCP<HT> > bank;
 
-	if ( comm_rank == 0 )
-	{
-	    TEST_EQUALITY( receives[0].numHistories(), 1 );
-	    TEST_EQUALITY( receives[1].numHistories(), 1 );
+	 if ( comm_rank == 0 )
+	 {
+	     TEST_EQUALITY( receives[0].numHistories(), 1 );
+	     TEST_EQUALITY( receives[1].numHistories(), 1 );
 
-	    receives[0].addToBank( bank );
-	    receives[1].addToBank( bank );
-	    TEST_EQUALITY( bank.size(), 2 );
-        
-	    Teuchos::RCP<HT> hp2, hp1;
-	    hp2 = bank.top();
-	    bank.pop();
-	    hp1 = bank.top();
-	    bank.pop();
+	     receives[0].addToBank( bank );
+	     receives[1].addToBank( bank );
+	     TEST_EQUALITY( bank.size(), 2 );
 
-	    TEST_EQUALITY( hp2->state(), 1 );
-	    TEST_EQUALITY( hp2->weight(), 1 );
+	     Teuchos::RCP<HT> hp2, hp1;
+	     hp2 = bank.top();
+	     bank.pop();
+	     hp1 = bank.top();
+	     bank.pop();
 
-	    TEST_EQUALITY( hp1->state(), 1 );
-	    TEST_EQUALITY( hp1->weight(), 1 );
-	} 
-	else if ( comm_rank == 1 )
-	{
-	    TEST_EQUALITY( receives[0].numHistories(), 1 );
-	    TEST_EQUALITY( receives[1].numHistories(), 1 );
+	     TEST_EQUALITY( hp2->state(), 1 );
+	     TEST_EQUALITY( hp2->weight(), 1 );
 
-	    receives[0].addToBank( bank );
-	    receives[1].addToBank( bank );
-	    TEST_EQUALITY( bank.size(), 2 );
-        
-	    Teuchos::RCP<HT> hp2, hp1;
-	    hp2 = bank.top();
-	    bank.pop();
-	    hp1 = bank.top();
-	    bank.pop();
+	     TEST_EQUALITY( hp1->state(), 1 );
+	     TEST_EQUALITY( hp1->weight(), 1 );
+	 } 
+	 else if ( comm_rank == 1 )
+	 {
+	     TEST_EQUALITY( receives[0].numHistories(), 1 );
+	     TEST_EQUALITY( receives[1].numHistories(), 1 );
 
-	    TEST_EQUALITY( hp2->state(), 1 );
-	    TEST_EQUALITY( hp2->weight(), 1 );
+	     receives[0].addToBank( bank );
+	     receives[1].addToBank( bank );
+	     TEST_EQUALITY( bank.size(), 2 );
 
-	    TEST_EQUALITY( hp1->state(), 1 );
-	    TEST_EQUALITY( hp1->weight(), 1 );
-	}
-	else if ( comm_rank == 2 )
-	{
-	    TEST_EQUALITY( receives[0].numHistories(), 3 );
-	    TEST_EQUALITY( receives[1].numHistories(), 3 );
+	     Teuchos::RCP<HT> hp2, hp1;
+	     hp2 = bank.top();
+	     bank.pop();
+	     hp1 = bank.top();
+	     bank.pop();
 
-	    receives[0].addToBank( bank );
-	    receives[1].addToBank( bank );
-	    TEST_EQUALITY( bank.size(), 6 );
-        
-	    Teuchos::RCP<HT> hp6, hp5, hp4, hp3, hp2, hp1;
-	    hp6 = bank.top();
-	    bank.pop();
-	    hp5 = bank.top();
-	    bank.pop();
-	    hp4 = bank.top();
-	    bank.pop();
-	    hp3 = bank.top();
-	    bank.pop();
-	    hp2 = bank.top();
-	    bank.pop();
-	    hp1 = bank.top();
-	    bank.pop();
+	     TEST_EQUALITY( hp2->state(), 1 );
+	     TEST_EQUALITY( hp2->weight(), 1 );
 
-	    TEST_EQUALITY( hp6->state(), 4);
-	    TEST_EQUALITY( hp6->weight(), 4 );
+	     TEST_EQUALITY( hp1->state(), 1 );
+	     TEST_EQUALITY( hp1->weight(), 1 );
+	 }
+	 else if ( comm_rank == 2 )
+	 {
+	     TEST_EQUALITY( receives[0].numHistories(), 3 );
+	     TEST_EQUALITY( receives[1].numHistories(), 3 );
 
-	    TEST_EQUALITY( hp5->state(), 3 );
-	    TEST_EQUALITY( hp5->weight(), 3 );
+	     receives[0].addToBank( bank );
+	     receives[1].addToBank( bank );
+	     TEST_EQUALITY( bank.size(), 6 );
 
-	    TEST_EQUALITY( hp4->state(), 2 );
-	    TEST_EQUALITY( hp4->weight(), 2 );
+	     Teuchos::RCP<HT> hp6, hp5, hp4, hp3, hp2, hp1;
+	     hp6 = bank.top();
+	     bank.pop();
+	     hp5 = bank.top();
+	     bank.pop();
+	     hp4 = bank.top();
+	     bank.pop();
+	     hp3 = bank.top();
+	     bank.pop();
+	     hp2 = bank.top();
+	     bank.pop();
+	     hp1 = bank.top();
+	     bank.pop();
 
-	    TEST_EQUALITY( hp3->state(), 4 );
-	    TEST_EQUALITY( hp3->weight(), 4 );
+	     TEST_EQUALITY( hp6->state(), 4);
+	     TEST_EQUALITY( hp6->weight(), 4 );
 
-	    TEST_EQUALITY( hp2->state(), 3 );
-	    TEST_EQUALITY( hp2->weight(), 3 );
+	     TEST_EQUALITY( hp5->state(), 3 );
+	     TEST_EQUALITY( hp5->weight(), 3 );
 
-	    TEST_EQUALITY( hp1->state(), 2 );
-	    TEST_EQUALITY( hp1->weight(), 2 );
-	}
-	else if ( comm_rank == 3 )
-	{
-	    TEST_EQUALITY( receives[0].numHistories(), 3 );
-	    TEST_EQUALITY( receives[1].numHistories(), 3 );
+	     TEST_EQUALITY( hp4->state(), 2 );
+	     TEST_EQUALITY( hp4->weight(), 2 );
 
-	    receives[0].addToBank( bank );
-	    receives[1].addToBank( bank );
-	    TEST_EQUALITY( bank.size(), 6 );
-        
-	    Teuchos::RCP<HT> hp6, hp5, hp4, hp3, hp2, hp1;
-	    hp6 = bank.top();
-	    bank.pop();
-	    hp5 = bank.top();
-	    bank.pop();
-	    hp4 = bank.top();
-	    bank.pop();
-	    hp3 = bank.top();
-	    bank.pop();
-	    hp2 = bank.top();
-	    bank.pop();
-	    hp1 = bank.top();
-	    bank.pop();
+	     TEST_EQUALITY( hp3->state(), 4 );
+	     TEST_EQUALITY( hp3->weight(), 4 );
 
-	    TEST_EQUALITY( hp6->state(), 4 );
-	    TEST_EQUALITY( hp6->weight(), 4 );
+	     TEST_EQUALITY( hp2->state(), 3 );
+	     TEST_EQUALITY( hp2->weight(), 3 );
 
-	    TEST_EQUALITY( hp5->state(), 3 );
-	    TEST_EQUALITY( hp5->weight(), 3 );
+	     TEST_EQUALITY( hp1->state(), 2 );
+	     TEST_EQUALITY( hp1->weight(), 2 );
+	 }
+	 else if ( comm_rank == 3 )
+	 {
+	     TEST_EQUALITY( receives[0].numHistories(), 3 );
+	     TEST_EQUALITY( receives[1].numHistories(), 3 );
 
-	    TEST_EQUALITY( hp4->state(), 2 );
-	    TEST_EQUALITY( hp4->weight(), 2 );
+	     receives[0].addToBank( bank );
+	     receives[1].addToBank( bank );
+	     TEST_EQUALITY( bank.size(), 6 );
 
-	    TEST_EQUALITY( hp3->state(), 4 );
-	    TEST_EQUALITY( hp3->weight(), 4 );
+	     Teuchos::RCP<HT> hp6, hp5, hp4, hp3, hp2, hp1;
+	     hp6 = bank.top();
+	     bank.pop();
+	     hp5 = bank.top();
+	     bank.pop();
+	     hp4 = bank.top();
+	     bank.pop();
+	     hp3 = bank.top();
+	     bank.pop();
+	     hp2 = bank.top();
+	     bank.pop();
+	     hp1 = bank.top();
+	     bank.pop();
 
-	    TEST_EQUALITY( hp2->state(), 3 );
-	    TEST_EQUALITY( hp2->weight(), 3 );
+	     TEST_EQUALITY( hp6->state(), 4 );
+	     TEST_EQUALITY( hp6->weight(), 4 );
 
-	    TEST_EQUALITY( hp1->state(), 2 );
-	    TEST_EQUALITY( hp1->weight(), 2 );
-	}
-	comm->barrier();
-    }
+	     TEST_EQUALITY( hp5->state(), 3 );
+	     TEST_EQUALITY( hp5->weight(), 3 );
+
+	     TEST_EQUALITY( hp4->state(), 2 );
+	     TEST_EQUALITY( hp4->weight(), 2 );
+
+	     TEST_EQUALITY( hp3->state(), 4 );
+	     TEST_EQUALITY( hp3->weight(), 4 );
+
+	     TEST_EQUALITY( hp2->state(), 3 );
+	     TEST_EQUALITY( hp2->weight(), 3 );
+
+	     TEST_EQUALITY( hp1->state(), 2 );
+	     TEST_EQUALITY( hp1->weight(), 2 );
+	 }
+	 comm->barrier();
+     }
 }
 
 UNIT_TEST_INSTANTIATION( CommHistoryBuffer, non_blocking )

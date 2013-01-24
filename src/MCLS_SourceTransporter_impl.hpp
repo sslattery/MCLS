@@ -147,6 +147,7 @@ void SourceTransporter<Domain>::transport()
 	// received from other domains.
 	if ( !d_source->empty() )
 	{
+	    std::cout << "SOURCE " << d_source->empty() << std::endl;
 	    transportSourceHistory( bank );
 	}
 
@@ -154,6 +155,7 @@ void SourceTransporter<Domain>::transport()
 	// bank and histories that have been received from other domains.
 	else if ( !bank.empty() )
 	{
+	    std::cout << "BANK " << bank.empty() << std::endl;
 	    transportBankHistory( bank );
 	}
 
@@ -161,12 +163,14 @@ void SourceTransporter<Domain>::transport()
 	// aren't empty.
 	else if ( d_domain_communicator.send() > 0 )
 	{
+	    std::cout << "SEND" << std::endl;
 	    continue;
 	}
 
 	// See if we've received any histories.
 	else if ( d_domain_communicator.checkAndPost(bank) > 0 )
 	{
+	    std::cout << "CHECK AND POST" << std::endl;
 	    continue;
 	}
 
@@ -174,10 +178,11 @@ void SourceTransporter<Domain>::transport()
 	// to check if transport is done.
 	else
 	{
+	    std::cout << "UPDATE" << std::endl;
 	    updateMasterCount();
 	}
     }
-
+    std::cout << "OUT OF LOOP" << std::endl;
     // Barrier before continuing.
     d_comm->barrier();
 
@@ -207,14 +212,15 @@ void SourceTransporter<Domain>::transportSourceHistory( BankType& bank )
     // Get a history from the source.
     Teuchos::RCP<HistoryType> history = d_source->getHistory();
     Check( !history.is_null() );
-
+    Check( history->alive() );
+    std::cout << "GOT HISTORY" << std::endl;
     // Add to the source history count.
     ++d_num_src;
 
     // Transport the history through the local domain and communicate it if
     // needed. 
     localHistoryTransport( history, bank );
-
+    std::cout << "DID LOCAL TRANSPORT" << std::endl;
     // Check for incoming histories on the check frequency. Transport those
     // that we do get.
     if ( d_num_run % d_check_freq == 0 )
@@ -223,6 +229,7 @@ void SourceTransporter<Domain>::transportSourceHistory( BankType& bank )
 	{
 	    while ( !bank.empty() )
 	    {
+		std::cout << "GOT SOME" << std::endl;
 		transportBankHistory( bank );
 	    }
 	}
@@ -252,7 +259,7 @@ void SourceTransporter<Domain>::transportBankHistory( BankType& bank )
     }
 
     // Set the history alive for transport.
-    history->alive();
+    history->live();
 
     // Transport the history through the local domain and communicate it if
     // needed. 
@@ -279,23 +286,26 @@ void SourceTransporter<Domain>::localHistoryTransport(
     Require( history->rng().assigned() );
 
     // Do local transport.
+    std::cout << "LOCAL TRANSPORT" << std::endl;
     d_domain_transporter.transport( *history );
     Check( !history->alive() );
-
+    std::cout << "DID LOCAL TRANSPORT" << std::endl;
     // Update the run count.
     ++d_num_run;
 
     // Communicate the history if it left the local domain.
     if ( history->event() == BOUNDARY )
     {
+	std::cout << "COMM BOUNDARY" << std::endl;
 	d_domain_communicator.communicate( history );
     }
 
     // Otherwise the history was killed by the weight cutoff.
     else
     {
+	std::cout << "CUTOFF" << std::endl;
 	Check( history->event() == CUTOFF );
-	++d_num_done;
+	++(*d_num_done);
 	++d_num_done_local;
     }
 }
@@ -373,16 +383,20 @@ void SourceTransporter<Domain>::completeMasterCount()
 template<class Domain>
 void SourceTransporter<Domain>::updateMasterCount()
 {
+	std::cout << d_comm->getRank() << " " << *d_num_done << " " 
+		  << *d_complete_report << " " << d_num_done_local << " "
+		  << d_num_src << " " << d_num_run << std::endl; 
+
     // MASTER checks for received reports of updated counts from work nodes
     // and adds them to the running total.
     if ( d_comm->getRank() == MASTER )
     {
 	// Check if we are done with transport.
 	if ( *d_num_done == d_nh ) *d_complete = 1;
-
+	std::cout << *d_num_done << " " << d_nh << std::endl;
 	// Check on work node reports.
 	int n = 0;
-	while( !(*d_complete) && ++n < d_comm->getSize() );
+	while( !(*d_complete) && ++n < d_comm->getSize() )
 	{
 	    // Receive completed reports and repost.
 	    if ( CommTools::isRequestComplete(d_num_done_handles[n-1]) )
@@ -410,9 +424,7 @@ void SourceTransporter<Domain>::updateMasterCount()
 	    {
 		Teuchos::RCP<Request> complete = Teuchos::isend<int,int>(
 		    *d_comm_complete, d_complete, n );
-
-		request_ptr = 
-		    Teuchos::Ptr<Teuchos::RCP<Request> >(&complete);
+		Teuchos::Ptr<Teuchos::RCP<Request> > request_ptr(&complete);
 		Teuchos::wait( *d_comm_complete, request_ptr );
 		Check( complete.is_null() );
 	    }
@@ -429,9 +441,7 @@ void SourceTransporter<Domain>::updateMasterCount()
 	{
 	    Teuchos::RCP<Request> report = Teuchos::isend<int,int>(
 		*d_comm_num_done, d_num_done, MASTER );
-
-	    request_ptr = 
-		Teuchos::Ptr<Teuchos::RCP<Request> >(&report);
+	    Teuchos::Ptr<Teuchos::RCP<Request> > request_ptr(&report);
 	    Teuchos::wait( *d_comm_num_done, request_ptr );
 	    Check( report.is_null() );
 
