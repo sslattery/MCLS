@@ -76,12 +76,14 @@ SourceTransporter<Domain>::SourceTransporter(
     Require( !d_tally.is_null() );
 
     // Set the duplicate communicators. This is how we get around not having
-    // access to message tags. We are constructing a separate messaging space
-    // for each of these bookeeping operations.
+    // access to message tags through the abstract Teuchos::Comm interface. We
+    // are constructing a separate messaging space for each of these
+    // bookeeping operations.
     d_comm_num_done = d_comm->duplicate();
     d_comm_complete = d_comm->duplicate();
 
-    // Set the check frequency. Default to 1.
+    // Set the check frequency. For every d_check_freq histories run, we will
+    // check for incoming histories. Default to 1.
     d_check_freq = 1;
     if ( plist.isParameter("MC Check Frequency") )
     {
@@ -89,6 +91,8 @@ SourceTransporter<Domain>::SourceTransporter(
     }
 
     Ensure( d_check_freq > 0 );
+    Ensure( !d_comm_num_done.is_null() );
+    Ensure( !d_comm_complete.is_null() );
 }
 
 //---------------------------------------------------------------------------//
@@ -130,7 +134,7 @@ void SourceTransporter<Domain>::transport()
     BankType bank;
     Check( bank.empty() );
 
-    // Everyone posts receives to get started.
+    // Everyone posts receives for history buffers to get started.
     d_domain_communicator.post();
 
     // Post asynchronous communcations with MASTER for bookeeping.
@@ -254,7 +258,7 @@ void SourceTransporter<Domain>::transportBankHistory( BankType& bank )
     // needed. 
     localHistoryTransport( history, bank );
 
-    // Check for incoming histories. Do not transport.
+    // Check for incoming histories. Do not transport these.
     if ( d_num_run % d_check_freq == 0 )
     {
 	d_domain_communicator.checkAndPost(bank);
@@ -281,15 +285,16 @@ void SourceTransporter<Domain>::localHistoryTransport(
     // Update the run count.
     ++d_num_run;
 
-    // Process domain boundary.
+    // Communicate the history if it left the local domain.
     if ( history->event() == BOUNDARY )
     {
 	d_domain_communicator.communicate( history );
     }
 
-    // Otherwise the history was killed by the cutoff.
+    // Otherwise the history was killed by the weight cutoff.
     else
     {
+	Check( history->event() == CUTOFF );
 	++d_num_done;
 	++d_num_done_local;
     }
@@ -327,7 +332,8 @@ void SourceTransporter<Domain>::postMasterCount()
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Complete communications with the set master proc for end of cycle.
+ * \brief Complete communications with the set master proc for end of cycle by
+ * completing all outstanding requests.
  */
 template<class Domain>
 void SourceTransporter<Domain>::completeMasterCount()
@@ -351,11 +357,11 @@ void SourceTransporter<Domain>::completeMasterCount()
     {
 	Teuchos::RCP<int> clear = Teuchos::rcp( new int(1) );
 	Teuchos::RCP<Request> finish = Teuchos::isend<int,int>(
-	    *d_comm_complete, clear, MASTER );
+	    *d_comm_num_done, clear, MASTER );
 
 	request_ptr = 
 	    Teuchos::Ptr<Teuchos::RCP<Request> >(&finish);
-	Teuchos::wait( *d_comm_complete, request_ptr );
+	Teuchos::wait( *d_comm_num_done, request_ptr );
 	Check( finish.is_null() );
     }
 }
@@ -382,6 +388,7 @@ void SourceTransporter<Domain>::updateMasterCount()
 	    if ( CommTools::isRequestComplete(d_num_done_handles[n-1]) )
 	    {
 		Check( *d_num_done_report[n-1] > 0 );
+		d_num_done_handles[n-1] = Teuchos::null;
 
 		// Add to the running total.
 		*d_num_done += *d_num_done_report[n-1];
@@ -432,10 +439,10 @@ void SourceTransporter<Domain>::updateMasterCount()
 	}
 
 	// Check for completion status from master.
-	if ( CommTools::isRequestComplete( d_complete_handle ) )
+	if ( CommTools::isRequestComplete(d_complete_handle) )
 	{
 	    Check( *d_complete_report ==  1 );
-	    d_complete_handle = Teuchos::null();
+	    d_complete_handle = Teuchos::null;
 	    *d_complete = 1;
 	}
     }

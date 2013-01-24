@@ -59,7 +59,8 @@ namespace MCLS
  *
  * This transporter will transport the histories provided by the source and
  * all subsequent histories through the global domain until completion. All
- * communication operations occur within a set. This class is based on that
+ * communication operations occur within a set. Multiple set problems will
+ * create multiple instances of this class. This class is based on that
  * developed by Tom Evans.
  */
 //---------------------------------------------------------------------------//
@@ -156,7 +157,7 @@ class SourceTransporter
     Teuchos::Array<Teuchos::RCP<int> > d_num_done_report;
 
     // Request handle for completed work on worker nodes.
-    Teuchos::RCP<Request> > d_complete_handle;
+    Teuchos::RCP<Request> d_complete_handle;
 
     // Completion report.
     Teuchos::RCP<int> d_complete_report;
