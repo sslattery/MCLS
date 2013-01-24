@@ -41,7 +41,6 @@
 #ifndef MCLS_SOURCETRANSPORTER_HPP
 #define MCLS_SOURCETRANSPORTER_HPP
 
-#include "MCLS_DBC.hpp"
 #include "MCLS_DomainTransporter.hpp"
 #include "MCLS_DomainCommunicator.hpp"
 #include "MCLS_Source.hpp"

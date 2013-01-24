@@ -32,167 +32,125 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_SourceTransporter.hpp
+ * \file MCLS_SourceTransporter_impl.hpp
  * \author Stuart R. Slattery
- * \brief SourceTransporter class declaration.
+ * \brief SourceTransporter class implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_SOURCETRANSPORTER_HPP
-#define MCLS_SOURCETRANSPORTER_HPP
+#ifndef MCLS_SOURCETRANSPORTER_IMPL_HPP
+#define MCLS_SOURCETRANSPORTER_IMPL_HPP
 
 #include "MCLS_DBC.hpp"
-#include "MCLS_DomainTransporter.hpp"
-#include "MCLS_DomainCommunicator.hpp"
-#include "MCLS_Source.hpp"
-
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Comm.hpp>
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_Array.hpp>
 
 namespace MCLS
 {
 //---------------------------------------------------------------------------//
 /*!
- * \class SourceTransporter 
- * \brief General Monte Carlo transporter for domain decomposed problems.
- *
- * This transporter will transport the histories provided by the source and
- * all subsequent histories through the global domain until completion. All
- * communication operations occur within a set. This class is based on that
- * developed by Tom Evans.
- */
-//---------------------------------------------------------------------------//
+ * \brief Constructor.
+ * /
 template<class Domain>
-class SourceTransporter
+SourceTransporter<Domain>::SourceTransporter( 
+    const Teuchos::RCP<const Comm>& comm,
+    const Teuchos::RCP<Domain>& domain, 
+    const Teuchos::ParameterList& plist )
 {
-  public:
 
-    //@{
-    //! Typedefs.
-    typedef Domain                                    domain_type;
-    typedef typename Domain::HistoryType              HistoryType;
-    typedef typename Domain::TallyType                TallyType;
-    typedef typename Domain::BankType                 BankType;
-    typedef DomainTransporter<Domain>                 DomainTransporterType;
-    typedef DomainCommunicator<Domain>                DomainCommunicatorType;
-    typedef Source<Domain>                            SourceType;
-    typedef Teuchos::Comm<int>                        Comm;
-    typedef Teuchos::CommRequest<int>                 Request;
-    //@}
+}
 
-    // Constructor.
-    SourceTransporter( const Teuchos::RCP<const Comm>& comm,
-		       const Teuchos::RCP<Domain>& domain, 
-		       const Teuchos::ParameterList& plist );
+//---------------------------------------------------------------------------//
+/*!
+* \brief Assign the source.
+*/
+template<class Domain>
+void SourceTransporter<Domain>::assignSource(
+    const Teuchos::RCP<SourceType>& source )
+{
 
-    // Destructor.
-    ~SourceTransporter() { /* ... */ }
+}
 
-    // Assign the source.
-    void assignSource( const Teuchos::RCP<SourceType>& source );
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Transport the source histories and all subsequent histories through
+ * the domain to completion.
+ */
+template<class Domain>
+void SourceTransporter<Domain>::transport()
+{
 
-    // Transport the source histories and all subsequent histories through the
-    // domain to completion.
-    void transport();
+}
 
-  private:
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Transport a source history.
+ */
+template<class Domain>
+void SourceTransporter<Domain>::transportSourceHistory( BankType& bank )
+{
 
-    // Transport a source history.
-    void transportSourceHistory( BankType& bank );
+}
 
-    // Transport a bank history.
-    void transportBankHistory( BankType& bank );
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Transport a bank history.
+ */
+template<class Domain>
+void SourceTransporter<Domain>::transportBankHistory( BankType& bank )
+{
 
-    // Transport a history through the local domain.
-    void localHistoryTransport( const Teuchos::RCP<HistoryType>& history, 
-				BankType& bank );
+}
 
-    // Post communications with the set master proc for end of cycle.
-    void postMasterCount();
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Transport a history through the local domain.
+ */
+template<class Domain>
+void SourceTransporter<Domain>::localHistoryTransport( 
+    const Teuchos::RCP<HistoryType>& history, 
+    BankType& bank )
+{
 
-    // Complete communications with the set master proc for end of cycle.
-    void completeMasterCount();
+}
 
-    // Update the master count of completed histories.
-    void updateMasterCount();
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Post communications with the set master proc for end of cycle.
+ */
+template<class Domain>
+void SourceTransporter<Domain>::postMasterCount()
+{
 
-  private:
+}
 
-    // Master proc enumeration for implementation clarity.
-    enum MasterIndicator { MASTER = 0 };
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Complete communications with the set master proc for end of cycle.
+ */
+template<class Domain>
+void SourceTransporter<Domain>::completeMasterCount()
+{
 
-  private:
+}
 
-    // Parallel communicator for this set.
-    Teuchos::RCP<const Comm> d_comm;
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Update the master count of completed histories.
+ */
+template<class Domain>
+void SourceTransporter<Domain>::updateMasterCount()
+{
 
-    // Local domain.
-    Teuchos::RCP<Domain> d_domain;
-
-    // Tally.
-    Teuchos::RCP<TallyType> d_tally;
-
-    // Domain transporter.
-    Teuchos::RCP<DomainTransporterType> d_domain_transporter;
-
-    // Domain communicator.
-    Teuchos::RCP<DomainCommunicatorType> d_domain_communicator;
-
-    // Source.
-    Teuchos::RCP<SourceType> d_source;
-
-    // Master-slave asynchornous communication request handles for number of
-    // histories complete.
-    Teuchos::Array<Teuchos::RCP<Request> > d_num_done_handles;
-
-    // Master-slave reports for number of histories complete communications. 
-    Teuchos::Array<int> d_num_done_report;
-
-    // Request handle for completed work on slave nodes.
-    Teuchos::RCP<Request> > d_complete_handle;
-
-    // Completion report.
-    int d_complete_report;
-
-    // Total number of source histories in set.
-    int d_nh;
-
-    // Total number of histories completed in set.
-    int d_num_done;
-    
-    // Total number of histories completed locally.
-    int d_num_done_local;
-
-    // Total number of histories completed from source.
-    int d_num_src;
-
-    // Number of histories complete in the local domain.
-    int d_num_run;
-
-    // Boolean-as-integer from completion of transport calculation.
-    int d_complete;
-
-    // Check frequency for history buffer communication.
-    int d_check_freq;
-};
+}
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
 //---------------------------------------------------------------------------//
-// Template includes.
-//---------------------------------------------------------------------------//
 
-#include "MCLS_SourceTransporter_impl.hpp"
+#endif // end MCLS_SOURCETRANSPORTER_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-
-#endif // end MCLS_SOURCETRANSPORTER_HPP
-
-//---------------------------------------------------------------------------//
-// end MCLS_SourceTransporter.hpp
+// end MCLS_SourceTransporter_impl.hpp
 //---------------------------------------------------------------------------//
 
