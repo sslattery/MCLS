@@ -355,7 +355,7 @@ void SourceTransporter<Domain>::completeMasterCount()
 
 	request_ptr = 
 	    Teuchos::Ptr<Teuchos::RCP<Request> >(&finish);
-	Teuchos::wait( *d_comm, request_ptr );
+	Teuchos::wait( *d_comm_complete, request_ptr );
 	Check( finish.is_null() );
     }
 }
