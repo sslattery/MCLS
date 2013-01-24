@@ -66,7 +66,7 @@ SourceTransporter<Domain>::SourceTransporter(
     , d_domain_transporter( d_domain, plist )
     , d_domain_communicator( d_domain, d_comm, plist )
     , d_num_done_handles( d_comm->getSize() - 1 )
-    , d_num_done_report( d_comm->getSize() - 1, Teuchos::rcp(new int(0)) )
+    , d_num_done_report( d_comm->getSize() - 1 )
     , d_complete_report( Teuchos::rcp(new int(0)) )
     , d_num_done( Teuchos::rcp(new int(0)) )
     , d_complete( Teuchos::rcp(new int(0)) )
@@ -81,6 +81,15 @@ SourceTransporter<Domain>::SourceTransporter(
     // bookeeping operations.
     d_comm_num_done = d_comm->duplicate();
     d_comm_complete = d_comm->duplicate();
+
+    // Create the history count reports.
+    Teuchos::Array<Teuchos::RCP<int> >::iterator report_it;
+    for ( report_it = d_num_done_report.begin();
+	  report_it != d_num_done_report.end();
+	  ++report_it )
+    {
+	*report_it = Teuchos::rcp( new int(0) );
+    }
 
     // Set the check frequency. For every d_check_freq histories run, we will
     // check for incoming histories. Default to 1.
@@ -147,7 +156,6 @@ void SourceTransporter<Domain>::transport()
 	// received from other domains.
 	if ( !d_source->empty() )
 	{
-	    std::cout << "SOURCE " << d_source->empty() << std::endl;
 	    transportSourceHistory( bank );
 	}
 
@@ -155,7 +163,6 @@ void SourceTransporter<Domain>::transport()
 	// bank and histories that have been received from other domains.
 	else if ( !bank.empty() )
 	{
-	    std::cout << "BANK " << bank.empty() << std::endl;
 	    transportBankHistory( bank );
 	}
 
@@ -163,14 +170,12 @@ void SourceTransporter<Domain>::transport()
 	// aren't empty.
 	else if ( d_domain_communicator.send() > 0 )
 	{
-	    std::cout << "SEND" << std::endl;
 	    continue;
 	}
 
 	// See if we've received any histories.
 	else if ( d_domain_communicator.checkAndPost(bank) > 0 )
 	{
-	    std::cout << "CHECK AND POST" << std::endl;
 	    continue;
 	}
 
@@ -178,11 +183,10 @@ void SourceTransporter<Domain>::transport()
 	// to check if transport is done.
 	else
 	{
-	    std::cout << "UPDATE" << std::endl;
 	    updateMasterCount();
 	}
     }
-    std::cout << "OUT OF LOOP" << std::endl;
+
     // Barrier before continuing.
     d_comm->barrier();
 
@@ -213,14 +217,14 @@ void SourceTransporter<Domain>::transportSourceHistory( BankType& bank )
     Teuchos::RCP<HistoryType> history = d_source->getHistory();
     Check( !history.is_null() );
     Check( history->alive() );
-    std::cout << "GOT HISTORY" << std::endl;
+
     // Add to the source history count.
     ++d_num_src;
 
     // Transport the history through the local domain and communicate it if
     // needed. 
     localHistoryTransport( history, bank );
-    std::cout << "DID LOCAL TRANSPORT" << std::endl;
+
     // Check for incoming histories on the check frequency. Transport those
     // that we do get.
     if ( d_num_run % d_check_freq == 0 )
@@ -229,7 +233,6 @@ void SourceTransporter<Domain>::transportSourceHistory( BankType& bank )
 	{
 	    while ( !bank.empty() )
 	    {
-		std::cout << "GOT SOME" << std::endl;
 		transportBankHistory( bank );
 	    }
 	}
@@ -286,24 +289,21 @@ void SourceTransporter<Domain>::localHistoryTransport(
     Require( history->rng().assigned() );
 
     // Do local transport.
-    std::cout << "LOCAL TRANSPORT" << std::endl;
     d_domain_transporter.transport( *history );
     Check( !history->alive() );
-    std::cout << "DID LOCAL TRANSPORT" << std::endl;
+
     // Update the run count.
     ++d_num_run;
 
     // Communicate the history if it left the local domain.
     if ( history->event() == BOUNDARY )
     {
-	std::cout << "COMM BOUNDARY" << std::endl;
 	d_domain_communicator.communicate( history );
     }
 
     // Otherwise the history was killed by the weight cutoff.
     else
     {
-	std::cout << "CUTOFF" << std::endl;
 	Check( history->event() == CUTOFF );
 	++(*d_num_done);
 	++d_num_done_local;
@@ -326,7 +326,7 @@ void SourceTransporter<Domain>::postMasterCount()
 	// Post an asynchronous receive for each worker.
 	for ( int n = 1; n < d_comm->getSize(); ++n )
 	{
-	    *d_num_done_report[n-1] = 0;
+	    *(d_num_done_report[n-1]) = 0;
 	    d_num_done_handles[n-1] = Teuchos::ireceive<int,int>( 
 		*d_comm_num_done, d_num_done_report[n-1], n );
 	}
@@ -383,17 +383,13 @@ void SourceTransporter<Domain>::completeMasterCount()
 template<class Domain>
 void SourceTransporter<Domain>::updateMasterCount()
 {
-	std::cout << d_comm->getRank() << " " << *d_num_done << " " 
-		  << *d_complete_report << " " << d_num_done_local << " "
-		  << d_num_src << " " << d_num_run << std::endl; 
-
     // MASTER checks for received reports of updated counts from work nodes
     // and adds them to the running total.
     if ( d_comm->getRank() == MASTER )
     {
 	// Check if we are done with transport.
 	if ( *d_num_done == d_nh ) *d_complete = 1;
-	std::cout << *d_num_done << " " << d_nh << std::endl;
+
 	// Check on work node reports.
 	int n = 0;
 	while( !(*d_complete) && ++n < d_comm->getSize() )
@@ -401,11 +397,11 @@ void SourceTransporter<Domain>::updateMasterCount()
 	    // Receive completed reports and repost.
 	    if ( CommTools::isRequestComplete(d_num_done_handles[n-1]) )
 	    {
-		Check( *d_num_done_report[n-1] > 0 );
+		Check( *(d_num_done_report[n-1]) > 0 );
 		d_num_done_handles[n-1] = Teuchos::null;
 
 		// Add to the running total.
-		*d_num_done += *d_num_done_report[n-1];
+		*d_num_done += *(d_num_done_report[n-1]);
 		Check( *d_num_done <= d_nh );
 
 		// Repost.

@@ -84,7 +84,7 @@ class Source
     //! Return whether the source has emitted all histories.
     virtual bool empty() const = 0;
 
-    //! Get the number of source histories left in the local domain
+    //! Get the number of source histories to transport in the local domain.
     virtual int numToTransport() const = 0;
 
     //! Get the number of source histories in the set.

@@ -176,16 +176,19 @@ inline void AdjointDomain<Vector,Matrix>::processTransition(
 {
     Require( history.alive() );
     Require( TRANSITION == history.event() );
+    Require( isLocalState(history.state()) );
 
     typename std::tr1::unordered_map<Ordinal,int>::const_iterator index =
 	d_row_indexer.find( history.state() );
-    Require( index != d_row_indexer.end() );
+    Check( index != d_row_indexer.end() );
 
+    // Sample the row CDF to get a new state.
     history.setState( 
 	d_columns[index->second][ 
 	    SamplingTools::sampleDiscreteCDF( d_cdfs[index->second](),
 					      history.rng().random() ) ] );
 
+    // Update the history weight with the transition weight.
     history.multiplyWeight( d_weights[index->second] );
 }
 
