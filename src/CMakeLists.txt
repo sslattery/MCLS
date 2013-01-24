@@ -28,6 +28,7 @@ APPEND_SET(HEADERS
   MCLS_AdjointTally_impl.hpp
   MCLS_CommHistoryBuffer.hpp
   MCLS_CommHistoryBuffer_impl.hpp
+  MCLS_CommTools.hpp
   MCLS_DBC.hpp
   MCLS_DomainCommunicator.hpp
   MCLS_DomainCommunicator_impl.hpp

@@ -87,7 +87,7 @@ class Source
     //! Get the number of source histories left in the local domain
     virtual int numToTransport() const = 0;
 
-    //! Get the number of source histories left in the set.
+    //! Get the number of source histories in the set.
     virtual int numToTransportInSet() const = 0;
 
     //! Get the source vector.

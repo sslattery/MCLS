@@ -134,26 +134,26 @@ class SourceTransporter
     Teuchos::RCP<TallyType> d_tally;
 
     // Domain transporter.
-    Teuchos::RCP<DomainTransporterType> d_domain_transporter;
+    DomainTransporterType d_domain_transporter;
 
     // Domain communicator.
-    Teuchos::RCP<DomainCommunicatorType> d_domain_communicator;
+    DomainCommunicatorType d_domain_communicator;
 
     // Source.
     Teuchos::RCP<SourceType> d_source;
 
-    // Master-slave asynchornous communication request handles for number of
+    // Master-worker asynchornous communication request handles for number of
     // histories complete.
     Teuchos::Array<Teuchos::RCP<Request> > d_num_done_handles;
 
-    // Master-slave reports for number of histories complete communications. 
-    Teuchos::Array<int> d_num_done_report;
+    // Master-worker reports for number of histories complete communications. 
+    Teuchos::Array<Teuchos::RCP<int> > d_num_done_report;
 
-    // Request handle for completed work on slave nodes.
+    // Request handle for completed work on worker nodes.
     Teuchos::RCP<Request> > d_complete_handle;
 
     // Completion report.
-    int d_complete_report;
+    Teuchos::RCP<int> d_complete_report;
 
     // Total number of source histories in set.
     int d_nh;
@@ -171,7 +171,7 @@ class SourceTransporter
     int d_num_run;
 
     // Boolean-as-integer from completion of transport calculation.
-    int d_complete;
+    Teuchos::RCP<int> d_complete;
 
     // Check frequency for history buffer communication.
     int d_check_freq;

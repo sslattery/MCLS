@@ -41,6 +41,8 @@
 #ifndef MCLS_COMMHISTORYBUFFER_IMPL_HPP
 #define MCLS_COMMHISTORYBUFFER_IMPL_HPP
 
+#include <MCLS_CommTools.hpp>
+
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_Ptr.hpp>
 
