@@ -31,8 +31,11 @@
 
 #include <Epetra_Map.h>
 #include <Epetra_Vector.h>
-#include <Epetra_MpiComm.h>
 #include <Epetra_SerialComm.h>
+
+#ifdef HAVE_MPI
+#include <Epetra_MpiComm.h>
+#endif
 
 //---------------------------------------------------------------------------//
 // Helper functions.

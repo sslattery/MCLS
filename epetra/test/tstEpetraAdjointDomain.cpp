@@ -32,6 +32,7 @@
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_TypeTraits.hpp>
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_OpaqueWrapper.hpp>
 
 #include <Epetra_Map.h>
 #include <Epetra_Vector.h>
@@ -39,7 +40,10 @@
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Comm.h>
 #include <Epetra_SerialComm.h>
+
+#ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
+#endif
 
 //---------------------------------------------------------------------------//
 // Helper functions.

@@ -53,13 +53,17 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_TypeTraits.hpp>
+#include <Teuchos_OpaqueWrapper.hpp>
 
 #include <Epetra_Comm.h>
-#include <Epetra_MpiComm.h>
 #include <Epetra_SerialComm.h>
 #include <Epetra_MpiDistributor.h>
 #include <Epetra_Vector.h>
 #include <Epetra_RowMatrix.h>
+
+#ifdef HAVE_MPI
+#include <Epetra_MpiComm.h>
+#endif
 
 namespace MCLS
 {
@@ -117,8 +121,9 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
 	Epetra_MpiComm* epetra_mpi_comm = 
 	    dynamic_cast<Epetra_MpiComm*>( epetra_comm );
 	Teuchos::RCP<const Teuchos::Comm<int> > teuchos_comm =
-	    Teuchos::rcp( 
-		new Teuchos::MpiComm<int>( epetra_mpi_comm->GetMpiComm() ) );
+	    Teuchos::rcp( new Teuchos::MpiComm<int>( 
+			      Teuchos::opaqueWrapper<MPI_Comm>(
+				  epetra_mpi_comm->GetMpiComm()) ) );
 	delete epetra_comm;
 	return teuchos_comm;
 #else

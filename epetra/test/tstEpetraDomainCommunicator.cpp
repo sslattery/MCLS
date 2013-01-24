@@ -42,7 +42,10 @@
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Comm.h>
 #include <Epetra_SerialComm.h>
+
+#ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
+#endif
 
 //---------------------------------------------------------------------------//
 // Helper functions.
@@ -166,13 +169,14 @@ TEUCHOS_UNIT_TEST( DomainCommunicator, Communicate )
 	MCLS::DomainCommunicator<DomainType>::BankType bank;
 	int buffer_size = 3;
 	plist.set<int>( "History Buffer Size", buffer_size );
+	std::cout << "CONSTRUCTION " << comm_rank << std::endl;
 	MCLS::DomainCommunicator<DomainType> communicator( domain, comm, plist );
 
 	// Test initialization.
 	TEST_EQUALITY( Teuchos::as<int>(communicator.maxBufferSize()), buffer_size );
 	TEST_ASSERT( !communicator.sendStatus() );
 	TEST_ASSERT( !communicator.receiveStatus() );
-
+	std::cout << "HERE " << comm_rank << std::endl;
 	// Post receives.
 	communicator.post();
 	if ( comm_rank == 0 )

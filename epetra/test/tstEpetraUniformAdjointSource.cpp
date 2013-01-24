@@ -41,7 +41,10 @@
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Comm.h>
 #include <Epetra_SerialComm.h>
+
+#ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
+#endif
 
 //---------------------------------------------------------------------------//
 // Helper functions.
