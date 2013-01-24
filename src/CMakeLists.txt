@@ -47,6 +47,8 @@ APPEND_SET(HEADERS
   MCLS_SamplingTools.hpp
   MCLS_Serializer.hpp
   MCLS_Source.hpp
+  MCLS_SourceTransporter.hpp
+  MCLS_SourceTransporter_impl.hpp
   MCLS_SPRNG.hpp
   MCLS_UniformAdjointSource.hpp
   MCLS_UniformAdjointSource_impl.hpp

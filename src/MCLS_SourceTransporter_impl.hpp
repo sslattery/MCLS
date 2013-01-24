@@ -77,11 +77,11 @@ SourceTransporter<Domain>::SourceTransporter(
 
     // Set the duplicate communicators. This is how we get around not having
     // access to message tags. We are constructing a separate messaging space
-    // for these bookeeping operations.
+    // for each of these bookeeping operations.
     d_comm_num_done = d_comm->duplicate();
     d_comm_complete = d_comm->duplicate();
 
-    // Set the check frequency.
+    // Set the check frequency. Default to 1.
     d_check_freq = 1;
     if ( plist.isParameter("MC Check Frequency") )
     {
