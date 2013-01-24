@@ -352,7 +352,7 @@ void DomainCommunicator<Domain>::end()
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Number of particles in all buffers.
+ * \brief Number of histories in all buffers.
  */
 template<class Domain>
 std::size_t DomainCommunicator<Domain>::sendBufferSize() const

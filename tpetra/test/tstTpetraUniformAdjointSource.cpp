@@ -220,7 +220,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformAdjointSource, nh_set, LO, GO, Scalar 
     // Create the adjoint source with a set number of histories.
     int mult = 10;
     double cutoff = 1.0e-8;
-    plist.set<int>("Global Number of Histories", mult*global_num_rows);
+    plist.set<int>("Set Number of Histories", mult*global_num_rows);
     plist.set<double>("Weight Cutoff", cutoff);
     MCLS::UniformAdjointSource<DomainType> 
 	source( b, domain, control, comm, plist );

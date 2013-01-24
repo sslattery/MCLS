@@ -76,9 +76,9 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
 
     // Get the requested global number of histories. The default value is the
     // global length of the source vector.
-    if ( plist.isParameter("Global Number of Histories") )
+    if ( plist.isParameter("Set Number of Histories") )
     {
-	d_nh_requested = plist.get<int>("Global Number of Histories");
+	d_nh_requested = plist.get<int>("Set Number of Histories");
     }
     
     // Set the total to the requested amount. This may change based on the

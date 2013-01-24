@@ -120,11 +120,11 @@ class DomainCommunicator
     // End communication.
     void end();
 
-    //! Particle buffer size.
+    //! History buffer size.
     std::size_t maxBufferSize() const
     { return HistoryBufferType::maxNum(); }
 
-    // Number of particles in all buffers.
+    // Number of histories in all buffers.
     std::size_t sendBufferSize() const;
 
     // Get a send buffer by local id.
