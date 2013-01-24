@@ -46,6 +46,10 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 
+#ifdef HAVE_MPI
+#include <Teuchos_DefaultMpiComm.hpp>
+#endif
+
 namespace MCLS
 {
 

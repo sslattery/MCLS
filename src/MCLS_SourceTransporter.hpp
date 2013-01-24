@@ -139,6 +139,12 @@ class SourceTransporter
     // Domain communicator.
     DomainCommunicatorType d_domain_communicator;
 
+    // Master-worker communicator for reporting number of histories.
+    Teuchos::RCP<const Comm> d_comm_num_done;
+
+    // Master-worker communicator for reporting completion status.
+    Teuchos::RCP<const Comm> d_comm_complete;
+
     // Source.
     Teuchos::RCP<SourceType> d_source;
 
@@ -159,7 +165,7 @@ class SourceTransporter
     int d_nh;
 
     // Total number of histories completed in set.
-    int d_num_done;
+    Teuchos::RCP<int> d_num_done;
     
     // Total number of histories completed locally.
     int d_num_done_local;
