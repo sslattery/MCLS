@@ -117,14 +117,14 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
     getComm( const matrix_type& matrix )
     {
 #ifdef HAVE_MPI
-	Epetra_Comm* epetra_comm = matrix.Comm().Clone();
-	Epetra_MpiComm* epetra_mpi_comm = 
-	    dynamic_cast<Epetra_MpiComm*>( epetra_comm );
-	Teuchos::RCP<const Teuchos::Comm<int> > teuchos_comm =
-	    Teuchos::rcp( new Teuchos::MpiComm<int>( 
-			      Teuchos::opaqueWrapper<MPI_Comm>(
-				  epetra_mpi_comm->GetMpiComm()) ) );
-	delete epetra_comm;
+	Teuchos::RCP<const Epetra_Comm> epetra_comm = 
+	    Teuchos::rcp( matrix.Comm().Clone() );
+	Teuchos::RCP<const Epetra_MpiComm> mpi_epetra_comm =
+	    Teuchos::rcp_dynamic_cast<const Epetra_MpiComm>( epetra_comm );
+	Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >
+	    raw_mpi_comm = Teuchos::opaqueWrapper( mpi_epetra_comm->Comm() );
+	Teuchos::RCP<const Teuchos::MpiComm<int> > teuchos_comm =
+	    Teuchos::rcp( new Teuchos::MpiComm<int>( raw_mpi_comm ) );
 	return teuchos_comm;
 #else
 	return Teuchos::rcp( new Teuchos::SerialComm<int>() );
