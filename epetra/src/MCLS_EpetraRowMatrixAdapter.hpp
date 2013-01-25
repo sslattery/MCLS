@@ -62,6 +62,7 @@
 #include <Epetra_RowMatrix.h>
 
 #ifdef HAVE_MPI
+#include <Teuchos_DefaultMpiComm.hpp>
 #include <Epetra_MpiComm.h>
 #endif
 
