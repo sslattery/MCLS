@@ -46,6 +46,9 @@
 #include <MCLS_MatrixTraits.hpp>
 
 #include <Teuchos_as.hpp>
+#include <Teuchos_Array.hpp>
+
+#include <Tpetra_Distributor.hpp>
 
 namespace MCLS
 {
@@ -101,7 +104,9 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 
     // By building the boundary data, now we know where we are sending
     // data. Find out who we are receiving from.
-    d_receive_ranks = MT::getReceivesFromSends( *A, d_send_ranks() );
+    Tpetra::Distributor distributor( MT::getComm(*A) );
+    distributor.createFromSends( d_send_ranks() );
+    d_receive_ranks = distributor.getImagesFrom();
 
     Ensure( !d_tally.is_null() );
 }

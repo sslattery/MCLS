@@ -350,19 +350,6 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
 	return neighbor_matrix;
     }
 
-    /*!
-     * \brief Given a list of ranks to which we will send data, get the list
-     * of ranks from which we will receive.
-     */
-    static Teuchos::Array<int>
-    getReceivesFromSends( const matrix_type& matrix,
-			  const Teuchos::ArrayView<int>& sends )
-    { 
-	Tpetra::Distributor distributor( matrix.getComm() );
-	distributor.createFromSends( sends );
-	return Teuchos::Array<int>( distributor.getImagesFrom() );
-    }
-
 };
 
 //---------------------------------------------------------------------------//

@@ -1028,60 +1028,11 @@ TEUCHOS_UNIT_TEST( MatrixTraits, copy_neighbor )
 	    {
 	    	TEST_EQUALITY( view_columns[n], n );
 	    	TEST_EQUALITY( view_values[n], 1 );
-
 	    }
 	}
     }
 }
 
-//---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST( MatrixTraits, receives_from_sends )
-{
-    typedef Epetra_RowMatrix MatrixType;
-    typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
-    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MT::scalar_type scalar_type;
-    typedef MT::local_ordinal_type local_ordinal_type;
-    typedef MT::global_ordinal_type global_ordinal_type;
-
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
-	Teuchos::DefaultComm<int>::getComm();
-    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
-    int comm_size = comm->getSize();
-    int comm_rank = comm->getRank();
-
-    int local_num_rows = 10;
-    int global_num_rows = local_num_rows*comm_size;
-    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
-	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
-
-    Teuchos::RCP<Epetra_CrsMatrix> A = 
-	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
-
-    Teuchos::Array<int> send_ranks;
-    for ( int i = 0; i < comm_size; ++i )
-    {
-	if ( i != comm_rank )
-	{
-	    send_ranks.push_back(i);
-	}
-    }
-    
-    Teuchos::Array<int> receive_ranks = 
-	MT::getReceivesFromSends( *A, send_ranks() );
-
-    TEST_EQUALITY( receive_ranks.size(), comm_size - 1 );
-    int counter = 0;
-    for ( int i = 0; i < comm_size; ++i )
-    {
-	if ( i != comm_rank )
-	{
-	    TEST_EQUALITY( receive_ranks[counter], i );
-	    ++counter;
-	}
-    }
-}
 //---------------------------------------------------------------------------//
 // end tstEpetraRowMatrix.cpp
 //---------------------------------------------------------------------------//

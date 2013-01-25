@@ -949,56 +949,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, copy_neighbor, LO, GO, Scalar )
 UNIT_TEST_INSTANTIATION( MatrixTraits, copy_neighbor )
 
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, receives_from_sends, LO, GO, Scalar )
-{
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
-    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
-
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
-	Teuchos::DefaultComm<int>::getComm();
-    int comm_size = comm->getSize();
-    int comm_rank = comm->getRank();
-
-    int local_num_rows = 10;
-    int global_num_rows = local_num_rows*comm_size;
-    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
-	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
-
-    Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
-
-    Teuchos::Array<int> send_ranks;
-    for ( int i = 0; i < comm_size; ++i )
-    {
-	if ( i != comm_rank )
-	{
-	    send_ranks.push_back(i);
-	}
-    }
-    
-    Teuchos::Array<int> receive_ranks = 
-	MT::getReceivesFromSends( *A, send_ranks() );
-
-    TEST_EQUALITY( receive_ranks.size(), comm_size - 1 );
-    int counter = 0;
-    for ( int i = 0; i < comm_size; ++i )
-    {
-	if ( i != comm_rank )
-	{
-	    TEST_EQUALITY( receive_ranks[counter], i );
-	    ++counter;
-	}
-    }
-}
-
-UNIT_TEST_INSTANTIATION( MatrixTraits, receives_from_sends )
-
-
-//---------------------------------------------------------------------------//
 // end tstTpetraCrsMatrix.cpp
 //---------------------------------------------------------------------------//
 
