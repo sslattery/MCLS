@@ -22,7 +22,6 @@
 #include <MCLS_VectorTraits.hpp>
 #include <MCLS_TpetraAdapter.hpp>
 #include <MCLS_History.hpp>
-#include <MCLS_AdjointTally.hpp>
 #include <MCLS_Events.hpp>
 #include <MCLS_RNGControl.hpp>
 
@@ -58,7 +57,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SourceTransporter, Typedefs, LO, GO, Scalar )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::AdjointTally<VectorType> TallyType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::History<GO> HistoryType;
     typedef MCLS::Source<DomainType> SourceType;
@@ -66,15 +64,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SourceTransporter, Typedefs, LO, GO, Scalar )
 
     typedef MCLS::SourceTransporter<DomainType> SourceTransporterType;
     typedef typename SourceTransporterType::HistoryType history_type;
-    typedef typename SourceTransporterType::TallyType tally_type;
     typedef typename SourceTransporterType::BankType bank_type;
     typedef typename SourceTransporterType::SourceType source_type;
 
     TEST_EQUALITY_CONST( 
 	(Teuchos::TypeTraits::is_same<HistoryType, history_type>::value)
-	== true, true );
-    TEST_EQUALITY_CONST( 
-	(Teuchos::TypeTraits::is_same<TallyType, tally_type>::value)
 	== true, true );
     TEST_EQUALITY_CONST( 
 	(Teuchos::TypeTraits::is_same<BankType, bank_type>::value)

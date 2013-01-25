@@ -32,99 +32,139 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_Adjoint Solver.hpp
+ * \file MCLS_AdjointSolver_impl.hpp
  * \author Stuart R. Slattery
- * \brief Adjoint Monte Carlo solver declaration.l
+ * \brief Adjoint Monte Carlo solver implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_ADJOINTSOLVER_HPP
-#define MCLS_ADJOINTSOLVER_HPP
+#ifndef MCLS_ADJOINTSOLVER_IMPL_HPP
+#define MCLS_ADJOINTSOLVER_IMPL_HPP
 
-#include "MCLS_Solver.hpp"
-#include "MCLS_LinearProblem.hpp"
-#include "MCLS_VectorTraits.hpp"
-#include "MCLS_MatrixTraits.hpp"
-#include "MCLS_AdjointDomain.hpp"
-#include "MCLS_SourceTransporter.hpp"
+#include <string>
 
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Comm.hpp>
-#include <Teuchos_ParameterList.hpp>
+#include "MCLS_DBC.hpp"
+#include "MCLS_UniformAdjointSource.hpp"
+
+#include <Teuchos_ScalarTraits.hpp>
 
 namespace MCLS
 {
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Constructor.
+ */
+template<class Vector, class Matrix>
+AdjointSolver<Vector,Matrix>::AdjointSolver( 
+    const Teuchos::RCP<LinearProblemType>& linear_problem,
+    const Teuchos::RCP<const Comm>& global_comm,
+    Teuchos::ParameterList& plist,
+    int seed )
+    : d_linear_problem( linear_problem )
+    , d_global_comm( global_comm )
+    , d_seed( seed )
+{
+    Require( !d_linear_problem.is_null() );
+    Require( !d_global_comm.is_null() );
+
+    // Get the set communicator.
+    d_set_comm = MT::getComm( *d_linear_problem->getOperator() );
+
+    // Build the random number generator.
+    d_rng_control = Teuchos::rcp( new RNGControl(seed) );
+
+    // Set the static byte size for the histories.
+    HistoryType::setByteSize( d_rng_control->getSize() );
+
+    // Generate the domain.
+    d_domain = Teuchos::rcp( new DomainType( d_linear_problem->getOperator(),
+					     d_linear_problem->getLHS(),
+					     plist ) );
+
+    // Get the domain tally.
+    d_tally = d_domain->domainTally();
+
+    // Generate the initial source.
+    setSource();
+
+    // Generate the source transporter.
+    d_transporter = 
+	Teuchos::rcp( new TransporterType(set_comm, d_domain, plist) );
+
+    Ensure( !d_set_comm.is_null() );
+    Ensure( !d_rng_control.is_null() );
+    Ensure( !d_domain.is_null() );
+    Ensure( !d_tally.is_null() );
+    Ensure( !d_source.is_null() );
+    Ensure( !d_transporter.is_null() );
+}
 
 //---------------------------------------------------------------------------//
 /*!
- * \class Adjointsolver
- * \brief Linear solver base class.
+ * \brief Solve the linear problem.
  */
 template<class Vector, class Matrix>
-class AdjointSolver : public Solver
+void AdjointSolver<Vector,Matrix>::solve()
 {
-  public:
+    // Zero out the LHS.
+    VT::putScalar( *d_linear_problem->getLHS(), 
+		   Teuchos::ScalarTraits<typename VT::scalar_type>::zero() );
 
-    //@{
-    //! Typedefs.
-    typedef Vector                                      vector_type;
-    typedef Matrix                                      matrix_type;
-    typedef VectorTraits<Vector>                        VT;
-    typedef MatrixTraits<Vector,Matrix>                 MT;
-    typedef LinearProblem<Vector,Matrix>                LinearProblemType;
-    typedef AdjointDomain<Vector,Matrix>                DomainType;
-    typedef SourceTransporter<DomainType>               TransporterType;
-    typedef typename TransporterType::SourceType        SourceType;
-    typedef Teuchos::Comm<int>                          Comm;
-    //@}
+    // If the RHS of the linear problem has changed since the last solve,
+    // update the source.
+    if ( d_linear_problem->updatedRHS() )
+    {
+	setSource();
+    }
+    Check( !d_source.is_null() );
 
-    // Constructor.
-    AdjointSolver( const Teuchos::RCP<LinearProblemType>& linear_problem,
-		   const Teuchos::RCP<const Comm>& global_comm,
-		   Teuchos::ParameterList& plist );
+    // Assign the source to the transporter.
+    d_transporter->assignSource( d_source );
 
-    //! Destructor.
-    ~AdjointSolver { /* ... */ }
+    // Transport the source to solve the problem.
+    d_transporter.transport();
 
-    // Solve the linear problem.
-    void solve();
+    // Barrier after completion.
+    d_comm_global->barrier();
 
-    // Return whether the solution has converged.
-    bool isConverged();
+    // Update the tallies.
+    d_tally->combineTallies();
+}
 
-  private:
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Return whether the solution has converged.
+ */
+template<class Vector, class Matrix>
+bool AdjointSolver<Vector,Matrix>::isConverged()
+{
 
-    // Linear problem.
-    Teuchos::RCP<LinearProblemType> d_linear_problem;
+}
 
-    // Global problem communicator.
-    Teuchos::RCP<const Comm> d_global_comm;
-
-    // Local domain.
-    Teuchos::RCP<DomainType> d_domain;
-
-    // Source transporter.
-    Teuchos::RCP<TransporterType> d_transporter;
-
-    // Source.
-    Teuchos::RCP<SourceType> d_source;
-};
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Set the source based on the RHS of the linear problem.
+ */
+template<class Vector, class Matrix>
+void AdjointSolver<Vector,Matrix>::setSource()
+{
+    d_source = Teuchos::rcp( new UniformAdjointSource<DomainType>(
+				 d_linear_problem->getRHS(),
+				 d_domain,
+				 d_rng_control,
+				 d_set_comm,
+				 plist ) );
+}
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
 //---------------------------------------------------------------------------//
-// Template includes.
-//---------------------------------------------------------------------------//
 
-#include "MCLS_AdjointSolver_impl.hpp"
+#endif // end MCLS_ADJOINTSOLVER_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-
-#endif // end MCLS_ADJOINTSOLVER_HPP
-
-//---------------------------------------------------------------------------//
-// end MCLS_Adjointsolver.hpp
+// end MCLS_AdjointSolver_impl.hpp
 // ---------------------------------------------------------------------------//
 

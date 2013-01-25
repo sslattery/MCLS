@@ -62,7 +62,6 @@ SourceTransporter<Domain>::SourceTransporter(
     const Teuchos::ParameterList& plist )
     : d_comm( comm )
     , d_domain( domain )
-    , d_tally( d_domain->domainTally() )
     , d_domain_transporter( d_domain, plist )
     , d_domain_communicator( d_domain, d_comm, plist )
     , d_num_done_handles( d_comm->getSize() - 1 )
@@ -73,7 +72,6 @@ SourceTransporter<Domain>::SourceTransporter(
 {
     Require( !d_comm.is_null() );
     Require( !d_domain.is_null() );
-    Require( !d_tally.is_null() );
 
     // Set the duplicate communicators. This is how we get around not having
     // access to message tags through the abstract Teuchos::Comm interface. We

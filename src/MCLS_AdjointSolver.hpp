@@ -32,9 +32,9 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_Adjoint Solver.hpp
+ * \file MCLS_AdjointSolver.hpp
  * \author Stuart R. Slattery
- * \brief Adjoint Monte Carlo solver declaration.l
+ * \brief Adjoint Monte Carlo solver declaration.
  */
 //---------------------------------------------------------------------------//
 
@@ -45,6 +45,7 @@
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_MatrixTraits.hpp"
+#include "MCLS_RNGControl.hpp"
 #include "MCLS_AdjointDomain.hpp"
 #include "MCLS_SourceTransporter.hpp"
 
@@ -57,7 +58,7 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 /*!
- * \class Adjointsolver
+ * \class AdjointSolver
  * \brief Linear solver base class.
  */
 template<class Vector, class Matrix>
@@ -73,15 +74,18 @@ class AdjointSolver : public Solver
     typedef MatrixTraits<Vector,Matrix>                 MT;
     typedef LinearProblem<Vector,Matrix>                LinearProblemType;
     typedef AdjointDomain<Vector,Matrix>                DomainType;
+    typedef typename DomainType::TallyType              TallyType;
     typedef SourceTransporter<DomainType>               TransporterType;
     typedef typename TransporterType::SourceType        SourceType;
+    typedef typename TransporterType::HistoryType       HistoryType;
     typedef Teuchos::Comm<int>                          Comm;
     //@}
 
     // Constructor.
     AdjointSolver( const Teuchos::RCP<LinearProblemType>& linear_problem,
 		   const Teuchos::RCP<const Comm>& global_comm,
-		   Teuchos::ParameterList& plist );
+		   Teuchos::ParameterList& plist,
+		   int seed = 433494437 );
 
     //! Destructor.
     ~AdjointSolver { /* ... */ }
@@ -94,20 +98,37 @@ class AdjointSolver : public Solver
 
   private:
 
+    // Set the source base on the RHS of the linear problem.
+    void setSource();
+
+  private:
+
     // Linear problem.
     Teuchos::RCP<LinearProblemType> d_linear_problem;
 
     // Global problem communicator.
     Teuchos::RCP<const Comm> d_global_comm;
 
+    // Random number seed.
+    int seed;
+
+    // Set constant communicator.
+    Teuchos::RCP<const Comm> d_set_comm;
+
+    // Random number controller.
+    Teuchos::RCP<RNGControl> d_rng_control;
+
     // Local domain.
     Teuchos::RCP<DomainType> d_domain;
 
-    // Source transporter.
-    Teuchos::RCP<TransporterType> d_transporter;
+    // Tally.
+    Teuchos::RCP<TallyType> d_tally;
 
     // Source.
     Teuchos::RCP<SourceType> d_source;
+
+    // Source transporter.
+    Teuchos::RCP<TransporterType> d_transporter;
 };
 
 //---------------------------------------------------------------------------//
@@ -125,6 +146,6 @@ class AdjointSolver : public Solver
 #endif // end MCLS_ADJOINTSOLVER_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_Adjointsolver.hpp
+// end MCLS_AdjointSolver.hpp
 // ---------------------------------------------------------------------------//
 

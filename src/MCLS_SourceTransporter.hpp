@@ -73,7 +73,6 @@ class SourceTransporter
     //! Typedefs.
     typedef Domain                                    domain_type;
     typedef typename Domain::HistoryType              HistoryType;
-    typedef typename Domain::TallyType                TallyType;
     typedef typename Domain::BankType                 BankType;
     typedef DomainTransporter<Domain>                 DomainTransporterType;
     typedef DomainCommunicator<Domain>                DomainCommunicatorType;
@@ -130,9 +129,6 @@ class SourceTransporter
 
     // Local domain.
     Teuchos::RCP<Domain> d_domain;
-
-    // Tally.
-    Teuchos::RCP<TallyType> d_tally;
 
     // Domain transporter.
     DomainTransporterType d_domain_transporter;
