@@ -70,11 +70,27 @@ AdjointSolver<Vector,Matrix>::AdjointSolver(
     // Get the set communicator.
     d_set_comm = MT::getComm( *d_linear_problem->getOperator() );
 
+    // Check for a user provided random number seed. The default is provided
+    // as a default argument for this constructor.
+    if ( plist.isParam("Random Number Seed") )
+    {
+	d_seed = plist.get<int>("Random Number Seed");
+    }
+
     // Build the random number generator.
     d_rng_control = Teuchos::rcp( new RNGControl(seed) );
 
-    // Set the static byte size for the histories.
-    HistoryType::setByteSize( d_rng_control->getSize() );
+    // Set the static byte size for the histories. If we want reproducible
+    // results we pack the RNG with the histories. If we don't, then we use
+    // the global RNG.
+    if ( plist.get<bool>("Reproducible MC Mode") )
+    {
+	HistoryType::setByteSize( d_rng_control->getSize() );
+    }
+    else
+    {
+	HistoryType::setByteSize( 0 );
+    }
 
     // Generate the domain.
     d_domain = Teuchos::rcp( new DomainType( d_linear_problem->getOperator(),
@@ -91,6 +107,7 @@ AdjointSolver<Vector,Matrix>::AdjointSolver(
     d_transporter = 
 	Teuchos::rcp( new TransporterType(set_comm, d_domain, plist) );
 
+    Ensure( HistoryType::getPackedBytes() > 0 );
     Ensure( !d_set_comm.is_null() );
     Ensure( !d_rng_control.is_null() );
     Ensure( !d_domain.is_null() );
@@ -116,7 +133,6 @@ void AdjointSolver<Vector,Matrix>::solve()
     {
 	setSource();
     }
-    Check( !d_source.is_null() );
 
     // Assign the source to the transporter.
     d_transporter->assignSource( d_source );
@@ -127,8 +143,11 @@ void AdjointSolver<Vector,Matrix>::solve()
     // Barrier after completion.
     d_comm_global->barrier();
 
-    // Update the tallies.
+    // Update the set tallies.
     d_tally->combineTallies();
+
+    // Normalize the tally with the number of source histories in the set.
+    d_tally->normalize( d_source->numToTransportInSet() );
 }
 
 //---------------------------------------------------------------------------//
@@ -138,7 +157,10 @@ void AdjointSolver<Vector,Matrix>::solve()
 template<class Vector, class Matrix>
 bool AdjointSolver<Vector,Matrix>::isConverged()
 {
-
+    // The adjoint MC solver is a direct solver. Therefore it is always
+    // converged (although we may want to return the residual norm through
+    // another method as it is not typically 0 due to statistical error).
+    return true;
 }
 
 //---------------------------------------------------------------------------//
@@ -154,6 +176,8 @@ void AdjointSolver<Vector,Matrix>::setSource()
 				 d_rng_control,
 				 d_set_comm,
 				 plist ) );
+
+    Ensure( !d_source.is_null() );
 }
 
 //---------------------------------------------------------------------------//
