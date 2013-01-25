@@ -68,7 +68,7 @@ Teuchos::RCP<Epetra_Comm> getEpetraComm(
 //---------------------------------------------------------------------------//
 // Test templates
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT( SourceTransporter, Typedefs )
+TEUCHOS_UNIT_TEST( SourceTransporter, Typedefs )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
@@ -76,7 +76,7 @@ TEUCHOS_UNIT( SourceTransporter, Typedefs )
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointTally<VectorType> TallyType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
-    typedef MCLS::History<GO> HistoryType;
+    typedef MCLS::History<int> HistoryType;
     typedef MCLS::Source<DomainType> SourceType;
     typedef std::stack<Teuchos::RCP<HistoryType> > BankType;
 
@@ -101,13 +101,13 @@ TEUCHOS_UNIT( SourceTransporter, Typedefs )
 }
 
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT( SourceTransporter, transport )
+TEUCHOS_UNIT_TEST( SourceTransporter, transport )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<GO> HistoryType;
+    typedef MCLS::History<int> HistoryType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::UniformAdjointSource<DomainType> SourceType;
 
@@ -115,15 +115,19 @@ TEUCHOS_UNIT( SourceTransporter, transport )
 	Teuchos::DefaultComm<int>::getComm();
     Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
     int comm_size = comm->getSize();
-    int comm_rank = comm->getRank();
+
+    int local_num_rows = 10;
+    int global_num_rows = local_num_rows*comm_size;
+    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
+	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
     // Build the linear system. This operator will be assymetric so we quickly
     // move the histories out of the domain before they hit the low weight
     // cutoff.
     Teuchos::RCP<Epetra_CrsMatrix> A = 	
 	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
-    Teuchos::Array<GO> global_columns( 3 );
-    Teuchos::Array<Scalar> values( 3 );
+    Teuchos::Array<int> global_columns( 3 );
+    Teuchos::Array<double> values( 3 );
     global_columns[0] = 0;
     global_columns[1] = 1;
     global_columns[2] = 2;
