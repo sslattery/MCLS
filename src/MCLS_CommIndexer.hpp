@@ -62,8 +62,7 @@ class CommIndexer
 
     //@{
     //! Typedefs.
-    typedef Teuchos::Comm<int>                             CommType;
-    typedef Teuchos::RCP<const CommType>                   RCP_Comm;
+    typedef Teuchos::Comm<int>                             Comm;
     typedef std::tr1::unordered_map<int,int>               IndexMap;
     //@}
 
@@ -78,7 +77,8 @@ class CommIndexer
     CommIndexer();
 
     // Constructor.
-    CommIndexer( RCP_Comm global_comm, RCP_Comm local_comm );
+    CommIndexer( const Teuchos::RCP<const Comm>& global_comm, 
+		 const Teuchos::RCP<const Comm>& local_comm );
 
     // Destructor.
     ~CommIndexer();

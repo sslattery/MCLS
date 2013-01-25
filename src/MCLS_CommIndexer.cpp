@@ -63,7 +63,8 @@ CommIndexer::CommIndexer()
  *
  * \param local_comm The local communicator.
  */
-CommIndexer::CommIndexer( RCP_Comm global_comm, RCP_Comm local_comm )
+CommIndexer::CommIndexer( const Teuchos::RCP<const Comm>& global_comm, 
+			  const Teuchos::RCP<const Comm>& local_comm )
 {
     int local_rank = -1;
     int global_rank = global_comm->getRank();
