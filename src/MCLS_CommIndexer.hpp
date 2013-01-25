@@ -32,21 +32,21 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file DTK_CommIndexer.hpp
+ * \file MCLS_CommIndexer.hpp
  * \author Stuart Slattery
  * \brief CommIndexer declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef DTK_COMMINDEXER_HPP
-#define DTK_COMMINDEXER_HPP
+#ifndef MCLS_COMMINDEXER_HPP
+#define MCLS_COMMINDEXER_HPP
 
-#include <map>
+#include <boost/tr1/unordered_map.hpp>
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 
-namespace DataTransferKit
+namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
@@ -64,7 +64,7 @@ class CommIndexer
     //! Typedefs.
     typedef Teuchos::Comm<int>                             CommType;
     typedef Teuchos::RCP<const CommType>                   RCP_Comm;
-    typedef std::map<int,int>                              IndexMap;
+    typedef std::tr1::unordered_map<int,int>               IndexMap;
     //@}
 
   private:
@@ -92,10 +92,10 @@ class CommIndexer
     { return d_l2gmap.size(); }
 };
 
-} // end namespace DataTransferKit
+} // end namespace MCLS
 
-#endif // end DTK_COMMINDEXER_HPP
+#endif // end MCLS_COMMINDEXER_HPP
 
 //---------------------------------------------------------------------------//
-// end DTK_CommIndexer.hpp
+// end MCLS_CommIndexer.hpp
 //---------------------------------------------------------------------------//

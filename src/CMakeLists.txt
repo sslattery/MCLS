@@ -28,6 +28,7 @@ APPEND_SET(HEADERS
   MCLS_AdjointTally_impl.hpp
   MCLS_CommHistoryBuffer.hpp
   MCLS_CommHistoryBuffer_impl.hpp
+  MCLS_CommIndexer.hpp
   MCLS_CommTools.hpp
   MCLS_DBC.hpp
   MCLS_DomainCommunicator.hpp
@@ -57,6 +58,7 @@ APPEND_SET(HEADERS
   ) 
 
 APPEND_SET(SOURCES
+  MCLS_CommIndexer.cpp
   MCLS_DBC.cpp
   MCLS_GlobalRNG.cpp
   MCLS_RNGControl.cpp

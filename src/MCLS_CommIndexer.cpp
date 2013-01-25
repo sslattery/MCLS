@@ -32,19 +32,19 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file DTK_CommIndexer.cpp
+ * \file MCLS_CommIndexer.cpp
  * \author Stuart Slattery
  * \brief CommIndexer definition.
  */
 //---------------------------------------------------------------------------//
 
-#include "DTK_CommIndexer.hpp"
+#include "MCLS_CommIndexer.hpp"
 
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_as.hpp>
 
-namespace DataTransferKit
+namespace MCLS
 {
 //---------------------------------------------------------------------------//
 /*!
@@ -103,11 +103,13 @@ CommIndexer::CommIndexer( RCP_Comm global_comm, RCP_Comm local_comm )
 				 &global_ids[0], 
 				 &global_ids_copy[0]);
 
-    Teuchos::Array<int>::const_iterator in_local_copy_it = in_local_copy.begin();
+    Teuchos::Array<int>::const_iterator in_local_copy_it = 
+	in_local_copy.begin();
     Teuchos::Array<int>::const_iterator local_it = 
 	local_ids_copy.begin();
     Teuchos::Array<int>::const_iterator global_it;
-    for ( global_it = global_ids_copy.begin(); global_it != global_ids_copy.end();
+    for ( global_it = global_ids_copy.begin(); 
+	  global_it != global_ids_copy.end();
     	  ++in_local_copy_it, ++local_it, ++global_it )
     {
     	if ( *in_local_copy_it )
@@ -149,8 +151,8 @@ const int CommIndexer::l2g( const int local_id ) const
 
 //---------------------------------------------------------------------------//
 
-} // end namespace DataTransferKit
+} // end namespace MCLS
 
 //---------------------------------------------------------------------------//
-// end DTK_CommIndexer.cpp
+// end MCLS_CommIndexer.cpp
 //---------------------------------------------------------------------------//
