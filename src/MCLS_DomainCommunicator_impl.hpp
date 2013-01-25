@@ -59,14 +59,15 @@ DomainCommunicator<Domain>::DomainCommunicator(
     const Teuchos::RCP<const Comm>& comm,
     const Teuchos::ParameterList& plist )
     : d_domain( domain )
-    , d_comm( comm )
+    , d_size( comm->getSize() )
+    , d_rank( comm->getRank() )
     , d_sends( d_domain->numSendNeighbors() )
     , d_receives( d_domain->numReceiveNeighbors() )
     , d_num_send_neighbors( d_domain->numSendNeighbors() )
     , d_num_receive_neighbors( d_domain->numReceiveNeighbors() )
 {
     Require( !d_domain.is_null() );
-    Require( !d_comm.is_null() );
+    Require( !comm.is_null() );
     Require( d_num_send_neighbors >= 0 );
     Require( d_num_receive_neighbors >= 0 );
 
@@ -80,10 +81,10 @@ DomainCommunicator<Domain>::DomainCommunicator(
 	    plist.get<int>("History Buffer Size") );
     }
 
-    // Duplicate the communicator so we have a blocking and nonblocking tag
-    // for the send and receive buffers.
-    Teuchos::RCP<const Comm> comm_blocking = d_comm->duplicate();
-    Teuchos::RCP<const Comm> comm_nonblocking = d_comm->duplicate();
+    // Duplicate the input communicator so we have a blocking and nonblocking
+    // tag for the send and receive buffers.
+    Teuchos::RCP<const Comm> comm_blocking = comm->duplicate();
+    Teuchos::RCP<const Comm> comm_nonblocking = comm->duplicate();
 
     // Allocate the send buffers and set their communicators.
     for ( int n = 0; n < d_num_send_neighbors; ++n )
@@ -123,7 +124,7 @@ DomainCommunicator<Domain>::communicate(
 
     // Update the result destination.
     d_result.destination = d_domain->sendNeighborRank( neighbor_id );
-    Check( d_result.destination < d_comm->getSize() );
+    Check( d_result.destination < d_size );
 
     // If the buffer is full send it.
     if ( d_sends[neighbor_id].isFull() )
@@ -157,7 +158,7 @@ int DomainCommunicator<Domain>::send()
     for ( int n = 0; n < d_num_send_neighbors; ++n )
     {
 	Check( d_sends[n].allocatedSize() > 0 );
-	Check( d_domain->sendNeighborRank(n) < d_comm->getSize() );
+	Check( d_domain->sendNeighborRank(n) < d_size );
 
 	if( !d_sends[n].isEmpty() )
 	{
@@ -190,7 +191,7 @@ int DomainCommunicator<Domain>::flush()
     for ( int n = 0; n < d_num_send_neighbors; ++n )
     {
 	Check( d_sends[n].allocatedSize() > 0 );
-	Check( d_domain->sendNeighborRank(n) < d_comm->getSize() );
+	Check( d_domain->sendNeighborRank(n) < d_size );
 
 	num_sent += d_sends[n].numHistories();
 	d_sends[n].post( d_domain->sendNeighborRank(n) );
@@ -216,7 +217,7 @@ void DomainCommunicator<Domain>::post()
 	Check( !d_receives[n].status() );
 	Check( d_receives[n].allocatedSize() > 0 );
 	Check( d_receives[n].isEmpty() );
-	Check( d_domain->receiveNeighborRank(n) < d_comm->getSize() );
+	Check( d_domain->receiveNeighborRank(n) < d_size );
 
 	d_receives[n].post( d_domain->receiveNeighborRank(n) );
 
@@ -260,7 +261,7 @@ int DomainCommunicator<Domain>::checkAndPost( BankType& bank )
     for ( int n = 0; n < d_num_receive_neighbors; ++n )
     {
 	Check( d_receives[n].allocatedSize() > 0 );
-	Check( d_domain->receiveNeighborRank(n) < d_comm->getSize() );
+	Check( d_domain->receiveNeighborRank(n) < d_size );
 
 	if( d_receives[n].check() )
 	{

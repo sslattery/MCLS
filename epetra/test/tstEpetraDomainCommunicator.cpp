@@ -45,19 +45,42 @@
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
+#include <Teuchos_DefaultMpiComm.hpp>
 #endif
 
 //---------------------------------------------------------------------------//
 // Helper functions.
 //---------------------------------------------------------------------------//
 
-Teuchos::RCP<Epetra_Comm> getEpetraComm()
+Teuchos::RCP<const Epetra_Comm> getEpetraComm()
 {
 #ifdef HAVE_MPI
     return Teuchos::rcp( new Epetra_MpiComm(MPI_COMM_WORLD) );
 #else
     return Teuchos::rcp( new Epetra_SerialComm() );
 #endif
+}
+
+//---------------------------------------------------------------------------//
+Teuchos::RCP<const Teuchos::Comm<int> > getTeuchosCommFromEpetra(
+    const Teuchos::RCP<const Epetra_Comm>& epetra_comm )
+{
+    Teuchos::RCP<const Teuchos::MpiComm<int> > teuchos_comm;
+
+#ifdef HAVE_MPI
+	Teuchos::RCP<const Epetra_MpiComm> mpi_epetra_comm =
+	    Teuchos::rcp_dynamic_cast<const Epetra_MpiComm>( epetra_comm );
+
+	Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >
+	    raw_mpi_comm = Teuchos::opaqueWrapper( mpi_epetra_comm->Comm() );
+
+	teuchos_comm =
+	    Teuchos::rcp( new Teuchos::MpiComm<int>( raw_mpi_comm ) );
+#else
+	teuchos_comm = Teuchos::DefaultComm<int>::getComm();
+#endif
+
+	return teuchos_comm;
 }
 
 //---------------------------------------------------------------------------//
@@ -116,9 +139,9 @@ TEUCHOS_UNIT_TEST( DomainCommunicator, Communicate )
     typedef MCLS::AdjointTally<VectorType> TallyType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
+    Teuchos::RCP<const Epetra_Comm> epetra_comm = getEpetraComm();
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
-	Teuchos::DefaultComm<int>::getComm();
-    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm();
+	getTeuchosCommFromEpetra( epetra_comm );
     int comm_size = comm->getSize();
     int comm_rank = comm->getRank();
 
@@ -164,6 +187,7 @@ TEUCHOS_UNIT_TEST( DomainCommunicator, Communicate )
 	MCLS::DomainCommunicator<DomainType>::BankType bank;
 	int buffer_size = 3;
 	plist.set<int>( "History Buffer Size", buffer_size );
+
 	MCLS::DomainCommunicator<DomainType> communicator( 
 	    domain, MT::getComm(*B), plist );
 

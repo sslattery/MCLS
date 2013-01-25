@@ -119,14 +119,14 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
     {
 #ifdef HAVE_MPI
 	Teuchos::RCP<const Epetra_Comm> epetra_comm = 
-	    Teuchos::rcp( matrix.Comm().Clone() );
+	    Teuchos::rcp( &matrix.Comm(), false );
 	Teuchos::RCP<const Epetra_MpiComm> mpi_epetra_comm =
 	    Teuchos::rcp_dynamic_cast<const Epetra_MpiComm>( epetra_comm );
 	Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >
 	    raw_mpi_comm = Teuchos::opaqueWrapper( mpi_epetra_comm->Comm() );
 	Teuchos::RCP<const Teuchos::MpiComm<int> > teuchos_comm =
 	    Teuchos::rcp( new Teuchos::MpiComm<int>( raw_mpi_comm ) );
-	return teuchos_comm;
+	return Teuchos::rcp_dynamic_cast<const Teuchos::Comm<int> >(teuchos_comm);
 #else
 	return Teuchos::rcp( new Teuchos::SerialComm<int>() );
 #endif
@@ -345,10 +345,10 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
 			  const Teuchos::ArrayView<int>& sends )
     { 
 #ifdef HAVE_MPI
-	Epetra_Comm* epetra_comm = matrix.Comm().Clone();
-	Epetra_MpiComm* epetra_mpi_comm = 
-	    dynamic_cast<Epetra_MpiComm*>( epetra_comm );
-	Epetra_MpiDistributor distributor( *epetra_mpi_comm );
+	const Epetra_Comm& epetra_comm = matrix.Comm();
+	const Epetra_MpiComm& epetra_mpi_comm = 
+	    dynamic_cast<const Epetra_MpiComm&>( epetra_comm );
+	Epetra_MpiDistributor distributor( epetra_mpi_comm );
 	int num_receives = 0;
 	distributor.CreateFromSends( sends.size(),
 				     sends.getRawPtr(),

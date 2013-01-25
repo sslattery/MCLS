@@ -265,7 +265,6 @@ void AdjointDomain<Vector,Matrix>::buildBoundary(
 	  ++bnd_row_it, ++bnd_rank_it )
     {
 	Check( *bnd_rank_it != -1 );
-	Check( *bnd_rank_it != MT::getComm( *A )->getRank() );
 
 	// Look for the owning process in the send rank array.
 	send_rank_it = std::find( d_send_ranks.begin(), 
