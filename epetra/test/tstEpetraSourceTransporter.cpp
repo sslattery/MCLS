@@ -81,10 +81,10 @@ TEUCHOS_UNIT_TEST( SourceTransporter, Typedefs )
     typedef std::stack<Teuchos::RCP<HistoryType> > BankType;
 
     typedef MCLS::SourceTransporter<DomainType> SourceTransporterType;
-    typedef typename SourceTransporterType::HistoryType history_type;
-    typedef typename SourceTransporterType::TallyType tally_type;
-    typedef typename SourceTransporterType::BankType bank_type;
-    typedef typename SourceTransporterType::SourceType source_type;
+    typedef SourceTransporterType::HistoryType history_type;
+    typedef SourceTransporterType::TallyType tally_type;
+    typedef SourceTransporterType::BankType bank_type;
+    typedef SourceTransporterType::SourceType source_type;
 
     TEST_EQUALITY_CONST( 
 	(Teuchos::TypeTraits::is_same<HistoryType, history_type>::value)
