@@ -344,13 +344,14 @@ void DomainCommunicator<Domain>::end()
     for ( int n = 0; n < d_num_receive_neighbors; ++n )
     {
 	Check( d_receives[n].allocatedSize() > 0 );
-
+	std::cout << "WAIT " << d_comm->getRank() << " " << n << std::endl;
 	d_receives[n].wait();
+	std::cout << "WAIT " << d_comm->getRank() << " " << n << std::endl;
 	d_receives[n].empty();
 
 	Ensure( d_receives[n].isEmpty() );
     }
-
+    std::cout << "END " << d_comm->getRank() << std::endl;
     Ensure( !sendStatus() );
     Ensure( !receiveStatus() );
 }

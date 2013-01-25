@@ -56,9 +56,9 @@ Teuchos::RCP<Epetra_Comm> getEpetraComm(
 {
 #ifdef HAVE_MPI
     Teuchos::RCP< const Teuchos::MpiComm<int> > mpi_comm = 
-	Teuchos::rcp_dynamic_cast< const Teuchos::MpiComm<int> >( comm );
+    	Teuchos::rcp_dynamic_cast< const Teuchos::MpiComm<int> >( comm );
     Teuchos::RCP< const Teuchos::OpaqueWrapper<MPI_Comm> > opaque_comm = 
-	mpi_comm->getRawMpiComm();
+    	mpi_comm->getRawMpiComm();
     return Teuchos::rcp( new Epetra_MpiComm( (*opaque_comm)() ) );
 #else
     return Teuchos::rcp( new Epetra_SerialComm() );
@@ -144,12 +144,12 @@ TEUCHOS_UNIT_TEST( DomainCommunicator, Communicate )
 	{
 	    global_columns[0] = i-1;
 	    values[0] = -0.5;
-	    A->InsertGlobalValues( i, global_columns().size(), 
+	    A->InsertGlobalValues( i, global_columns.size(), 
 				   &values[0], &global_columns[0] );
 	}
 	global_columns[0] = global_num_rows-1;
 	values[0] = -0.5;
-	A->InsertGlobalValues( global_num_rows-1, global_columns().size(),
+	A->InsertGlobalValues( global_num_rows-1, global_columns.size(),
 			       &values[0], &global_columns[0] );
 	A->FillComplete();
 
@@ -169,14 +169,13 @@ TEUCHOS_UNIT_TEST( DomainCommunicator, Communicate )
 	MCLS::DomainCommunicator<DomainType>::BankType bank;
 	int buffer_size = 3;
 	plist.set<int>( "History Buffer Size", buffer_size );
-	std::cout << "CONSTRUCTION " << comm_rank << std::endl;
 	MCLS::DomainCommunicator<DomainType> communicator( domain, comm, plist );
 
 	// Test initialization.
 	TEST_EQUALITY( Teuchos::as<int>(communicator.maxBufferSize()), buffer_size );
 	TEST_ASSERT( !communicator.sendStatus() );
 	TEST_ASSERT( !communicator.receiveStatus() );
-	std::cout << "HERE " << comm_rank << std::endl;
+
 	// Post receives.
 	communicator.post();
 	if ( comm_rank == 0 )
