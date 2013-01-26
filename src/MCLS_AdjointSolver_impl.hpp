@@ -57,14 +57,16 @@ namespace MCLS
 template<class Vector, class Matrix>
 AdjointSolver<Vector,Matrix>::AdjointSolver( 
     const Teuchos::RCP<LinearProblemType>& linear_problem,
+    const Teuchos::RCP<const Comm>& set_comm,
     Teuchos::ParameterList& plist,
     int seed )
     : d_linear_problem( linear_problem )
+    , d_set_comm( set_comm )
     , d_seed( seed )
-    , d_set_comm( MT::getComm(*d_linear_problem->getOperator()) )
 {
     Require( !d_linear_problem.is_null() );
     Require( d_linear_problem->status() );
+    Require( !d_set_comm.is_null() );
 
     // Check for a user provided random number seed. The default is provided
     // as a default argument for this constructor.
@@ -104,7 +106,6 @@ AdjointSolver<Vector,Matrix>::AdjointSolver(
 	Teuchos::rcp( new TransporterType(set_comm, d_domain, plist) );
 
     Ensure( HistoryType::getPackedBytes() > 0 );
-    Ensure( !d_set_comm.is_null() );
     Ensure( !d_rng_control.is_null() );
     Ensure( !d_domain.is_null() );
     Ensure( !d_tally.is_null() );

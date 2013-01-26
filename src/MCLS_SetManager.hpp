@@ -32,37 +32,36 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_AdjointSolver.hpp
+ * \file MCLS_SetManager.hpp
  * \author Stuart R. Slattery
- * \brief Adjoint Monte Carlo solver declaration.
+ * \brief Multiple set manager declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_ADJOINTSOLVER_HPP
-#define MCLS_ADJOINTSOLVER_HPP
+#ifndef MCLS_SETMANAGER_HPP
+#define MCLS_SETMANAGER_HPP
 
-#include "MCLS_Solver.hpp"
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_MatrixTraits.hpp"
-#include "MCLS_RNGControl.hpp"
-#include "MCLS_AdjointDomain.hpp"
-#include "MCLS_SourceTransporter.hpp"
+#include "MCLS_VectorExport.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_Array.hpp>
 
 namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class AdjointSolver
- * \brief Linear solver base class.
+ * \class SetManager
+ * \brief Class for generating and managing multiple sets in an MSOD
+ * decomposition. 
  */
 template<class Vector, class Matrix>
-class AdjointSolver
+class SetManager
 {
   public:
 
@@ -73,56 +72,45 @@ class AdjointSolver
     typedef VectorTraits<Vector>                        VT;
     typedef MatrixTraits<Vector,Matrix>                 MT;
     typedef LinearProblem<Vector,Matrix>                LinearProblemType;
-    typedef AdjointDomain<Vector,Matrix>                DomainType;
-    typedef typename DomainType::TallyType              TallyType;
-    typedef SourceTransporter<DomainType>               TransporterType;
-    typedef typename TransporterType::SourceType        SourceType;
-    typedef typename TransporterType::HistoryType       HistoryType;
     typedef Teuchos::Comm<int>                          Comm;
     //@}
 
     // Constructor.
-    AdjointSolver( const Teuchos::RCP<LinearProblemType>& linear_problem,
-		   const Teuchos::RCP<const Comm>& set_comm,
-		   Teuchos::ParameterList& plist,
-		   int seed = 433494437 );
+    SetManager( const Teuchos::RCP<LinearProblemType>& primary_problem,
+		const Teuchos::RCP<const Comm>& global_comm,
+		Teuchos::ParameterList& plist );
 
     //! Destructor.
-    ~AdjointSolver { /* ... */ }
+    ~SetManager { /* ... */ }
 
-    // Solve the linear problem.
-    void solve();
+    // Get the number of sets.
+    int numSets() const { return d_num_sets; }
 
-  private:
-
-    // Set the source base on the RHS of the linear problem.
-    void setSource();
+    // Set ID for this set.
+    int setID() const { return d_set_id; }
 
   private:
 
-    // Linear problem.
-    Teuchos::RCP<LinearProblemType> d_linear_problem;
+    // Global communicator.
+    Teuchos::RCP<const Comm> d_global_comm;
 
-    // Random number seed.
-    int seed;
+    // Set-constant communicators.
+    Teuchos::Array<Teuchos::RCP<const Comm> > d_set_comms;
 
-    // Set constant communicator.
-    Teuchos::RCP<const Comm> d_set_comm;
+    // Number of sets in the problem.
+    int d_num_sets;
 
-    // Random number controller.
-    Teuchos::RCP<RNGControl> d_rng_control;
+    // Set ID for this set.
+    int d_set_id;
 
-    // Local domain.
-    Teuchos::RCP<DomainType> d_domain;
+    // Set linear problems.
+    Teuchos::Array<Teuchos::RCP<LinearProblemType> > d_problems;
 
-    // Tally.
-    Teuchos::RCP<TallyType> d_tally;
+    // Primary-to-secondary set exporters.
+    Teuchos::Array<VectorExport<Vector> > d_p_to_s_exports;
 
-    // Source.
-    Teuchos::RCP<SourceType> d_source;
-
-    // Source transporter.
-    Teuchos::RCP<TransporterType> d_transporter;
+    // Secondary-to-primary set exporters.
+    Teuchos::Array<VectorExport<Vector> > d_s_to_p_exports;
 };
 
 //---------------------------------------------------------------------------//
@@ -133,13 +121,13 @@ class AdjointSolver
 // Template includes.
 //---------------------------------------------------------------------------//
 
-#include "MCLS_AdjointSolver_impl.hpp"
+#include "MCLS_SetManager_impl.hpp"
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_ADJOINTSOLVER_HPP
+#endif // end MCLS_SETMANAGER_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_AdjointSolver.hpp
+// end MCLS_SetManager.hpp
 // ---------------------------------------------------------------------------//
 
