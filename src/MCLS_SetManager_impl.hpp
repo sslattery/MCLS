@@ -32,102 +32,97 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_SetManager.hpp
+ * \file MCLS_SetManager_impl.hpp
  * \author Stuart R. Slattery
- * \brief Multiple set manager declaration.
+ * \brief Multiple set manager implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_SETMANAGER_HPP
-#define MCLS_SETMANAGER_HPP
+#ifndef MCLS_SETMANAGER_IMPL_HPP
+#define MCLS_SETMANAGER_IMPL_HPP
 
-#include "MCLS_LinearProblem.hpp"
-#include "MCLS_VectorTraits.hpp"
-#include "MCLS_MatrixTraits.hpp"
-#include "MCLS_VectorExport.hpp"
+#include "MCLS_DBC.hpp"
 
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Comm.hpp>
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_Array.hpp>
+#include <Teuchos_CommHelpers.hpp>
+#include <Teuchos_as.hpp>
+#include <Teuchos_Ptr.hpp>
 
 namespace MCLS
 {
-
 //---------------------------------------------------------------------------//
 /*!
- * \class SetManager
- * \brief Class for generating and managing multiple sets in an MSOD
- * decomposition. 
+ * \brief Constructor.
  */
 template<class Vector, class Matrix>
-class SetManager
+SetManager<Vector,Matrix>::SetManager( 
+    const Teuchos::RCP<LinearProblemType>& primary_problem,
+    const Teuchos::RCP<const Comm>& global_comm,
+    Teuchos::ParameterList& plist )
+    : d_global_comm( global_comm )
+    , d_num_sets( plist.get<int>("Number of Sets") )
+    , d_set_size( 0 )
+    , d_set_id( 0 )
+    , d_problems( d_num_sets )
+    , d_set_comms( d_num_sets )
+    , d_p_to_s_exports( d_num_sets - 1 )
+    , d_s_to_p_exports( d_num_sets - 1 )
 {
-  public:
+    Require( !primary_problem.is_null() );
+    Require( !global_comm.is_null() );
+    Require( d_num_sets > 0 );
 
-    //@{
-    //! Typedefs.
-    typedef Vector                                      vector_type;
-    typedef Matrix                                      matrix_type;
-    typedef VectorTraits<Vector>                        VT;
-    typedef MatrixTraits<Vector,Matrix>                 MT;
-    typedef LinearProblem<Vector,Matrix>                LinearProblemType;
-    typedef Teuchos::Comm<int>                          Comm;
-    //@}
+    // Get the set size. We could compute this value from user input, but we
+    // must Insist that this is true every time and therefore we do this
+    // reduction to verify. We require the primary problem to be have no data
+    // on procs not owned by the primary linear problem.
+    int local_size = Teuchos::as<int>( 
+	(VT::getLocalLength(*primary_problem->getLHS()) > 0) ); 
+    Teuchos::reduceAll<int,int>( *d_global_comm, Teuchos::REDUCE_SUM,
+				 local_size, Teuchos::Ptr<int>(&d_set_size) );
+    Insist( d_num_sets * d_set_size == d_global_comm->getSize(),
+	    "Size of set * Number of sets != Global communicator size!" );
+    Check( d_set_size > 0 );
 
-    // Constructor.
-    SetManager( const Teuchos::RCP<LinearProblemType>& primary_problem,
-		const Teuchos::RCP<const Comm>& global_comm,
-		Teuchos::ParameterList& plist );
+    // We require that the primary problem exist on global procs 0 through
+    // (d_set_size-1).
+    if ( d_global_comm->getRank() < d_set_size )
+    {
+	Insist(VT::getLocalLength(*primary_problem->getLHS()) > 0,
+	       "Primary linear problem must exist on procs [0,(set_size-1)] only!");
+    }
+    else
+    {
+	Insist(VT::getLocalLength(*primary_problem->getLHS()) == 0,
+	       "Primary linear problem must exist on procs [0,(set_size-1)] only!");
+    }
 
-    //! Destructor.
-    ~SetManager { /* ... */ }
+    // Add the primary set to the linear problem array.
+    d_problems[0] = primary_problem;
 
-    // Get the number of sets.
-    int numSets() const { return d_num_sets; }
+    // Generate the set-constant communicator for the primary problem.
+    Teuchos::Array<int> subcomm_ranks( d_set_size );
+    for ( int n = 0; n < d_set_size; ++n )
+    {
+	subcomm_ranks[n] = n;
+    }
+    d_set_comms[0] = d_global_comm->createSubcommunicator( subcomm_ranks() );
 
-    // Set ID for this set.
-    int setID() const { return d_set_id; }
-
-  private:
-
-    // Global communicator.
-    Teuchos::RCP<const Comm> d_global_comm;
-
-    // Set-constant communicators.
-    Teuchos::Array<Teuchos::RCP<const Comm> > d_set_comms;
-
-    // Number of sets in the problem.
-    int d_num_sets;
-
-    // Set ID for this set.
-    int d_set_id;
-
-    // Set linear problems.
-    Teuchos::Array<Teuchos::RCP<LinearProblemType> > d_problems;
-
-    // Primary-to-secondary set exporters.
-    Teuchos::Array<VectorExport<Vector> > d_p_to_s_exports;
-
-    // Secondary-to-primary set exporters.
-    Teuchos::Array<VectorExport<Vector> > d_s_to_p_exports;
-};
+    // Build the secondary linear problems.
+    for ( int p = 1; p < d_num_sets; ++p )
+    {
+	
+    }
+}
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
 //---------------------------------------------------------------------------//
-// Template includes.
-//---------------------------------------------------------------------------//
 
-#include "MCLS_SetManager_impl.hpp"
+#endif // end MCLS_SETMANAGER_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-
-#endif // end MCLS_SETMANAGER_HPP
-
-//---------------------------------------------------------------------------//
-// end MCLS_SetManager.hpp
+// end MCLS_SetManager_impl.hpp
 // ---------------------------------------------------------------------------//
 

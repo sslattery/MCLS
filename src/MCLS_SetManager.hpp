@@ -94,17 +94,20 @@ class SetManager
     // Global communicator.
     Teuchos::RCP<const Comm> d_global_comm;
 
-    // Set-constant communicators.
-    Teuchos::Array<Teuchos::RCP<const Comm> > d_set_comms;
-
     // Number of sets in the problem.
     int d_num_sets;
+
+    // Size of a set.
+    int d_set_size;
 
     // Set ID for this set.
     int d_set_id;
 
     // Set linear problems.
     Teuchos::Array<Teuchos::RCP<LinearProblemType> > d_problems;
+
+    // Set-constant communicators.
+    Teuchos::Array<Teuchos::RCP<const Comm> > d_set_comms;
 
     // Primary-to-secondary set exporters.
     Teuchos::Array<VectorExport<Vector> > d_p_to_s_exports;
