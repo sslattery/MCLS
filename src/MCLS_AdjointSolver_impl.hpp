@@ -170,12 +170,16 @@ bool AdjointSolver<Vector,Matrix>::isConverged()
 template<class Vector, class Matrix>
 void AdjointSolver<Vector,Matrix>::setSource()
 {
+    // Initialize source.
     d_source = Teuchos::rcp( new UniformAdjointSource<DomainType>(
 				 d_linear_problem->getRHS(),
 				 d_domain,
 				 d_rng_control,
 				 d_set_comm,
 				 plist ) );
+
+    // Generate the source.
+    source->buildSource();
 
     Ensure( !d_source.is_null() );
 }
