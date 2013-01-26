@@ -32,19 +32,18 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_AdjointSolver_impl.hpp
+ * \file MCLS_MCSolver_impl.hpp
  * \author Stuart R. Slattery
- * \brief Adjoint Monte Carlo solver implementation.
+ * \brief Monte Carlo solver implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_ADJOINTSOLVER_IMPL_HPP
-#define MCLS_ADJOINTSOLVER_IMPL_HPP
+#ifndef MCLS_MCSOLVER_IMPL_HPP
+#define MCLS_MCSOLVER_IMPL_HPP
 
 #include <string>
 
 #include "MCLS_DBC.hpp"
-#include "MCLS_UniformAdjointSource.hpp"
 
 #include <Teuchos_ScalarTraits.hpp>
 
@@ -54,11 +53,10 @@ namespace MCLS
 /*!
  * \brief Constructor.
  */
-template<class Vector, class Matrix>
-AdjointSolver<Vector,Matrix>::AdjointSolver(
-    const Teuchos::RCP<const Comm>& set_comm,
-    const Teuchos::RCP<Teuchos::ParameterList>& plist,
-    int seed )
+template<class Domain>
+MCSolver<Domain>::MCSolver( const Teuchos::RCP<const Comm>& set_comm,
+			    const Teuchos::RCP<Teuchos::ParameterList>& plist,
+			    int seed )
     , d_set_comm( set_comm )
     , d_plist( plist )
     , d_seed( seed )
@@ -103,8 +101,8 @@ AdjointSolver<Vector,Matrix>::AdjointSolver(
 /*!
  * \brief Solve the linear problem.
  */
-template<class Vector, class Matrix>
-void AdjointSolver<Vector,Matrix>::solve()
+template<class Domain>
+void MCSolver<Domain>::solve()
 {
     Require( !d_domain.is_null() );
     Require( !d_source.is_null() );
@@ -134,9 +132,8 @@ void AdjointSolver<Vector,Matrix>::solve()
 /*!
  * \brief Set the domain for transport.
  */
-template<class Vector, class Matrix>
-void AdjointSolver<Vector,Matrix>::setDomain( 
-    const Teuchos::RCP<Domain>& domain )
+template<class Domain>
+void MCSolver<Domain>::setDomain( const Teuchos::RCP<Domain>& domain )
 {
     Require( !domain.is_null() );
 
@@ -159,9 +156,8 @@ void AdjointSolver<Vector,Matrix>::setDomain(
 /*!
  * \brief Set the source for transport.
  */
-template<class Vector, class Matrix>
-void AdjointSolver<Vector,Matrix>::setSource( 
-    const Teuchos::RCP<Source>& source )
+template<class Domain>
+void MCSolver<Domain>::setSource( const Teuchos::RCP<SourceType>& source )
 {
     Require( !source.is_null() );
 
@@ -177,9 +173,9 @@ void AdjointSolver<Vector,Matrix>::setSource(
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_ADJOINTSOLVER_IMPL_HPP
+#endif // end MCLS_MCSOLVER_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_AdjointSolver_impl.hpp
+// end MCLS_MCSolver_impl.hpp
 // ---------------------------------------------------------------------------//
 

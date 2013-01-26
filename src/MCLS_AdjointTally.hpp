@@ -90,7 +90,7 @@ class AdjointTally
     // block. Normalize the result with the number of blocks.
     void combineBlockTallies( const Teuchos::RCP<const Comm>& block_comm );
 
-    // Normalize base decomposition tallies with the number of specified
+    // Normalize base decomposition tally with the number of specified
     // histories.
     void normalize( const int& nh );
 

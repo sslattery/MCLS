@@ -32,21 +32,17 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_AdjointSolver.hpp
+ * \file MCLS_MCSolver.hpp
  * \author Stuart R. Slattery
- * \brief Adjoint Monte Carlo solver declaration.
+ * \brief Monte Carlo solver declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_ADJOINTSOLVER_HPP
-#define MCLS_ADJOINTSOLVER_HPP
+#ifndef MCLS_MCSOLVER_HPP
+#define MCLS_MCSOLVER_HPP
 
 #include "MCLS_Solver.hpp"
-#include "MCLS_LinearProblem.hpp"
-#include "MCLS_VectorTraits.hpp"
-#include "MCLS_MatrixTraits.hpp"
 #include "MCLS_RNGControl.hpp"
-#include "MCLS_AdjointDomain.hpp"
 #include "MCLS_SourceTransporter.hpp"
 
 #include <Teuchos_RCP.hpp>
@@ -58,36 +54,35 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 /*!
- * \class AdjointSolver
- * \brief Linear solver base class.
+ * \class MCSolver
+ * \brief Monte Carlo Linear Solver. 
+ *
+ * The domain type indicates the solver type. For example, templating this
+ * class on the AdjointDomain will solve the system using the analog adjoint
+ * Neumann-Ulam method.
  */
-template<class Vector, class Matrix>
-class AdjointSolver
+template<class Domain>
+class MCSolver
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Vector                                      vector_type;
-    typedef Matrix                                      matrix_type;
-    typedef VectorTraits<Vector>                        VT;
-    typedef MatrixTraits<Vector,Matrix>                 MT;
-    typedef LinearProblem<Vector,Matrix>                LinearProblemType;
-    typedef AdjointDomain<Vector,Matrix>                DomainType;
-    typedef typename DomainType::TallyType              TallyType;
-    typedef SourceTransporter<DomainType>               TransporterType;
+    typedef Domain                                      domain_type;
+    typedef typename Domain::TallyType                  TallyType;
+    typedef SourceTransporter<Domain>                   TransporterType;
     typedef typename TransporterType::SourceType        SourceType;
     typedef typename TransporterType::HistoryType       HistoryType;
     typedef Teuchos::Comm<int>                          Comm;
     //@}
 
     // Constructor.
-    AdjointSolver( const Teuchos::RCP<const Comm>& set_comm,
-		   const Teuchos::RCP<Teuchos::ParameterList>& plist,
-		   int seed = 433494437 );
+    MCSolver( const Teuchos::RCP<const Comm>& set_comm,
+	      const Teuchos::RCP<Teuchos::ParameterList>& plist,
+	      int seed = 433494437 );
 
     //! Destructor.
-    ~AdjointSolver { /* ... */ }
+    ~MCSolver { /* ... */ }
 
     // Solve the linear problem.
     void solve();
@@ -96,7 +91,7 @@ class AdjointSolver
     void setDomain( const Teuchos::RCP<Domain>& domain );
 
     // Set the source.
-    void setSource( const Teuchos::RCP<Source>& source );
+    void setSource( const Teuchos::RCP<SourceType>& source );
 
   private:
 
@@ -112,17 +107,17 @@ class AdjointSolver
     // Random number controller.
     Teuchos::RCP<RNGControl> d_rng_control;
 
-    // Local domain.
-    Teuchos::RCP<DomainType> d_domain;
+    // Domain.
+    Teuchos::RCP<Domain> d_domain;
 
     // Tally.
     Teuchos::RCP<TallyType> d_tally;
 
-    // Source.
-    Teuchos::RCP<SourceType> d_source;
-
-    // Source transporter.
+    // SourceType transporter.
     Teuchos::RCP<TransporterType> d_transporter;
+
+    // SourceType.
+    Teuchos::RCP<SourceType> d_source;
 };
 
 //---------------------------------------------------------------------------//
@@ -133,13 +128,13 @@ class AdjointSolver
 // Template includes.
 //---------------------------------------------------------------------------//
 
-#include "MCLS_AdjointSolver_impl.hpp"
+#include "MCLS_MCSolver_impl.hpp"
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_ADJOINTSOLVER_HPP
+#endif // end MCLS_MCSOLVER_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_AdjointSolver.hpp
+// end MCLS_MCSolver.hpp
 // ---------------------------------------------------------------------------//
 
