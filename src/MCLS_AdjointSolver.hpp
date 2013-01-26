@@ -82,9 +82,8 @@ class AdjointSolver
     //@}
 
     // Constructor.
-    AdjointSolver( const Teuchos::RCP<LinearProblemType>& linear_problem,
-		   const Teuchos::RCP<const Comm>& set_comm,
-		   Teuchos::ParameterList& plist,
+    AdjointSolver( const Teuchos::RCP<const Comm>& set_comm,
+		   const Teuchos::RCP<Teuchos::ParameterList>& plist,
 		   int seed = 433494437 );
 
     //! Destructor.
@@ -93,21 +92,22 @@ class AdjointSolver
     // Solve the linear problem.
     void solve();
 
+    // Set the domain.
+    void setDomain( const Teuchos::RCP<Domain>& domain );
+
+    // Set the source.
+    void setSource( const Teuchos::RCP<Source>& source );
+
   private:
-
-    // Set the source base on the RHS of the linear problem.
-    void setSource();
-
-  private:
-
-    // Linear problem.
-    Teuchos::RCP<LinearProblemType> d_linear_problem;
-
-    // Random number seed.
-    int seed;
 
     // Set constant communicator.
     Teuchos::RCP<const Comm> d_set_comm;
+
+    // Problem parameters.
+    Teuchos::RCP<Teuchos::ParameterList> d_plist;
+
+    // Random number seed.
+    int seed;
 
     // Random number controller.
     Teuchos::RCP<RNGControl> d_rng_control;

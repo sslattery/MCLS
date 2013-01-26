@@ -237,7 +237,7 @@ TEUCHOS_UNIT_TEST( AdjointTally, Combine )
 	tally.tallyHistory( history );
     }
 
-    tally.combineTallies();
+    tally.combineSetTallies();
 
     Teuchos::ArrayRCP<const double> A_view = VT::view( *A );
     Teuchos::ArrayRCP<const double>::const_iterator a_view_iterator;
@@ -322,7 +322,7 @@ TEUCHOS_UNIT_TEST( AdjointTally, Normalize )
 	tally.tallyHistory( history );
     }
     
-    tally.combineTallies();
+    tally.combineSetTallies();
     int nh = 10;
     tally.normalize( nh );
 

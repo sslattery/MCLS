@@ -86,12 +86,16 @@ class AdjointTally
     // Combine the overlap tally with the base decomposition tally in the set.
     void combineSetTallies();
 
-    // Combine the secondary tallies with the primary tally across a block.
+    // Combine the secondary tallies with the primary tally across a
+    // block. Normalize the result with the number of blocks.
     void combineBlockTallies( const Teuchos::RCP<const Comm>& block_comm );
 
     // Normalize base decomposition tallies with the number of specified
     // histories.
     void normalize( const int& nh );
+
+    // Zero out the tallies.
+    void zeroOut();
 
     // Get the global tally rows in the base decomposition.
     Teuchos::Array<Ordinal> baseRows() const;

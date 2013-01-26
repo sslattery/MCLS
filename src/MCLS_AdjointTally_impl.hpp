@@ -41,6 +41,8 @@
 #ifndef MCLS_ADJOINTTALLY_IMPL_HPP
 #define MCLS_ADJOINTTALLY_IMPL_HPP
 
+#include <Teuchos_ScalarTraits.hpp>
+
 namespace MCLS
 {
 
@@ -71,13 +73,27 @@ void AdjointTally<Vector>::combineTallies()
 
 //---------------------------------------------------------------------------//
 /*
- * \brief Normalize base decomposition tallies with the number of specified
+ * \brief Normalize base decomposition tally with the number of specified
  * histories.
  */
 template<class Vector>
 void AdjointTally<Vector>::normalize( const int& nh )
 {
     VT::scale( *d_x, 1.0 / nh );
+}
+
+//---------------------------------------------------------------------------//
+/*
+ * \brief Zero out base decomposition and overlap decomposition tallies.
+ */
+template<class Vector>
+void AdjointTally<Vector>::zeroOut()
+{
+    VT::putScalar( *d_x, 
+		   Teuchos::ScalarTraits<typename VT::scalar_type>::zero() );
+
+    VT::putScalar( *d_x_overlap, 
+		   Teuchos::ScalarTraits<typename VT::scalar_type>::zero() );
 }
 
 //---------------------------------------------------------------------------//

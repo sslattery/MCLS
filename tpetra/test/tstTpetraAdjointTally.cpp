@@ -221,7 +221,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, Combine, LO, GO, Scalar )
 	tally.tallyHistory( history );
     }
 
-    tally.combineTallies();
+    tally.combineSetTallies();
 
     Teuchos::ArrayRCP<const Scalar> A_view = VT::view( *A );
     typename Teuchos::ArrayRCP<const Scalar>::const_iterator a_view_iterator;
@@ -303,7 +303,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, Normalize, LO, GO, Scalar )
 	tally.tallyHistory( history );
     }
     
-    tally.combineTallies();
+    tally.combineSetTallies();
     int nh = 10;
     tally.normalize( nh );
 

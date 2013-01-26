@@ -55,17 +55,15 @@ namespace MCLS
  * \brief Constructor.
  */
 template<class Vector, class Matrix>
-AdjointSolver<Vector,Matrix>::AdjointSolver( 
-    const Teuchos::RCP<LinearProblemType>& linear_problem,
+AdjointSolver<Vector,Matrix>::AdjointSolver(
     const Teuchos::RCP<const Comm>& set_comm,
-    Teuchos::ParameterList& plist,
+    const Teuchos::RCP<Teuchos::ParameterList>& plist,
     int seed )
-    : d_linear_problem( linear_problem )
     , d_set_comm( set_comm )
+    , d_plist( plist )
     , d_seed( seed )
 {
-    Require( !d_linear_problem.is_null() );
-    Require( d_linear_problem->status() );
+    Require( !d_plist.is_null() );
     Require( !d_set_comm.is_null() );
 
     // Check for a user provided random number seed. The default is provided
@@ -90,16 +88,8 @@ AdjointSolver<Vector,Matrix>::AdjointSolver(
 	HistoryType::setByteSize( 0 );
     }
 
-    // Generate the domain.
-    d_domain = Teuchos::rcp( new DomainType( d_linear_problem->getOperator(),
-					     d_linear_problem->getLHS(),
-					     plist ) );
-
     // Get the domain tally.
     d_tally = d_domain->domainTally();
-
-    // Generate the initial source.
-    setSource();
 
     // Generate the source transporter.
     d_transporter = 
@@ -107,10 +97,6 @@ AdjointSolver<Vector,Matrix>::AdjointSolver(
 
     Ensure( HistoryType::getPackedBytes() > 0 );
     Ensure( !d_rng_control.is_null() );
-    Ensure( !d_domain.is_null() );
-    Ensure( !d_tally.is_null() );
-    Ensure( !d_source.is_null() );
-    Ensure( !d_transporter.is_null() );
 }
 
 //---------------------------------------------------------------------------//
@@ -120,18 +106,13 @@ AdjointSolver<Vector,Matrix>::AdjointSolver(
 template<class Vector, class Matrix>
 void AdjointSolver<Vector,Matrix>::solve()
 {
-    // Zero out the LHS.
-    VT::putScalar( *d_linear_problem->getLHS(), 
-		   Teuchos::ScalarTraits<typename VT::scalar_type>::zero() );
-
-    // If the RHS of the linear problem has changed since the last solve,
-    // update the source.
-    if ( !d_linear_problem->status() )
-    {
-	setSource();
-	d_linear_problem->setProblem();
-    }
-    Check( d_linear_problem->status() );
+    Require( !d_domain.is_null() );
+    Require( !d_source.is_null() );
+    Require( !d_tally.is_null() );
+    Require( !d_transporter.is_null() );
+    
+    // Zero out the tally.
+    d_tally->zeroOut();
 
     // Assign the source to the transporter.
     d_transporter->assignSource( d_source );
@@ -143,7 +124,7 @@ void AdjointSolver<Vector,Matrix>::solve()
     d_set_comm->barrier();
 
     // Update the set tallies.
-    d_tally->combineTallies();
+    d_tally->combineSetTallies();
 
     // Normalize the tally with the number of source histories in the set.
     d_tally->normalize( d_source->numToTransportInSet() );
@@ -151,21 +132,41 @@ void AdjointSolver<Vector,Matrix>::solve()
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Set the source based on the RHS of the linear problem.
+ * \brief Set the domain for transport.
  */
 template<class Vector, class Matrix>
-void AdjointSolver<Vector,Matrix>::setSource()
+void AdjointSolver<Vector,Matrix>::setDomain( 
+    const Teuchos::RCP<Domain>& domain )
 {
-    // Initialize source.
-    d_source = Teuchos::rcp( new UniformAdjointSource<DomainType>(
-				 d_linear_problem->getRHS(),
-				 d_domain,
-				 d_rng_control,
-				 d_set_comm,
-				 plist ) );
+    Require( !domain.is_null() );
 
-    // Generate the source.
-    source->buildSource();
+    // Set the domain.
+    d_domain = domain;
+
+    // Get the domain tally.
+    d_tally = d_domain->domainTally();
+
+    // Generate the source transporter.
+    d_transporter = 
+	Teuchos::rcp( new TransporterType(d_set_comm, d_domain, *d_plist) );
+
+    Ensure( !d_domain.is_null() );
+    Ensure( !d_tally.is_null() );
+    Ensure( !d_transporter.is_null() );
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Set the source for transport.
+ */
+template<class Vector, class Matrix>
+void AdjointSolver<Vector,Matrix>::setSource( 
+    const Teuchos::RCP<Source>& source )
+{
+    Require( !source.is_null() );
+
+    d_source = source;
+    d_source->buildSource();
 
     Ensure( !d_source.is_null() );
 }
