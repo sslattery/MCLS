@@ -57,18 +57,14 @@ namespace MCLS
 template<class Vector, class Matrix>
 AdjointSolver<Vector,Matrix>::AdjointSolver( 
     const Teuchos::RCP<LinearProblemType>& linear_problem,
-    const Teuchos::RCP<const Comm>& global_comm,
     Teuchos::ParameterList& plist,
     int seed )
     : d_linear_problem( linear_problem )
-    , d_global_comm( global_comm )
     , d_seed( seed )
+    , d_set_comm( MT::getComm(*d_linear_problem->getOperator()) )
 {
     Require( !d_linear_problem.is_null() );
-    Require( !d_global_comm.is_null() );
-
-    // Get the set communicator.
-    d_set_comm = MT::getComm( *d_linear_problem->getOperator() );
+    Require( d_linear_problem->status() );
 
     // Check for a user provided random number seed. The default is provided
     // as a default argument for this constructor.
@@ -129,10 +125,12 @@ void AdjointSolver<Vector,Matrix>::solve()
 
     // If the RHS of the linear problem has changed since the last solve,
     // update the source.
-    if ( d_linear_problem->updatedRHS() )
+    if ( !d_linear_problem->status() )
     {
 	setSource();
+	d_linear_problem->setProblem();
     }
+    Check( d_linear_problem->status() );
 
     // Assign the source to the transporter.
     d_transporter->assignSource( d_source );
@@ -141,26 +139,13 @@ void AdjointSolver<Vector,Matrix>::solve()
     d_transporter.transport();
 
     // Barrier after completion.
-    d_comm_global->barrier();
+    d_set_comm->barrier();
 
     // Update the set tallies.
     d_tally->combineTallies();
 
     // Normalize the tally with the number of source histories in the set.
     d_tally->normalize( d_source->numToTransportInSet() );
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Return whether the solution has converged.
- */
-template<class Vector, class Matrix>
-bool AdjointSolver<Vector,Matrix>::isConverged()
-{
-    // The adjoint MC solver is a direct solver. Therefore it is always
-    // converged (although we may want to return the residual norm through
-    // another method as it is not typically 0 due to statistical error).
-    return true;
 }
 
 //---------------------------------------------------------------------------//

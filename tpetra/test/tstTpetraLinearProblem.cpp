@@ -142,6 +142,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LinearProblem, Constructor, LO, GO, Scalar )
     TEST_EQUALITY( linear_problem.getOperator(), A );
     TEST_EQUALITY( linear_problem.getLHS(), X );
     TEST_EQUALITY( linear_problem.getRHS(), B );
+    TEST_ASSERT( linear_problem.status() );
+
+    Teuchos::RCP<VectorType> Y = VT::clone( *X );
+    linear_problem.setLHS( Y );
+    TEST_EQUALITY( linear_problem.getLHS(), Y );
+    TEST_ASSERT( !linear_problem.status() );
+    linear_problem.setProblem();
+    TEST_ASSERT( linear_problem.status() );
+
+    Teuchos::RCP<VectorType> C = VT::clone( *B );
+    linear_problem.setRHS( C );
+    TEST_EQUALITY( linear_problem.getRHS(), C );
+    TEST_ASSERT( !linear_problem.status() );
+    linear_problem.setProblem();
+    TEST_ASSERT( linear_problem.status() );
 }
 
 UNIT_TEST_INSTANTIATION( LinearProblem, Constructor )

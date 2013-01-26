@@ -75,27 +75,35 @@ class LinearProblem
     // Destructor.
     ~LinearProblem();
 
+    //! Set the left-hand side.
+    void setLHS( const Teuchos::RCP<Vector>& x );
+
+    //! Set the righ-hand side.
+    void setRHS( const Teuchos::RCP<Vector>& b );
+
     //! Get the linear operator.
-    Teuchos::RCP<const Matrix> getOperator() const
-    { return d_A; }
+    Teuchos::RCP<const Matrix> getOperator() const { return d_A; }
 
     //! Get the left-hand side.
-    Teuchos::RCP<Vector> getLHS() const
-    { return d_x; }
+    Teuchos::RCP<Vector> getLHS() const { return d_x; }
 
     //! Get the right-hand side.
-    Teuchos::RCP<const Vector> getRHS() const
-    { return d_b; }
+    Teuchos::RCP<const Vector> getRHS() const { return d_b; }
 
     //! Get the residual.
-    Teuchos::RCP<const Vector> getResidual() const
-    { return d_r; }
+    Teuchos::RCP<const Vector> getResidual() const { return d_r; }
 
     // Apply the linear operator to a vector.
     void applyOperator( const Vector& x, Vector& y );
 
     // Update the residual.
     void updateResidual();
+
+    //! Get the status of the linear problem.
+    bool status() const { return d_status; }
+
+    //! Set the linear problem status to true.
+    void setProblem() { d_status = true; }
 
   private:
 
@@ -110,6 +118,9 @@ class LinearProblem
 
     // Residual r = b - A*x.
     Teuchos::RCP<Vector> d_r;
+
+    // Boolean for linear system status. True if we are ready to solve.
+    bool d_status;
 };
 
 //---------------------------------------------------------------------------//

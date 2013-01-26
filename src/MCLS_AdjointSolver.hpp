@@ -62,7 +62,7 @@ namespace MCLS
  * \brief Linear solver base class.
  */
 template<class Vector, class Matrix>
-class AdjointSolver : public Solver
+class AdjointSolver
 {
   public:
 
@@ -83,7 +83,6 @@ class AdjointSolver : public Solver
 
     // Constructor.
     AdjointSolver( const Teuchos::RCP<LinearProblemType>& linear_problem,
-		   const Teuchos::RCP<const Comm>& global_comm,
 		   Teuchos::ParameterList& plist,
 		   int seed = 433494437 );
 
@@ -92,9 +91,6 @@ class AdjointSolver : public Solver
 
     // Solve the linear problem.
     void solve();
-
-    // Return whether the solution has converged.
-    bool isConverged();
 
   private:
 
@@ -105,9 +101,6 @@ class AdjointSolver : public Solver
 
     // Linear problem.
     Teuchos::RCP<LinearProblemType> d_linear_problem;
-
-    // Global problem communicator.
-    Teuchos::RCP<const Comm> d_global_comm;
 
     // Random number seed.
     int seed;

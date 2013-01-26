@@ -59,6 +59,8 @@ LinearProblem<Vector,Matrix>::LinearProblem(
     , d_b( b )
     , d_r( VT::clone( *d_x ) )
 {
+    d_status = true;
+
     Ensure( !d_A.is_null() );
     Ensure( !d_x.is_null() );
     Ensure( !d_b.is_null() );
@@ -72,6 +74,32 @@ LinearProblem<Vector,Matrix>::LinearProblem(
 template<class Vector, class Matrix>
 LinearProblem<Vector,Matrix>::~LinearProblem()
 { /* ... */ }
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Set the left-hand side
+ */
+template<class Vector, class Matrix>
+void LinearProblem<Vector,Matrix>::setLHS( const Teuchos::RCP<Vector>& x )
+{
+    Require( !x.is_null() );
+
+    d_x = x;
+    d_status = false;
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Set the right-hand side
+ */
+template<class Vector, class Matrix>
+void LinearProblem<Vector,Matrix>::setRHS( const Teuchos::RCP<Vector>& b )
+{
+    Require( !b.is_null() );
+
+    d_b = b;
+    d_status = false;
+}
 
 //---------------------------------------------------------------------------//
 /*!
