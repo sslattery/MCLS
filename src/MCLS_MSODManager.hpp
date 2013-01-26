@@ -32,14 +32,14 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_SetManager.hpp
+ * \file MCLS_MSODManager.hpp
  * \author Stuart R. Slattery
- * \brief Multiple set manager declaration.
+ * \brief Multiple-set overlapping-domain decomposition manager declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_SETMANAGER_HPP
-#define MCLS_SETMANAGER_HPP
+#ifndef MCLS_MSODMANAGER_HPP
+#define MCLS_MSODMANAGER_HPP
 
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
@@ -56,11 +56,11 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 /*!
- * \class SetManager \brief Class for generating and managing the MSOD
- * decomposition.
+ * \class MSODManager 
+ * \brief Class for generating and managing the MSOD decomposition.
  */
 template<class Domain>
-class SetManager
+class MSODManager
 {
   public:
 
@@ -71,12 +71,12 @@ class SetManager
     //@}
 
     // Constructor.
-    SetManager(	const Teuchos::RCP<Domain>& primary_domain,
-		const Teuchos::RCP<const Comm>& global_comm,
-		Teuchos::ParameterList& plist );
+    MSODManager( const Teuchos::RCP<Domain>& primary_domain,
+		 const Teuchos::RCP<const Comm>& global_comm,
+		 Teuchos::ParameterList& plist );
 
     //! Destructor.
-    ~SetManager { /* ... */ }
+    ~MSODManager { /* ... */ }
 
     //! Get the local domain.
     Teuchos::RCP<Domain> localDomain() const { return d_local_domain; }
@@ -147,12 +147,6 @@ class SetManager
 
     // Block-constant communicator.
     Teuchos::RCP<const Comm> d_block_comm;
-
-    // Primary-to-secondary set exporters.
-    Teuchos::Array<VectorExport<Vector> > d_p_to_s_exports;
-
-    // Secondary-to-primary set exporters.
-    Teuchos::Array<VectorExport<Vector> > d_s_to_p_exports;
 };
 
 //---------------------------------------------------------------------------//
@@ -163,13 +157,13 @@ class SetManager
 // Template includes.
 //---------------------------------------------------------------------------//
 
-#include "MCLS_SetManager_impl.hpp"
+#include "MCLS_MSODManager_impl.hpp"
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_SETMANAGER_HPP
+#endif // end MCLS_MSODMANAGER_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_SetManager.hpp
+// end MCLS_MSODManager.hpp
 // ---------------------------------------------------------------------------//
 

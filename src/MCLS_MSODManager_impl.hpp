@@ -32,14 +32,14 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_SetManager_impl.hpp
+ * \file MCLS_MSODManager_impl.hpp
  * \author Stuart R. Slattery
- * \brief Multiple set manager implementation.
+ * \brief Multiple-set overlapping-domain decomposition manager implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_SETMANAGER_IMPL_HPP
-#define MCLS_SETMANAGER_IMPL_HPP
+#ifndef MCLS_MSODMANAGER_IMPL_HPP
+#define MCLS_MSODMANAGER_IMPL_HPP
 
 #include "MCLS_DBC.hpp"
 
@@ -54,17 +54,15 @@ namespace MCLS
  * \brief Constructor.
  */
 template<class Domain>
-SetManager<Domain>::SetManager( const Teuchos::RCP<Domain>& primary_domain,
-				const Teuchos::RCP<const Comm>& global_comm,
-				Teuchos::ParameterList& plist )
+MSODManager<Domain>::MSODManager( const Teuchos::RCP<Domain>& primary_domain,
+				  const Teuchos::RCP<const Comm>& global_comm,
+				  Teuchos::ParameterList& plist )
     : d_global_comm( global_comm )
     , d_num_sets( plist.get<int>("Number of Sets") )
     , d_set_size( 0 )
     , d_block_size( d_num_sets )
     , d_set_id( -1 )
     , d_block_id( -1 )
-    , d_p_to_s_exports( d_num_sets - 1 )
-    , d_s_to_p_exports( d_num_sets - 1 )
 {
     Require( !global_comm.is_null() );
     Require( d_num_sets > 0 );
@@ -107,7 +105,7 @@ SetManager<Domain>::SetManager( const Teuchos::RCP<Domain>& primary_domain,
     // Generate the block-constant communicators and the block ids.
     buildBlockComms();
 
-    // Pack the primary domain and broadcast it to the blocks.
+    // Pack the primary domain and broadcast across the blocks.
     buildDecomposition();
 
     // Barrier before proceeding.
@@ -119,7 +117,7 @@ SetManager<Domain>::SetManager( const Teuchos::RCP<Domain>& primary_domain,
  * \brief Build the set-constant commumnicators.
  */
 template<class Domain>
-void SetManager<Domain>::buildSetComms()
+void MSODManager<Domain>::buildSetComms()
 {
     Require( d_set_size > 0 );
     Require( d_num_sets > 0 );
@@ -183,7 +181,7 @@ void BlockManager<Domain>::buildBlockComms()
  * \brief Build the global decomposition by broadcasting the primary domain.
  */
 template<class Domain>
-void SetManager<Domain>::buildDecomposition()
+void MSODManager<Domain>::buildDecomposition()
 {
     Require( !d_block_comm.is_null() );
 
@@ -211,9 +209,9 @@ void SetManager<Domain>::buildDecomposition()
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_SETMANAGER_IMPL_HPP
+#endif // end MCLS_MSODMANAGER_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_SetManager_impl.hpp
+// end MCLS_MSODManager_impl.hpp
 // ---------------------------------------------------------------------------//
 
