@@ -56,38 +56,65 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 /*!
- * \class SetManager
- * \brief Class for generating and managing multiple sets in an MSOD
- * decomposition. 
+ * \class SetManager \brief Class for generating and managing the MSOD
+ * decomposition.
  */
-template<class Vector, class Matrix>
+template<class Domain>
 class SetManager
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Vector                                      vector_type;
-    typedef Matrix                                      matrix_type;
-    typedef VectorTraits<Vector>                        VT;
-    typedef MatrixTraits<Vector,Matrix>                 MT;
-    typedef LinearProblem<Vector,Matrix>                LinearProblemType;
+    typedef Domain                                      domain_type;
     typedef Teuchos::Comm<int>                          Comm;
     //@}
 
     // Constructor.
-    SetManager( const Teuchos::RCP<LinearProblemType>& primary_problem,
+    SetManager(	const Teuchos::RCP<Domain>& primary_domain,
 		const Teuchos::RCP<const Comm>& global_comm,
 		Teuchos::ParameterList& plist );
 
     //! Destructor.
     ~SetManager { /* ... */ }
 
-    // Get the number of sets.
+    //! Get the local domain.
+    Teuchos::RCP<Domain> localDomain() const { return d_local_domain; }
+
+    //! Get the number of sets.
     int numSets() const { return d_num_sets; }
 
-    // Set ID for this set.
+    //! Get the size of a set.
+    int setSize() const { return d_set_size; }
+
+    //! Set ID for this set for this proc.
     int setID() const { return d_set_id; }
+
+    //! Get the set-constant communication.
+    Teuchos::RCP<const Comm> setComm() const { return d_set_comm; }
+
+    //! Get the number of blocks.
+    int numBlocks() const { return d_num_blocks; }
+
+    //! Get the size of a block.
+    int blockSize() const { return d_block_size; }
+
+    //! Block ID for this block for this proc.
+    int blockID() const { return d_block_id; }
+
+    //! Get the block-constant communication.
+    Teuchos::RCP<const Comm> blockComm() const { return d_block_comm; }
+
+  private:
+
+    // Build the set-constant communicators.
+    void buildSetComms();
+
+    // Build the block-constant communicators.
+    void buildBlockComms();
+
+    // Build the global decomposition by broadcasting the primary domain.
+    void buildDecomposition();
 
   private:
 
@@ -97,17 +124,29 @@ class SetManager
     // Number of sets in the problem.
     int d_num_sets;
 
+    // Number of blocks in the problem.
+    int d_num_blocks;
+
     // Size of a set.
     int d_set_size;
+
+    // Size of a block.
+    int d_block_size;
 
     // Set ID for this set.
     int d_set_id;
 
-    // Set linear problems.
-    Teuchos::Array<Teuchos::RCP<LinearProblemType> > d_problems;
+    // Block ID for this block.
+    int d_block_id;
 
-    // Set-constant communicators.
-    Teuchos::Array<Teuchos::RCP<const Comm> > d_set_comms;
+    // Local domain for this proc.
+    Teuchos::RCP<Domain> d_local_domain;
+
+    // Set-constant communicator.
+    Teuchos::RCP<const Comm> d_set_comm;
+
+    // Block-constant communicator.
+    Teuchos::RCP<const Comm> d_block_comm;
 
     // Primary-to-secondary set exporters.
     Teuchos::Array<VectorExport<Vector> > d_p_to_s_exports;
