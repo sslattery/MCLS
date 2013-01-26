@@ -53,10 +53,12 @@ namespace MCLS
 /*!
  * \brief Constructor.
  */
-template<class Domain>
-MSODManager<Domain>::MSODManager( const Teuchos::RCP<Domain>& primary_domain,
-				  const Teuchos::RCP<const Comm>& global_comm,
-				  Teuchos::ParameterList& plist )
+template<class Domain, class Source>
+MSODManager<Domain,Source>::MSODManager( 
+    const Teuchos::RCP<Domain>& primary_domain,
+    const Teuchos::RCP<Source>& primary_source,
+    const Teuchos::RCP<const Comm>& global_comm,
+    Teuchos::ParameterList& plist )
     : d_global_comm( global_comm )
     , d_num_sets( plist.get<int>("Number of Sets") )
     , d_set_size( 0 )
@@ -90,13 +92,22 @@ MSODManager<Domain>::MSODManager( const Teuchos::RCP<Domain>& primary_domain,
 	Insist( !primary_domain.is_null(),
 		"Primary domain must exist on procs [0,(set_size-1)] only!" );
 
+	Insist( !primary_source.is_null(),
+		"Primary source must exist on procs [0,(set_size-1)] only!" );
+
 	// The local domain is the primary domain in this case.
 	d_local_domain = primary_domain;
+
+	// The local source is the primary source in this case.
+	d_local_source = primary_source;
     }
     else
     {
 	Insist( primary_domain.is_null(),
 		"Primary domain must exist on procs [0,(set_size-1)] only!" );
+
+	Insist( primary_source.is_null(),
+		"Primary source must exist on procs [0,(set_size-1)] only!" );
     }
 
     // Generate the set-constant communicators and the set ids.
@@ -106,7 +117,10 @@ MSODManager<Domain>::MSODManager( const Teuchos::RCP<Domain>& primary_domain,
     buildBlockComms();
 
     // Pack the primary domain and broadcast across the blocks.
-    buildDecomposition();
+    broadcastDomain();
+
+    // Pack the primary source and broadcast across the blocks.
+    broadcastSource();
 
     // Barrier before proceeding.
     d_global_comm->barrier();
@@ -114,10 +128,58 @@ MSODManager<Domain>::MSODManager( const Teuchos::RCP<Domain>& primary_domain,
 
 //---------------------------------------------------------------------------//
 /*!
+ * \brief Update the local domain.
+ */
+template<class Domain, class Source>
+void MSODManager<Domain,Source>::updateDomain(
+    const Teuchos::RCP<Domain>& primary_domain )
+{
+    if ( d_set_id == 0 )
+    {
+	Insist( !primary_domain.is_null(),
+		"Primary domain must exist on set 0 only!" );
+
+	d_local_domain = primary_domain;
+    }
+    else
+    {
+	Insist( primary_domain.is_null(),
+		"Primary domain must exist on 0 only!" );
+    }
+
+    broadcastDomain();
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Update the local source.
+ */
+template<class Domain, class Source>
+void MSODManager<Domain,Source>::updateSource(
+    const Teuchos::RCP<Source>& primary_source )
+{
+    if ( d_set_id == 0 )
+    {
+	Insist( !primary_source.is_null(),
+		"Primary source must exist on set 0 only!" );
+
+	d_local_source = primary_source;
+    }
+    else
+    {
+	Insist( primary_source.is_null(),
+		"Primary source must exist on 0 only!" );
+    }
+
+    broadcastSource();
+}
+
+//---------------------------------------------------------------------------//
+/*!
  * \brief Build the set-constant commumnicators.
  */
-template<class Domain>
-void MSODManager<Domain>::buildSetComms()
+template<class Domain, class Source>
+void MSODManager<Domain,Source>::buildSetComms()
 {
     Require( d_set_size > 0 );
     Require( d_num_sets > 0 );
@@ -148,7 +210,7 @@ void MSODManager<Domain>::buildSetComms()
 /*!
  * \brief Build the block-constant commumnicators.
  */
-template<class Domain>
+template<class Domain, class Source>
 void BlockManager<Domain>::buildBlockComms()
 {
     Require( d_block_size > 0 );
@@ -180,8 +242,8 @@ void BlockManager<Domain>::buildBlockComms()
 /*!
  * \brief Build the global decomposition by broadcasting the primary domain.
  */
-template<class Domain>
-void MSODManager<Domain>::buildDecomposition()
+template<class Domain, class Source>
+void MSODManager<Domain,Source>::broadcastDomain()
 {
     Require( !d_block_comm.is_null() );
 
@@ -201,6 +263,33 @@ void MSODManager<Domain>::buildDecomposition()
     }
 
     Ensure( !d_local_domain.is_null() );
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Build the global decomposition by broadcasting the primary source.
+ */
+template<class Domain, class Source>
+void MSODManager<Domain,Source>::broadcastSource()
+{
+    Require( !d_block_comm.is_null() );
+
+    Source::setByteSize();
+    Teuchos::Array<char> source_buffer( Source::getPackedBytes() );
+    if ( !d_local_source.is_null() )
+    {
+	source_buffer = d_local_source->pack();
+	Check( source_buffer.size() == Source::getPackedBytes() );
+    }
+
+    Teuchos::broadcast<int,char>( *d_block_comm, 0, source_buffer() );
+
+    if ( d_local_source.is_null() )
+    {
+	d_local_source = Teuchos::rcp( new Source(source_buffer()) );
+    }
+
+    Ensure( !d_local_source.is_null() );
 }
 
 //---------------------------------------------------------------------------//

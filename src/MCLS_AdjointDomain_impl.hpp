@@ -44,6 +44,7 @@
 #include <algorithm>
 
 #include <MCLS_MatrixTraits.hpp>
+#include <MCLS_Serializer.hpp>
 
 #include <Teuchos_as.hpp>
 #include <Teuchos_Array.hpp>
@@ -54,7 +55,7 @@ namespace MCLS
 {
 //---------------------------------------------------------------------------//
 /*!
- * \brief Constructor.
+ * \brief Matrix constructor.
  */
 template<class Vector, class Matrix>
 AdjointDomain<Vector,Matrix>::AdjointDomain( 
@@ -109,6 +110,73 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     d_receive_ranks = distributor.getImagesFrom();
 
     Ensure( !d_tally.is_null() );
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Deserializer constructor.
+ */
+template<class Vector, class Matrix>
+AdjointDomain<Vector,Matrix>::AdjointDomain( 
+    const Teuchos::ArrayView<char>& buffer )
+{
+    Require( Teuchos::as<std::size_t>(buffer.size()) == d_packed_bytes );
+
+    Deserializer ds;
+    ds.set_buffer( buffer() );
+
+    // Unpack of the local row indexer.
+
+    // Unpack up the local columns.
+
+    // Unpack up the local cdfs.
+
+    // Unpack up the local weights.
+
+    // Unpack up the receive ranks.
+
+    // Unpack up the send ranks.
+
+    // Unpack up the boundary-to-neighbor id table.
+
+    // Unpack up the tally base rows.
+
+    // Unpack up the tally overlap rows.
+
+    // Build the tally.
+
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Pack the domain into a buffer.
+ */
+template<class Vector, class Matrix>
+Teuchos::Array<char> AdjointDomain<Vector,Matrix>::pack()
+{
+    Require( d_packed_bytes );
+
+    Teuchos::Array<char> buffer( d_packed_bytes );
+    Serializer s;
+    s.setBuffer( buffer() );
+
+    // Pack of the local row indexer.
+
+    // Pack up the local columns.
+
+    // Pack up the local cdfs.
+
+    // Pack up the local weights.
+
+    // Pack up the receive ranks.
+
+    // Pack up the send ranks.
+
+    // Pack up the boundary-to-neighbor id table.
+
+    // Pack up the tally base rows.
+
+    // Pack up the tally overlap rows.
 }
 
 //---------------------------------------------------------------------------//
@@ -295,6 +363,42 @@ void AdjointDomain<Vector,Matrix>::buildBoundary(
 
     Ensure( d_bnd_to_neighbor.size() == 
 	    Teuchos::as<std::size_t>(boundary_rows.size()) );
+}
+
+//---------------------------------------------------------------------------//
+// Static members.
+//---------------------------------------------------------------------------//
+template<class Vector, class Matrix>
+std::size_t Domain<Vector,Matrix>::d_packed_bytes = 0;
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Set the byte size of the packed domain state.
+ */
+template<class Vector, class Matrix>
+void Domain<Vector,Matrix>::setByteSize( Ordinal num_rows, Ordinal max_col, 
+					 int num_receive, int num_send, 
+					 Ordinal num_boundary,
+					 int num_base, int num_overlap )
+{
+    d_packed_bytes = 
+	num_rows*( 
+	sizeof(Ordinal) + sizeof(int) + sizeof(Ordinal)*(max_col+1) +
+	sizeof(double)*(max_col+1) + sizeof(double) + sizeof(int) +
+	sizeof(int) + sizeof(Ordinal) + sizeof(int) 
+	)
+	+ (num_base+num_overlap)*sizeof(Ordinal);
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Get the number of bytes in the packed domain state.
+ */
+template<class Vector, class Matrix>
+std::size_t Domain<Vector,Matrix>::getPackedBytes()
+{
+    Require( d_packed_bytes );
+    return d_packed_bytes;
 }
 
 //---------------------------------------------------------------------------//

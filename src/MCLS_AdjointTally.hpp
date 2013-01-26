@@ -47,6 +47,7 @@
 #include <MCLS_VectorTraits.hpp>
 
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_Comm.hpp>
 
 namespace MCLS
 {
@@ -68,6 +69,7 @@ class AdjointTally
     typedef VectorTraits<Vector>                                VT;
     typedef typename VT::global_ordinal_type                    Ordinal;
     typedef History<Ordinal>                                    HistoryType;
+    typedef Teuchos::Comm<int>                                  Comm;
     //@}
 
     // Constructor.
@@ -81,12 +83,21 @@ class AdjointTally
     // Add a history's contribution to the tally.
     inline void tallyHistory( const HistoryType& history );
 
-    // Combine the overlap tally with the base decomposition tally.
-    void combineTallies();
+    // Combine the overlap tally with the base decomposition tally in the set.
+    void combineSetTallies();
+
+    // Combine the secondary tallies with the primary tally across a block.
+    void combineBlockTallies( const Teuchos::RCP<const Comm>& block_comm );
 
     // Normalize base decomposition tallies with the number of specified
     // histories.
     void normalize( const int& nh );
+
+    // Get the global tally rows in the base decomposition.
+    Teuchos::Array<Ordinal> baseRows() const;
+
+    // Get the global tally rows in the overlap decomposition.
+    Teuchos::Array<Ordinal> overlapRows() const;
 
   private:
 

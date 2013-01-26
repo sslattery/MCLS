@@ -45,6 +45,7 @@
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_MatrixTraits.hpp"
 #include "MCLS_VectorExport.hpp"
+#include "MCLS_Source.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
@@ -59,7 +60,7 @@ namespace MCLS
  * \class MSODManager 
  * \brief Class for generating and managing the MSOD decomposition.
  */
-template<class Domain>
+template<class Domain,class Source>
 class MSODManager
 {
   public:
@@ -67,40 +68,51 @@ class MSODManager
     //@{
     //! Typedefs.
     typedef Domain                                      domain_type;
+    typedef Source                                      source_type;
     typedef Teuchos::Comm<int>                          Comm;
     //@}
 
     // Constructor.
     MSODManager( const Teuchos::RCP<Domain>& primary_domain,
+		 const Teuchos::RCP<Source>& primary_source,
 		 const Teuchos::RCP<const Comm>& global_comm,
 		 Teuchos::ParameterList& plist );
 
     //! Destructor.
     ~MSODManager { /* ... */ }
 
+    // Update the local domain.
+    void updateDomain( const Teuchos::RCP<Domain>& primary_domain );
+
+    // Update the local source.
+    void updateSource( const Teuchos::RCP<Source>& primary_source );
+
     //! Get the local domain.
     Teuchos::RCP<Domain> localDomain() const { return d_local_domain; }
+
+    //! Get the local source.
+    Teuchos::RCP<Source> localSource() const { return d_local_source; }
 
     //! Get the number of sets.
     int numSets() const { return d_num_sets; }
 
-    //! Get the size of a set.
-    int setSize() const { return d_set_size; }
-
-    //! Set ID for this set for this proc.
-    int setID() const { return d_set_id; }
-
-    //! Get the set-constant communication.
-    Teuchos::RCP<const Comm> setComm() const { return d_set_comm; }
-
     //! Get the number of blocks.
     int numBlocks() const { return d_num_blocks; }
+
+    //! Get the size of a set.
+    int setSize() const { return d_set_size; }
 
     //! Get the size of a block.
     int blockSize() const { return d_block_size; }
 
+    //! Set ID for this set for this proc.
+    int setID() const { return d_set_id; }
+
     //! Block ID for this block for this proc.
     int blockID() const { return d_block_id; }
+
+    //! Get the set-constant communication.
+    Teuchos::RCP<const Comm> setComm() const { return d_set_comm; }
 
     //! Get the block-constant communication.
     Teuchos::RCP<const Comm> blockComm() const { return d_block_comm; }
@@ -113,8 +125,11 @@ class MSODManager
     // Build the block-constant communicators.
     void buildBlockComms();
 
-    // Build the global decomposition by broadcasting the primary domain.
-    void buildDecomposition();
+    // Build the global decomposition by broadcasting the primary domain. 
+    void broadcastDomain();
+
+    // Build the global decomposition by broadcasting the primary source. 
+    void broadcastSource();
 
   private:
 
@@ -141,6 +156,9 @@ class MSODManager
 
     // Local domain for this proc.
     Teuchos::RCP<Domain> d_local_domain;
+
+    // Local source for this proc.
+    Teuchos::RCP<Source> d_local_source;
 
     // Set-constant communicator.
     Teuchos::RCP<const Comm> d_set_comm;

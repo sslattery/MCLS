@@ -42,6 +42,7 @@
 #define MCLS_VECTORTRAITS_HPP
 
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_Comm.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
@@ -83,6 +84,7 @@ class VectorTraits
     typedef typename Vector::scalar_type                scalar_type;
     typedef typename Vector::local_ordinal_type         local_ordinal_type;
     typedef typename Vector::global_ordinal_type        global_ordinal_type;
+    typedef Teuchos::Comm<int>                          Comm;
     //@}
 
     /*!
@@ -90,6 +92,18 @@ class VectorTraits
      * the same parallel distribution as the given vector.
      */
     static Teuchos::RCP<Vector> clone( const Vector& vector )
+    { 
+	UndefinedVectorTraits<Vector>::notDefined(); 
+	return Teuchos::null; 
+    }
+
+    /*!
+     * \brief Create a reference-counted pointer to a new empty vector with
+     * the same parallel distribution given by the input rows.
+     */
+    static Teuchos::RCP<Vector> 
+    createFromRows( const Teuchos::RCP<const Comm>& comm,
+		    const Teuchos::ArrayView<global_ordinal_type>& global_rows )
     { 
 	UndefinedVectorTraits<Vector>::notDefined(); 
 	return Teuchos::null; 

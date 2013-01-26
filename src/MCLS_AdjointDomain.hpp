@@ -53,6 +53,7 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
+#include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #include <boost/tr1/unordered_map.hpp>
@@ -97,9 +98,15 @@ class AdjointDomain
 		   const Teuchos::RCP<Vector>& x,
 		   const Teuchos::ParameterList& plist );
 
+    // Deserializer constructor.
+    explicit AdjointDomain( const Teuchos::ArrayView<char>& buffer );
+
     // Destructor.
     ~AdjointDomain()
     { /* ... */ }
+
+    // Pack the domain into a buffer.
+    Teuchos::Array<char> pack() const;
 
     // Process a history through a transition to a new state.
     inline void processTransition( HistoryType& history );
@@ -127,6 +134,14 @@ class AdjointDomain
 
     // Get the neighbor domain that owns a boundary state (local neighbor id).
     int owningNeighbor( const Ordinal& state );
+
+  public:
+
+    // Set the byte size of the packed domain state.
+    static void setByteSize();
+
+    // Get the number of bytes in the packed domain state.
+    static std::size_t getPackedBytes();
 
   private:
 
@@ -162,6 +177,11 @@ class AdjointDomain
 
     // Boundary state to owning neighbor local id table.
     std::tr1::unordered_map<Ordinal,int> d_bnd_to_neighbor;
+
+  private:
+
+    // Packed size of domain in bytes.
+    static std::size_t d_packed_bytes;
 };
 
 //---------------------------------------------------------------------------//
