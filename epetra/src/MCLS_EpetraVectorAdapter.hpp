@@ -54,7 +54,7 @@
 #include <Epetra_SerialComm.h>
 
 #ifdef HAVE_MPI
-#include <Teuchos_MpiComm.hpp>
+#include <Teuchos_DefaultMpiComm.hpp>
 #include <Epetra_MpiComm.h>
 #endif
 
@@ -115,7 +115,7 @@ class VectorTraits<Epetra_Vector>
 			    0,
 			    *epetra_comm ) );
 
-	return Teuchos::rcp( new Epetra_Vector(map) );
+	return Teuchos::rcp( new Epetra_Vector(*map) );
     }
 
     /*!

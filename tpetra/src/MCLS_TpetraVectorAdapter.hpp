@@ -93,8 +93,8 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
 	Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type> > 
 	    map = 
 	    Tpetra::createNonContigMap<local_ordinal_type,global_ordinal_type>( 
-		ghost_global(), comm );
-	return Tpetra::createVector( map );
+		global_rows(), comm );
+	return Tpetra::createVector<Scalar,LO,GO>( map );
     }
 
     /*!

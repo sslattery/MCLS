@@ -170,14 +170,14 @@ TEUCHOS_UNIT_TEST( VectorTraits, RowCreate )
 
     Teuchos::RCP<VectorType> A = Teuchos::rcp( new Epetra_Vector( *map ) );
 
-    Teuchos::Array<GO> rows;
+    Teuchos::Array<int> rows( local_num_rows );
     map->MyGlobalElements( rows.getRawPtr() );
     Teuchos::RCP<VectorType> B = VT::createFromRows( comm, rows() );
 
-    TEST_ASSERT( A->getMap()->isSameAs( *(B->getMap()) ) );
-    
-    Teuchos::ArrayRCP<const Scalar> B_view = VT::view( *B );
-    typename Teuchos::ArrayRCP<const Scalar>::const_iterator view_iterator;
+    TEST_ASSERT( A->Map().SameAs( B->Map() ) );
+
+    Teuchos::ArrayRCP<const double> B_view = VT::view( *B );
+    typename Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
     for ( view_iterator = B_view.begin();
 	  view_iterator != B_view.end();
 	  ++view_iterator )

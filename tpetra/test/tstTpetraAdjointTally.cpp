@@ -172,7 +172,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, TallyHistory, LO, GO, Scalar )
 	}
     }
 
-    TEST_EQUALITY( tally.numBaseRows(), VT::localLength(*A) );
+    TEST_EQUALITY( tally.numBaseRows(), VT::getLocalLength(*A) );
     Teuchos::Array<GO> base_rows = tally.baseRows();
     TEST_EQUALITY( Teuchos::as<GO>(base_rows.size()),
 		   tally.numBaseRows() );
@@ -181,7 +181,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, TallyHistory, LO, GO, Scalar )
 	TEST_EQUALITY( base_rows[i], VT::getGlobalRow(*A,i) )
     }
 
-    TEST_EQUALITY( tally.numOverlapRows(), VT::localLength(*B) );
+    TEST_EQUALITY( tally.numOverlapRows(), VT::getLocalLength(*B) );
     Teuchos::Array<GO> overlap_rows = tally.overlapRows();
     TEST_EQUALITY( Teuchos::as<GO>(overlap_rows.size()),
 		   tally.numOverlapRows() );

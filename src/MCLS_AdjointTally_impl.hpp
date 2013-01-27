@@ -64,10 +64,11 @@ AdjointTally<Vector>::AdjointTally( const Teuchos::RCP<Vector>& x,
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Combine the overlap tally with the base decomposition tally.
+ * \brief Combine the overlap tally with the base decomposition tally in the
+ * set. 
  */
 template<class Vector>
-void AdjointTally<Vector>::combineTallies()
+void AdjointTally<Vector>::combineSetTallies()
 {
     d_export.doExportAdd();
 }
@@ -102,7 +103,8 @@ void AdjointTally<Vector>::zeroOut()
  * \brief Get the number global rows in the base decomposition.
  */
 template<class Vector>
-AdjointTally<Vector>::Ordinal AdjointTally<Vector>::numBaseRows() const
+typename AdjointTally<Vector>::Ordinal 
+AdjointTally<Vector>::numBaseRows() const
 {
     return VT::getLocalLength( *d_x );
 }
@@ -112,9 +114,10 @@ AdjointTally<Vector>::Ordinal AdjointTally<Vector>::numBaseRows() const
  * \brief Get the number global rows in the overlap decomposition.
  */
 template<class Vector>
-AdjointTally<Vector>::Ordinal AdjointTally<Vector>::numOverlapRows() const
+typename AdjointTally<Vector>::Ordinal 
+AdjointTally<Vector>::numOverlapRows() const
 {
-    return VT::getGlobalLength( *d_x );
+    return VT::getLocalLength( *d_x );
 }
 
 //---------------------------------------------------------------------------//
@@ -122,7 +125,7 @@ AdjointTally<Vector>::Ordinal AdjointTally<Vector>::numOverlapRows() const
  * \brief Get the global rows in the base decomposition.
  */
 template<class Vector>
-Teuchos::Array<AdjointTally<Vector>::Ordinal>
+Teuchos::Array<typename AdjointTally<Vector>::Ordinal>
 AdjointTally<Vector>::baseRows() const
 {
     Teuchos::Array<Ordinal> base_rows( VT::getLocalLength(*d_x) );
@@ -134,6 +137,7 @@ AdjointTally<Vector>::baseRows() const
 	  ++row_it )
     {
 	*row_it = VT::getGlobalRow( *d_x, local_row );
+	++local_row;
     }
 
     return base_rows;
@@ -144,7 +148,7 @@ AdjointTally<Vector>::baseRows() const
  * \brief Get the global rows in the overlap decomposition.
  */
 template<class Vector>
-Teuchos::Array<AdjointTally<Vector>::Ordinal>
+Teuchos::Array<typename AdjointTally<Vector>::Ordinal>
 AdjointTally<Vector>::overlapRows() const
 {
     Teuchos::Array<Ordinal> overlap_rows( VT::getLocalLength(*d_x_overlap) );
@@ -156,6 +160,7 @@ AdjointTally<Vector>::overlapRows() const
 	  ++row_it )
     {
 	*row_it = VT::getGlobalRow( *d_x_overlap, local_row );
+	++local_row;
     }
 
     return overlap_rows;

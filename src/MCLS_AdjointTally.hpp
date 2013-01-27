@@ -88,7 +88,7 @@ class AdjointTally
 
     // Combine the secondary tallies with the primary tally across a
     // block. Normalize the result with the number of blocks.
-    void combineBlockTallies( const Teuchos::RCP<const Comm>& block_comm );
+//    void combineBlockTallies( const Teuchos::RCP<const Comm>& block_comm );
 
     // Normalize base decomposition tally with the number of specified
     // histories.
