@@ -32,9 +32,9 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file tstTpetraMSODManager.cpp
+ * \file tstEpetraMSODManager.cpp
  * \author Stuart R. Slattery
- * \brief Tpetra MSOD manager tests.
+ * \brief Epetra MSOD manager tests.
  */
 //---------------------------------------------------------------------------//
 
@@ -52,7 +52,7 @@
 #include <MCLS_UniformAdjointSource.hpp>
 #include <MCLS_AdjointDomain.hpp>
 #include <MCLS_VectorTraits.hpp>
-#include <MCLS_TpetraAdapter.hpp>
+#include <MCLS_EpetraAdapter.hpp>
 #include <MCLS_History.hpp>
 #include <MCLS_AdjointTally.hpp>
 #include <MCLS_Events.hpp>
@@ -68,29 +68,46 @@
 #include <Teuchos_TypeTraits.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-#include <Tpetra_Map.hpp>
-#include <Tpetra_Vector.hpp>
+#include <Epetra_Map.h>
+#include <Epetra_Vector.h>
+#include <Epetra_RowMatrix.h>
+#include <Epetra_CrsMatrix.h>
+#include <Epetra_Comm.h>
+#include <Epetra_SerialComm.h>
+
+#ifdef HAVE_MPI
+#include <Epetra_MpiComm.h>
+#include <Teuchos_DefaultMpiComm.hpp>
+#endif
 
 //---------------------------------------------------------------------------//
-// Instantiation macro. 
-// 
-// These types are those enabled by Tpetra under explicit instantiation. I
-// have removed scalar types that are not floating point
+// Helper functions.
 //---------------------------------------------------------------------------//
-#define UNIT_TEST_INSTANTIATION( type, name )			           \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, double )   \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
+
+Teuchos::RCP<Epetra_Comm> getEpetraComm( 
+    const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
+{
+#ifdef HAVE_MPI
+    Teuchos::RCP< const Teuchos::MpiComm<int> > mpi_comm = 
+    	Teuchos::rcp_dynamic_cast< const Teuchos::MpiComm<int> >( comm );
+    Teuchos::RCP< const Teuchos::OpaqueWrapper<MPI_Comm> > opaque_comm = 
+    	mpi_comm->getRawMpiComm();
+    return Teuchos::rcp( new Epetra_MpiComm( (*opaque_comm)() ) );
+#else
+    return Teuchos::rcp( new Epetra_SerialComm() );
+#endif
+}
 
 //---------------------------------------------------------------------------//
 // Test templates
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MSODManager, two_by_two, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST( MSODManager, two_by_two )
 {
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
+    typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<GO> HistoryType;
+    typedef MCLS::History<int> HistoryType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::UniformAdjointSource<DomainType> SourceType;
     typedef typename DomainType::TallyType TallyType;
@@ -156,30 +173,34 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MSODManager, two_by_two, LO, GO, Scalar )
 	int global_num_rows = local_num_rows*set_size;
 
 	// Create the solution vector externally so that we can check it.
-	Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
-	    Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm_set );
-	Teuchos::RCP<VectorType> x = 
-	    Tpetra::createVector<Scalar,LO,GO>(map);
+	Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( set_comm );
+	Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
+	    new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
+
+	Teuchos::RCP<VectorType> x = Teuchos::rcp( new Epetra_Vector(*map) );
 
 	// Build the primary source and domain on set 0.
 	if ( comm_rank < 2 )
 	{
 	    // Build the linear operator and solution vector.
-	    Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
-	    Teuchos::Array<GO> global_columns( 2 );
-	    Teuchos::Array<Scalar> values( 2 );
+	    Teuchos::RCP<Epetra_CrsMatrix> A = 
+		Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
+	    Teuchos::Array<int> global_columns( 2 );
+	    Teuchos::Array<double> values( 2 );
 	    for ( int i = 1; i < global_num_rows; ++i )
 	    {
 		global_columns[0] = i-1;
 		global_columns[1] = i;
 		values[0] = 2;
 		values[1] = 3;
-		A->insertGlobalValues( i, global_columns(), values() );
+		A->InsertGlobalValues( i, global_columns.size(), 
+				       &values[0], &global_columns[0] );
 	    }
-	    A->fillComplete();
+	    A->FillComplete();
 
 	    // Build the primary adjoint domain.
-	    primary_domain = Teuchos::rcp( new DomainType(A, x, plist) );
+	    Teuchos::RCP<MatrixType> B = A;
+	    primary_domain = Teuchos::rcp( new DomainType(B, x, plist) );
 
 	    // Create the primary adjoint source with default values.
 	    Teuchos::RCP<VectorType> b = VT::clone( *x );
@@ -231,7 +252,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MSODManager, two_by_two, LO, GO, Scalar )
 	Teuchos::RCP<DomainType> domain = msod_manager.localDomain();
 
 	// Check the tally.
-	Scalar x_val = 2;
+	double x_val = 2;
 	Teuchos::RCP<TallyType> tally = domain->domainTally();
 	tally->setBaseVector( x );
 	for ( int i = 0; i < global_num_rows; ++i )
@@ -246,8 +267,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MSODManager, two_by_two, LO, GO, Scalar )
 
 	tally->combineSetTallies();
 
-	Teuchos::ArrayRCP<const Scalar> x_view = VT::view( *x );
-	typename Teuchos::ArrayRCP<const Scalar>::const_iterator x_view_iterator;
+	Teuchos::ArrayRCP<const double> x_view = VT::view( *x );
+	typename Teuchos::ArrayRCP<const double>::const_iterator x_view_iterator;
 	for ( x_view_iterator = x_view.begin();
 	      x_view_iterator != x_view.end();
 	      ++x_view_iterator )
@@ -488,9 +509,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MSODManager, two_by_two, LO, GO, Scalar )
     }
 }
 
-UNIT_TEST_INSTANTIATION( MSODManager, two_by_two )
-
 //---------------------------------------------------------------------------//
-// end tstTpetraMSODManager.cpp
+// end tstEpetraMSODManager.cpp
 //---------------------------------------------------------------------------//
 
