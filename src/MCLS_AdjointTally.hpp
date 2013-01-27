@@ -95,6 +95,9 @@ class AdjointTally
     // histories.
     void normalize( const int& nh );
 
+    // Set the base tally vector. The maps are required to be compatible.
+    void setBaseVector( const Teuchos::RCP<Vector>& x );
+
     // Zero out the tallies.
     void zeroOut();
 

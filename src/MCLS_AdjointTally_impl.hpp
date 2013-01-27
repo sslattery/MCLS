@@ -113,6 +113,19 @@ void AdjointTally<Vector>::normalize( const int& nh )
 
 //---------------------------------------------------------------------------//
 /*
+ * \brief Set the base tally vector. The maps are required to be compatible.
+ */
+template<class Vector>
+void AdjointTally<Vector>::setBaseVector( const Teuchos::RCP<Vector>& x )
+{
+    Require( !x.is_null() );
+
+    d_x = x;
+    d_export = VectorExport<Vector>( d_x_overlap, d_x );
+}
+
+//---------------------------------------------------------------------------//
+/*
  * \brief Zero out base decomposition and overlap decomposition tallies.
  */
 template<class Vector>
@@ -144,7 +157,7 @@ template<class Vector>
 typename AdjointTally<Vector>::Ordinal 
 AdjointTally<Vector>::numOverlapRows() const
 {
-    return VT::getLocalLength( *d_x );
+    return VT::getLocalLength( *d_x_overlap );
 }
 
 //---------------------------------------------------------------------------//

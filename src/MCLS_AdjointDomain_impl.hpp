@@ -115,6 +115,11 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 //---------------------------------------------------------------------------//
 /*!
  * \brief Deserializer constructor.
+ * 
+ * \param buffer Data buffer to construct the domain from.
+ *
+ * \param set_comm Set constant communicator for this domain over which to
+ * reconstruct the tallies.
  */
 template<class Vector, class Matrix>
 AdjointDomain<Vector,Matrix>::AdjointDomain( 
@@ -221,7 +226,7 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     d_receive_ranks.resize( num_receives );
     Teuchos::Array<int>::iterator receive_it;
     for ( receive_it = d_receive_ranks.begin();
-	  receive_it = d_receive_ranks.end();
+	  receive_it != d_receive_ranks.end();
 	  ++receive_it )
     {
 	ds >> *receive_it;
@@ -231,7 +236,7 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     d_send_ranks.resize( num_sends );
     Teuchos::Array<int>::iterator send_it;
     for ( send_it = d_send_ranks.begin();
-	  send_it = d_send_ranks.end();
+	  send_it != d_send_ranks.end();
 	  ++send_it )
     {
 	ds >> *send_it;
@@ -265,6 +270,8 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     {
 	ds >> *overlap_it;
     }
+
+    Check( ds.end() == ds.getPtr() );
 
     // Build the tally.
     Teuchos::RCP<Vector> base_x = 
@@ -365,7 +372,7 @@ Teuchos::Array<char> AdjointDomain<Vector,Matrix>::pack() const
     // Pack up the receive ranks.
     Teuchos::Array<int>::const_iterator receive_it;
     for ( receive_it = d_receive_ranks.begin();
-	  receive_it = d_receive_ranks.end();
+	  receive_it != d_receive_ranks.end();
 	  ++receive_it )
     {
 	s << *receive_it;
@@ -374,7 +381,7 @@ Teuchos::Array<char> AdjointDomain<Vector,Matrix>::pack() const
     // Pack up the send ranks.
     Teuchos::Array<int>::const_iterator send_it;
     for ( send_it = d_send_ranks.begin();
-	  send_it = d_send_ranks.end();
+	  send_it != d_send_ranks.end();
 	  ++send_it )
     {
 	s << *send_it;
@@ -408,6 +415,8 @@ Teuchos::Array<char> AdjointDomain<Vector,Matrix>::pack() const
     {
 	s << *overlap_it;
     }
+
+    Ensure( s.end() == s.getPtr() );
 
     return buffer;
 }
@@ -497,7 +506,7 @@ std::size_t AdjointDomain<Vector,Matrix>::getPackedBytes() const
     // Pack up the receive ranks.
     Teuchos::Array<int>::const_iterator receive_it;
     for ( receive_it = d_receive_ranks.begin();
-	  receive_it = d_receive_ranks.end();
+	  receive_it != d_receive_ranks.end();
 	  ++receive_it )
     {
 	s << *receive_it;
@@ -506,7 +515,7 @@ std::size_t AdjointDomain<Vector,Matrix>::getPackedBytes() const
     // Pack up the send ranks.
     Teuchos::Array<int>::const_iterator send_it;
     for ( send_it = d_send_ranks.begin();
-	  send_it = d_send_ranks.end();
+	  send_it != d_send_ranks.end();
 	  ++send_it )
     {
 	s << *send_it;
