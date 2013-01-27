@@ -230,6 +230,124 @@ TEUCHOS_UNIT_TEST( AdjointDomain, NoOverlap )
 }
 
 //---------------------------------------------------------------------------//
+TEUCHOS_UNIT_TEST( AdjointDomain, PackUnpack )
+{
+    typedef Epetra_Vector VectorType;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef Epetra_RowMatrix MatrixType;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
+    typedef MCLS::History<int> HistoryType;
+    typedef MCLS::AdjointTally<VectorType> TallyType;
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+	Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
+    int comm_size = comm->getSize();
+    int comm_rank = comm->getRank();
+
+    int local_num_rows = 10;
+    int global_num_rows = local_num_rows*comm_size;
+    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
+	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
+
+    // Build the linear operator and solution vector.
+    Teuchos::RCP<Epetra_CrsMatrix> A = 	
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
+
+    Teuchos::Array<int> global_columns( 2 );
+    Teuchos::Array<double> values( 2 );
+    for ( int i = 1; i < global_num_rows; ++i )
+    {
+	global_columns[0] = i-1;
+	global_columns[1] = i;
+	values[0] = 2;
+	values[1] = 3;
+	A->InsertGlobalValues( i, global_columns().size(), 
+			       &values[0], &global_columns[0] );
+    }
+    A->FillComplete();
+
+    Teuchos::RCP<MatrixType> B = A;
+    Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *B );
+
+    // Build the adjoint domain.
+    Teuchos::ParameterList plist;
+    plist.set<int>( "Overlap Size", 0 );
+    MCLS::AdjointDomain<VectorType,MatrixType> primary_domain( B, x, plist );
+
+    // Pack the domain into a buffer.
+    Teuchos::Array<char> domain_buffer = primary_domain.pack();
+
+    // Unpack the domain to make a new one for testing.
+    MCLS::AdjointDomain<VectorType,MatrixType> domain( domain_buffer, comm );
+
+    // Check the tally.
+    double x_val = 2;
+    Teuchos::RCP<TallyType> tally = domain.domainTally();
+    tally->setBaseVector( x );
+    for ( int i = 0; i < global_num_rows; ++i )
+    {
+	if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
+	{
+	    HistoryType history( i, x_val );
+	    history.live();
+	    tally->tallyHistory( history );
+	}
+    }
+
+    tally->combineSetTallies();
+
+    Teuchos::ArrayRCP<const double> x_view = VT::view( *x );
+    Teuchos::ArrayRCP<const double>::const_iterator x_view_iterator;
+    for ( x_view_iterator = x_view.begin();
+	  x_view_iterator != x_view.end();
+	  ++x_view_iterator )
+    {
+	TEST_EQUALITY( *x_view_iterator, x_val );
+    }
+
+    // Check the boundary.
+    if ( comm_rank == 0 && comm_size == 1 )
+    {
+	TEST_EQUALITY( domain.numSendNeighbors(), 0 );
+	TEST_EQUALITY( domain.numReceiveNeighbors(), 0 );
+    }
+    else if ( comm_rank == 0 && comm_size > 1 )
+    {
+	TEST_EQUALITY( domain.numSendNeighbors(), 1 );
+	TEST_EQUALITY( domain.sendNeighborRank(0), comm_rank+1 );
+	TEST_EQUALITY( domain.owningNeighbor(local_num_rows*(comm_rank+1)), 0 );
+	TEST_EQUALITY( domain.numReceiveNeighbors(), 0 );
+    }
+    else if ( comm_rank == comm_size - 1 )
+    {
+	TEST_EQUALITY( domain.numSendNeighbors(), 0 );
+	TEST_EQUALITY( domain.numReceiveNeighbors(), 1 );
+	TEST_EQUALITY( domain.receiveNeighborRank(0), comm_rank-1 );
+    }
+    else
+    {
+	TEST_EQUALITY( domain.numSendNeighbors(), 1 );
+	TEST_EQUALITY( domain.sendNeighborRank(0), comm_rank+1 );
+	TEST_EQUALITY( domain.owningNeighbor(local_num_rows*(comm_rank+1)), 0 );
+	TEST_EQUALITY( domain.numReceiveNeighbors(), 1 );
+	TEST_EQUALITY( domain.receiveNeighborRank(0), comm_rank-1 );
+    }
+
+    for ( int i = 0; i < global_num_rows; ++i )
+    {
+	if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
+	{
+	    TEST_ASSERT( domain.isLocalState(i) );
+	}
+	else
+	{
+	    TEST_ASSERT( !domain.isLocalState(i) );
+	}
+    }
+}
+
+//---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST( AdjointDomain, SomeOverlap )
 {
     typedef Epetra_Vector VectorType;
@@ -277,6 +395,144 @@ TEUCHOS_UNIT_TEST( AdjointDomain, SomeOverlap )
     // Check the tally.
     double x_val = 2;
     Teuchos::RCP<TallyType> tally = domain.domainTally();
+    for ( int i = 0; i < global_num_rows; ++i )
+    {
+	if ( i >= local_num_rows*comm_rank && i < 2+local_num_rows*(comm_rank+1) )
+	{
+	    HistoryType history( i, x_val );
+	    history.live();
+	    tally->tallyHistory( history );
+	}
+    }
+
+    tally->combineSetTallies();
+
+    Teuchos::ArrayRCP<const double> x_view = VT::view( *x );
+    for ( int i = 0; i < local_num_rows; ++i )
+    {
+	if ( comm_rank == 0 || i > 1 )
+	{
+	    TEST_EQUALITY( x_view[i], x_val );
+	}
+	else
+	{
+	    TEST_EQUALITY( x_view[i], 2*x_val );
+	}
+    }
+
+    // Check the boundary.
+    if ( comm_rank == 0 && comm_size == 1 )
+    {
+	TEST_EQUALITY( domain.numSendNeighbors(), 0 );
+	TEST_EQUALITY( domain.numReceiveNeighbors(), 0 );
+    }
+    else if ( comm_rank == 0 && comm_size > 1 )
+    {
+	TEST_EQUALITY( domain.numSendNeighbors(), 1 );
+	TEST_EQUALITY( domain.sendNeighborRank(0), comm_rank+1 );
+	TEST_EQUALITY( domain.owningNeighbor(2+local_num_rows*(comm_rank+1)), 0 );
+	TEST_EQUALITY( domain.numReceiveNeighbors(), 0 );
+    }
+    else if ( comm_rank == comm_size - 1 )
+    {
+	TEST_EQUALITY( domain.numSendNeighbors(), 0 );
+	TEST_EQUALITY( domain.numReceiveNeighbors(), 1 );
+	TEST_EQUALITY( domain.receiveNeighborRank(0), comm_rank-1 );
+    }
+    else
+    {
+	TEST_EQUALITY( domain.numSendNeighbors(), 1 );
+	TEST_EQUALITY( domain.sendNeighborRank(0), comm_rank+1 );
+	TEST_EQUALITY( domain.owningNeighbor(2+local_num_rows*(comm_rank+1)), 0 );
+	TEST_EQUALITY( domain.numReceiveNeighbors(), 1 );
+	TEST_EQUALITY( domain.receiveNeighborRank(0), comm_rank-1 );
+    }
+
+    if ( comm_rank == comm_size-1 )
+    {
+	for ( int i = 0; i < global_num_rows; ++i )
+	{
+	    if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
+	    {
+		TEST_ASSERT( domain.isLocalState(i) );
+	    }
+	    else
+	    {
+		TEST_ASSERT( !domain.isLocalState(i) );
+	    }
+	}
+    }
+    else
+    {
+	for ( int i = 0; i < global_num_rows; ++i )
+	{
+	    if ( i >= local_num_rows*comm_rank && i < 2+local_num_rows*(comm_rank+1) )
+	    {
+		TEST_ASSERT( domain.isLocalState(i) );
+	    }
+	    else
+	    {
+		TEST_ASSERT( !domain.isLocalState(i) );
+	    }
+	}
+    }
+}
+
+//---------------------------------------------------------------------------//
+TEUCHOS_UNIT_TEST( AdjointDomain, SomeOverlapPackUnpack )
+{
+    typedef Epetra_Vector VectorType;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef Epetra_RowMatrix MatrixType;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
+    typedef MCLS::History<int> HistoryType;
+    typedef MCLS::AdjointTally<VectorType> TallyType;
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+	Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
+    int comm_size = comm->getSize();
+    int comm_rank = comm->getRank();
+
+    int local_num_rows = 10;
+    int global_num_rows = local_num_rows*comm_size;
+    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
+	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
+
+    // Build the linear operator and solution vector.
+    Teuchos::RCP<Epetra_CrsMatrix> A = 	
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
+    Teuchos::Array<int> global_columns( 2 );
+    Teuchos::Array<double> values( 2 );
+    for ( int i = 1; i < global_num_rows; ++i )
+    {
+	global_columns[0] = i-1;
+	global_columns[1] = i;
+	values[0] = 2;
+	values[1] = 3;
+	A->InsertGlobalValues( i, global_columns().size(), 
+			       &values[0], &global_columns[0] );
+    }
+    A->FillComplete();
+
+    Teuchos::RCP<MatrixType> B = A;
+    Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *B );
+
+    // Build the adjoint domain.
+    Teuchos::ParameterList plist;
+    plist.set<int>( "Overlap Size", 2 );
+    MCLS::AdjointDomain<VectorType,MatrixType> primary_domain( B, x, plist );
+
+    // Pack the domain into a buffer.
+    Teuchos::Array<char> domain_buffer = primary_domain.pack();
+
+    // Unpack the domain to make a new one for testing.
+    MCLS::AdjointDomain<VectorType,MatrixType> domain( domain_buffer, comm );
+
+    // Check the tally.
+    double x_val = 2;
+    Teuchos::RCP<TallyType> tally = domain.domainTally();
+    tally->setBaseVector( x );
     for ( int i = 0; i < global_num_rows; ++i )
     {
 	if ( i >= local_num_rows*comm_rank && i < 2+local_num_rows*(comm_rank+1) )
