@@ -97,6 +97,12 @@ class AdjointTally
     // Zero out the tallies.
     void zeroOut();
 
+    // Get the number global rows in the base decomposition.
+    Ordinal numBaseRows() const;
+
+    // Get the number global rows in the overlap decomposition.
+    Ordinal numOverlapRows() const;
+
     // Get the global tally rows in the base decomposition.
     Teuchos::Array<Ordinal> baseRows() const;
 

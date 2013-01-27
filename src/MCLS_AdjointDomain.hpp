@@ -52,6 +52,7 @@
 #include <MCLS_MatrixTraits.hpp>
 
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_Comm.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -83,14 +84,16 @@ class AdjointDomain
 
     //@{
     //! Typedefs.
-    typedef Vector                                      vector_type;
-    typedef VectorTraits<Vector>                        VT;
-    typedef Matrix                                      matrix_type;
-    typedef MatrixTraits<Vector,Matrix>                 MT;
-    typedef typename VT::global_ordinal_type            Ordinal;
-    typedef AdjointTally<Vector>                        TallyType;
-    typedef typename TallyType::HistoryType             HistoryType;
-    typedef std::stack<Teuchos::RCP<HistoryType> >      BankType;
+    typedef Vector                                        vector_type;
+    typedef VectorTraits<Vector>                          VT;
+    typedef Matrix                                        matrix_type;
+    typedef MatrixTraits<Vector,Matrix>                   MT;
+    typedef typename VT::global_ordinal_type              Ordinal;
+    typedef AdjointTally<Vector>                          TallyType;
+    typedef typename TallyType::HistoryType               HistoryType;
+    typedef std::stack<Teuchos::RCP<HistoryType> >        BankType;
+    typedef typename std::tr1::unordered_map<Ordinal,int> MapType;
+    typedef Teuchos::Comm<int>                            Comm;
     //@}
 
     // Matrix constructor.
@@ -99,7 +102,8 @@ class AdjointDomain
 		   const Teuchos::ParameterList& plist );
 
     // Deserializer constructor.
-    explicit AdjointDomain( const Teuchos::ArrayView<char>& buffer );
+    explicit AdjointDomain( const Teuchos::ArrayView<char>& buffer,
+			    const Teuchos::RCP<const Comm>& set_comm );
 
     // Destructor.
     ~AdjointDomain()
@@ -107,6 +111,9 @@ class AdjointDomain
 
     // Pack the domain into a buffer.
     Teuchos::Array<char> pack() const;
+
+    // Get the size of this object in packed bytes.
+    std::size_t getPackedBytes() const;
 
     // Process a history through a transition to a new state.
     inline void processTransition( HistoryType& history );
@@ -135,14 +142,6 @@ class AdjointDomain
     // Get the neighbor domain that owns a boundary state (local neighbor id).
     int owningNeighbor( const Ordinal& state );
 
-  public:
-
-    // Set the byte size of the packed domain state.
-    static void setByteSize();
-
-    // Get the number of bytes in the packed domain state.
-    static std::size_t getPackedBytes();
-
   private:
 
     // Add matrix data to the local domain.
@@ -158,7 +157,7 @@ class AdjointDomain
     Teuchos::RCP<TallyType> d_tally;
 
     // Local row indexer.
-    std::tr1::unordered_map<Ordinal,int> d_row_indexer;
+    MapType d_row_indexer;
 
     // Local columns.
     Teuchos::Array<Teuchos::Array<Ordinal> > d_columns;
@@ -176,12 +175,7 @@ class AdjointDomain
     Teuchos::Array<int> d_send_ranks;
 
     // Boundary state to owning neighbor local id table.
-    std::tr1::unordered_map<Ordinal,int> d_bnd_to_neighbor;
-
-  private:
-
-    // Packed size of domain in bytes.
-    static std::size_t d_packed_bytes;
+    MapType d_bnd_to_neighbor;
 };
 
 //---------------------------------------------------------------------------//

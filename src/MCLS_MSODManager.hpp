@@ -60,7 +60,7 @@ namespace MCLS
  * \class MSODManager 
  * \brief Class for generating and managing the MSOD decomposition.
  */
-template<class Domain,class Source>
+template<class Domain, class Source>
 class MSODManager
 {
   public:

@@ -118,33 +118,163 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
  */
 template<class Vector, class Matrix>
 AdjointDomain<Vector,Matrix>::AdjointDomain( 
-    const Teuchos::ArrayView<char>& buffer )
+    const Teuchos::ArrayView<char>& buffer,
+    const Teuchos::RCP<const Comm>& set_comm )
 {
-    Require( Teuchos::as<std::size_t>(buffer.size()) == d_packed_bytes );
+    Ordinal num_rows = 0;
+    int num_receives = 0;
+    int num_sends = 0;
+    Ordinal num_bnd = 0;
+    Ordinal num_base = 0;
+    Ordinal num_overlap = 0;
 
     Deserializer ds;
-    ds.set_buffer( buffer() );
+    ds.setBuffer( buffer() );
 
-    // Unpack of the local row indexer.
+    // Unpack the local number of rows.
+    ds >> num_rows;
+    Check( num_rows > 0 );
 
-    // Unpack up the local columns.
+    // Unpack the number of receive neighbors.
+    ds >> num_receives;
+    Check( num_receives > 0 );
 
-    // Unpack up the local cdfs.
+    // Unpack the number of send neighbors.
+    ds >> num_sends;
+    Check( num_sends > 0 );
 
-    // Unpack up the local weights.
+    // Unpack the number of boundary states.
+    ds >> num_bnd;
+    Check( num_bnd > 0 );
 
-    // Unpack up the receive ranks.
+    // Unpack the number of base rows in the tally.
+    ds >> num_base;
+    Check( num_base > 0 );
 
-    // Unpack up the send ranks.
+    // Unpack the number of overlap rows in the tally.
+    ds >> num_overlap;
+    Check( num_overlap > 0 );
 
-    // Unpack up the boundary-to-neighbor id table.
+    // Unpack the local row indexer by key-value pairs.
+    Ordinal global_row = 0;
+    int local_row = 0;
+    for ( Ordinal n = 0; n < num_rows; ++n )
+    {
+	ds >> global_row >> local_row;
+	d_row_indexer[global_row] = local_row;
+    }
 
-    // Unpack up the tally base rows.
+    // Unpack the local columns.
+    d_columns.resize( num_rows );
+    Ordinal num_cols = 0;
+    typename Teuchos::Array<Teuchos::Array<Ordinal> >::iterator column_it;
+    typename Teuchos::Array<Ordinal>::iterator index_it;
+    for( column_it = d_columns.begin(); 
+	 column_it != d_columns.end(); 
+	 ++column_it )
+    {
+	// Unpack the number of column entries in the row.
+	ds >> num_cols;
+	column_it->resize( num_cols )
 
-    // Unpack up the tally overlap rows.
+	// Unpack the column indices.
+	for ( index_it = column_it->begin();
+	      index_it != column_it->end();
+	      ++index_it )
+	{
+	    ds >> *index_it;
+	}
+    }
+
+    // Unpack the local cdfs.
+    d_cdfs.resize( num_rows );
+    Ordinal num_values = 0;
+    Teuchos::Array<Teuchos::Array<double> >::iterator cdf_it;
+    Teuchos::Array<double>::iterator value_it;
+    for( cdf_it = d_cdfs.begin(); cdf_it != d_cdfs.end(); ++cdf_it )
+    {
+	// Unpack the number of entries in the row cdf.
+	ds >> num_values;
+	cdf_it->resize( num_values );
+
+	// Unpack the column indices.
+	for ( value_it = cdf_it->begin();
+	      value_it != cdf_it->end();
+	      ++value_it )
+	{
+	    ds >> *value_it;
+	}
+    }
+
+    // Unpack the local weights.
+    d_weights.resize( num_rows );
+    Teuchos::Array<double>::iterator weight_it;
+    for ( weight_it = d_weights.begin();
+	  weight_it != d_weights.end();
+	  ++weight_it )
+    {
+	ds >> *weight_it;
+    }
+
+    // Unpack the receive ranks.
+    d_receive_ranks.resize( num_receives );
+    Teuchos::Array<int>::iterator receive_it;
+    for ( receive_it = d_receive_ranks.begin();
+	  receive_it = d_receive_ranks.end();
+	  ++receive_it )
+    {
+	ds >> *receive_it;
+    }
+
+    // Unpack the send ranks.
+    d_send_ranks.resize( num_sends );
+    Teuchos::Array<int>::iterator send_it;
+    for ( send_it = d_send_ranks.begin();
+	  send_it = d_send_ranks.end();
+	  ++send_it )
+    {
+	ds >> *send_it;
+    }
+
+    // Unpack the boundary-to-neighbor id table.
+    Ordinal boundary_row = 0;
+    int neighbor = 0;
+    for ( bnd_it = d_bnd_to_neighbor.begin();
+	  bnd_it != d_bnd_to_neighbor.end();
+	  ++bnd_it )
+    {
+	ds >> boundary_row >> neighbor;
+	d_bnd_to_neighbor[boundary_row] = neighbor;
+    }
+
+    // Unpack the tally base rows.
+    Teuchos::Array<Ordinal> base_rows( num_base );
+    typename Teuchos::Array<Ordinal>::iterator base_it;
+    for ( base_it = base_rows.begin();
+	  base_it != base_rows.end();
+	  ++base_it )
+    {
+	ds >> *base_it;
+    }
+
+    // Unpack the tally overlap rows.
+    Teuchos::Array<Ordinal> overlap_rows( num_overlap );
+    typename Teuchos::Array<Ordinal>::iterator overlap_it;
+    for ( overlap_it = overlap_rows.begin();
+	  overlap_it != overlap_rows.end();
+	  ++overlap_it )
+    {
+	ds >> *overlap_it;
+    }
 
     // Build the tally.
+    Teuchos::RCP<Vector> base_x = 
+	VT::createFromRows( set_comm, base_rows() );
+    Teuchos::RCP<Vector> overlap_x = 
+	VT::createFromRows( set_comm, overlap_rows() );
+    d_tally = Teuchos::rcp( new TallyType(base_x, overlap_x) );
 
+    Ensure( !d_tally.is_null() );
 }
 
 //---------------------------------------------------------------------------//
@@ -152,31 +282,265 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
  * \brief Pack the domain into a buffer.
  */
 template<class Vector, class Matrix>
-Teuchos::Array<char> AdjointDomain<Vector,Matrix>::pack()
+Teuchos::Array<char> AdjointDomain<Vector,Matrix>::pack() const
 {
-    Require( d_packed_bytes );
+    std::size_t packed_bytes = getPackedBytes();
+    Check( packed_bytes );
 
-    Teuchos::Array<char> buffer( d_packed_bytes );
+    Teuchos::Array<char> buffer( packed_bytes );
     Serializer s;
     s.setBuffer( buffer() );
 
-    // Pack of the local row indexer.
+    // Pack the local number of rows.
+    s << Teuchos::as<Ordinal>(d_row_indexer.size());
+
+    // Pack in the number of receive neighbors.
+    s << Teuchos::as<int>(d_receive_ranks.size());
+
+    // Pack in the number of send neighbors.
+    s << Teuchos::as<int>(d_send_ranks.size());
+
+    // Pack in the number of boundary states.
+    s << Teuchos::as<Ordinal>(d_bnd_to_neighbor.size());
+
+    // Pack in the number of base rows in the tally.
+    s << Teuchos::as<Ordinal>(d_tally->numBaseRows());
+
+    // Pack in the number of overlap rows in the tally.
+    s << Teuchos::as<Ordinal>(d_tally->numOverlapRows());
+
+    // Pack up the local row indexer by key-value pairs.
+    typename MapType::const_iterator row_index_it;
+    for ( row_index_it = d_row_indexer.begin();
+	  row_index_it != d_row_indexer.end();
+	  ++row_index_it )
+    {
+	s << row_index_it->first << row_index_it->second;
+    }
 
     // Pack up the local columns.
+    typename Teuchos::Array<Teuchos::Array<Ordinal> >::const_iterator column_it;
+    typename Teuchos::Array<Ordinal>::const_iterator index_it;
+    for( column_it = d_columns.begin(); 
+	 column_it != d_columns.end(); 
+	 ++column_it )
+    {
+	// Pack the number of column entries in the row.
+	s << Teuchos::as<Ordinal>( column_it->size() );
+
+	// Pack in the column indices.
+	for ( index_it = column_it->begin();
+	      index_it != column_it->end();
+	      ++index_it )
+	{
+	    s << *index_it;
+	}
+    }
 
     // Pack up the local cdfs.
+    Teuchos::Array<Teuchos::Array<double> >::const_iterator cdf_it;
+    Teuchos::Array<double>::const_iterator value_it;
+    for( cdf_it = d_cdfs.begin(); cdf_it != d_cdfs.end(); ++cdf_it )
+    {
+	// Pack the number of entries in the row cdf.
+	s << Teuchos::as<Ordinal>( cdf_it->size() );
+
+	// Pack in the column indices.
+	for ( value_it = cdf_it->begin();
+	      value_it != cdf_it->end();
+	      ++value_it )
+	{
+	    s << *value_it;
+	}
+    }
 
     // Pack up the local weights.
+    Teuchos::Array<double>::const_iterator weight_it;
+    for ( weight_it = d_weights.begin();
+	  weight_it != d_weights.end();
+	  ++weight_it )
+    {
+	s << *weight_it;
+    }
 
     // Pack up the receive ranks.
+    Teuchos::Array<int>::const_iterator receive_it;
+    for ( receive_it = d_receive_ranks.begin();
+	  receive_it = d_receive_ranks.end();
+	  ++receive_it )
+    {
+	s << *receive_it;
+    }
 
     // Pack up the send ranks.
+    Teuchos::Array<int>::const_iterator send_it;
+    for ( send_it = d_send_ranks.begin();
+	  send_it = d_send_ranks.end();
+	  ++send_it )
+    {
+	s << *send_it;
+    }
 
     // Pack up the boundary-to-neighbor id table.
+    typename MapType::const_iterator bnd_it;
+    for ( bnd_it = d_bnd_to_neighbor.begin();
+	  bnd_it != d_bnd_to_neighbor.end();
+	  ++bnd_it )
+    {
+	s << bnd_it->first << bnd_it->second
+    }
 
     // Pack up the tally base rows.
+    Teuchos::Array<Ordinal> base_rows = d_tally->baseRows();
+    typename Teuchos::Array<Ordinal>::const_iterator base_it;
+    for ( base_it = base_rows.begin();
+	  base_it != base_rows.end();
+	  ++base_it )
+    {
+	s << *base_it;
+    }
 
     // Pack up the tally overlap rows.
+    Teuchos::Array<Ordinal> overlap_rows = d_tally->overlapRows();
+    typename Teuchos::Array<Ordinal>::const_iterator overlap_it;
+    for ( overlap_it = overlap_rows.begin();
+	  overlap_it != overlap_rows.end();
+	  ++overlap_it )
+    {
+	s << *overlap_it;
+    }
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Get the size of this object in packed bytes.
+ */
+template<class Vector, class Matrix>
+std::size_t AdjointDomain<Vector,Matrix>::getPackedBytes() const
+{
+    Serializer s;
+    s.computeBufferSizeMode();
+
+    // Pack the local number of rows.
+    s << Teuchos::as<Ordinal>(d_row_indexer.size());
+
+    // Pack in the number of receive neighbors.
+    s << Teuchos::as<int>(d_receive_ranks.size());
+
+    // Pack in the number of send neighbors.
+    s << Teuchos::as<int>(d_send_ranks.size());
+
+    // Pack in the number of boundary states.
+    s << Teuchos::as<Ordinal>(d_bnd_to_neighbor.size());
+
+    // Pack in the number of base rows in the tally.
+    s << Teuchos::as<Ordinal>(d_tally->numBaseRows());
+
+    // Pack in the number of overlap rows in the tally.
+    s << Teuchos::as<Ordinal>(d_tally->numOverlapRows());
+
+    // Pack up the local row indexer by key-value pairs.
+    typename MapType::const_iterator row_index_it;
+    for ( row_index_it = d_row_indexer.begin();
+	  row_index_it != d_row_indexer.end();
+	  ++row_index_it )
+    {
+	s << row_index_it->first << row_index_it->second;
+    }
+
+    // Pack up the local columns.
+    typename Teuchos::Array<Teuchos::Array<Ordinal> >::const_iterator column_it;
+    typename Teuchos::Array<Ordinal>::const_iterator index_it;
+    for( column_it = d_columns.begin(); 
+	 column_it != d_columns.end(); 
+	 ++column_it )
+    {
+	// Pack the number of column entries in the row.
+	s << Teuchos::as<Ordinal>( column_it->size() );
+
+	// Pack in the column indices.
+	for ( index_it = column_it->begin();
+	      index_it != column_it->end();
+	      ++index_it )
+	{
+	    s << *index_it;
+	}
+    }
+
+    // Pack up the local cdfs.
+    Teuchos::Array<Teuchos::Array<double> >::const_iterator cdf_it;
+    Teuchos::Array<double>::const_iterator value_it;
+    for( cdf_it = d_cdfs.begin(); cdf_it != d_cdfs.end(); ++cdf_it )
+    {
+	// Pack the number of entries in the row cdf.
+	s << Teuchos::as<Ordinal>( cdf_it->size() );
+
+	// Pack in the column indices.
+	for ( value_it = cdf_it->begin();
+	      value_it != cdf_it->end();
+	      ++value_it )
+	{
+	    s << *value_it;
+	}
+    }
+
+    // Pack up the local weights.
+    Teuchos::Array<double>::const_iterator weight_it;
+    for ( weight_it = d_weights.begin();
+	  weight_it != d_weights.end();
+	  ++weight_it )
+    {
+	s << *weight_it;
+    }
+
+    // Pack up the receive ranks.
+    Teuchos::Array<int>::const_iterator receive_it;
+    for ( receive_it = d_receive_ranks.begin();
+	  receive_it = d_receive_ranks.end();
+	  ++receive_it )
+    {
+	s << *receive_it;
+    }
+
+    // Pack up the send ranks.
+    Teuchos::Array<int>::const_iterator send_it;
+    for ( send_it = d_send_ranks.begin();
+	  send_it = d_send_ranks.end();
+	  ++send_it )
+    {
+	s << *send_it;
+    }
+
+    // Pack up the boundary-to-neighbor id table.
+    typename MapType::const_iterator bnd_it;
+    for ( bnd_it = d_bnd_to_neighbor.begin();
+	  bnd_it != d_bnd_to_neighbor.end();
+	  ++bnd_it )
+    {
+	s << bnd_it->first << bnd_it->second
+    }
+
+    // Pack up the tally base rows.
+    Teuchos::Array<Ordinal> base_rows = d_tally->baseRows();
+    typename Teuchos::Array<Ordinal>::const_iterator base_it;
+    for ( base_it = base_rows.begin();
+	  base_it != base_rows.end();
+	  ++base_it )
+    {
+	s << *base_it;
+    }
+
+    // Pack up the tally overlap rows.
+    Teuchos::Array<Ordinal> overlap_rows = d_tally->overlapRows();
+    typename Teuchos::Array<Ordinal>::const_iterator overlap_it;
+    for ( overlap_it = overlap_rows.begin();
+	  overlap_it != overlap_rows.end();
+	  ++overlap_it )
+    {
+	s << *overlap_it;
+    }
+
+    return s.size();
 }
 
 //---------------------------------------------------------------------------//
@@ -363,42 +727,6 @@ void AdjointDomain<Vector,Matrix>::buildBoundary(
 
     Ensure( d_bnd_to_neighbor.size() == 
 	    Teuchos::as<std::size_t>(boundary_rows.size()) );
-}
-
-//---------------------------------------------------------------------------//
-// Static members.
-//---------------------------------------------------------------------------//
-template<class Vector, class Matrix>
-std::size_t Domain<Vector,Matrix>::d_packed_bytes = 0;
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Set the byte size of the packed domain state.
- */
-template<class Vector, class Matrix>
-void Domain<Vector,Matrix>::setByteSize( Ordinal num_rows, Ordinal max_col, 
-					 int num_receive, int num_send, 
-					 Ordinal num_boundary,
-					 int num_base, int num_overlap )
-{
-    d_packed_bytes = 
-	num_rows*( 
-	sizeof(Ordinal) + sizeof(int) + sizeof(Ordinal)*(max_col+1) +
-	sizeof(double)*(max_col+1) + sizeof(double) + sizeof(int) +
-	sizeof(int) + sizeof(Ordinal) + sizeof(int) 
-	)
-	+ (num_base+num_overlap)*sizeof(Ordinal);
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Get the number of bytes in the packed domain state.
- */
-template<class Vector, class Matrix>
-std::size_t Domain<Vector,Matrix>::getPackedBytes()
-{
-    Require( d_packed_bytes );
-    return d_packed_bytes;
 }
 
 //---------------------------------------------------------------------------//

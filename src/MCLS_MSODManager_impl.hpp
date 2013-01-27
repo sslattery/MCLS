@@ -247,20 +247,35 @@ void MSODManager<Domain,Source>::broadcastDomain()
 {
     Require( !d_block_comm.is_null() );
 
-    Domain::setByteSize();
-    Teuchos::Array<char> domain_buffer( Domain::getPackedBytes() );
+    // Get the byte size of the domain.
+    std::size_t buffer_size = 0;
+    if ( !d_local_domain.is_null() )
+    {
+	buffer_size = d_local_domain->getPackedBytes();
+    }
+    d_block_comm->barrier();
+
+    Teuchos::broadcast<int,std::size_t>( 
+	*d_block_comm, 0, Teuchos::Ptr<std::size_t>(&buffer_size) );
+    Check( buffer_size > 0 );
+
+    // Pack the domain and send it.
+    Teuchos::Array<char> domain_buffer( buffer_size );
     if ( !d_local_domain.is_null() )
     {
 	domain_buffer = d_local_domain->pack();
-	Check( domain_buffer.size() == Domain::getPackedBytes() );
+	Check( domain_buffer.size() == buffer_size );
     }
+    d_block_comm->barrier();
 
     Teuchos::broadcast<int,char>( *d_block_comm, 0, domain_buffer() );
 
+    // Assign the domain.
     if ( d_local_domain.is_null() )
     {
 	d_local_domain = Teuchos::rcp( new Domain(domain_buffer()) );
     }
+    d_block_comm->barrier();
 
     Ensure( !d_local_domain.is_null() );
 }
@@ -274,20 +289,35 @@ void MSODManager<Domain,Source>::broadcastSource()
 {
     Require( !d_block_comm.is_null() );
 
-    Source::setByteSize();
-    Teuchos::Array<char> source_buffer( Source::getPackedBytes() );
+    // Get the byte size of the source.
+    std::size_t buffer_size = 0;
+    if ( !d_local_source.is_null() )
+    {
+	buffer_size = d_local_source->getPackedBytes();
+    }
+    d_block_comm->barrier();
+
+    Teuchos::broadcast<int,std::size_t>( 
+	*d_block_comm, 0, Teuchos::Ptr<std::size_t>(&buffer_size) );
+    Check( buffer_size > 0 );
+
+    // Pack the source and send it.
+    Teuchos::Array<char> source_buffer( buffer_size );
     if ( !d_local_source.is_null() )
     {
 	source_buffer = d_local_source->pack();
-	Check( source_buffer.size() == Source::getPackedBytes() );
+	Check( source_buffer.size() == buffer_size );
     }
+    d_block_comm->barrier();
 
     Teuchos::broadcast<int,char>( *d_block_comm, 0, source_buffer() );
 
+    // Assign the source.
     if ( d_local_source.is_null() )
     {
 	d_local_source = Teuchos::rcp( new Source(source_buffer()) );
     }
+    d_block_comm->barrier();
 
     Ensure( !d_local_source.is_null() );
 }

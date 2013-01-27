@@ -99,7 +99,7 @@ MCSolver<Domain>::MCSolver( const Teuchos::RCP<const Comm>& set_comm,
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Solve the linear problem.
+ * \brief Solve the linear problem. The domain and source must be set!
  */
 template<class Domain>
 void MCSolver<Domain>::solve()
