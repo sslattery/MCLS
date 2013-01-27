@@ -205,7 +205,8 @@ TEUCHOS_UNIT_TEST( SourceTransporter, transport )
     plist.set<int>("Set Number of Histories", mult*global_num_rows);
     plist.set<double>("Weight Cutoff", cutoff);
     Teuchos::RCP<SourceType> source = Teuchos::rcp(
-	new SourceType( b, domain, control, comm, plist ) );
+	new SourceType( b, domain, control, comm, 
+			comm->getSize(), comm->getRank(), plist ) );
     source->buildSource();
 
     // Create the source transporter.
