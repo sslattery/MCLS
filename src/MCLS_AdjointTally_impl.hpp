@@ -83,6 +83,8 @@ template<class Vector>
 void AdjointTally<Vector>::combineBlockTallies(
     const Teuchos::RCP<const Comm>& block_comm )
 {
+    Require( !block_comm.is_null() );
+
     Teuchos::ArrayRCP<const Scalar> const_base_view = VT::view( *d_x );
 
     Teuchos::ArrayRCP<Scalar> copy_buffer( const_base_view.size() );

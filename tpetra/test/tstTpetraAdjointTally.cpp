@@ -208,7 +208,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, TallyHistory, LO, GO, Scalar )
 UNIT_TEST_INSTANTIATION( AdjointTally, TallyHistory )
 
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, Combine, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, SetCombine, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
@@ -288,7 +288,123 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, Combine, LO, GO, Scalar )
     }
 }
 
-UNIT_TEST_INSTANTIATION( AdjointTally, Combine )
+UNIT_TEST_INSTANTIATION( AdjointTally, SetCombine )
+
+//---------------------------------------------------------------------------//
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, BlockCombine, LO, GO, Scalar )
+{
+    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::History<GO> HistoryType;
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+	Teuchos::DefaultComm<int>::getComm();
+    int comm_size = comm->getSize();
+    int comm_rank = comm->getRank();
+
+    // This test is for 4 procs.
+    if ( comm_size == 4 )
+    {
+	// Build the set-constant communicator.
+	Teuchos::Array<int> ranks(2);
+	if ( comm_rank < 2 )
+	{
+	    ranks[0] = 0;
+	    ranks[1] = 1;
+	}
+	else
+	{
+	    ranks[0] = 2;
+	    ranks[1] = 3;
+	}
+	Teuchos::RCP<const Teuchos::Comm<int> > comm_set =
+	    comm->createSubcommunicator( ranks() );
+	int set_size = comm_set->getSize();
+	int set_rank = comm_set->getRank();
+
+	// Build the block-constant communicator.
+	if ( comm_rank == 0 || comm_rank == 2 )
+	{
+	    ranks[0] = 0;
+	    ranks[1] = 2;
+	}
+	else
+	{
+	    ranks[0] = 1;
+	    ranks[1] = 3;
+	}
+	Teuchos::RCP<const Teuchos::Comm<int> > comm_block =
+	    comm->createSubcommunicator( ranks() );
+	int block_rank = comm_block->getRank();
+
+	// Build the map.
+	int local_num_rows = 10;
+	int global_num_rows = local_num_rows*set_size;
+	Teuchos::RCP<const Tpetra::Map<LO,GO> > map_a = 
+	    Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm_set );
+	Teuchos::RCP<VectorType> A = Tpetra::createVector<Scalar,LO,GO>( map_a );
+
+	Teuchos::Array<GO> inverse_rows( local_num_rows );
+	for ( int i = 0; i < local_num_rows; ++i )
+	{
+	    inverse_rows[i] = 
+		(local_num_rows-1-i) + local_num_rows*(set_size-1-set_rank);
+	}
+	Teuchos::RCP<const Tpetra::Map<LO,GO> > map_b = 
+	    Tpetra::createNonContigMap<LO,GO>( inverse_rows(), comm_set );
+	Teuchos::RCP<VectorType> B = Tpetra::createVector<Scalar,LO,GO>( map_b );
+
+	MCLS::AdjointTally<VectorType> tally( A, B );
+
+	Scalar a_val = 2;
+	Scalar b_val = 3;
+	if ( block_rank == 1 )
+	{
+	    a_val = 4;
+	    b_val = 6;
+	}
+	comm->barrier();
+
+	for ( int i = 0; i < local_num_rows; ++i )
+	{
+	    GO state = i + local_num_rows*set_rank;
+	    HistoryType history( state, a_val );
+	    history.live();
+	    tally.tallyHistory( history );
+
+	    GO inverse_state = 
+		(local_num_rows-1-i) + local_num_rows*(set_size-1-set_rank);
+	    history = HistoryType( inverse_state, b_val );
+	    history.live();
+	    tally.tallyHistory( history );
+	}
+
+	tally.combineSetTallies();
+	tally.combineBlockTallies( comm_block );
+
+	// The base tallies should be combined across the blocks.
+	Teuchos::ArrayRCP<const Scalar> A_view = VT::view( *A );
+	typename Teuchos::ArrayRCP<const Scalar>::const_iterator a_view_iterator;
+	for ( a_view_iterator = A_view.begin();
+	      a_view_iterator != A_view.end();
+	      ++a_view_iterator )
+	{
+	    TEST_EQUALITY( *a_view_iterator, 2+3+4+6 );
+	}
+
+	// The overlap shouldn't change.
+	Teuchos::ArrayRCP<const Scalar> B_view = VT::view( *B );
+	typename Teuchos::ArrayRCP<const Scalar>::const_iterator b_view_iterator;
+	for ( b_view_iterator = B_view.begin();
+	      b_view_iterator != B_view.end();
+	      ++b_view_iterator )
+	{
+	    TEST_EQUALITY( *b_view_iterator, b_val );
+	}
+    }
+}
+
+UNIT_TEST_INSTANTIATION( AdjointTally, BlockCombine )
 
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, Normalize, LO, GO, Scalar )
