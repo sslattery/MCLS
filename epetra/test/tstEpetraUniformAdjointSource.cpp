@@ -194,6 +194,7 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_not_set )
     TEST_EQUALITY( source.numLeft(), local_num_rows );
     TEST_EQUALITY( source.numEmitted(), 0 );
     TEST_EQUALITY( source.numStreams(), comm->getSize() );
+    TEST_EQUALITY( source.sourceWeight(), VT::norm1(*b) );
 
     // Sample the source.
     for ( int i = 0; i < local_num_rows; ++i )
