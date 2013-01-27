@@ -173,7 +173,7 @@ TEUCHOS_UNIT_TEST( MSODManager, two_by_two )
 	int global_num_rows = local_num_rows*set_size;
 
 	// Create the solution vector externally so that we can check it.
-	Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( set_comm );
+	Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm_set );
 	Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
 	    new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 

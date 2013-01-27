@@ -76,6 +76,7 @@
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
+#include <Teuchos_DefaultMpiComm.hpp>
 #endif
 
 //---------------------------------------------------------------------------//
