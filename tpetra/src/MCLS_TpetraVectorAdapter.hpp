@@ -86,8 +86,9 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
      * the same parallel distribution given by the input rows.
      */
     static Teuchos::RCP<vector_type> 
-    createFromRows( const Teuchos::RCP<const Comm>& comm,
-		    const Teuchos::ArrayView<global_ordinal_type>& global_rows )
+    createFromRows( 
+	const Teuchos::RCP<const Comm>& comm,
+	const Teuchos::ArrayView<const global_ordinal_type>& global_rows )
     { 
 	Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type> > 
 	    map = 

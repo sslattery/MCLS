@@ -149,6 +149,44 @@ TEUCHOS_UNIT_TEST( VectorTraits, Clone )
 }
 
 //---------------------------------------------------------------------------//
+TEUCHOS_UNIT_TEST( VectorTraits, RowCreate )
+{
+    typedef Epetra_Vector VectorType;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef VT::scalar_type scalar_type;
+    typedef VT::local_ordinal_type local_ordinal_type;
+    typedef VT::global_ordinal_type global_ordinal_type;
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+	Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
+
+    int comm_size = comm->getSize();
+    int local_num_rows = 10;
+    int global_num_rows = local_num_rows*comm_size;
+
+    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
+	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
+
+    Teuchos::RCP<VectorType> A = Teuchos::rcp( new Epetra_Vector( *map ) );
+
+    Teuchos::Array<GO> rows;
+    map->MyGlobalElements( rows.getRawPtr() );
+    Teuchos::RCP<VectorType> B = VT::createFromRows( comm, rows() );
+
+    TEST_ASSERT( A->getMap()->isSameAs( *(B->getMap()) ) );
+    
+    Teuchos::ArrayRCP<const Scalar> B_view = VT::view( *B );
+    typename Teuchos::ArrayRCP<const Scalar>::const_iterator view_iterator;
+    for ( view_iterator = B_view.begin();
+	  view_iterator != B_view.end();
+	  ++view_iterator )
+    {
+	TEST_EQUALITY( *view_iterator, 0.0 );
+    }
+}
+
+//---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST( VectorTraits, DeepCopy )
 {
     typedef Epetra_Vector VectorType;

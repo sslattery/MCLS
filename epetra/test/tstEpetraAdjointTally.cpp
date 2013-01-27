@@ -184,6 +184,38 @@ TEUCHOS_UNIT_TEST( AdjointTally, TallyHistory )
 	    TEST_EQUALITY( *b_view_iterator, b_val );
 	}
     }
+
+    TEST_EQUALITY( tally.numBaseRows(), VT::localLength(*A) );
+    Teuchos::Array<int> base_rows = tally.baseRows();
+    TEST_EQUALITY( Teuchos::as<int>(base_rows.size()),
+		   tally.numBaseRows() );
+    for ( int i = 0; i < base_rows.size(); ++i )
+    {
+	TEST_EQUALITY( base_rows[i], VT::getGlobalRow(*A,i) )
+    }
+
+    TEST_EQUALITY( tally.numOverlapRows(), VT::localLength(*B) );
+    Teuchos::Array<int> overlap_rows = tally.overlapRows();
+    TEST_EQUALITY( Teuchos::as<int>(overlap_rows.size()),
+		   tally.numOverlapRows() );
+    for ( int i = 0; i < overlap_rows.size(); ++i )
+    {
+	TEST_EQUALITY( overlap_rows[i], VT::getGlobalRow(*B,i) )
+    }
+
+    tally.zeroOut();
+    for ( a_view_iterator = A_view.begin();
+	  a_view_iterator != A_view.end();
+	  ++a_view_iterator )
+    {
+	TEST_EQUALITY( *a_view_iterator, 0 );
+    }
+    for ( b_view_iterator = B_view.begin();
+	  b_view_iterator != B_view.end();
+	  ++b_view_iterator )
+    {
+	TEST_EQUALITY( *b_view_iterator, 0 );
+    }
 }
 
 //---------------------------------------------------------------------------//

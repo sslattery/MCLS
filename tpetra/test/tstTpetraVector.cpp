@@ -138,6 +138,43 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, Clone, LO, GO, Scalar )
 UNIT_TEST_INSTANTIATION( VectorTraits, Clone )
 
 //---------------------------------------------------------------------------//
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, RowCreate, LO, GO, Scalar )
+{
+    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef typename VT::scalar_type scalar_type;
+    typedef typename VT::local_ordinal_type local_ordinal_type;
+    typedef typename VT::global_ordinal_type global_ordinal_type;
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+	Teuchos::DefaultComm<int>::getComm();
+    int comm_size = comm->getSize();
+
+    int local_num_rows = 10;
+    int global_num_rows = local_num_rows*comm_size;
+    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
+	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
+
+    Teuchos::RCP<VectorType> A = Tpetra::createVector<Scalar,LO,GO>( map );
+
+    Teuchos::ArrayView<const GO> rows = map->getNodeElementList();
+    Teuchos::RCP<VectorType> B = VT::createFromRows( comm, rows );
+
+    TEST_ASSERT( A->getMap()->isSameAs( *(B->getMap()) ) );
+    
+    Teuchos::ArrayRCP<const Scalar> B_view = VT::view( *B );
+    typename Teuchos::ArrayRCP<const Scalar>::const_iterator view_iterator;
+    for ( view_iterator = B_view.begin();
+	  view_iterator != B_view.end();
+	  ++view_iterator )
+    {
+	TEST_EQUALITY( *view_iterator, 0.0 );
+    }
+}
+
+UNIT_TEST_INSTANTIATION( VectorTraits, RowCreate )
+
+//---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, DeepCopy, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
