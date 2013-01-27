@@ -137,15 +137,15 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 
     // Unpack the number of receive neighbors.
     ds >> num_receives;
-    Check( num_receives > 0 );
+    Check( num_receives >= 0 );
 
     // Unpack the number of send neighbors.
     ds >> num_sends;
-    Check( num_sends > 0 );
+    Check( num_sends >= 0 );
 
     // Unpack the number of boundary states.
     ds >> num_bnd;
-    Check( num_bnd > 0 );
+    Check( num_bnd >= 0 );
 
     // Unpack the number of base rows in the tally.
     ds >> num_base;
@@ -153,7 +153,8 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 
     // Unpack the number of overlap rows in the tally.
     ds >> num_overlap;
-    Check( num_overlap > 0 );
+    Check( num_overlap >= 0 );
+    Check( num_base + num_overlap == num_rows );
 
     // Unpack the local row indexer by key-value pairs.
     Ordinal global_row = 0;

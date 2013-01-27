@@ -44,9 +44,11 @@
 #include <MCLS_DBC.hpp>
 #include <MCLS_VectorTraits.hpp>
 
+#include <Teuchos_Comm.hpp>
 #include <Teuchos_as.hpp>
 
 #include <Tpetra_Vector.hpp>
+#include <Tpetra_Map.hpp>
 
 namespace MCLS
 {
@@ -67,6 +69,7 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     typedef typename vector_type::scalar_type            scalar_type;
     typedef typename vector_type::local_ordinal_type     local_ordinal_type;
     typedef typename vector_type::global_ordinal_type    global_ordinal_type;
+    typedef Teuchos::Comm<int>                           Comm;
     //@}
 
     /*!
@@ -76,6 +79,21 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     static Teuchos::RCP<vector_type> clone( const vector_type& vector )
     {
 	return Tpetra::createVector<Scalar,LO,GO>( vector.getMap() );
+    }
+
+    /*!
+     * \brief Create a reference-counted pointer to a new empty vector with
+     * the same parallel distribution given by the input rows.
+     */
+    static Teuchos::RCP<vector_type> 
+    createFromRows( const Teuchos::RCP<const Comm>& comm,
+		    const Teuchos::ArrayView<global_ordinal_type>& global_rows )
+    { 
+	Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type> > 
+	    map = 
+	    Tpetra::createNonContigMap<local_ordinal_type,global_ordinal_type>( 
+		ghost_global(), comm );
+	return Tpetra::createVector( map );
     }
 
     /*!

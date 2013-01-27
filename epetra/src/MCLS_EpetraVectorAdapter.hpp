@@ -45,8 +45,18 @@
 #include <MCLS_VectorTraits.hpp>
 
 #include <Teuchos_as.hpp>
+#include <Teuchos_Comm.hpp>
+#include <Teuchos_OpaqueWrapper.hpp>
 
 #include <Epetra_Vector.h>
+#include <Epetra_Map.h>
+#include <Epetra_Comm.h>
+#include <Epetra_SerialComm.h>
+
+#ifdef HAVE_MPI
+#include <Teuchos_MpiComm.hpp>
+#include <Epetra_MpiComm.h>
+#endif
 
 namespace MCLS
 {
@@ -67,6 +77,7 @@ class VectorTraits<Epetra_Vector>
     typedef double                              scalar_type;
     typedef int                                 local_ordinal_type;
     typedef int                                 global_ordinal_type;
+    typedef Teuchos::Comm<int>                  Comm;
     //@}
 
     /*!
@@ -76,6 +87,34 @@ class VectorTraits<Epetra_Vector>
     static Teuchos::RCP<vector_type> clone( const vector_type& vector )
     {
 	return Teuchos::rcp( new Epetra_Vector( vector.Map() ) );
+    }
+
+    /*!
+     * \brief Create a reference-counted pointer to a new empty vector with
+     * the same parallel distribution given by the input rows.
+     */
+    static Teuchos::RCP<vector_type> 
+    createFromRows( const Teuchos::RCP<const Comm>& comm,
+		    const Teuchos::ArrayView<global_ordinal_type>& global_rows )
+    { 
+	Teuchos::RCP<Epetra_Comm> epetra_comm;
+#ifdef HAVE_MPI
+	Teuchos::RCP< const Teuchos::MpiComm<int> > mpi_comm = 
+	    Teuchos::rcp_dynamic_cast< const Teuchos::MpiComm<int> >( comm );
+	Teuchos::RCP< const Teuchos::OpaqueWrapper<MPI_Comm> > opaque_comm = 
+	    mpi_comm->getRawMpiComm();
+	epetra_comm = Teuchos::rcp( new Epetra_MpiComm( (*opaque_comm)() ) );
+#else
+	epetra_comm = Teuchos::rcp( new Epetra_SerialComm() );
+#endif
+	Teuchos::RCP<const Epetra_Map> map = Teuchos::rcp( 
+	    new Epetra_Map( -1, 
+			    Teuchos::as<int>(global_rows.size()),
+			    global_rows.getRawPtr(),
+			    0,
+			    *epetra_comm ) );
+
+	return Teuchos::rcp( new Epetra_Vector(map) );
     }
 
     /*!

@@ -54,6 +54,7 @@
 
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_Map.hpp>
 #include <Tpetra_Import.hpp>
 #include <Tpetra_RowMatrixTransposer.hpp>
 #include <Tpetra_Distributor.hpp>

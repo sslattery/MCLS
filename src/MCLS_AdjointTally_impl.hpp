@@ -42,6 +42,7 @@
 #define MCLS_ADJOINTTALLY_IMPL_HPP
 
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_OrdinalTraits.hpp>
 
 namespace MCLS
 {
@@ -94,6 +95,70 @@ void AdjointTally<Vector>::zeroOut()
 
     VT::putScalar( *d_x_overlap, 
 		   Teuchos::ScalarTraits<typename VT::scalar_type>::zero() );
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Get the number global rows in the base decomposition.
+ */
+template<class Vector>
+AdjointTally<Vector>::Ordinal AdjointTally<Vector>::numBaseRows() const
+{
+    return VT::getLocalLength( *d_x );
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Get the number global rows in the overlap decomposition.
+ */
+template<class Vector>
+AdjointTally<Vector>::Ordinal AdjointTally<Vector>::numOverlapRows() const
+{
+    return VT::getGlobalLength( *d_x );
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Get the global rows in the base decomposition.
+ */
+template<class Vector>
+Teuchos::Array<AdjointTally<Vector>::Ordinal>
+AdjointTally<Vector>::baseRows() const
+{
+    Teuchos::Array<Ordinal> base_rows( VT::getLocalLength(*d_x) );
+    typename Teuchos::Array<Ordinal>::iterator row_it;
+    typename VT::local_ordinal_type local_row = 
+	Teuchos::OrdinalTraits<typename VT::local_ordinal_type>::zero();
+    for ( row_it = base_rows.begin();
+	  row_it != base_rows.end();
+	  ++row_it )
+    {
+	*row_it = VT::getGlobalRow( *d_x, local_row );
+    }
+
+    return base_rows;
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Get the global rows in the overlap decomposition.
+ */
+template<class Vector>
+Teuchos::Array<AdjointTally<Vector>::Ordinal>
+AdjointTally<Vector>::overlapRows() const
+{
+    Teuchos::Array<Ordinal> overlap_rows( VT::getLocalLength(*d_x_overlap) );
+    typename Teuchos::Array<Ordinal>::iterator row_it;
+    typename VT::local_ordinal_type local_row = 
+	Teuchos::OrdinalTraits<typename VT::local_ordinal_type>::zero();
+    for ( row_it = overlap_rows.begin();
+	  row_it != overlap_rows.end();
+	  ++row_it )
+    {
+	*row_it = VT::getGlobalRow( *d_x_overlap, local_row );
+    }
+
+    return overlap_rows;
 }
 
 //---------------------------------------------------------------------------//
