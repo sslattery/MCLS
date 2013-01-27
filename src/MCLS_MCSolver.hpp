@@ -41,7 +41,6 @@
 #ifndef MCLS_MCSOLVER_HPP
 #define MCLS_MCSOLVER_HPP
 
-#include "MCLS_Solver.hpp"
 #include "MCLS_RNGControl.hpp"
 #include "MCLS_SourceTransporter.hpp"
 
@@ -92,6 +91,9 @@ class MCSolver
 
     // Set the source.
     void setSource( const Teuchos::RCP<SourceType>& source );
+
+    //! Get the random number controler.
+    Teuchos::RCP<RNGControl> rngControl() const { return d_rng_control; }
 
   private:
 

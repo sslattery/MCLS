@@ -32,29 +32,29 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_Solver.hpp
+ * \file MCLS_SolverManager.hpp
  * \author Stuart R. Slattery
- * \brief Linear solver base class.
+ * \brief Linear solver manager base class.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_SOLVER_HPP
-#define MCLS_SOLVER_HPP
+#ifndef MCLS_SOLVERMANAGER_HPP
+#define MCLS_SOLVERMANAGER_HPP
 
 namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class Solver
+ * \class SolverManager
  * \brief Linear solver base class.
  */
-class Solver
+class SolverManager
 {
   public:
 
     //! Destructor.
-    virtual ~Solver { /* ... */ }
+    virtual ~SolverManager { /* ... */ }
 
     //! Solve the linear problem.
     virtual void solve() = 0;
@@ -65,7 +65,7 @@ class Solver
   private:
 
     //! Private constructor. This forces construction through the factory.
-    Solver() { /* ... */ }
+    SolverManager() { /* ... */ }
 };
 
 //---------------------------------------------------------------------------//
@@ -74,9 +74,9 @@ class Solver
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_SOLVER_HPP
+#endif // end MCLS_SOLVERMANAGER_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_Solver.hpp
+// end MCLS_SolverManager.hpp
 // ---------------------------------------------------------------------------//
 

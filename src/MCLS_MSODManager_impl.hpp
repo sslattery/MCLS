@@ -60,7 +60,6 @@ MSODManager<Domain,Source>::MSODManager(
     const Teuchos::RCP<const Comm>& global_comm,
     Teuchos::ParameterList& plist )
     : d_global_comm( global_comm )
-    , d_plist( plist )
     , d_num_sets( plist.get<int>("Number of Sets") )
     , d_set_size( 0 )
     , d_block_size( d_num_sets )
@@ -148,7 +147,7 @@ void MSODManager<Domain,Source>::updateDomain(
     else
     {
 	Insist( primary_domain.is_null(),
-		"Primary domain must exist on 0 only!" );
+		"Primary domain must exist on set 0 only!" );
     }
 
     broadcastDomain();
@@ -175,7 +174,7 @@ void MSODManager<Domain,Source>::updateSource(
     else
     {
 	Insist( primary_source.is_null(),
-		"Primary source must exist on 0 only!" );
+		"Primary source must exist on set 0 only!" );
     }
 
     broadcastSource( rng_control );
