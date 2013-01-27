@@ -96,8 +96,7 @@ class UniformAdjointSource : public Source<Domain>
 			  const Teuchos::RCP<RNGControl>& rng_control,
 			  const Teuchos::RCP<const Comm>& set_comm,
 			  const int global_comm_size,
-			  const int global_comm_rank,
-			  Teuchos::ParameterList& plist );
+			  const int global_comm_rank );
 
     // Destructor.
     ~UniformAdjointSource() { /* ... */ }

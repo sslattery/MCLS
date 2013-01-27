@@ -98,6 +98,9 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
 //---------------------------------------------------------------------------//
 /*!
  * \brief Deserializer constructor.
+ *
+ * Note that the relative weight cutoff will be set in the global parameter
+ * list by the first call to the vector constructor above.
  */
 template<class Domain>
 UniformAdjointSource<Domain>::UniformAdjointSource( 
@@ -106,8 +109,7 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
     const Teuchos::RCP<RNGControl>& rng_control,
     const Teuchos::RCP<const Comm>& set_comm,
     const int global_comm_size,
-    const int global_comm_rank,
-    Teuchos::ParameterList& plist )
+    const int global_comm_rank )
     : Base( domain, rng_control )
     , d_set_comm( set_comm )
     , d_global_size( global_comm_size )
@@ -125,9 +127,14 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
     Deserializer ds;
     ds.setBuffer( buffer() );
 
+    // Unpack the requested number of histories.
+    ds >> d_nh_requested;
+    Check( d_nh_requested > 0 );
+
     // Unpack the size of the local source data.
     std::size_t local_size = 0;
     ds >> local_size;
+    Check( local_size > 0 );
 
     // Unpack the source global rows.
     Teuchos::ArrayRCP<Ordinal> global_rows( local_size );
@@ -150,31 +157,26 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
     }
 
     Check( ds.getPtr() == ds.end() );
-    
+   
     // Build the source vector.
     Base::setSourceVector( VT::createFromRows(d_set_comm, global_rows()) );
+
+    // Set the data in the source vector.
+    typename Teuchos::ArrayRCP<Scalar>::const_iterator const_data_it;
+    for ( const_data_it = source_data.begin(), row_it = global_rows.begin(); 
+	  const_data_it != source_data.end(); 
+	  ++const_data_it, ++row_it )
+    {
+	VT::replaceGlobalValue( *Base::b_b, *row_it, *const_data_it );
+    }
+    source_data.clear();
 
     // Set the weight.
     d_weight = VT::norm1( *Base::b_b );
 
-    // Get the requested number of histories. The default value is the
-    // length of the source vector in this set.
-    if ( plist.isParameter("Set Number of Histories") )
-    {
-	d_nh_requested = plist.get<int>("Set Number of Histories");
-    }
-    else
-    {
-	d_nh_requested = VT::getLocalLength( *Base::b_b );
-    }
-
     // Set the total to the requested amount. This may change based on the
     // global stratified sampling.
     d_nh_total = d_nh_requested;
-
-    // Set the relative weight cutoff with the source weight.
-    double cutoff = plist.get<double>( "Weight Cutoff" );
-    plist.set<double>( "Relative Weight Cutoff", cutoff*d_weight );
 }
 
 //---------------------------------------------------------------------------//
@@ -192,6 +194,9 @@ Teuchos::Array<char> UniformAdjointSource<Domain>::pack() const
     Teuchos::Array<char> buffer( packed_bytes );
     Serializer s;
     s.setBuffer( buffer() );
+
+    // Pack the requested number of histories.
+    s << d_nh_requested;
 
     // Pack the size of the local source data.
     s << Teuchos::as<std::size_t>( VT::getLocalLength(*Base::b_b) );
@@ -224,6 +229,9 @@ std::size_t UniformAdjointSource<Domain>::getPackedBytes() const
 {
     Serializer s;
     s.computeBufferSizeMode();
+
+    // Pack the requested number of histories.
+    s << d_nh_requested;
 
     // Pack the size of the local source data.
     s << Teuchos::as<std::size_t>( VT::getLocalLength(*Base::b_b) );
