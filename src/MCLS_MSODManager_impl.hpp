@@ -255,11 +255,12 @@ void MSODManager<Domain,Source>::broadcastDomain()
     }
     d_block_comm->barrier();
 
+    // Broadcast the buffer size across the blocks.
     Teuchos::broadcast<int,std::size_t>( 
 	*d_block_comm, 0, Teuchos::Ptr<std::size_t>(&buffer_size) );
     Check( buffer_size > 0 );
 
-    // Pack the domain and send it.
+    // Pack the domain.
     Teuchos::Array<char> domain_buffer( buffer_size );
     if ( !d_local_domain.is_null() )
     {
@@ -268,13 +269,13 @@ void MSODManager<Domain,Source>::broadcastDomain()
     }
     d_block_comm->barrier();
 
+    // Broadcast the domain across the blocks.
     Teuchos::broadcast<int,char>( *d_block_comm, 0, domain_buffer() );
 
     // Assign the domain.
-    if ( d_local_domain.is_null() )
-    {
-	d_local_domain = Teuchos::rcp( new Domain(domain_buffer()) );
-    }
+    d_local_domain = Teuchos::rcp( new Domain(domain_buffer()) );
+
+    // Barrier before continuing.
     d_block_comm->barrier();
 
     Ensure( !d_local_domain.is_null() );
@@ -297,11 +298,12 @@ void MSODManager<Domain,Source>::broadcastSource()
     }
     d_block_comm->barrier();
 
+    // Broadcast the buffer size across the blocks.
     Teuchos::broadcast<int,std::size_t>( 
 	*d_block_comm, 0, Teuchos::Ptr<std::size_t>(&buffer_size) );
     Check( buffer_size > 0 );
 
-    // Pack the source and send it.
+    // Pack the source.
     Teuchos::Array<char> source_buffer( buffer_size );
     if ( !d_local_source.is_null() )
     {
@@ -310,13 +312,13 @@ void MSODManager<Domain,Source>::broadcastSource()
     }
     d_block_comm->barrier();
 
+    // Broadcast the source across the blocks.
     Teuchos::broadcast<int,char>( *d_block_comm, 0, source_buffer() );
 
     // Assign the source.
-    if ( d_local_source.is_null() )
-    {
-	d_local_source = Teuchos::rcp( new Source(source_buffer()) );
-    }
+    d_local_source = Teuchos::rcp( new Source(source_buffer()) );
+
+    // Barrier before continuing.
     d_block_comm->barrier();
 
     Ensure( !d_local_source.is_null() );
