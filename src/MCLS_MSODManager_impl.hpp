@@ -62,6 +62,7 @@ MSODManager<Domain,Source>::MSODManager(
     : d_global_comm( global_comm )
     , d_num_sets( plist.get<int>("Number of Sets") )
     , d_set_size( 0 )
+    , d_num_blocks( 0 )
     , d_block_size( d_num_sets )
     , d_set_id( -1 )
     , d_block_id( -1 )
@@ -140,7 +141,7 @@ void MSODManager<Domain,Source>::updateDomain(
     if ( d_set_id == 0 )
     {
 	Insist( !primary_domain.is_null(),
-		"Primary domain must exist on set 0 only!" );
+		"Primary domain must exist on set 0!" );
 
 	d_local_domain = primary_domain;
     }
@@ -167,7 +168,7 @@ void MSODManager<Domain,Source>::updateSource(
     if ( d_set_id == 0 )
     {
 	Insist( !primary_source.is_null(),
-		"Primary source must exist on set 0 only!" );
+		"Primary source must exist on set 0!" );
 
 	d_local_source = primary_source;
     }
@@ -252,11 +253,13 @@ template<class Domain, class Source>
 void MSODManager<Domain,Source>::broadcastDomain()
 {
     Require( !d_block_comm.is_null() );
+    Require( d_set_id >= 0 );
 
-    // Get the byte size of the domain.
+    // Get the byte size of the domain from the primary set.
     std::size_t buffer_size = 0;
-    if ( !d_local_domain.is_null() )
+    if ( d_set_id == 0 )
     {
+	Check( !d_local_domain.is_null() );
 	buffer_size = d_local_domain->getPackedBytes();
     }
     d_block_comm->barrier();
@@ -266,10 +269,11 @@ void MSODManager<Domain,Source>::broadcastDomain()
 	*d_block_comm, 0, Teuchos::Ptr<std::size_t>(&buffer_size) );
     Check( buffer_size > 0 );
 
-    // Pack the domain.
+    // Pack the primary domain.
     Teuchos::Array<char> domain_buffer( buffer_size );
-    if ( !d_local_domain.is_null() )
+    if ( d_set_id == 0 )
     {
+	Check( !d_local_domain.is_null() );
 	domain_buffer = d_local_domain->pack();
 	Check( domain_buffer.size() == buffer_size );
     }
@@ -298,11 +302,13 @@ void MSODManager<Domain,Source>::broadcastSource(
     Require( !d_rng_control.is_null() );
     Require( !d_block_comm.is_null() );
     Require( !d_local_domain.is_null() );
+    Require( d_set_id >= 0 ); 
 
-    // Get the byte size of the source.
+    // Get the byte size of the source from the primary set.
     std::size_t buffer_size = 0;
-    if ( !d_local_source.is_null() )
+    if ( d_set_id == 0 )
     {
+	Check( !d_local_source.is_null() );
 	buffer_size = d_local_source->getPackedBytes();
     }
     d_block_comm->barrier();
@@ -312,10 +318,11 @@ void MSODManager<Domain,Source>::broadcastSource(
 	*d_block_comm, 0, Teuchos::Ptr<std::size_t>(&buffer_size) );
     Check( buffer_size > 0 );
 
-    // Pack the source.
+    // Pack the primary source.
     Teuchos::Array<char> source_buffer( buffer_size );
-    if ( !d_local_source.is_null() )
+    if ( d_set_id == 0 )
     {
+	Check( !d_local_source.is_null() );
 	source_buffer = d_local_source->pack();
 	Check( source_buffer.size() == buffer_size );
     }
