@@ -193,7 +193,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Cutoff, LO, GO, Scalar )
     }
 
     // Check the tally.
-    domain->domainTally()->combineTallies();
+    domain->domainTally()->combineSetTallies();
     Teuchos::ArrayRCP<const Scalar> x_view = VT::view( *x );
     Scalar x_val = weight;
     for ( int i = 0; i < local_num_rows; ++i )
@@ -301,7 +301,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Cutoff2, LO, GO, Scalar )
     }
 
     // Check the tally.
-    domain->domainTally()->combineTallies();
+    domain->domainTally()->combineSetTallies();
     Teuchos::ArrayRCP<const Scalar> x_view = VT::view( *x );
     Scalar x_val = weight;
     for ( int i = 0; i < local_num_rows; ++i )

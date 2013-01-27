@@ -43,6 +43,8 @@
 
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_ArrayRCP.hpp>
+#include <Teuchos_CommHelpers.hpp>
 
 namespace MCLS
 {
@@ -74,6 +76,29 @@ void AdjointTally<Vector>::combineSetTallies()
 }
 
 //---------------------------------------------------------------------------//
+/*!
+ * \brief Combine the base tallies across a block. 
+ */
+template<class Vector>
+void AdjointTally<Vector>::combineBlockTallies(
+    const Teuchos::RCP<const Comm>& block_comm )
+{
+    Teuchos::ArrayRCP<const Scalar> const_base_view = VT::view( *d_x );
+
+    Teuchos::ArrayRCP<Scalar> copy_buffer( const_base_view.size() );
+
+    Teuchos::reduceAll<int,Scalar>( *block_comm,
+				    Teuchos::REDUCE_SUM,
+				    Teuchos::as<int>( const_base_view.size() ),
+				    const_base_view.getRawPtr(),
+				    copy_buffer.getRawPtr() );
+
+    Teuchos::ArrayRCP<Scalar> base_view = VT::viewNonConst( *d_x );
+    
+    std::copy( copy_buffer.begin(), copy_buffer.end(), base_view.begin() );
+}
+
+//---------------------------------------------------------------------------//
 /*
  * \brief Normalize base decomposition tally with the number of specified
  * histories.
@@ -92,10 +117,10 @@ template<class Vector>
 void AdjointTally<Vector>::zeroOut()
 {
     VT::putScalar( *d_x, 
-		   Teuchos::ScalarTraits<typename VT::scalar_type>::zero() );
+		   Teuchos::ScalarTraits<Scalar>::zero() );
 
     VT::putScalar( *d_x_overlap, 
-		   Teuchos::ScalarTraits<typename VT::scalar_type>::zero() );
+		   Teuchos::ScalarTraits<Scalar>::zero() );
 }
 
 //---------------------------------------------------------------------------//

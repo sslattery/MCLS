@@ -157,7 +157,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, NoOverlap, LO, GO, Scalar )
 	}
     }
 
-    tally->combineTallies();
+    tally->combineSetTallies();
 
     Teuchos::ArrayRCP<const Scalar> x_view = VT::view( *x );
     typename Teuchos::ArrayRCP<const Scalar>::const_iterator x_view_iterator;
@@ -265,7 +265,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, SomeOverlap, LO, GO, Scalar )
 	}
     }
 
-    tally->combineTallies();
+    tally->combineSetTallies();
 
     Teuchos::ArrayRCP<const Scalar> x_view = VT::view( *x );
     for ( int i = 0; i < local_num_rows; ++i )

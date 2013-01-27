@@ -68,6 +68,7 @@ class AdjointTally
     typedef Vector                                              vector_type;
     typedef VectorTraits<Vector>                                VT;
     typedef typename VT::global_ordinal_type                    Ordinal;
+    typedef typename VT::scalar_type                            Scalar;
     typedef History<Ordinal>                                    HistoryType;
     typedef Teuchos::Comm<int>                                  Comm;
     //@}
@@ -88,7 +89,7 @@ class AdjointTally
 
     // Combine the secondary tallies with the primary tally across a
     // block. Normalize the result with the number of blocks.
-//    void combineBlockTallies( const Teuchos::RCP<const Comm>& block_comm );
+    void combineBlockTallies( const Teuchos::RCP<const Comm>& block_comm );
 
     // Normalize base decomposition tally with the number of specified
     // histories.

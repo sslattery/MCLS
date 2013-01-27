@@ -176,7 +176,7 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     {
 	// Unpack the number of column entries in the row.
 	ds >> num_cols;
-	column_it->resize( num_cols )
+	column_it->resize( num_cols );
 
 	// Unpack the column indices.
 	for ( index_it = column_it->begin();
@@ -240,9 +240,7 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     // Unpack the boundary-to-neighbor id table.
     Ordinal boundary_row = 0;
     int neighbor = 0;
-    for ( bnd_it = d_bnd_to_neighbor.begin();
-	  bnd_it != d_bnd_to_neighbor.end();
-	  ++bnd_it )
+    for ( Ordinal n = 0; n < num_bnd; ++n )
     {
 	ds >> boundary_row >> neighbor;
 	d_bnd_to_neighbor[boundary_row] = neighbor;
@@ -388,7 +386,7 @@ Teuchos::Array<char> AdjointDomain<Vector,Matrix>::pack() const
 	  bnd_it != d_bnd_to_neighbor.end();
 	  ++bnd_it )
     {
-	s << bnd_it->first << bnd_it->second
+	s << bnd_it->first << bnd_it->second;
     }
 
     // Pack up the tally base rows.
@@ -410,6 +408,8 @@ Teuchos::Array<char> AdjointDomain<Vector,Matrix>::pack() const
     {
 	s << *overlap_it;
     }
+
+    return buffer;
 }
 
 //---------------------------------------------------------------------------//
@@ -518,7 +518,7 @@ std::size_t AdjointDomain<Vector,Matrix>::getPackedBytes() const
 	  bnd_it != d_bnd_to_neighbor.end();
 	  ++bnd_it )
     {
-	s << bnd_it->first << bnd_it->second
+	s << bnd_it->first << bnd_it->second;
     }
 
     // Pack up the tally base rows.
