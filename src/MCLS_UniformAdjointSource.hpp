@@ -48,6 +48,8 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ArrayRCP.hpp>
+#include <Teuchos_Array.hpp>
+#include <Teuchos_ArrayView.hpp>
 
 namespace MCLS
 {
@@ -83,11 +85,28 @@ class UniformAdjointSource : public Source<Domain>
     UniformAdjointSource( const Teuchos::RCP<VectorType>& b,
 			  const Teuchos::RCP<Domain>& domain,
 			  const Teuchos::RCP<RNGControl>& rng_control,
-			  const Teuchos::RCP<const Comm>& comm,
+			  const Teuchos::RCP<const Comm>& set_comm,
+			  const int global_comm_size,
+			  const int global_comm_rank,
+			  Teuchos::ParameterList& plist );
+
+    // Deserializer constructor.
+    UniformAdjointSource( const Teuchos::ArrayView<char>& buffer,
+			  const Teuchos::RCP<Domain>& domain,
+			  const Teuchos::RCP<RNGControl>& rng_control,
+			  const Teuchos::RCP<const Comm>& set_comm,
+			  const int global_comm_size,
+			  const int global_comm_rank,
 			  Teuchos::ParameterList& plist );
 
     // Destructor.
     ~UniformAdjointSource() { /* ... */ }
+
+    // Pack the source into a buffer.
+    Teuchos::Array<char> pack() const;
+
+    // Get the size of this object in packed bytes.
+    std::size_t getPackedBytes() const;
 
     // Build the source.
     void buildSource();
@@ -125,7 +144,13 @@ class UniformAdjointSource : public Source<Domain>
   private:
 
     // Communicator for this set.
-    Teuchos::RCP<const Comm> d_comm;
+    Teuchos::RCP<const Comm> d_set_comm;
+
+    // Size of global communicator (all sets, all blocks).
+    int d_global_size;
+
+    // Global rank of this proc (all sets, all blocks).
+    int d_global_rank;
 
     // RNG stream offset.
     int d_rng_stream;

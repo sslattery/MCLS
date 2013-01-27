@@ -158,7 +158,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformAdjointSource, nh_not_set, LO, GO, Sca
     double cutoff = 1.0e-8;
     plist.set<double>("Weight Cutoff", cutoff );
     MCLS::UniformAdjointSource<DomainType> 
-	source( b, domain, control, comm, plist );
+	source( b, domain, control, comm, comm->getSize(), comm->getRank(), plist );
     TEST_ASSERT( source.empty() );
     TEST_EQUALITY( source.numToTransport(), 0 );
     TEST_EQUALITY( source.numToTransportInSet(), global_num_rows );
@@ -255,7 +255,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformAdjointSource, nh_set, LO, GO, Scalar 
     plist.set<int>("Set Number of Histories", mult*global_num_rows);
     plist.set<double>("Weight Cutoff", cutoff);
     MCLS::UniformAdjointSource<DomainType> 
-	source( b, domain, control, comm, plist );
+	source( b, domain, control, comm, comm->getSize(), comm->getRank(), plist );
     TEST_ASSERT( source.empty() );
     TEST_EQUALITY( source.numToTransport(), 0 );
     TEST_EQUALITY( source.numToTransportInSet(), mult*global_num_rows );

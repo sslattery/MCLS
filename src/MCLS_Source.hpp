@@ -70,7 +70,12 @@ class Source
     typedef RNGControl::RNG                              RNG;
     //@}
 
-    // Constructor.
+    // No source constructor.
+    Source( const Teuchos::RCP<Domain>& domain,
+	    const Teuchos::RCP<RNGControl>& rng_control );
+
+
+    // Source constructor.
     Source( const Teuchos::RCP<VectorType>& b,
 	    const Teuchos::RCP<Domain>& domain,
 	    const Teuchos::RCP<RNGControl>& rng_control );
@@ -89,6 +94,9 @@ class Source
 
     //! Get the number of source histories in the set.
     virtual int numToTransportInSet() const = 0;
+
+    // Set the source vector.
+    void setSourceVector( const Teuchos::RCP<VectorType>& b );
 
     //! Get the source vector.
     const VectorType& sourceVector() const { return *b_b; }
@@ -115,6 +123,20 @@ class Source
 // Implementation.
 //---------------------------------------------------------------------------//
 /*!
+ * \brief No source constructor.
+ */
+template<class Domain>
+Source<Domain>::Source( const Teuchos::RCP<Domain>& domain,
+			const Teuchos::RCP<RNGControl>& rng_control )
+    : b_domain( domain )
+    , b_rng_control( rng_control )
+{
+    Require( !b_domain.is_null() );
+    Require( !b_rng_control.is_null() );
+}
+
+//---------------------------------------------------------------------------//
+/*!
  * \brief Constructor.
  */
 template<class Domain>
@@ -132,12 +154,24 @@ Source<Domain>::Source( const Teuchos::RCP<VectorType>& b,
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Destructur. Pure virtual to prohibit direct generation of this
+ * \brief Destructor. Pure virtual to prohibit direct generation of this
  * class. 
  */
 template<class Domain>
 Source<Domain>::~Source()
 { /* ... */ }
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Set the source vector.
+ */
+template<class Domain>
+void Source<Domain>::setSourceVector( const Teuchos::RCP<VectorType>& b)
+{
+    Require( !b.is_null() );
+
+    b_b = b;
+}
 
 //---------------------------------------------------------------------------//
 

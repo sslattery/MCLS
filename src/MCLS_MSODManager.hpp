@@ -45,7 +45,7 @@
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_MatrixTraits.hpp"
 #include "MCLS_VectorExport.hpp"
-#include "MCLS_Source.hpp"
+#include "MCLS_RNGControl.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
@@ -76,7 +76,7 @@ class MSODManager
     MSODManager( const Teuchos::RCP<Domain>& primary_domain,
 		 const Teuchos::RCP<Source>& primary_source,
 		 const Teuchos::RCP<const Comm>& global_comm,
-		 Teuchos::ParameterList& plist );
+		 const Teuchos::RCP<Teuchos::ParameterList>& plist );
 
     //! Destructor.
     ~MSODManager { /* ... */ }
@@ -85,7 +85,8 @@ class MSODManager
     void updateDomain( const Teuchos::RCP<Domain>& primary_domain );
 
     // Update the local source.
-    void updateSource( const Teuchos::RCP<Source>& primary_source );
+    void updateSource( const Teuchos::RCP<Source>& primary_source,
+		       const Teuchos::RCP<RNGControl>& rng_control );
 
     //! Get the local domain.
     Teuchos::RCP<Domain> localDomain() const { return d_local_domain; }
@@ -129,12 +130,15 @@ class MSODManager
     void broadcastDomain();
 
     // Build the global decomposition by broadcasting the primary source. 
-    void broadcastSource();
+    void broadcastSource( const Teuchos::RCP<RNGControl>& rng_control );
 
   private:
 
     // Global communicator.
     Teuchos::RCP<const Comm> d_global_comm;
+
+    // Parameter list.
+    Teuchos::RCP<Teuchos::ParameterList> d_plist;
 
     // Number of sets in the problem.
     int d_num_sets;

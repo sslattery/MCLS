@@ -290,9 +290,11 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 template<class Vector, class Matrix>
 Teuchos::Array<char> AdjointDomain<Vector,Matrix>::pack() const
 {
+    // Get the byte size of the buffer.
     std::size_t packed_bytes = getPackedBytes();
     Check( packed_bytes );
 
+    // Build the buffer and set it with the serializer.
     Teuchos::Array<char> buffer( packed_bytes );
     Serializer s;
     s.setBuffer( buffer() );
