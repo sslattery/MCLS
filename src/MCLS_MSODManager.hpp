@@ -76,17 +76,17 @@ class MSODManager
     MSODManager( const Teuchos::RCP<Domain>& primary_domain,
 		 const Teuchos::RCP<Source>& primary_source,
 		 const Teuchos::RCP<const Comm>& global_comm,
-		 const Teuchos::RCP<Teuchos::ParameterList>& plist );
+		 const Teuchos::RCP<RNGControl>& rng_control,
+		 const Teuchos::ParameterList& plist );
 
     //! Destructor.
-    ~MSODManager { /* ... */ }
+    ~MSODManager() { /* ... */ }
 
     // Update the local domain.
     void updateDomain( const Teuchos::RCP<Domain>& primary_domain );
 
     // Update the local source.
-    void updateSource( const Teuchos::RCP<Source>& primary_source,
-		       const Teuchos::RCP<RNGControl>& rng_control );
+    void updateSource( const Teuchos::RCP<Source>& primary_source );
 
     //! Get the local domain.
     Teuchos::RCP<Domain> localDomain() const { return d_local_domain; }
@@ -130,15 +130,15 @@ class MSODManager
     void broadcastDomain();
 
     // Build the global decomposition by broadcasting the primary source. 
-    void broadcastSource( const Teuchos::RCP<RNGControl>& rng_control );
+    void broadcastSource();
 
   private:
 
     // Global communicator.
     Teuchos::RCP<const Comm> d_global_comm;
 
-    // Parameter list.
-    Teuchos::RCP<Teuchos::ParameterList> d_plist;
+    // RNG Controller.
+    Teuchos::RCP<RNGControl> d_rng_control;
 
     // Number of sets in the problem.
     int d_num_sets;

@@ -166,9 +166,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformAdjointSource, nh_not_set, LO, GO, Sca
     TEST_EQUALITY( source.numLeft(), 0 );
     TEST_EQUALITY( source.numEmitted(), 0 );
     TEST_EQUALITY( source.numStreams(), 0 );
-    TEST_ASSERT( plist.isParameter("Relative Weight Cutoff") );
-    TEST_EQUALITY( plist.get<double>("Relative Weight Cutoff"),
-		   global_num_rows*cutoff );
 
     // Build the source.
     source.buildSource();
@@ -268,9 +265,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformAdjointSource, PackUnpack, LO, GO, Sca
     TEST_EQUALITY( source.numLeft(), 0 );
     TEST_EQUALITY( source.numEmitted(), 0 );
     TEST_EQUALITY( source.numStreams(), 0 );
-    TEST_ASSERT( plist.isParameter("Relative Weight Cutoff") );
-    TEST_EQUALITY( plist.get<double>("Relative Weight Cutoff"),
-		   global_num_rows*cutoff );
 
     // Build the source.
     source.buildSource();
@@ -365,9 +359,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformAdjointSource, nh_set, LO, GO, Scalar 
     TEST_EQUALITY( source.numLeft(), 0 );
     TEST_EQUALITY( source.numEmitted(), 0 );
     TEST_EQUALITY( source.numStreams(), 0 );
-    TEST_ASSERT( plist.isParameter("Relative Weight Cutoff") );
-    TEST_EQUALITY( plist.get<double>("Relative Weight Cutoff"),
-		   global_num_rows*cutoff );
 
     // Build the source.
     source.buildSource();
@@ -470,9 +461,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformAdjointSource, nh_set_pu, LO, GO, Scal
     TEST_EQUALITY( source.numLeft(), 0 );
     TEST_EQUALITY( source.numEmitted(), 0 );
     TEST_EQUALITY( source.numStreams(), 0 );
-    TEST_ASSERT( plist.isParameter("Relative Weight Cutoff") );
-    TEST_EQUALITY( plist.get<double>("Relative Weight Cutoff"),
-		   global_num_rows*cutoff );
 
     // Build the source.
     source.buildSource();

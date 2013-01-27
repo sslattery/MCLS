@@ -88,7 +88,7 @@ class UniformAdjointSource : public Source<Domain>
 			  const Teuchos::RCP<const Comm>& set_comm,
 			  const int global_comm_size,
 			  const int global_comm_rank,
-			  Teuchos::ParameterList& plist );
+			  const Teuchos::ParameterList& plist );
 
     // Deserializer constructor.
     UniformAdjointSource( const Teuchos::ArrayView<char>& buffer,
@@ -109,6 +109,9 @@ class UniformAdjointSource : public Source<Domain>
 
     // Build the source.
     void buildSource();
+
+    // Get the source weight;
+    double sourceWeight() const { return d_weight; }
 
     // Get a history from the source.
     Teuchos::RCP<HistoryType> getHistory();

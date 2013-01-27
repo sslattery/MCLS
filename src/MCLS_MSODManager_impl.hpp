@@ -58,16 +58,19 @@ MSODManager<Domain,Source>::MSODManager(
     const Teuchos::RCP<Domain>& primary_domain,
     const Teuchos::RCP<Source>& primary_source,
     const Teuchos::RCP<const Comm>& global_comm,
-    Teuchos::ParameterList& plist )
+    const Teuchos::RCP<RNGControl>& rng_control,
+    const Teuchos::ParameterList& plist )
     : d_global_comm( global_comm )
+    , d_rng_control( rng_control )
     , d_num_sets( plist.get<int>("Number of Sets") )
-    , d_set_size( 0 )
     , d_num_blocks( 0 )
+    , d_set_size( 0 )
     , d_block_size( d_num_sets )
     , d_set_id( -1 )
     , d_block_id( -1 )
 {
-    Require( !global_comm.is_null() );
+    Require( !d_global_comm.is_null() );
+    Require( !d_rng_control.is_null() );
     Require( d_num_sets > 0 );
 
     // Get the set size. We could compute this value from user input, but we
@@ -160,11 +163,8 @@ void MSODManager<Domain,Source>::updateDomain(
  */
 template<class Domain, class Source>
 void MSODManager<Domain,Source>::updateSource(
-    const Teuchos::RCP<Source>& primary_source,
-    const Teuchos::RCP<RNGControl>& rng_control )
+    const Teuchos::RCP<Source>& primary_source )
 {
-    Require( !rng_control.is_null() );
-
     if ( d_set_id == 0 )
     {
 	Insist( !primary_source.is_null(),
@@ -178,7 +178,7 @@ void MSODManager<Domain,Source>::updateSource(
 		"Primary source must exist on set 0 only!" );
     }
 
-    broadcastSource( rng_control );
+    broadcastSource();
 }
 
 //---------------------------------------------------------------------------//
@@ -218,7 +218,7 @@ void MSODManager<Domain,Source>::buildSetComms()
  * \brief Build the block-constant commumnicators.
  */
 template<class Domain, class Source>
-void BlockManager<Domain>::buildBlockComms()
+void MSODManager<Domain,Source>::buildBlockComms()
 {
     Require( d_block_size > 0 );
     Require( d_num_blocks > 0 );
@@ -227,9 +227,9 @@ void BlockManager<Domain>::buildBlockComms()
     Teuchos::RCP<const Comm> block_comm;
     for ( int i = 0; i < d_num_blocks; ++i )
     {
-	for ( int n = i*d_block_size; n < (i+1)*d_block_size; ++n )
+	for ( int n = 0; n < d_block_size; ++n )
 	{
-	    subcomm_ranks[n - i*d_block_size] = n;
+	    subcomm_ranks[n] = n*d_set_size + i;
 	}
 
 	block_comm = d_global_comm->createSubcommunicator( subcomm_ranks() );
@@ -252,6 +252,7 @@ void BlockManager<Domain>::buildBlockComms()
 template<class Domain, class Source>
 void MSODManager<Domain,Source>::broadcastDomain()
 {
+    Require( !d_set_comm.is_null() );
     Require( !d_block_comm.is_null() );
     Require( d_set_id >= 0 );
 
@@ -275,7 +276,7 @@ void MSODManager<Domain,Source>::broadcastDomain()
     {
 	Check( !d_local_domain.is_null() );
 	domain_buffer = d_local_domain->pack();
-	Check( domain_buffer.size() == buffer_size );
+	Check( Teuchos::as<std::size_t>(domain_buffer.size()) == buffer_size );
     }
     d_block_comm->barrier();
 
@@ -296,10 +297,9 @@ void MSODManager<Domain,Source>::broadcastDomain()
  * \brief Build the global decomposition by broadcasting the primary source.
  */
 template<class Domain, class Source>
-void MSODManager<Domain,Source>::broadcastSource(  
-    const Teuchos::RCP<RNGControl>& rng_control )
+void MSODManager<Domain,Source>::broadcastSource()
 {
-    Require( !d_rng_control.is_null() );
+    Require( !d_set_comm.is_null() );
     Require( !d_block_comm.is_null() );
     Require( !d_local_domain.is_null() );
     Require( d_set_id >= 0 ); 
@@ -324,7 +324,7 @@ void MSODManager<Domain,Source>::broadcastSource(
     {
 	Check( !d_local_source.is_null() );
 	source_buffer = d_local_source->pack();
-	Check( source_buffer.size() == buffer_size );
+	Check( Teuchos::as<std::size_t>(source_buffer.size()) == buffer_size );
     }
     d_block_comm->barrier();
 
@@ -334,7 +334,7 @@ void MSODManager<Domain,Source>::broadcastSource(
     // Assign the source.
     d_local_source = Teuchos::rcp( new Source( source_buffer(),
 					       d_local_domain,
-					       rng_control,
+					       d_rng_control,
 					       d_set_comm,
 					       d_global_comm->getSize(),
 					       d_global_comm->getRank() ) );

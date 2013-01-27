@@ -64,7 +64,7 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
     const Teuchos::RCP<const Comm>& set_comm,
     const int global_comm_size,
     const int global_comm_rank,
-    Teuchos::ParameterList& plist )
+    const Teuchos::ParameterList& plist )
     : Base( b, domain, rng_control )
     , d_set_comm( set_comm )
     , d_global_size( global_comm_size )
@@ -89,10 +89,6 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
     // Set the total to the requested amount. This may change based on the
     // global stratified sampling.
     d_nh_total = d_nh_requested;
-
-    // Set the relative weight cutoff with the source weight.
-    double cutoff = plist.get<double>( "Weight Cutoff" );
-    plist.set<double>( "Relative Weight Cutoff", cutoff*d_weight );
 }
 
 //---------------------------------------------------------------------------//
