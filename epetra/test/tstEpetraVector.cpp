@@ -177,7 +177,7 @@ TEUCHOS_UNIT_TEST( VectorTraits, RowCreate )
     TEST_ASSERT( A->Map().SameAs( B->Map() ) );
 
     Teuchos::ArrayRCP<const double> B_view = VT::view( *B );
-    typename Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
+    Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
     for ( view_iterator = B_view.begin();
 	  view_iterator != B_view.end();
 	  ++view_iterator )

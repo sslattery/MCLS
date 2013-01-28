@@ -110,7 +110,7 @@ TEUCHOS_UNIT_TEST( MSODManager, two_by_two )
     typedef MCLS::History<int> HistoryType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::UniformAdjointSource<DomainType> SourceType;
-    typedef typename DomainType::TallyType TallyType;
+    typedef DomainType::TallyType TallyType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -268,7 +268,7 @@ TEUCHOS_UNIT_TEST( MSODManager, two_by_two )
 	tally->combineSetTallies();
 
 	Teuchos::ArrayRCP<const double> x_view = VT::view( *x );
-	typename Teuchos::ArrayRCP<const double>::const_iterator x_view_iterator;
+	Teuchos::ArrayRCP<const double>::const_iterator x_view_iterator;
 	for ( x_view_iterator = x_view.begin();
 	      x_view_iterator != x_view.end();
 	      ++x_view_iterator )
