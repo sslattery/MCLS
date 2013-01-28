@@ -89,13 +89,11 @@ class DomainTraits
 
     /*!
      * \brief Create a reference-counted pointer to a new domain defined over
-     * the given communicator by unpacking
-     * a data buffer.
+     * the given communicator by unpacking a data buffer. 
      */
     static Teuchos::RCP<Domain> 
-    createFromBuffer( 
-	const Teuchos::RCP<const Comm>& comm,
-	const Teuchos::ArrayView<char>& buffer )
+    createFromBuffer( const Teuchos::RCP<const Comm>& comm,
+		      const Teuchos::ArrayView<char>& buffer )
     { 
 	UndefinedDomainTraits<Domain>::notDefined(); 
 	return Teuchos::null; 
@@ -116,7 +114,7 @@ class DomainTraits
     static std::size_t getPackedBytes( const Domain& domain )
     { 
 	UndefinedDomainTraits<Domain>::notDefined(); 
-	return Teuchos::Array<char>(0);
+	return 0;
     }
 
     /*!
