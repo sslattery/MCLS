@@ -86,13 +86,6 @@ MCSolver<Domain>::MCSolver( const Teuchos::RCP<const Comm>& set_comm,
 	HistoryType::setByteSize( 0 );
     }
 
-    // Get the domain tally.
-    d_tally = d_domain->domainTally();
-
-    // Generate the source transporter.
-    d_transporter = 
-	Teuchos::rcp( new TransporterType(set_comm, d_domain, plist) );
-
     Ensure( HistoryType::getPackedBytes() > 0 );
     Ensure( !d_rng_control.is_null() );
 }

@@ -44,6 +44,7 @@
 #include <stack>
 
 #include <MCLS_DBC.hpp>
+#include <MCLS_DomainTraits.hpp>
 #include <MCLS_History.hpp>
 #include <MCLS_AdjointTally.hpp>
 #include <MCLS_SamplingTools.hpp>
@@ -102,8 +103,8 @@ class AdjointDomain
 		   const Teuchos::ParameterList& plist );
 
     // Deserializer constructor.
-    explicit AdjointDomain( const Teuchos::ArrayView<char>& buffer,
-			    const Teuchos::RCP<const Comm>& set_comm );
+    AdjointDomain( const Teuchos::ArrayView<char>& buffer,
+		   const Teuchos::RCP<const Comm>& set_comm );
 
     // Destructor.
     ~AdjointDomain()
@@ -123,7 +124,7 @@ class AdjointDomain
     { return d_tally; }
 
     // Determine if a given state is on-process.
-    inline bool isLocalState( const Ordinal& state );
+    inline bool isLocalState( const Ordinal& state ) const;
 
     //! Get the number of neighboring domains from which we will receive.
     int numReceiveNeighbors() const
@@ -140,7 +141,7 @@ class AdjointDomain
     int sendNeighborRank( int n ) const;
 
     // Get the neighbor domain that owns a boundary state (local neighbor id).
-    int owningNeighbor( const Ordinal& state );
+    int owningNeighbor( const Ordinal& state ) const;
 
   private:
 
@@ -211,12 +212,137 @@ inline void AdjointDomain<Vector,Matrix>::processTransition(
  * \brief Determine if a given state is on-process.
  */
 template<class Vector, class Matrix>
-inline bool AdjointDomain<Vector,Matrix>::isLocalState( const Ordinal& state )
+inline bool AdjointDomain<Vector,Matrix>::isLocalState( 
+    const Ordinal& state ) const
 {
    typename std::tr1::unordered_map<Ordinal,int>::const_iterator index =
        d_row_indexer.find( state );
    return ( index != d_row_indexer.end() );
 }
+
+//---------------------------------------------------------------------------//
+// DomainTraits implementation.
+//---------------------------------------------------------------------------//
+/*!
+ * \class DomainTraits
+ * \brief Traits implementation for the AdjointDomain.
+ */
+template<class Vector, class Matrix>
+class DomainTraits<AdjointDomain<Vector,Matrix> >
+{
+  public:
+
+    //@{
+    //! Typedefs.
+    typedef AdjointDomain<Vector,Matrix>                domain_type;
+    typedef typename domain_type::Ordinal               ordinal_type;
+    typedef typename domain_type::HistoryType           history_type;
+    typedef typename domain_type::TallyType             tally_type;
+    typedef typename domain_type::BankType              bank_type;
+    typedef Teuchos::Comm<int>                          Comm;
+    //@}
+
+    /*!
+     * \brief Create a reference-counted pointer to a new domain defined over
+     * the given communicator by unpacking a data buffer. 
+     */
+    static Teuchos::RCP<domain_type> 
+    createFromBuffer( 
+	const Teuchos::RCP<const Comm>& comm,
+	const Teuchos::ArrayView<char>& buffer )
+    { 
+	return Teuchos::rcp( new domain_type(comm, buffer) );
+    }
+
+    /*!
+     * \brief Pack a domain into a buffer.
+     */
+    static Teuchos::Array<char> pack( const domain_type& domain )
+    { 
+	return domain.pack();
+    }
+
+    /*!
+     * \brief Get the size of domain in packed bytes.
+     */
+    static std::size_t getPackedBytes( const domain_type& domain )
+    { 
+	return domain.getPackedBytes();
+    }
+
+    /*!
+     * \brief Process a history through a transition in the local domain to a
+     * new state
+     */
+    static inline void processTransition( 
+	const domain_type& domain, history_type& history )
+    { 
+	domain.processTransition( history );
+    }
+
+    /*!
+     * \brief Get the tally associated with this domain.
+     */
+    static Teuchos::RCP<tally_type> domainTally( const domain_type& domain )
+    { 
+	return domain.domainTally();
+    }
+
+    /*!
+     * \brief Determine if a given state is in the local domain.
+     */
+    static bool isLocalState( const domain_type& domain, 
+			      const ordinal_type state )
+    { 
+	return domain.isLocalState( state );
+    }
+
+    /*!
+     * \brief Get the number of neighbors from which this domain will
+     * receive. 
+     */
+    static int numReceiveNeighbors( const domain_type& domain )
+    {
+	return domain.numReceiveNeighbors();
+    }
+
+    /*!
+     * \brief Given a local neighbor ID, return the proc rank of that
+     * neighbor. 
+     */
+    static int receiveNeighborRank( const domain_type& domain, 
+				    int neighbor_id )
+    {
+	return domain.receiveNeighborRank( neighbor_id );
+    }
+
+    /*!
+     * \brief Get the number of neighbors to which this domain will send.
+     */
+    static int numSendNeighbors( const domain_type& domain )
+    {
+	return domain.numSendNeighbors();
+    }
+
+    /*!
+     * \brief Given a local neighbor ID, return the proc rank of that
+     * neighbor. 
+     */
+    static int sendNeighborRank( const domain_type& domain, int neighbor_id )
+    {
+	return domain.sendNeighborRank( neighbor_id );
+    }
+
+    /*!
+     * \brief Given a state on the boundary or this domain, return the ID of
+     * the owning neighbor.
+     */
+    static int owningNeighbor( const domain_type& domain, 
+			       const ordinal_type state )
+    {
+	return domain.owningNeighbor( state );
+    }
+};
 
 //---------------------------------------------------------------------------//
 

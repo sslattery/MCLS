@@ -33,6 +33,7 @@ APPEND_SET(HEADERS
   MCLS_DBC.hpp
   MCLS_DomainCommunicator.hpp
   MCLS_DomainCommunicator_impl.hpp
+  MCLS_DomainTraits.hpp
   MCLS_DomainTransporter.hpp
   MCLS_DomainTransporter_impl.hpp
   MCLS_Events.hpp

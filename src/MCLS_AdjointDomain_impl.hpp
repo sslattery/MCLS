@@ -583,7 +583,7 @@ int AdjointDomain<Vector,Matrix>::sendNeighborRank( int n ) const
  * id).
  */
 template<class Vector, class Matrix>
-int AdjointDomain<Vector,Matrix>::owningNeighbor( const Ordinal& state )
+int AdjointDomain<Vector,Matrix>::owningNeighbor( const Ordinal& state ) const
 {
     typename std::tr1::unordered_map<Ordinal,int>::const_iterator neighbor =
 	d_bnd_to_neighbor.find( state );
