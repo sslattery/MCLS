@@ -54,21 +54,20 @@ namespace MCLS
  * \brief Constructor.
  */
 template<class Source>
-MCSolver<SOurce>::MCSolver( const Teuchos::RCP<const Comm>& set_comm,
+MCSolver<Source>::MCSolver( const Teuchos::RCP<const Comm>& set_comm,
 			    const Teuchos::RCP<Teuchos::ParameterList>& plist,
 			    int seed )
-    , d_set_comm( set_comm )
+    : d_set_comm( set_comm )
     , d_plist( plist )
-    , d_seed( seed )
 {
     Require( !d_plist.is_null() );
     Require( !d_set_comm.is_null() );
 
     // Check for a user provided random number seed. The default is provided
     // as a default argument for this constructor.
-    if ( plist.isParam("Random Number Seed") )
+    if ( d_plist->isParameter("Random Number Seed") )
     {
-	d_seed = plist.get<int>("Random Number Seed");
+	seed = d_plist->get<int>("Random Number Seed");
     }
 
     // Build the random number generator.
@@ -77,7 +76,7 @@ MCSolver<SOurce>::MCSolver( const Teuchos::RCP<const Comm>& set_comm,
     // Set the static byte size for the histories. If we want reproducible
     // results we pack the RNG with the histories. If we don't, then we use
     // the global RNG.
-    if ( plist.get<bool>("Reproducible MC Mode") )
+    if ( d_plist->get<bool>("Reproducible MC Mode") )
     {
 	HistoryType::setByteSize( d_rng_control->getSize() );
     }
@@ -95,7 +94,7 @@ MCSolver<SOurce>::MCSolver( const Teuchos::RCP<const Comm>& set_comm,
  * \brief Solve the linear problem. The domain and source must be set!
  */
 template<class Source>
-void MCSolver<SOurce>::solve()
+void MCSolver<Source>::solve()
 {
     Require( !d_domain.is_null() );
     Require( !d_source.is_null() );
@@ -108,10 +107,13 @@ void MCSolver<SOurce>::solve()
     // Assign the source to the transporter.
     d_transporter->assignSource( d_source );
 
-    // Transport the source to solve the problem.
-    d_transporter.transport();
+    // Barrier before solve.
+    d_set_comm->barrier();
 
-    // Barrier after completion.
+    // Transport the source to solve the problem.
+    d_transporter->transport();
+
+    // Barrier after solve.
     d_set_comm->barrier();
 
     // Update the set tallies.
@@ -126,7 +128,7 @@ void MCSolver<SOurce>::solve()
  * \brief Set the domain for transport.
  */
 template<class Source>
-void MCSolver<SOurce>::setDomain( const Teuchos::RCP<Domain>& domain )
+void MCSolver<Source>::setDomain( const Teuchos::RCP<Domain>& domain )
 {
     Require( !domain.is_null() );
 
@@ -147,10 +149,11 @@ void MCSolver<SOurce>::setDomain( const Teuchos::RCP<Domain>& domain )
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Set the source for transport.
+ * \brief Set the source for transport. Must always be called after
+ * setDomain(). 
  */
 template<class Source>
-void MCSolver<SOurce>::setSource( const Teuchos::RCP<Source>& source )
+void MCSolver<Source>::setSource( const Teuchos::RCP<Source>& source )
 {
     Require( !source.is_null() );
 

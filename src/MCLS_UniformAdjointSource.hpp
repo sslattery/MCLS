@@ -254,9 +254,9 @@ class SourceTraits<UniformAdjointSource<Domain> >
     /*!
      * \brief Build the source.
      */
-    static void buildsource_type( source_type& source )
+    static void buildSource( source_type& source )
     {
-	source.buildsource_type();
+	source.buildSource();
     }
 
     /*!

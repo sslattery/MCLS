@@ -148,9 +148,8 @@ TEUCHOS_UNIT_TEST( SourceTransporter, transport )
     Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
-    // Build the linear system. This operator will be assymetric so we quickly
-    // move the histories out of the domain before they hit the low weight
-    // cutoff.
+    // Build the linear system. This operator is symmetric with a spectral
+    // radius less than 1.
     Teuchos::RCP<Epetra_CrsMatrix> A = 	
 	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
     Teuchos::Array<int> global_columns( 3 );
@@ -219,6 +218,14 @@ TEUCHOS_UNIT_TEST( SourceTransporter, transport )
 
     // Do transport.
     source_transporter.transport();
+
+    // Check that we got a negative solution.
+    Teuchos::ArrayRCP<const double> x_view = VT::view(*x);
+    Teuchos::ArrayRCP<const double>::const_iterator x_view_it;
+    for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
+    {
+	TEST_ASSERT( *x_view_it < 0.0 );
+    }
 }
 
 //---------------------------------------------------------------------------//

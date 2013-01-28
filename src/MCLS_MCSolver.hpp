@@ -41,7 +41,7 @@
 #ifndef MCLS_MCSOLVER_HPP
 #define MCLS_MCSOLVER_HPP
 
-#include "MLCS_SourceTraits.hpp"
+#include "MCLS_SourceTraits.hpp"
 #include "MCLS_DomainTraits.hpp"
 #include "MCLS_TallyTraits.hpp"
 #include "MCLS_RNGControl.hpp"
@@ -86,7 +86,7 @@ class MCSolver
 	      int seed = 433494437 );
 
     //! Destructor.
-    ~MCSolver { /* ... */ }
+    ~MCSolver() { /* ... */ }
 
     // Solve the linear problem.
     void solve();
@@ -97,7 +97,7 @@ class MCSolver
     // Set the source.
     void setSource( const Teuchos::RCP<Source>& source );
 
-    //! Get the random number controler.
+    //! Get the random number controller.
     Teuchos::RCP<RNGControl> rngControl() const { return d_rng_control; }
 
   private:
@@ -107,9 +107,6 @@ class MCSolver
 
     // Problem parameters.
     Teuchos::RCP<Teuchos::ParameterList> d_plist;
-
-    // Random number seed.
-    int seed;
 
     // Random number controller.
     Teuchos::RCP<RNGControl> d_rng_control;
