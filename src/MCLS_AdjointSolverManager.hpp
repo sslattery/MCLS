@@ -44,7 +44,6 @@
 #include "MCLS_SolverManager.hpp"
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
-#include "MCLS_MatrixTraits.hpp"
 #include "MCLS_MSODManager.hpp"
 #include "MCLS_MCSolver.hpp"
 #include "MCLS_UniformAdjointSource.hpp"
@@ -76,7 +75,6 @@ class AdjointSolverManager : public SolverManager<Vector,Matrix>
     typedef VectorTraits<Vector>                    VT;
     typedef typename VT::scalar_type                Scalar;
     typedef Matrix                                  matrix_type;
-    typedef MatrixTraits<Matrix>                    MT;
     typedef LinearProblem<Vector,Matrix>            LinearProblemType;
     typedef AdjointDomain<Vector,Matrix>            DomainType;
     typedef typename DomainType::TallyType          TallyType;
@@ -105,7 +103,7 @@ class AdjointSolverManager : public SolverManager<Vector,Matrix>
 
     // Get the tolerance achieved on the last linear solve. This may be less
     // or more than the set convergence tolerance.
-    Teuchos::ScalarTraits<Scalar>::magnitudeType achievedTol() const;
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType achievedTol() const;
 
     // Get the number of iterations from the last linear solve.
     int getNumIters() const;
@@ -139,7 +137,7 @@ class AdjointSolverManager : public SolverManager<Vector,Matrix>
   private:
 
     // Linear problem
-    Teuchos::RCP<LinearProblemType> d_linear_problem;
+    Teuchos::RCP<LinearProblemType> d_problem;
 
     // Global communicator.
     Teuchos::RCP<const Comm> d_global_comm;

@@ -170,9 +170,10 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff )
     Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( B, x, plist ) );
 
     // Build the domain transporter.
-    double weight = 3.0; 
-    plist.set<double>("Relative Weight Cutoff", (weight/2)+0.01);
+    double weight = 3.0;
+    double relative_cutoff = weight / 2 + 0.01;
     MCLS::DomainTransporter<DomainType> transporter( domain, plist );
+    transporter.setCutoff( relative_cutoff );
 
     // Transport histories through the domain.
     MCLS::RNGControl control( 2394723 );
@@ -283,8 +284,9 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff2 )
 
     // Build the domain transporter.
     double weight = 3.0; 
-    plist.set<double>("Relative Weight Cutoff", (weight/4)+0.01);
+    double relative_cutoff = weight / 4 + 0.01;
     MCLS::DomainTransporter<DomainType> transporter( domain, plist );
+    transporter.setCutoff( relative_cutoff );
 
     // Transport histories through the domain.
     MCLS::RNGControl control( 2394723 );
@@ -424,8 +426,8 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Boundary )
 	Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( B, x, plist ) );
 
 	// Build the domain transporter.
-	plist.set<double>("Relative Weight Cutoff", 1.0e-12);
 	MCLS::DomainTransporter<DomainType> transporter( domain, plist );
+	transporter.setCutoff( 1.0e-12 );
 
 	// Transport histories through the domain until they hit a boundary.
 	double weight = 3.0; 

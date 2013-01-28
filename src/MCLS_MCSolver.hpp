@@ -108,6 +108,9 @@ class MCSolver
     // Problem parameters.
     Teuchos::RCP<Teuchos::ParameterList> d_plist;
 
+    // Relative weight cutoff.
+    double d_relative_weight_cutoff;
+
     // Random number controller.
     Teuchos::RCP<RNGControl> d_rng_control;
 

@@ -59,6 +59,7 @@ MCSolver<Source>::MCSolver( const Teuchos::RCP<const Comm>& set_comm,
 			    int seed )
     : d_set_comm( set_comm )
     , d_plist( plist )
+    , d_relative_weight_cutoff( 0.0 )
 {
     Require( !d_plist.is_null() );
     Require( !d_set_comm.is_null() );
@@ -105,7 +106,7 @@ void MCSolver<Source>::solve()
     TT::zeroOut( *d_tally );
 
     // Assign the source to the transporter.
-    d_transporter->assignSource( d_source );
+    d_transporter->assignSource( d_source, d_relative_weight_cutoff );
 
     // Barrier before solve.
     d_set_comm->barrier();
@@ -160,7 +161,11 @@ void MCSolver<Source>::setSource( const Teuchos::RCP<Source>& source )
     d_source = source;
     ST::buildSource( *d_source );
 
+    double cutoff = d_plist->get<double>("Weight Cutoff");
+    d_relative_weight_cutoff = cutoff * ST::weight( *d_source, 0 );
+
     Ensure( !d_source.is_null() );
+    Ensure( d_relative_weight_cutoff > 0.0 );
 }
 
 //---------------------------------------------------------------------------//

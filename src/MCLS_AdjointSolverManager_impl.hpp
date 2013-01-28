@@ -95,17 +95,25 @@ AdjointSolverManager<Vector,Matrix>::getValidParameters() const
  * less or more than the set convergence tolerance.
  */
 template<class Vector, class Matrix>
-Teuchos::ScalarTraits<typename 
-		      AdjointSolverManager<Vector,Matrix>::Scalar>::magnitudeType 
+typename Teuchos::ScalarTraits<
+    typename AdjointSolverManager<Vector,Matrix>::Scalar>::magnitudeType 
 AdjointSolverManager<Vector,Matrix>::achievedTol() const
 {
     // Here we'll simply return the source weighted norm of the residual after
     // solution. This will give us a measure of the stochastic error generated
-    // by the Monte Carlo solve.
-    d_linear_problem->updateResidual();
-    Teuchos::ScalarTraits<Scalar>::magnitudeType() residual_norm =
-	VT::normInf( *d_linear_problem->getResidual() );
-    residual_norm /= VT::normInf( *d_linear_problem->getRHS() );
+    // by the Monte Carlo solve. 
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType residual_norm = 
+	Teuchos::ScalarTraits<Scalar>::zero();
+
+    // We only do this on the primary set where the linear problem exists.
+    if ( d_primary_set )
+    {
+	d_problem->updateResidual();
+	residual_norm = VT::normInf( *d_problem->getResidual() );
+	residual_norm /= VT::normInf( *d_problem->getRHS() );
+    }
+    d_global_comm->barrier();
+
     return residual_norm;
 }
 
@@ -176,7 +184,7 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
     // set export and block reduction parallel operations are still valid.
     if ( d_primary_set )
     {
-	tally->setBaseVector( d_linear_problem->getLHS() );
+	tally->setBaseVector( d_problem->getLHS() );
     }
     d_global_comm->barrier();
 
@@ -199,8 +207,11 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
     // Combine the tallies across the blocks.
     tally->combineBlockTallies( d_msod_manager->blockComm() );
 
-    // Normalize the tallies by the number of blocks.
-    tally->normalize( d_msod_manager->numBlocks() );
+    // Normalize the tallies by the number of sets.
+    tally->normalize( d_msod_manager->numSets() );
+
+    // Barrier before exiting.
+    d_global_comm->barrier();
 
     // This is a direct solve and therefore always converged in the iterative
     // sense. 
@@ -219,7 +230,7 @@ void AdjointSolverManager<Vector,Matrix>::buildMonteCarloDomain()
 
     // Build the MSOD manager.
     d_msod_manager = Teuchos::rcp( 
-	new MSODManager<SourceType>(d_primary_set, d_global_comm, d_plist) );
+	new MSODManager<SourceType>(d_primary_set, d_global_comm, *d_plist) );
 
     // Build the Monte Carlo set solver.
     d_mc_solver = Teuchos::rcp(
@@ -232,8 +243,8 @@ void AdjointSolverManager<Vector,Matrix>::buildMonteCarloDomain()
     if ( d_primary_set )
     {
 	primary_domain = Teuchos::rcp( 
-	    new DomainType( d_linear_problem->getOperator(),
-			    d_linear_problem->getLHS(),
+	    new DomainType( d_problem->getOperator(),
+			    d_problem->getLHS(),
 			    *d_plist ) );
     }
     d_global_comm->barrier();
@@ -256,6 +267,7 @@ void AdjointSolverManager<Vector,Matrix>::buildMonteCarloSource()
     Require( !d_global_comm.is_null() );
     Require( !d_plist.is_null() );
     Require( !d_msod_manager.is_null() );
+    Require( !d_msod_manager->localDomain().is_null() );
     Require( !d_mc_solver.is_null() );
 
     // Set a global scope variable for the primary source.
@@ -265,27 +277,19 @@ void AdjointSolverManager<Vector,Matrix>::buildMonteCarloSource()
     if ( d_primary_set )
     {
 	primary_source = Teuchos::rcp(
-	    new SourceType( d_linear_problem->getRHS(),
-			    primary_domain,
-			    d_mc_solver->rngControl(),
-			    d_msod_manager->setComm(),
-			    d_global_comm->getSize(),
-			    d_global_comm->getRank(),
-			    *d_plist ) );
+	    new SourceType( 
+		Teuchos::rcp_const_cast<Vector>(d_problem->getRHS()),
+		d_msod_manager->localDomain(),
+		d_mc_solver->rngControl(),
+		d_msod_manager->setComm(),
+		d_global_comm->getSize(),
+		d_global_comm->getRank(),
+		*d_plist ) );
     }
     d_global_comm->barrier();
 
     // Build the global MSOD Monte Carlo source from the primary set.
     d_msod_manager->setSource( primary_source, d_mc_solver->rngControl() );
-    Check( !d_msod_manager->localSource().is_null() );
-
-    // Build the local source data.
-    d_msod_manager->localSource()->buildSource();
-
-    // Set the relative weight cutoff from the source data.
-    double cutoff = plist->get<double>("Weight Cutoff");
-    double source_weight = d_msod_manager->localSource()->sourceWeight();
-    d_plist->set<double>("Relative Weight Cutoff", cutoff*source_weight );
 
     Ensure( !d_msod_manager->localSource().is_null() );
 }

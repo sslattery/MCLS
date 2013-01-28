@@ -56,12 +56,10 @@ DomainTransporter<Domain>::DomainTransporter(
     const Teuchos::RCP<Domain>& domain, const Teuchos::ParameterList& plist )
     : d_domain( domain )
     , d_tally( DT::domainTally(*d_domain) )
+    , d_weight_cutoff( 0.0 )
 {
     Require( !d_domain.is_null() );
     Require( !d_tally.is_null() );
-
-    d_weight_cutoff = plist.get<double>("Relative Weight Cutoff");
-    Ensure( d_weight_cutoff > 0.0 );
 }
 
 //---------------------------------------------------------------------------//
@@ -75,6 +73,7 @@ void DomainTransporter<Domain>::transport( HistoryType& history )
     Require( history.rng().assigned() );
     Require( history.weightAbs() >= d_weight_cutoff );
     Require( DT::isLocalState(*d_domain, history.state()) );
+    Require( d_weight_cutoff > 0.0 );
 
     // Set the history to transition.
     history.setEvent( TRANSITION );

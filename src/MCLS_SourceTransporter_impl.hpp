@@ -108,10 +108,13 @@ SourceTransporter<Source>::SourceTransporter(
 */
 template<class Source>
 void SourceTransporter<Source>::assignSource(
-    const Teuchos::RCP<Source>& source )
+    const Teuchos::RCP<Source>& source,
+    const double relative_weight_cutoff )
 {
     Require( !source.is_null() );
     d_source = source;
+
+    d_domain_transporter.setCutoff( relative_weight_cutoff );
 }
 
 //---------------------------------------------------------------------------//

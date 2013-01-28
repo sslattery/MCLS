@@ -93,7 +93,8 @@ class SourceTransporter
     ~SourceTransporter() { /* ... */ }
 
     // Assign the source.
-    void assignSource( const Teuchos::RCP<Source>& source );
+    void assignSource( const Teuchos::RCP<Source>& source, 
+		       const double relative_weight_cutoff );
 
     // Transport the source histories and all subsequent histories through the
     // domain to completion.

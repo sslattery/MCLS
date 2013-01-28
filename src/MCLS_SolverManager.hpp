@@ -89,7 +89,7 @@ class SolverManager : public Teuchos::Describable
 
     //! Get the tolerance achieved on the last linear solve. This may be less
     //! or more than the set convergence tolerance.
-    virtual Teuchos::ScalarTraits<Scalar>::magnitudeType 
+    virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
     achievedTol() const = 0;
 
     //! Get the number of iterations from the last linear solve.

@@ -211,10 +211,10 @@ TEUCHOS_UNIT_TEST( SourceTransporter, transport )
 
     // Create the source transporter.
     plist.set<int>("MC Check Frequency", 10);
-    plist.set<double>("Relative Weight Cutoff", source->sourceWeight()*cutoff);
+    double relative_cutoff = source->sourceWeight()*cutoff;
     MCLS::SourceTransporter<SourceType> source_transporter( 
 	comm, domain, plist );
-    source_transporter.assignSource( source );
+    source_transporter.assignSource( source, relative_cutoff );
 
     // Do transport.
     source_transporter.transport();
