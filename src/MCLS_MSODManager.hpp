@@ -58,17 +58,17 @@ namespace MCLS
  * \class MSODManager 
  * \brief Class for generating and managing the MSOD decomposition.
  */
-template<class Domain, class Source>
+template<class Source>
 class MSODManager
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Domain                                      domain_type;
-    typedef DomainTraits<Domain>                        DT;
     typedef Source                                      source_type;
     typedef SourceTraits<Source>                        ST;
+    typedef typename ST::domain_type                    Domain;
+    typedef DomainTraits<Domain>                        DT;
     typedef Teuchos::Comm<int>                          Comm;
     //@}
 

@@ -191,11 +191,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MSODManager, two_by_two, LO, GO, Scalar )
 	comm->barrier();
 
 	// Build the MSOD manager.
-	MCLS::MSODManager<DomainType,SourceType> msod_manager( primary_domain,
-							       primary_source,
-							       comm,
-							       control,
-							       plist );
+	MCLS::MSODManager<SourceType> msod_manager( primary_domain,
+						    primary_source,
+						    comm,
+						    control,
+						    plist );
 
 	// Test the MSOD manager.
 	TEST_EQUALITY( msod_manager.numSets(), 2 );

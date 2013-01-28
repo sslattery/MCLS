@@ -57,11 +57,10 @@ namespace MCLS
 //---------------------------------------------------------------------------//
 /*!
  * \class MCSolver
- * \brief Monte Carlo Linear Solver. 
+ * \brief Monte Carlo Linear Solver for sets. 
  *
- * The domain type indicates the solver type. For example, templating this
- * class on the AdjointDomain will solve the system using the analog adjoint
- * Neumann-Ulam method.
+ * This class will generate a Monte Carlo solution over a single set. These
+ * solutions should be collapsed over blocks externally.
  */
 template<class Source>
 class MCSolver

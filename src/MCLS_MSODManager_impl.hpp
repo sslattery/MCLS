@@ -53,13 +53,12 @@ namespace MCLS
 /*!
  * \brief Constructor.
  */
-template<class Domain, class Source>
-MSODManager<Domain,Source>::MSODManager( 
-    const Teuchos::RCP<Domain>& primary_domain,
-    const Teuchos::RCP<Source>& primary_source,
-    const Teuchos::RCP<const Comm>& global_comm,
-    const Teuchos::RCP<RNGControl>& rng_control,
-    const Teuchos::ParameterList& plist )
+template<class Source>
+MSODManager<Source>::MSODManager( const Teuchos::RCP<Domain>& primary_domain,
+				  const Teuchos::RCP<Source>& primary_source,
+				  const Teuchos::RCP<const Comm>& global_comm,
+				  const Teuchos::RCP<RNGControl>& rng_control,
+				  const Teuchos::ParameterList& plist )
     : d_global_comm( global_comm )
     , d_rng_control( rng_control )
     , d_num_sets( plist.get<int>("Number of Sets") )
@@ -137,8 +136,8 @@ MSODManager<Domain,Source>::MSODManager(
 /*!
  * \brief Update the local domain.
  */
-template<class Domain, class Source>
-void MSODManager<Domain,Source>::updateDomain(
+template<class Source>
+void MSODManager<Source>::updateDomain(
     const Teuchos::RCP<Domain>& primary_domain )
 {
     if ( d_set_id == 0 )
@@ -161,8 +160,8 @@ void MSODManager<Domain,Source>::updateDomain(
 /*!
  * \brief Update the local source.
  */
-template<class Domain, class Source>
-void MSODManager<Domain,Source>::updateSource(
+template<class Source>
+void MSODManager<Source>::updateSource(
     const Teuchos::RCP<Source>& primary_source )
 {
     if ( d_set_id == 0 )
@@ -185,8 +184,8 @@ void MSODManager<Domain,Source>::updateSource(
 /*!
  * \brief Build the set-constant commumnicators.
  */
-template<class Domain, class Source>
-void MSODManager<Domain,Source>::buildSetComms()
+template<class Source>
+void MSODManager<Source>::buildSetComms()
 {
     Require( d_set_size > 0 );
     Require( d_num_sets > 0 );
@@ -217,8 +216,8 @@ void MSODManager<Domain,Source>::buildSetComms()
 /*!
  * \brief Build the block-constant commumnicators.
  */
-template<class Domain, class Source>
-void MSODManager<Domain,Source>::buildBlockComms()
+template<class Source>
+void MSODManager<Source>::buildBlockComms()
 {
     Require( d_block_size > 0 );
     Require( d_num_blocks > 0 );
@@ -249,8 +248,8 @@ void MSODManager<Domain,Source>::buildBlockComms()
 /*!
  * \brief Build the global decomposition by broadcasting the primary domain.
  */
-template<class Domain, class Source>
-void MSODManager<Domain,Source>::broadcastDomain()
+template<class Source>
+void MSODManager<Source>::broadcastDomain()
 {
     Require( !d_set_comm.is_null() );
     Require( !d_block_comm.is_null() );
@@ -296,8 +295,8 @@ void MSODManager<Domain,Source>::broadcastDomain()
 /*!
  * \brief Build the global decomposition by broadcasting the primary source.
  */
-template<class Domain, class Source>
-void MSODManager<Domain,Source>::broadcastSource()
+template<class Source>
+void MSODManager<Source>::broadcastSource()
 {
     Require( !d_set_comm.is_null() );
     Require( !d_block_comm.is_null() );
