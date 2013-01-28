@@ -53,8 +53,8 @@ namespace MCLS
 /*!
  * \brief Constructor.
  */
-template<class Domain>
-MCSolver<Domain>::MCSolver( const Teuchos::RCP<const Comm>& set_comm,
+template<class Source>
+MCSolver<SOurce>::MCSolver( const Teuchos::RCP<const Comm>& set_comm,
 			    const Teuchos::RCP<Teuchos::ParameterList>& plist,
 			    int seed )
     , d_set_comm( set_comm )
@@ -94,8 +94,8 @@ MCSolver<Domain>::MCSolver( const Teuchos::RCP<const Comm>& set_comm,
 /*!
  * \brief Solve the linear problem. The domain and source must be set!
  */
-template<class Domain>
-void MCSolver<Domain>::solve()
+template<class Source>
+void MCSolver<SOurce>::solve()
 {
     Require( !d_domain.is_null() );
     Require( !d_source.is_null() );
@@ -103,7 +103,7 @@ void MCSolver<Domain>::solve()
     Require( !d_transporter.is_null() );
     
     // Zero out the tally.
-    d_tally->zeroOut();
+    TT::zeroOut( *d_tally );
 
     // Assign the source to the transporter.
     d_transporter->assignSource( d_source );
@@ -115,18 +115,18 @@ void MCSolver<Domain>::solve()
     d_set_comm->barrier();
 
     // Update the set tallies.
-    d_tally->combineSetTallies();
+    TT::combineSetTallies( *d_tally );
 
     // Normalize the tally with the number of source histories in the set.
-    d_tally->normalize( d_source->numToTransportInSet() );
+    TT::normalize( *d_tally, ST::numToTransportInSet(*d_source) );
 }
 
 //---------------------------------------------------------------------------//
 /*!
  * \brief Set the domain for transport.
  */
-template<class Domain>
-void MCSolver<Domain>::setDomain( const Teuchos::RCP<Domain>& domain )
+template<class Source>
+void MCSolver<SOurce>::setDomain( const Teuchos::RCP<Domain>& domain )
 {
     Require( !domain.is_null() );
 
@@ -149,13 +149,13 @@ void MCSolver<Domain>::setDomain( const Teuchos::RCP<Domain>& domain )
 /*!
  * \brief Set the source for transport.
  */
-template<class Domain>
-void MCSolver<Domain>::setSource( const Teuchos::RCP<SourceType>& source )
+template<class Source>
+void MCSolver<SOurce>::setSource( const Teuchos::RCP<Source>& source )
 {
     Require( !source.is_null() );
 
     d_source = source;
-    d_source->buildSource();
+    ST::buildSource( *d_source );
 
     Ensure( !d_source.is_null() );
 }

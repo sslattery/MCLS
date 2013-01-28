@@ -41,7 +41,9 @@
 #ifndef MCLS_MCSOLVER_HPP
 #define MCLS_MCSOLVER_HPP
 
+#include "MLCS_SourceTraits.hpp"
 #include "MCLS_DomainTraits.hpp"
+#include "MCLS_TallyTraits.hpp"
 #include "MCLS_RNGControl.hpp"
 #include "MCLS_SourceTransporter.hpp"
 
@@ -61,19 +63,21 @@ namespace MCLS
  * class on the AdjointDomain will solve the system using the analog adjoint
  * Neumann-Ulam method.
  */
-template<class Domain>
+template<class Source>
 class MCSolver
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Domain                                      domain_type;
+    typedef Source                                      source_type;
+    typedef SourceTraits<Source>                        ST;
+    typedef typename ST::domain_type                    Domain;
     typedef DomainTraits<Domain>                        DT;
     typedef typename DT::tally_type                     TallyType;
-    typedef SourceTransporter<Domain>                   TransporterType;
-    typedef typename TransporterType::SourceType        SourceType;
-    typedef typename TransporterType::HistoryType       HistoryType;
+    typedef TallyTraits<TallyType>                      TT;
+    typedef typename TT::history_type                   HistoryType;
+    typedef SourceTransporter<Source>                   TransporterType;
     typedef Teuchos::Comm<int>                          Comm;
     //@}
 
@@ -92,7 +96,7 @@ class MCSolver
     void setDomain( const Teuchos::RCP<Domain>& domain );
 
     // Set the source.
-    void setSource( const Teuchos::RCP<SourceType>& source );
+    void setSource( const Teuchos::RCP<Source>& source );
 
     //! Get the random number controler.
     Teuchos::RCP<RNGControl> rngControl() const { return d_rng_control; }
@@ -117,11 +121,11 @@ class MCSolver
     // Tally.
     Teuchos::RCP<TallyType> d_tally;
 
-    // SourceType transporter.
+    // Source transporter.
     Teuchos::RCP<TransporterType> d_transporter;
 
-    // SourceType.
-    Teuchos::RCP<SourceType> d_source;
+    // Source.
+    Teuchos::RCP<Source> d_source;
 };
 
 //---------------------------------------------------------------------------//
