@@ -237,6 +237,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, SetCombine, LO, GO, Scalar )
 
     MCLS::AdjointTally<VectorType> tally( A, B );
 
+    // Sub in a map-compatible base vector to ensure we can swap vectors and
+    // still do the parallel export operation.
+    Teuchos::RCP<VectorType> C = VT::clone(*A);
+    tally.setBaseVector( C );
+
     Scalar a_val = 2;
     Scalar b_val = 3;
     for ( int i = 0; i < local_num_rows; ++i )
@@ -255,19 +260,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, SetCombine, LO, GO, Scalar )
 
     tally.combineSetTallies();
 
-    Teuchos::ArrayRCP<const Scalar> A_view = VT::view( *A );
-    typename Teuchos::ArrayRCP<const Scalar>::const_iterator a_view_iterator;
-    for ( a_view_iterator = A_view.begin();
-	  a_view_iterator != A_view.end();
-	  ++a_view_iterator )
+    Teuchos::ArrayRCP<const Scalar> C_view = VT::view( *C );
+    typename Teuchos::ArrayRCP<const Scalar>::const_iterator c_view_iterator;
+    for ( c_view_iterator = C_view.begin();
+	  c_view_iterator != C_view.end();
+	  ++c_view_iterator )
     {
 	if ( comm_size == 1 )
 	{
-	    TEST_EQUALITY( *a_view_iterator, 0 );
+	    TEST_EQUALITY( *c_view_iterator, 0 );
 	}
 	else
 	{
-	    TEST_EQUALITY( *a_view_iterator, a_val + b_val );
+	    TEST_EQUALITY( *c_view_iterator, a_val + b_val );
 	}
     }
 
@@ -356,6 +361,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, BlockCombine, LO, GO, Scalar )
 
 	MCLS::AdjointTally<VectorType> tally( A, B );
 
+	// Sub in a base vector over just set 0 after we have made the tally.
+	Teuchos::RCP<VectorType> C;
+	if ( comm_rank < 2 )
+	{
+	    C = VT::clone(*A);
+	    tally.setBaseVector( C );
+	}
+	comm->barrier();
+
 	Scalar a_val = 2;
 	Scalar b_val = 3;
 	if ( block_rank == 1 )
@@ -382,14 +396,29 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, BlockCombine, LO, GO, Scalar )
 	tally.combineSetTallies();
 	tally.combineBlockTallies( comm_block );
 
-	// The base tallies should be combined across the blocks.
-	Teuchos::ArrayRCP<const Scalar> A_view = VT::view( *A );
-	typename Teuchos::ArrayRCP<const Scalar>::const_iterator a_view_iterator;
-	for ( a_view_iterator = A_view.begin();
-	      a_view_iterator != A_view.end();
-	      ++a_view_iterator )
+	// The base tallies should be combined across the blocks. The sets
+	// tallied over different vectors.
+	if ( comm_rank < 2 )
 	{
-	    TEST_EQUALITY( *a_view_iterator, 2+3+4+6 );
+	    Teuchos::ArrayRCP<const Scalar> C_view = VT::view( *C );
+	    typename Teuchos::ArrayRCP<const Scalar>::const_iterator c_view_iterator;
+	    for ( c_view_iterator = C_view.begin();
+		  c_view_iterator != C_view.end();
+		  ++c_view_iterator )
+	    {
+		TEST_EQUALITY( *c_view_iterator, 2+3+4+6 );
+	    }
+	}
+	else
+	{
+	    Teuchos::ArrayRCP<const Scalar> A_view = VT::view( *A );
+	    typename Teuchos::ArrayRCP<const Scalar>::const_iterator a_view_iterator;
+	    for ( a_view_iterator = A_view.begin();
+		  a_view_iterator != A_view.end();
+		  ++a_view_iterator )
+	    {
+		TEST_EQUALITY( *a_view_iterator, 2+3+4+6 );
+	    }
 	}
 
 	// The overlap shouldn't change.

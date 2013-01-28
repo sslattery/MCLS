@@ -79,6 +79,7 @@ class AdjointSolverManager : public SolverManager<Vector,Matrix>
     typedef MatrixTraits<Matrix>                    MT;
     typedef LinearProblem<Vector,Matrix>            LinearProblemType;
     typedef AdjointDomain<Vector,Matrix>            DomainType;
+    typedef typename DomainType::TallyType          TallyType;
     typedef UniformAdjointSource<DomainType>        SourceType;
     typedef Teuchos::Comm<int>                      Comm;
     //@}
@@ -121,9 +122,19 @@ class AdjointSolverManager : public SolverManager<Vector,Matrix>
     // if it did not.
     bool solve();
 
-    // Return if the last linear solve converged.
+    //! Return if the last linear solve converged. The adjoint Monte Carlo
+    //! solver is a direct solver, and therefore always converges in the
+    //! iterative sense.
     bool getConvergedStatus() const
-    { return d_converged_status; }
+    { return true; }
+
+  private:
+
+    // Build the Monte Carlo domain from the provided linear problem.
+    void buildMonteCarloDomain();
+
+    // Build the Monte Carlo source from the provided linear problem.
+    void buildMonteCarloSource();
 
   private:
 
@@ -136,14 +147,14 @@ class AdjointSolverManager : public SolverManager<Vector,Matrix>
     // Paramters.
     Teuchos::RCP<Teuchos::ParameterList> d_plist;
 
-    // Monte Carlo set solver.
-    Teuchos::RCP<MCSolver<SourceType> > d_mc_solver;
+    // Primary set indicator.
+    bool d_primary_set;
 
     // MSOD Manager.
     Teuchos::RCP<MSODManager<SourceType> > d_msod_manager;
 
-    // Convergence status. True if the last solve converged.
-    bool d_converged_status;
+    // Monte Carlo set solver.
+    Teuchos::RCP<MCSolver<SourceType> > d_mc_solver;
 };
 
 //---------------------------------------------------------------------------//
