@@ -129,6 +129,9 @@ class AdjointSolverManager : public SolverManager<Vector,Matrix>
     // Paramters.
     Teuchos::RCP<Teuchos::ParameterList> d_plist;
 
+    // Monte Carlo set solver.
+    Teuchos::RCP<MCSolver> d_mc_solver;
+
     // MSOD Manager.
     Teuchos::RCP<MSODManager> d_msod_manager;
 
