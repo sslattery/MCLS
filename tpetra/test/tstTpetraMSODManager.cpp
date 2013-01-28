@@ -191,11 +191,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MSODManager, two_by_two, LO, GO, Scalar )
 	comm->barrier();
 
 	// Build the MSOD manager.
-	MCLS::MSODManager<SourceType> msod_manager( primary_domain,
-						    primary_source,
+	MCLS::MSODManager<SourceType> msod_manager( !primary_domain.is_null(),
 						    comm,
-						    control,
 						    plist );
+
+	msod_manager.setDomain( primary_domain );
+	msod_manager.setSource( primary_source, control );
 
 	// Test the MSOD manager.
 	TEST_EQUALITY( msod_manager.numSets(), 2 );
@@ -357,8 +358,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MSODManager, two_by_two, LO, GO, Scalar )
 	domain = Teuchos::null;
 	source = Teuchos::null;
 
-	msod_manager.updateDomain( primary_domain );
-	msod_manager.updateSource( primary_source );
+	msod_manager.setDomain( primary_domain );
+	msod_manager.setSource( primary_source, control );
 
 	// Test the local domain.
 	domain = msod_manager.localDomain();

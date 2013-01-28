@@ -74,7 +74,7 @@ class SolverManager : public Teuchos::Describable
     SolverManager() { /* ... */ }
 
     //! Destructor.
-    virtual ~SolverManager { /* ... */ }
+    virtual ~SolverManager() { /* ... */ }
 
     //! Get the linear problem being solved by the manager.
     virtual const LinearProblem<Vector,Matrix>& getProblem() const = 0;

@@ -34,7 +34,7 @@
 /*!
  * \file MCLS_AdjointSolverManager.hpp
  * \author Stuart R. Slattery
- * \brief Linear solver manager base class.
+ * \brief Adjoint Monte Carlo solver manager declaration.
  */
 //---------------------------------------------------------------------------//
 
@@ -45,16 +45,16 @@
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_MatrixTraits.hpp"
-#include "MCLS_SourceTraits.hpp"
-#include "MCLS_DomainTraits.hpp"
-#include "MCLS_TallyTraits.hpp"
 #include "MCLS_MSODManager.hpp"
 #include "MCLS_MCSolver.hpp"
+#include "MCLS_UniformAdjointSource.hpp"
+#include "MCLS_AdjointDomain.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_Comm.hpp>
 
 namespace MCLS
 {
@@ -62,7 +62,7 @@ namespace MCLS
 //---------------------------------------------------------------------------//
 /*!
  * \class AdjointSolverManager
- * \brief Linear solver base class.
+ * \brief Solver manager for analog adjoint Monte Carlo.
  */
 template<class Vector, class Matrix>
 class AdjointSolverManager : public SolverManager<Vector,Matrix>
@@ -78,14 +78,18 @@ class AdjointSolverManager : public SolverManager<Vector,Matrix>
     typedef Matrix                                  matrix_type;
     typedef MatrixTraits<Matrix>                    MT;
     typedef LinearProblem<Vector,Matrix>            LinearProblemType;
+    typedef AdjointDomain<Vector,Matrix>            DomainType;
+    typedef UniformAdjointSource<DomainType>        SourceType;
+    typedef Teuchos::Comm<int>                      Comm;
     //@}
 
     // Constructor.
     AdjointSolverManager( const Teuchos::RCP<LinearProblemType>& problem,
-			  const Teuchos::RCP<Teuchos::ParameterList>& plist )
+			  const Teuchos::RCP<const Comm>& global_comm,
+			  const Teuchos::RCP<Teuchos::ParameterList>& plist );
 
     //! Destructor.
-    ~AdjointSolverManager { /* ... */ }
+    ~AdjointSolverManager() { /* ... */ }
 
     //! Get the linear problem being solved by the manager.
     const LinearProblem<Vector,Matrix>& getProblem() const
@@ -126,14 +130,17 @@ class AdjointSolverManager : public SolverManager<Vector,Matrix>
     // Linear problem
     Teuchos::RCP<LinearProblemType> d_linear_problem;
 
+    // Global communicator.
+    Teuchos::RCP<const Comm> d_global_comm;
+
     // Paramters.
     Teuchos::RCP<Teuchos::ParameterList> d_plist;
 
     // Monte Carlo set solver.
-    Teuchos::RCP<MCSolver> d_mc_solver;
+    Teuchos::RCP<MCSolver<SourceType> > d_mc_solver;
 
     // MSOD Manager.
-    Teuchos::RCP<MSODManager> d_msod_manager;
+    Teuchos::RCP<MSODManager<SourceType> > d_msod_manager;
 
     // Convergence status. True if the last solve converged.
     bool d_converged_status;
@@ -142,6 +149,12 @@ class AdjointSolverManager : public SolverManager<Vector,Matrix>
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
+
+//---------------------------------------------------------------------------//
+// Template includes.
+//---------------------------------------------------------------------------//
+
+#include "MCLS_AdjointSolverManager_impl.hpp"
 
 //---------------------------------------------------------------------------//
 

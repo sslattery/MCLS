@@ -54,13 +54,10 @@ namespace MCLS
  * \brief Constructor.
  */
 template<class Source>
-MSODManager<Source>::MSODManager( const Teuchos::RCP<Domain>& primary_domain,
-				  const Teuchos::RCP<Source>& primary_source,
+MSODManager<Source>::MSODManager( const bool primary_set,
 				  const Teuchos::RCP<const Comm>& global_comm,
-				  const Teuchos::RCP<RNGControl>& rng_control,
 				  const Teuchos::ParameterList& plist )
     : d_global_comm( global_comm )
-    , d_rng_control( rng_control )
     , d_num_sets( plist.get<int>("Number of Sets") )
     , d_num_blocks( 0 )
     , d_set_size( 0 )
@@ -69,14 +66,13 @@ MSODManager<Source>::MSODManager( const Teuchos::RCP<Domain>& primary_domain,
     , d_block_id( -1 )
 {
     Require( !d_global_comm.is_null() );
-    Require( !d_rng_control.is_null() );
     Require( d_num_sets > 0 );
 
     // Get the set size. We could compute this value from user input, but we
     // must Insist that this is true every time and therefore we do this
     // reduction to verify. We require the primary domain to not exist on
     // procs not owned by the primary domain.
-    int local_size = Teuchos::as<int>( !primary_domain.is_null() );
+    int local_size = Teuchos::as<int>( primary_set );
     Teuchos::reduceAll<int,int>( *d_global_comm, Teuchos::REDUCE_SUM,
 				 local_size, Teuchos::Ptr<int>(&d_set_size) );
     Insist( d_num_sets * d_set_size == d_global_comm->getSize(),
@@ -92,25 +88,13 @@ MSODManager<Source>::MSODManager( const Teuchos::RCP<Domain>& primary_domain,
     // domain. The same requirements are also applied to the primary source.
     if ( d_global_comm->getRank() < d_set_size )
     {
-	Insist( !primary_domain.is_null(),
-		"Primary domain must exist on procs [0,(set_size-1)] only!" );
-
-	Insist( !primary_source.is_null(),
-		"Primary source must exist on procs [0,(set_size-1)] only!" );
-
-	// The local domain is the primary domain in this case.
-	d_local_domain = primary_domain;
-
-	// The local source is the primary source in this case.
-	d_local_source = primary_source;
+	Insist( primary_set,
+		"Primary set must exist on procs [0,(set_size-1)] only!" );
     }
     else
     {
-	Insist( primary_domain.is_null(),
-		"Primary domain must exist on procs [0,(set_size-1)] only!" );
-
-	Insist( primary_source.is_null(),
-		"Primary source must exist on procs [0,(set_size-1)] only!" );
+	Insist( !primary_set,
+		"Primary set must exist on procs [0,(set_size-1)] only!" );
     }
 
     // Barrier before proceeding.
@@ -122,22 +106,16 @@ MSODManager<Source>::MSODManager( const Teuchos::RCP<Domain>& primary_domain,
     // Generate the block-constant communicators and the block ids.
     buildBlockComms();
 
-    // Pack the primary domain and broadcast across the blocks.
-    broadcastDomain();
-
-    // Pack the primary source and broadcast across the blocks.
-    broadcastSource();
-
     // Barrier before proceeding.
     d_global_comm->barrier();
 }
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Update the local domain.
+ * \brief Set the local domain.
  */
 template<class Source>
-void MSODManager<Source>::updateDomain(
+void MSODManager<Source>::setDomain(
     const Teuchos::RCP<Domain>& primary_domain )
 {
     if ( d_set_id == 0 )
@@ -158,12 +136,15 @@ void MSODManager<Source>::updateDomain(
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Update the local source.
+ * \brief Set the local source.
  */
 template<class Source>
-void MSODManager<Source>::updateSource(
-    const Teuchos::RCP<Source>& primary_source )
+void MSODManager<Source>::setSource( 
+    const Teuchos::RCP<Source>& primary_source,
+    const Teuchos::RCP<RNGControl>& rng_control )
 {
+    Require( !rng_control.is_null() );
+
     if ( d_set_id == 0 )
     {
 	Insist( !primary_source.is_null(),
@@ -177,7 +158,7 @@ void MSODManager<Source>::updateSource(
 		"Primary source must exist on set 0 only!" );
     }
 
-    broadcastSource();
+    broadcastSource( rng_control );
 }
 
 //---------------------------------------------------------------------------//
@@ -296,8 +277,10 @@ void MSODManager<Source>::broadcastDomain()
  * \brief Build the global decomposition by broadcasting the primary source.
  */
 template<class Source>
-void MSODManager<Source>::broadcastSource()
+void MSODManager<Source>::broadcastSource( 
+    const Teuchos::RCP<RNGControl>& rng_control )
 {
+    Require( !rng_control.is_null() );
     Require( !d_set_comm.is_null() );
     Require( !d_block_comm.is_null() );
     Require( !d_local_domain.is_null() );
@@ -334,7 +317,7 @@ void MSODManager<Source>::broadcastSource()
     d_local_source = ST::createFromBuffer( source_buffer(),
 					   d_set_comm,
 					   d_local_domain,
-					   d_rng_control,
+					   rng_control,
 					   d_global_comm->getSize(),
 					   d_global_comm->getRank() );
 

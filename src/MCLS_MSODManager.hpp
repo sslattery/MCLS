@@ -73,20 +73,19 @@ class MSODManager
     //@}
 
     // Constructor.
-    MSODManager( const Teuchos::RCP<Domain>& primary_domain,
-		 const Teuchos::RCP<Source>& primary_source,
+    MSODManager( const bool primary_set,
 		 const Teuchos::RCP<const Comm>& global_comm,
-		 const Teuchos::RCP<RNGControl>& rng_control,
 		 const Teuchos::ParameterList& plist );
 
     //! Destructor.
     ~MSODManager() { /* ... */ }
 
-    // Update the local domain.
-    void updateDomain( const Teuchos::RCP<Domain>& primary_domain );
+    // Set the local domain.
+    void setDomain( const Teuchos::RCP<Domain>& primary_domain );
 
-    // Update the local source.
-    void updateSource( const Teuchos::RCP<Source>& primary_source );
+    // Set the local source.
+    void setSource( const Teuchos::RCP<Source>& primary_source,
+		    const Teuchos::RCP<RNGControl>& rng_control );
 
     //! Get the local domain.
     Teuchos::RCP<Domain> localDomain() const { return d_local_domain; }
@@ -130,7 +129,7 @@ class MSODManager
     void broadcastDomain();
 
     // Build the global decomposition by broadcasting the primary source. 
-    void broadcastSource();
+    void broadcastSource( const Teuchos::RCP<RNGControl>& rng_control );
 
   private:
 
