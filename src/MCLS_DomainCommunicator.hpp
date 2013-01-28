@@ -41,6 +41,7 @@
 #ifndef MCLS_DOMAINCOMMUNICATOR_HPP
 #define MCLS_DOMAINCOMMUNICATOR_HPP
 
+#include "MCLS_DomainTraits.hpp"
 #include "MCLS_HistoryBuffer.hpp"
 #include "MCLS_CommHistoryBuffer.hpp"
 
@@ -67,8 +68,9 @@ class DomainCommunicator
     //@{
     //! Typedefs.
     typedef Domain                                       domain_type;
-    typedef typename Domain::HistoryType                 HistoryType;
-    typedef typename Domain::BankType                    BankType;
+    typedef DomainTraits<Domain>                         DT;
+    typedef typename DT::history_type                    HistoryType;
+    typedef typename DT::bank_type                       BankType;
     typedef HistoryBuffer<HistoryType>                   HistoryBufferType;
     typedef SendHistoryBuffer<HistoryType>               SendBuffer;
     typedef ReceiveHistoryBuffer<HistoryType>            ReceiveBuffer;

@@ -41,6 +41,7 @@
 #ifndef MCLS_MCSOLVER_HPP
 #define MCLS_MCSOLVER_HPP
 
+#include "MCLS_DomainTraits.hpp"
 #include "MCLS_RNGControl.hpp"
 #include "MCLS_SourceTransporter.hpp"
 
@@ -68,7 +69,8 @@ class MCSolver
     //@{
     //! Typedefs.
     typedef Domain                                      domain_type;
-    typedef typename Domain::TallyType                  TallyType;
+    typedef DomainTraits<Domain>                        DT;
+    typedef typename DT::tally_type                     TallyType;
     typedef SourceTransporter<Domain>                   TransporterType;
     typedef typename TransporterType::SourceType        SourceType;
     typedef typename TransporterType::HistoryType       HistoryType;

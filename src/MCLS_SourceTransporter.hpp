@@ -41,6 +41,7 @@
 #ifndef MCLS_SOURCETRANSPORTER_HPP
 #define MCLS_SOURCETRANSPORTER_HPP
 
+#include "MCLS_DomainTraits.hpp"
 #include "MCLS_DomainTransporter.hpp"
 #include "MCLS_DomainCommunicator.hpp"
 #include "MCLS_Source.hpp"
@@ -72,8 +73,9 @@ class SourceTransporter
     //@{
     //! Typedefs.
     typedef Domain                                    domain_type;
-    typedef typename Domain::HistoryType              HistoryType;
-    typedef typename Domain::BankType                 BankType;
+    typedef DomainTraits<Domain>                      DT;
+    typedef typename DT::history_type                 HistoryType;
+    typedef typename DT::bank_type                    BankType;
     typedef DomainTransporter<Domain>                 DomainTransporterType;
     typedef DomainCommunicator<Domain>                DomainCommunicatorType;
     typedef Source<Domain>                            SourceType;

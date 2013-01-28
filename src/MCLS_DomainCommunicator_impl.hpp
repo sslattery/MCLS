@@ -61,10 +61,10 @@ DomainCommunicator<Domain>::DomainCommunicator(
     : d_domain( domain )
     , d_size( comm->getSize() )
     , d_rank( comm->getRank() )
-    , d_sends( d_domain->numSendNeighbors() )
-    , d_receives( d_domain->numReceiveNeighbors() )
-    , d_num_send_neighbors( d_domain->numSendNeighbors() )
-    , d_num_receive_neighbors( d_domain->numReceiveNeighbors() )
+    , d_sends( DT::numSendNeighbors(*d_domain) )
+    , d_receives( DT::numReceiveNeighbors(*d_domain) )
+    , d_num_send_neighbors( DT::numSendNeighbors(*d_domain) )
+    , d_num_receive_neighbors( DT::numReceiveNeighbors(*d_domain) )
 {
     Require( !d_domain.is_null() );
     Require( !comm.is_null() );
@@ -119,11 +119,11 @@ DomainCommunicator<Domain>::communicate(
     d_result.destination = 0;
 
     // Add the history to the appropriate buffer.
-    int neighbor_id = d_domain->owningNeighbor( history->state() );
+    int neighbor_id = DT::owningNeighbor( *d_domain, history->state() );
     d_sends[neighbor_id].bufferHistory( *history );
 
     // Update the result destination.
-    d_result.destination = d_domain->sendNeighborRank( neighbor_id );
+    d_result.destination = DT::sendNeighborRank( *d_domain, neighbor_id );
     Check( d_result.destination < d_size );
 
     // If the buffer is full send it.
@@ -158,14 +158,14 @@ int DomainCommunicator<Domain>::send()
     for ( int n = 0; n < d_num_send_neighbors; ++n )
     {
 	Check( d_sends[n].allocatedSize() > 0 );
-	Check( d_domain->sendNeighborRank(n) < d_size );
+	Check( DT::sendNeighborRank(*d_domain,n) < d_size );
 
 	if( !d_sends[n].isEmpty() )
 	{
 	    Check( d_sends[n].numHistories() > 0 );
 
 	    num_sent += d_sends[n].numHistories();
-	    d_sends[n].post( d_domain->sendNeighborRank(n) );
+	    d_sends[n].post( DT::sendNeighborRank(*d_domain,n) );
 	    d_sends[n].wait();
 
 	    Check( num_sent > 0 );
@@ -191,10 +191,10 @@ int DomainCommunicator<Domain>::flush()
     for ( int n = 0; n < d_num_send_neighbors; ++n )
     {
 	Check( d_sends[n].allocatedSize() > 0 );
-	Check( d_domain->sendNeighborRank(n) < d_size );
+	Check( DT::sendNeighborRank(*d_domain,n) < d_size );
 
 	num_sent += d_sends[n].numHistories();
-	d_sends[n].post( d_domain->sendNeighborRank(n) );
+	d_sends[n].post( DT::sendNeighborRank(*d_domain,n) );
 	d_sends[n].wait();
 
 	Ensure( d_sends[n].isEmpty() );
@@ -217,9 +217,9 @@ void DomainCommunicator<Domain>::post()
 	Check( !d_receives[n].status() );
 	Check( d_receives[n].allocatedSize() > 0 );
 	Check( d_receives[n].isEmpty() );
-	Check( d_domain->receiveNeighborRank(n) < d_size );
+	Check( DT::receiveNeighborRank(*d_domain,n) < d_size );
 
-	d_receives[n].post( d_domain->receiveNeighborRank(n) );
+	d_receives[n].post( DT::receiveNeighborRank(*d_domain,n) );
 
 	Ensure( d_receives[n].status() );
     }
@@ -261,7 +261,7 @@ int DomainCommunicator<Domain>::checkAndPost( BankType& bank )
     for ( int n = 0; n < d_num_receive_neighbors; ++n )
     {
 	Check( d_receives[n].allocatedSize() > 0 );
-	Check( d_domain->receiveNeighborRank(n) < d_size );
+	Check( DT::receiveNeighborRank(*d_domain,n) < d_size );
 
 	if( d_receives[n].check() )
 	{
@@ -271,7 +271,7 @@ int DomainCommunicator<Domain>::checkAndPost( BankType& bank )
 	    Check( d_receives[n].isEmpty() );
 	    Check( !d_receives[n].status() );
 
-	    d_receives[n].post( d_domain->receiveNeighborRank(n) );
+	    d_receives[n].post( DT::receiveNeighborRank(*d_domain,n) );
 
 	    Ensure( d_receives[n].status() );
 	}

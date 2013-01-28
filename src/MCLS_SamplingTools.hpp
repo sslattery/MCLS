@@ -64,18 +64,18 @@ class SamplingTools
      * \brief Given a discrete CDF and random number, sample it to get the
      * output state. 
      */
-    static inline Teuchos::ArrayView<double>::size_type
-    sampleDiscreteCDF( const Teuchos::ArrayView<double>& cdf, 
+    static inline Teuchos::ArrayView<const double>::size_type
+    sampleDiscreteCDF( const Teuchos::ArrayView<const double>& cdf, 
 		       const double& random )
     {
 	Require( cdf.size() > 0 );
 	Require( std::abs( cdf[cdf.size()-1] - 1.0 ) < 1.0e-6 );
 	Require( random >= 0.0 && random <= 1.0 );
 
-	Teuchos::ArrayView<double>::iterator bin_iterator =
+	Teuchos::ArrayView<const double>::iterator bin_iterator =
 	    std::lower_bound( cdf.begin(), cdf.end(), random );
 
-	Teuchos::ArrayView<double>::size_type bin =
+	Teuchos::ArrayView<const double>::size_type bin =
 	    std::distance( cdf.begin(), bin_iterator );
 
 	Ensure( bin >= 0 && bin < cdf.size() );

@@ -55,7 +55,7 @@ template<class Domain>
 DomainTransporter<Domain>::DomainTransporter( 
     const Teuchos::RCP<Domain>& domain, const Teuchos::ParameterList& plist )
     : d_domain( domain )
-    , d_tally( d_domain->domainTally() )
+    , d_tally( DT::domainTally(*d_domain) )
 {
     Require( !d_domain.is_null() );
     Require( !d_tally.is_null() );
@@ -74,7 +74,7 @@ void DomainTransporter<Domain>::transport( HistoryType& history )
     Require( history.alive() );
     Require( history.rng().assigned() );
     Require( history.weightAbs() >= d_weight_cutoff );
-    Require( d_domain->isLocalState(history.state()) );
+    Require( DT::isLocalState(*d_domain, history.state()) );
 
     // Set the history to transition.
     history.setEvent( TRANSITION );
@@ -86,13 +86,13 @@ void DomainTransporter<Domain>::transport( HistoryType& history )
     {
 	Check( history.event() == TRANSITION );
 	Check( history.weightAbs() >= d_weight_cutoff );
-	Check( d_domain->isLocalState(history.state()) );
+	Check( DT::isLocalState(*d_domain, history.state()) );
 
 	// Tally the history.
 	d_tally->tallyHistory( history );
 
 	// Transition the history one step.
-	d_domain->processTransition( history );
+	DT::processTransition( *d_domain, history );
 
 	// If the history's weight is less than the cutoff, kill it.
 	if ( history.weightAbs() < d_weight_cutoff )
@@ -102,7 +102,7 @@ void DomainTransporter<Domain>::transport( HistoryType& history )
 	}
 
 	// If the history has left the domain, kill it.
-	else if ( !d_domain->isLocalState(history.state()) )
+	else if ( !DT::isLocalState(*d_domain,history.state()) )
 	{
 	    history.setEvent( BOUNDARY );
 	    history.kill();

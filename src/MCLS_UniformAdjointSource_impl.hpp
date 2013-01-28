@@ -332,7 +332,7 @@ UniformAdjointSource<Domain>::getHistory()
     Teuchos::ArrayView<double>::size_type local_state =
 	SamplingTools::sampleDiscreteCDF( d_cdf(), rng.random() );
     Ordinal starting_state = VT::getGlobalRow( *Base::b_b, local_state );
-    Check( Base::b_domain->isLocalState(starting_state) );
+    Check( DT::isLocalState(*Base::b_domain,starting_state) );
 
     // Set the history state.
     Ordinal weight_sign = 

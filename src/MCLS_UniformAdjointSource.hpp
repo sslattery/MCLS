@@ -42,6 +42,7 @@
 #define MCLS_UNIFORMSOURCE_HPP
 
 #include "MCLS_Source.hpp"
+#include "MCLS_DomainTraits.hpp"
 #include "MCLS_VectorTraits.hpp"
 
 #include <Teuchos_RCP.hpp>
@@ -70,6 +71,7 @@ class UniformAdjointSource : public Source<Domain>
     //@{
     //! Typedefs.
     typedef Domain                                       domain_type;
+    typedef DomainTraits<Domain>                         DT;
     typedef Source<Domain>                               Base;
     typedef typename Base::HistoryType                   HistoryType;
     typedef typename HistoryType::ordinal_type           Ordinal;

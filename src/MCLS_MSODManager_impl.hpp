@@ -261,7 +261,7 @@ void MSODManager<Domain,Source>::broadcastDomain()
     if ( d_set_id == 0 )
     {
 	Check( !d_local_domain.is_null() );
-	buffer_size = d_local_domain->getPackedBytes();
+	buffer_size = DT::getPackedBytes( *d_local_domain );
     }
     d_block_comm->barrier();
 
@@ -275,7 +275,7 @@ void MSODManager<Domain,Source>::broadcastDomain()
     if ( d_set_id == 0 )
     {
 	Check( !d_local_domain.is_null() );
-	domain_buffer = d_local_domain->pack();
+	domain_buffer = DT::pack( *d_local_domain );
 	Check( Teuchos::as<std::size_t>(domain_buffer.size()) == buffer_size );
     }
     d_block_comm->barrier();
@@ -284,7 +284,7 @@ void MSODManager<Domain,Source>::broadcastDomain()
     Teuchos::broadcast<int,char>( *d_block_comm, 0, domain_buffer() );
 
     // Assign the domain.
-    d_local_domain = Teuchos::rcp( new Domain(domain_buffer(), d_set_comm) );
+    d_local_domain = DT::createFromBuffer( d_set_comm, domain_buffer() );
 
     // Barrier before continuing.
     d_block_comm->barrier();
@@ -355,5 +355,5 @@ void MSODManager<Domain,Source>::broadcastSource()
 
 //---------------------------------------------------------------------------//
 // end MCLS_MSODManager_impl.hpp
-// ---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
 

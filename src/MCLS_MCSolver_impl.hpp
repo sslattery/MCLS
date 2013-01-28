@@ -134,7 +134,7 @@ void MCSolver<Domain>::setDomain( const Teuchos::RCP<Domain>& domain )
     d_domain = domain;
 
     // Get the domain tally.
-    d_tally = d_domain->domainTally();
+    d_tally = DT::domainTally( *d_domain );
 
     // Generate the source transporter.
     d_transporter = 

@@ -117,7 +117,7 @@ class AdjointDomain
     std::size_t getPackedBytes() const;
 
     // Process a history through a transition to a new state.
-    inline void processTransition( HistoryType& history );
+    inline void processTransition( HistoryType& history ) const;
 
     // Get the domain tally.
     Teuchos::RCP<TallyType> domainTally() const
@@ -187,7 +187,7 @@ class AdjointDomain
  */
 template<class Vector, class Matrix>
 inline void AdjointDomain<Vector,Matrix>::processTransition( 
-    HistoryType& history )
+    HistoryType& history ) const
 {
     Require( history.alive() );
     Require( TRANSITION == history.event() );
@@ -251,7 +251,7 @@ class DomainTraits<AdjointDomain<Vector,Matrix> >
 	const Teuchos::RCP<const Comm>& comm,
 	const Teuchos::ArrayView<char>& buffer )
     { 
-	return Teuchos::rcp( new domain_type(comm, buffer) );
+	return Teuchos::rcp( new domain_type(buffer,comm) );
     }
 
     /*!

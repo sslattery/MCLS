@@ -41,9 +41,7 @@
 #ifndef MCLS_MSODMANAGER_HPP
 #define MCLS_MSODMANAGER_HPP
 
-#include "MCLS_LinearProblem.hpp"
-#include "MCLS_VectorTraits.hpp"
-#include "MCLS_MatrixTraits.hpp"
+#include "MCLS_DomainTraits.hpp"
 #include "MCLS_VectorExport.hpp"
 #include "MCLS_RNGControl.hpp"
 
@@ -68,6 +66,7 @@ class MSODManager
     //@{
     //! Typedefs.
     typedef Domain                                      domain_type;
+    typedef DomainTraits<Domain>                        DT;
     typedef Source                                      source_type;
     typedef Teuchos::Comm<int>                          Comm;
     //@}
@@ -187,5 +186,5 @@ class MSODManager
 
 //---------------------------------------------------------------------------//
 // end MCLS_MSODManager.hpp
-// ---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
 
