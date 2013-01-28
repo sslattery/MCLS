@@ -41,10 +41,10 @@
 #ifndef MCLS_SOURCETRANSPORTER_HPP
 #define MCLS_SOURCETRANSPORTER_HPP
 
+#include "MCLS_SourceTraits.hpp"
 #include "MCLS_DomainTraits.hpp"
 #include "MCLS_DomainTransporter.hpp"
 #include "MCLS_DomainCommunicator.hpp"
-#include "MCLS_Source.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
@@ -65,20 +65,21 @@ namespace MCLS
  * developed by Tom Evans.
  */
 //---------------------------------------------------------------------------//
-template<class Domain>
+template<class Source>
 class SourceTransporter
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Domain                                    domain_type;
+    typedef Source                                    source_type;
+    typedef SourceTraits<Source>                      ST;
+    typedef typename ST::domain_type                  Domain;
     typedef DomainTraits<Domain>                      DT;
     typedef typename DT::history_type                 HistoryType;
     typedef typename DT::bank_type                    BankType;
     typedef DomainTransporter<Domain>                 DomainTransporterType;
     typedef DomainCommunicator<Domain>                DomainCommunicatorType;
-    typedef Source<Domain>                            SourceType;
     typedef Teuchos::Comm<int>                        Comm;
     typedef Teuchos::CommRequest<int>                 Request;
     //@}
@@ -92,7 +93,7 @@ class SourceTransporter
     ~SourceTransporter() { /* ... */ }
 
     // Assign the source.
-    void assignSource( const Teuchos::RCP<SourceType>& source );
+    void assignSource( const Teuchos::RCP<Source>& source );
 
     // Transport the source histories and all subsequent histories through the
     // domain to completion.
@@ -145,7 +146,7 @@ class SourceTransporter
     Teuchos::RCP<const Comm> d_comm_complete;
 
     // Source.
-    Teuchos::RCP<SourceType> d_source;
+    Teuchos::RCP<Source> d_source;
 
     // Master-worker asynchornous communication request handles for number of
     // histories complete.

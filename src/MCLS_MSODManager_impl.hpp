@@ -309,7 +309,7 @@ void MSODManager<Domain,Source>::broadcastSource()
     if ( d_set_id == 0 )
     {
 	Check( !d_local_source.is_null() );
-	buffer_size = d_local_source->getPackedBytes();
+	buffer_size = ST::getPackedBytes( *d_local_source );
     }
     d_block_comm->barrier();
 
@@ -323,7 +323,7 @@ void MSODManager<Domain,Source>::broadcastSource()
     if ( d_set_id == 0 )
     {
 	Check( !d_local_source.is_null() );
-	source_buffer = d_local_source->pack();
+	source_buffer = ST::pack( *d_local_source );
 	Check( Teuchos::as<std::size_t>(source_buffer.size()) == buffer_size );
     }
     d_block_comm->barrier();
@@ -332,12 +332,12 @@ void MSODManager<Domain,Source>::broadcastSource()
     Teuchos::broadcast<int,char>( *d_block_comm, 0, source_buffer() );
 
     // Assign the source.
-    d_local_source = Teuchos::rcp( new Source( source_buffer(),
-					       d_local_domain,
-					       d_rng_control,
-					       d_set_comm,
-					       d_global_comm->getSize(),
-					       d_global_comm->getRank() ) );
+    d_local_source = ST::createFromBuffer( source_buffer(),
+					   d_set_comm,
+					   d_local_domain,
+					   d_rng_control,
+					   d_global_comm->getSize(),
+					   d_global_comm->getRank() );
 
     // Barrier before continuing.
     d_block_comm->barrier();

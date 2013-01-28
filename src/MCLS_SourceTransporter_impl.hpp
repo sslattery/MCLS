@@ -55,8 +55,8 @@ namespace MCLS
 /*!
  * \brief Constructor.
  */
-template<class Domain>
-SourceTransporter<Domain>::SourceTransporter( 
+template<class Source>
+SourceTransporter<Source>::SourceTransporter( 
     const Teuchos::RCP<const Comm>& comm,
     const Teuchos::RCP<Domain>& domain, 
     const Teuchos::ParameterList& plist )
@@ -106,9 +106,9 @@ SourceTransporter<Domain>::SourceTransporter(
 /*!
 * \brief Assign the source.
 */
-template<class Domain>
-void SourceTransporter<Domain>::assignSource(
-    const Teuchos::RCP<SourceType>& source )
+template<class Source>
+void SourceTransporter<Source>::assignSource(
+    const Teuchos::RCP<Source>& source )
 {
     Require( !source.is_null() );
     d_source = source;
@@ -119,8 +119,8 @@ void SourceTransporter<Domain>::assignSource(
  * \brief Transport the source histories and all subsequent histories through
  * the domain to completion.
  */
-template<class Domain>
-void SourceTransporter<Domain>::transport()
+template<class Source>
+void SourceTransporter<Source>::transport()
 {
     Require( !d_source.is_null() );
 
@@ -135,7 +135,7 @@ void SourceTransporter<Domain>::transport()
     d_num_run = 0;
 
     // Get the number of histories in the set from the source.
-    d_nh = d_source->numToTransportInSet();
+    d_nh = ST::numToTransportInSet( *d_source );
 
     // Create a history bank.
     BankType bank;
@@ -152,7 +152,7 @@ void SourceTransporter<Domain>::transport()
     {
 	// Transport the source histories and histories that have been
 	// received from other domains.
-	if ( !d_source->empty() )
+	if ( !ST::empty(*d_source) )
 	{
 	    transportSourceHistory( bank );
 	}
@@ -198,21 +198,21 @@ void SourceTransporter<Domain>::transport()
     // Barrier before completion.
     d_comm->barrier();
 
-    Ensure( d_source->empty() );
+    Ensure( ST::empty(*d_source) );
 }
 
 //---------------------------------------------------------------------------//
 /*!
  * \brief Transport a source history.
  */
-template<class Domain>
-void SourceTransporter<Domain>::transportSourceHistory( BankType& bank )
+template<class Source>
+void SourceTransporter<Source>::transportSourceHistory( BankType& bank )
 {
     Require( !d_source.is_null() );
-    Require( !d_source->empty() );
+    Require( !ST::empty(*d_source) );
 
     // Get a history from the source.
-    Teuchos::RCP<HistoryType> history = d_source->getHistory();
+    Teuchos::RCP<HistoryType> history = ST::getHistory( *d_source );
     Check( !history.is_null() );
     Check( history->alive() );
 
@@ -241,8 +241,8 @@ void SourceTransporter<Domain>::transportSourceHistory( BankType& bank )
 /*!
  * \brief Transport a bank history.
  */
-template<class Domain>
-void SourceTransporter<Domain>::transportBankHistory( BankType& bank )
+template<class Source>
+void SourceTransporter<Source>::transportBankHistory( BankType& bank )
 {
     Require( !bank.empty() );
 
@@ -277,8 +277,8 @@ void SourceTransporter<Domain>::transportBankHistory( BankType& bank )
 /*!
  * \brief Transport a history through the local domain.
  */
-template<class Domain>
-void SourceTransporter<Domain>::localHistoryTransport( 
+template<class Source>
+void SourceTransporter<Source>::localHistoryTransport( 
     const Teuchos::RCP<HistoryType>& history, 
     BankType& bank )
 {
@@ -312,8 +312,8 @@ void SourceTransporter<Domain>::localHistoryTransport(
 /*!
  * \brief Post communications with the set master proc for end of cycle.
  */
-template<class Domain>
-void SourceTransporter<Domain>::postMasterCount()
+template<class Source>
+void SourceTransporter<Source>::postMasterCount()
 {
     // MASTER will receive history count data from each worker node.
     if ( d_comm->getRank() == MASTER )
@@ -343,8 +343,8 @@ void SourceTransporter<Domain>::postMasterCount()
  * \brief Complete communications with the set master proc for end of cycle by
  * completing all outstanding requests.
  */
-template<class Domain>
-void SourceTransporter<Domain>::completeMasterCount()
+template<class Source>
+void SourceTransporter<Source>::completeMasterCount()
 {
     // MASTER will wait for each worker node to report their completed number
     // of histories.
@@ -378,8 +378,8 @@ void SourceTransporter<Domain>::completeMasterCount()
 /*!
  * \brief Update the master count of completed histories.
  */
-template<class Domain>
-void SourceTransporter<Domain>::updateMasterCount()
+template<class Source>
+void SourceTransporter<Source>::updateMasterCount()
 {
     // MASTER checks for received reports of updated counts from work nodes
     // and adds them to the running total.

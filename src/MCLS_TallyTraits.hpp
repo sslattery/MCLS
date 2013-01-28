@@ -3,11 +3,11 @@
   Copyright (c) 2012, Stuart R. Slattery
   All rights reserved.
 
-  Redistribution and use in source and binary forms, with or without
+  Redistribution and use in tally and binary forms, with or without
   modification, are permitted provided that the following conditions are
   met:
 
-  *: Redistributions of source code must retain the above copyright
+  *: Redistributions of tally code must retain the above copyright
   notice, this list of conditions and the following disclaimer.
 
   *: Redistributions in binary form must reproduce the above copyright
@@ -32,20 +32,19 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_SourceTraits.hpp
+ * \file MCLS_TallyTraits.hpp
  * \author Stuart R. Slattery
- * \brief Source traits definition.
+ * \brief Tally traits definition.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_SOURCETRAITS_HPP
-#define MCLS_SOURCETRAITS_HPP
+#ifndef MCLS_TALLYTRAITS_HPP
+#define MCLS_TALLYTRAITS_HPP
 
 #include "MCLS_RNGControl.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
-#include <Teuchos_ArrayView.hpp>
 #include <Teuchos_Array.hpp>
 
 namespace MCLS
@@ -53,131 +52,126 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 /*!
- * \class UndefinedSourceTraits
- * \brief Class for undefined source traits. 
+ * \class UndefinedTallyTraits
+ * \brief Class for undefined tally traits. 
  *
  * Will throw a compile-time error if these traits are not specialized.
  */
-template<class Source>
-struct UndefinedSourceTraits
+template<class Tally>
+struct UndefinedTallyTraits
 {
     static inline void notDefined()
     {
-	return Source::this_type_is_missing_a_specialization();
+	return Tally::this_type_is_missing_a_specialization();
     }
 };
 
 //---------------------------------------------------------------------------//
 /*!
- * \class SourceTraits
- * \brief Traits for Monte Carlo transport sources.
+ * \class TallyTraits
+ * \brief Traits for Monte Carlo transport tallys.
  *
- * SourceTraits defines an interface for parallel distributed sources.
+ * TallyTraits defines an interface for parallel distributed tallys.
  */
-template<class Source>
-class SourceTraits
+template<class Tally>
+class TallyTraits
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Source                                      source_type;
-    typedef typename Source::ordinal_type               ordinal_type;
-    typedef typename Source::history_type               history_type;
-    typedef typename Source::domain_type                domain_type;
-    typedef Teuchos::Comm<int>                          Comm;
+    typedef Tally                                      tally_type;
+    typedef typename Tally::vector_type                vector_type;
+    typedef typename Tally::ordinal_type               ordinal_type;
+    typedef typename Tally::history_type               history_type;
+    typedef Teuchos::Comm<int>                         Comm;
     //@}
 
     /*!
-     * \brief Create a reference-counted pointer to a new source defined over
-     * the given communicator and domain by unpacking a data buffer.
+     * \brief Add a history's contribution to the tally.
      */
-    static Teuchos::RCP<Source> 
-    createFromBuffer( const Teuchos::ArrayView<char>& buffer,
-		      const Teuchos::RCP<const Comm>& comm,
-		      const Teuchos::RCP<domain_type>& domain,
-		      const Teuchos::RCP<RNGControl>& rng_control,
-		      const int global_comm_size,
-		      const int global_comm_rank )
-
+    static inline void tallyHistory( Tally& tally, 
+				     const history_type& history )
     { 
-	UndefinedSourceTraits<Source>::notDefined(); 
-	return Teuchos::null; 
-    }
-
-    /*!
-     * \brief Pack a source into a buffer.
-     */
-    static Teuchos::Array<char> pack( const Source& source )
-    { 
-	UndefinedSourceTraits<Source>::notDefined(); 
+	UndefinedTallyTraits<Tally>::notDefined(); 
 	return Teuchos::Array<char>(0);
     }
 
     /*!
-     * \brief Get the size of source in packed bytes.
+     * \brief Combine the tallies together over a set. This is generally
+     * combining the overlap and base tallies.
      */
-    static std::size_t getPackedBytes( const Source& source )
-    { 
-	UndefinedSourceTraits<Source>::notDefined(); 
-	return 0;
-    }
-
-    /*!
-     * \brief Build the source.
-     */
-    static void buildSource( Source& source )
+    static void combineSetTallies( Tally& tally )
     {
-	UndefinedSourceTraits<Source>::notDefined(); 
+	UndefinedTallyTraits<Tally>::notDefined(); 
     }
 
     /*!
-     * \brief Get the weight of a given on-process global state in the
-     * source. 
+     * \brief Combine the tallies together over a block communicator.
      */
-    static double weight( const Source& source, const ordinal_type state )
-    { 
-	UndefinedSourceTraits<Source>::notDefined(); 
-	return 0.0;
+    static void combineBlockTallies( 
+	Tally& tally,
+	const Teuchos::RCP<const Comm>& block_comm )
+    {
+	UndefinedTallyTraits<Tally>::notDefined(); 
     }
 
     /*!
-     * \brief Get a history from the source.
+     * \brief Normalize the tally with a specified number of histories.
      */
-    static Teuchos::RCP<history_type> getHistory( Source& source )
-    { 
-	UndefinedSourceTraits<Source>::notDefined(); 
-	return Teuchos::null; 
+    static void normalize( Tally& tally, const int nh )
+    {
+	UndefinedTallyTraits<Tally>::notDefined(); 
     }
 
     /*!
-     * \brief Return whether or not a source has emitted all of its
-     * histories. 
+     * \brief Set the tally base vector. The maps are required to be
+     * compatible. 
      */
-    static bool empty( const Source& source )
-    { 
-	UndefinedSourceTraits<Source>::notDefined(); 
-	return false;
+    static void setBaseVector( Tally& tally, 
+			       const Teuchos::RCP<vector_type>& x_base )
+    {
+	UndefinedTallyTraits<Tally>::notDefined(); 
     }
 
     /*!
-     * \brief Get the local number of histories to be transported by this
-     * source. 
+     * \brief Set the tallies to zero.
      */
-    static int numToTransport( const Source& source )
-    { 
-	UndefinedSourceTraits<Source>::notDefined(); 
-	return 0;
+    static void zeroOut( Tally& tally )
+    {
+	UndefinedTallyTraits<Tally>::notDefined(); 
     }
 
     /*!
-     * \brief Get the number of histories to be transported by this source for
-     * the entire set.
+     * \brief Get the number of global rows in the base decompostion.
      */
-    static int numToTransportInSet( const Source& source )
-    { 
-	UndefinedSourceTraits<Source>::notDefined(); 
-	return 0;
+    static ordinal_type numBaseRows( const Tally& tally )
+    {
+	UndefinedTallyTraits<Tally>::notDefined(); 
+    }
+
+    /*!
+     * \brief Get the number of global rows in the overlap decompostion.
+     */
+    static ordinal_type numOverlapRows( const Tally& tally )
+    {
+	UndefinedTallyTraits<Tally>::notDefined(); 
+    }
+
+    /*!
+     * \brief Get the global tally rows in the base decompostion.
+     */
+    static Teuchos::Array<ordinal_type> baseRows( const Tally& tally )
+    {
+	UndefinedTallyTraits<Tally>::notDefined(); 
+    }
+
+    /*!
+     * \brief Get the global tally rows in the overlap decompostion.
+     */
+    static Teuchos::Array<ordinal_type> overlapRows( const Tally& tally )
+    {
+	UndefinedTallyTraits<Tally>::notDefined(); 
     }
 };
 
@@ -185,9 +179,9 @@ class SourceTraits
 
 } // end namespace MCLS
 
-#endif // end MCLS_SOURCETRAITS_HPP
+#endif // end MCLS_TALLYTRAITS_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_SourceTraits.hpp
+// end MCLS_TallyTraits.hpp
 //---------------------------------------------------------------------------//
 

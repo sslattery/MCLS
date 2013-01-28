@@ -89,7 +89,7 @@ void DomainTransporter<Domain>::transport( HistoryType& history )
 	Check( DT::isLocalState(*d_domain, history.state()) );
 
 	// Tally the history.
-	d_tally->tallyHistory( history );
+	TT::tallyHistory( *d_tally, history );
 
 	// Transition the history one step.
 	DT::processTransition( *d_domain, history );

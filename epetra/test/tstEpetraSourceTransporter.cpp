@@ -108,13 +108,13 @@ TEUCHOS_UNIT_TEST( SourceTransporter, Typedefs )
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::History<int> HistoryType;
-    typedef MCLS::Source<DomainType> SourceType;
+    typedef MCLS::UniformAdjointSource<DomainType> SourceType;
     typedef std::stack<Teuchos::RCP<HistoryType> > BankType;
 
-    typedef MCLS::SourceTransporter<DomainType> SourceTransporterType;
+    typedef MCLS::SourceTransporter<SourceType> SourceTransporterType;
     typedef SourceTransporterType::HistoryType history_type;
     typedef SourceTransporterType::BankType bank_type;
-    typedef SourceTransporterType::SourceType source_type;
+    typedef SourceTransporterType::Domain domain_type;
 
     TEST_EQUALITY_CONST( 
 	(Teuchos::TypeTraits::is_same<HistoryType, history_type>::value)
@@ -123,7 +123,7 @@ TEUCHOS_UNIT_TEST( SourceTransporter, Typedefs )
 	(Teuchos::TypeTraits::is_same<BankType, bank_type>::value)
 	== true, true );
     TEST_EQUALITY_CONST( 
-	(Teuchos::TypeTraits::is_same<SourceType, source_type>::value)
+	(Teuchos::TypeTraits::is_same<DomainType, domain_type>::value)
 	== true, true );
 }
 
@@ -213,7 +213,8 @@ TEUCHOS_UNIT_TEST( SourceTransporter, transport )
     // Create the source transporter.
     plist.set<int>("MC Check Frequency", 10);
     plist.set<double>("Relative Weight Cutoff", source->sourceWeight()*cutoff);
-    MCLS::SourceTransporter<DomainType> source_transporter( comm, domain, plist );
+    MCLS::SourceTransporter<SourceType> source_transporter( 
+	comm, domain, plist );
     source_transporter.assignSource( source );
 
     // Do transport.

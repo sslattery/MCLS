@@ -126,7 +126,10 @@ class SourceTraits
     /*!
      * \brief Build the source.
      */
-    static void buildSource( Source& source );
+    static void buildSource( Source& source )
+    {
+	UndefinedSourceTraits<Source>::notDefined(); 
+    }
 
     /*!
      * \brief Get the weight of a given on-process global state in the

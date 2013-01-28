@@ -42,6 +42,7 @@
 #define MCLS_DOMAINTRANSPORTER_HPP
 
 #include <MCLS_DomainTraits.hpp>
+#include <MCLS_TallyTraits.hpp>
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -65,9 +66,10 @@ class DomainTransporter
     //! Typedefs.
     typedef Domain                                    domain_type;
     typedef DomainTraits<Domain>                      DT;
-    typedef typename DT::tally_type                   TallyType;
     typedef typename DT::history_type                 HistoryType;
     typedef typename DT::bank_type                    BankType;
+    typedef typename DT::tally_type                   TallyType;
+    typedef TallyTraits<TallyType>                    TT;
     //@}
 
     // Matrix constructor.

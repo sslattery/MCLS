@@ -65,18 +65,23 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
     const int global_comm_size,
     const int global_comm_rank,
     const Teuchos::ParameterList& plist )
-    : Base( b, domain, rng_control )
+    : d_b( b )
+    , d_domain( domain )
+    , d_rng_control( rng_control )
     , d_set_comm( set_comm )
     , d_global_size( global_comm_size )
     , d_global_rank( global_comm_rank )
     , d_rng_stream(0)
-    , d_nh_requested( VT::getGlobalLength(*Base::b_b) )
+    , d_nh_requested( VT::getGlobalLength(*d_b) )
     , d_nh_total(0)
     , d_nh_domain(0)
-    , d_weight( VT::norm1(*Base::b_b) )
+    , d_weight( VT::norm1(*d_b) )
     , d_nh_left(0)
     , d_nh_emitted(0)
 {
+    Require( !d_b.is_null() );
+    Require( !d_domain.is_null() );
+    Require( !d_rng_control.is_null() );
     Require( !d_set_comm.is_null() );
 
     // Get the requested number of histories. The default value is the
@@ -106,7 +111,8 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
     const Teuchos::RCP<const Comm>& set_comm,
     const int global_comm_size,
     const int global_comm_rank )
-    : Base( domain, rng_control )
+    : d_domain( domain )
+    , d_rng_control( rng_control )
     , d_set_comm( set_comm )
     , d_global_size( global_comm_size )
     , d_global_rank( global_comm_rank )
@@ -118,6 +124,8 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
     , d_nh_left(0)
     , d_nh_emitted(0)
 {
+    Require( !d_domain.is_null() );
+    Require( !d_rng_control.is_null() );
     Require( !d_set_comm.is_null() );
 
     Deserializer ds;
@@ -155,7 +163,7 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
     Check( ds.getPtr() == ds.end() );
    
     // Build the source vector.
-    Base::setSourceVector( VT::createFromRows(d_set_comm, global_rows()) );
+    d_b = VT::createFromRows( d_set_comm, global_rows() );
 
     // Set the data in the source vector.
     typename Teuchos::ArrayRCP<Scalar>::const_iterator const_data_it;
@@ -163,12 +171,12 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
 	  const_data_it != source_data.end(); 
 	  ++const_data_it, ++row_it )
     {
-	VT::replaceGlobalValue( *Base::b_b, *row_it, *const_data_it );
+	VT::replaceGlobalValue( *d_b, *row_it, *const_data_it );
     }
     source_data.clear();
 
     // Set the weight.
-    d_weight = VT::norm1( *Base::b_b );
+    d_weight = VT::norm1( *d_b );
 
     // Set the total to the requested amount. This may change based on the
     // global stratified sampling.
@@ -195,16 +203,16 @@ Teuchos::Array<char> UniformAdjointSource<Domain>::pack() const
     s << d_nh_requested;
 
     // Pack the size of the local source data.
-    s << Teuchos::as<std::size_t>( VT::getLocalLength(*Base::b_b) );
+    s << Teuchos::as<std::size_t>( VT::getLocalLength(*d_b) );
 
     // Pack the source global rows.
-    for ( Ordinal i = 0; i < VT::getLocalLength(*Base::b_b); ++i )
+    for ( Ordinal i = 0; i < VT::getLocalLength(*d_b); ++i )
     {
-	s << Teuchos::as<Ordinal>( VT::getGlobalRow(*Base::b_b,i) );
+	s << Teuchos::as<Ordinal>( VT::getGlobalRow(*d_b,i) );
     }
 
     // Pack the local source data.
-    Teuchos::ArrayRCP<const Scalar> b_view = VT::view(*Base::b_b );
+    Teuchos::ArrayRCP<const Scalar> b_view = VT::view(*d_b );
     typename Teuchos::ArrayRCP<const Scalar>::const_iterator b_view_it;
     for ( b_view_it = b_view.begin(); b_view_it != b_view.end(); ++b_view_it )
     {
@@ -230,16 +238,16 @@ std::size_t UniformAdjointSource<Domain>::getPackedBytes() const
     s << d_nh_requested;
 
     // Pack the size of the local source data.
-    s << Teuchos::as<std::size_t>( VT::getLocalLength(*Base::b_b) );
+    s << Teuchos::as<std::size_t>( VT::getLocalLength(*d_b) );
 
     // Pack the source global rows.
-    for ( Ordinal i = 0; i < VT::getLocalLength(*Base::b_b); ++i )
+    for ( Ordinal i = 0; i < VT::getLocalLength(*d_b); ++i )
     {
-	s << Teuchos::as<Ordinal>( VT::getGlobalRow(*Base::b_b,i) );
+	s << Teuchos::as<Ordinal>( VT::getGlobalRow(*d_b,i) );
     }
 
     // Pack the local source data.
-    Teuchos::ArrayRCP<const Scalar> b_view = VT::view(*Base::b_b );
+    Teuchos::ArrayRCP<const Scalar> b_view = VT::view(*d_b );
     typename Teuchos::ArrayRCP<const Scalar>::const_iterator b_view_it;
     for ( b_view_it = b_view.begin(); b_view_it != b_view.end(); ++b_view_it )
     {
@@ -260,7 +268,7 @@ void UniformAdjointSource<Domain>::buildSource()
     makeRNG();
 
     // Get the local source components.
-    Teuchos::ArrayRCP<const Scalar> local_source = VT::view( *Base::b_b );
+    Teuchos::ArrayRCP<const Scalar> local_source = VT::view( *d_b );
     Check( local_source.size() > 0 );
 
     // Build a non-normalized CDF from the local source data.
@@ -320,7 +328,7 @@ UniformAdjointSource<Domain>::getHistory()
     }
 
     // Get the local source components.
-    Teuchos::ArrayRCP<const Scalar> local_source = VT::view( *Base::b_b );
+    Teuchos::ArrayRCP<const Scalar> local_source = VT::view( *d_b );
     Check( local_source.size() > 0 );
 
     // Generate the history.
@@ -331,8 +339,8 @@ UniformAdjointSource<Domain>::getHistory()
     // Sample the local source cdf to get a starting state.
     Teuchos::ArrayView<double>::size_type local_state =
 	SamplingTools::sampleDiscreteCDF( d_cdf(), rng.random() );
-    Ordinal starting_state = VT::getGlobalRow( *Base::b_b, local_state );
-    Check( DT::isLocalState(*Base::b_domain,starting_state) );
+    Ordinal starting_state = VT::getGlobalRow( *d_b, local_state );
+    Check( DT::isLocalState(*d_domain,starting_state) );
 
     // Set the history state.
     Ordinal weight_sign = 
@@ -362,7 +370,7 @@ UniformAdjointSource<Domain>::getHistory()
 template<class Domain>
 void UniformAdjointSource<Domain>::makeRNG()
 {
-    GlobalRNG::d_rng = Base::b_rng_control->rng( 
+    GlobalRNG::d_rng = d_rng_control->rng( 
 	d_rng_stream + d_global_rank );
     d_rng_stream += d_global_size;
 

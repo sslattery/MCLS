@@ -41,9 +41,11 @@
 #ifndef MCLS_UNIFORMSOURCE_HPP
 #define MCLS_UNIFORMSOURCE_HPP
 
-#include "MCLS_Source.hpp"
+#include "MCLS_SourceTraits.hpp"
 #include "MCLS_DomainTraits.hpp"
 #include "MCLS_VectorTraits.hpp"
+#include "MCLS_TallyTraits.hpp"
+#include "MCLS_RNGControl.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
@@ -64,7 +66,7 @@ namespace MCLS
  */
 //---------------------------------------------------------------------------//
 template<class Domain>
-class UniformAdjointSource : public Source<Domain>
+class UniformAdjointSource
 {
   public:
 
@@ -72,13 +74,14 @@ class UniformAdjointSource : public Source<Domain>
     //! Typedefs.
     typedef Domain                                       domain_type;
     typedef DomainTraits<Domain>                         DT;
-    typedef Source<Domain>                               Base;
-    typedef typename Base::HistoryType                   HistoryType;
-    typedef typename HistoryType::ordinal_type           Ordinal;
-    typedef typename Base::VectorType                    VectorType;
+    typedef typename DT::history_type                    HistoryType;
+    typedef typename DT::ordinal_type                    Ordinal;
+    typedef typename DT::tally_type                      TallyType;
+    typedef TallyTraits<TallyType>                       TT;
+    typedef typename TT::vector_type                     VectorType;
     typedef VectorTraits<VectorType>                     VT;
     typedef typename VT::scalar_type                     Scalar;
-    typedef typename Base::RNG                           RNG;
+    typedef RNGControl::RNG                              RNG;
     typedef Teuchos::Comm<int>                           Comm;
 
     //@}
@@ -147,6 +150,15 @@ class UniformAdjointSource : public Source<Domain>
 
   private:
 
+    // Source vector.
+    Teuchos::RCP<VectorType> d_b;
+
+    // Local domain.
+    Teuchos::RCP<Domain> d_domain;
+
+    // Random number controller.
+    Teuchos::RCP<RNGControl> d_rng_control;
+
     // Communicator for this set.
     Teuchos::RCP<const Comm> d_set_comm;
 
@@ -179,6 +191,117 @@ class UniformAdjointSource : public Source<Domain>
 
     // Local source cdf.
     Teuchos::ArrayRCP<double> d_cdf;
+};
+
+//---------------------------------------------------------------------------//
+// SourceTraits implementation.
+//---------------------------------------------------------------------------//
+/*!
+ * \class SourceTraits
+ * \brief Specialization for MCLS_UniformAdjointSource.
+ */
+template<class Domain>
+class SourceTraits<UniformAdjointSource<Domain> >
+{
+  public:
+
+    //@{
+    //! Typedefs.
+    typedef UniformAdjointSource<Domain>                source_type;
+    typedef typename source_type::Ordinal               ordinal_type;
+    typedef typename source_type::HistoryType           history_type;
+    typedef typename source_type::domain_type           domain_type;
+    typedef Teuchos::Comm<int>                          Comm;
+    //@}
+
+    /*!
+     * \brief Create a reference-counted pointer to a new source defined over
+     * the given communicator and domain by unpacking a data buffer.
+     */
+    static Teuchos::RCP<source_type> 
+    createFromBuffer( const Teuchos::ArrayView<char>& buffer,
+		      const Teuchos::RCP<const Comm>& comm,
+		      const Teuchos::RCP<domain_type>& domain,
+		      const Teuchos::RCP<RNGControl>& rng_control,
+		      const int global_comm_size,
+		      const int global_comm_rank )
+
+    { 
+	return Teuchos::rcp( new source_type( buffer,
+					 domain,
+					 rng_control,
+					 comm,
+					 global_comm_size,
+					 global_comm_rank ) );
+    }
+
+    /*!
+     * \brief Pack a source into a buffer.
+     */
+    static Teuchos::Array<char> pack( const source_type& source )
+    { 
+	return source.pack();
+    }
+
+    /*!
+     * \brief Get the size of source in packed bytes.
+     */
+    static std::size_t getPackedBytes( const source_type& source )
+    { 
+	return source.getPackedBytes();
+    }
+
+    /*!
+     * \brief Build the source.
+     */
+    static void buildsource_type( source_type& source )
+    {
+	source.buildsource_type();
+    }
+
+    /*!
+     * \brief Get the weight of a given on-process global state in the
+     * source. 
+     */
+    static double weight( const source_type& source, const ordinal_type state )
+    { 
+	return source.sourceWeight();
+    }
+
+    /*!
+     * \brief Get a history from the source.
+     */
+    static Teuchos::RCP<history_type> getHistory( source_type& source )
+    { 
+	return source.getHistory();
+    }
+
+    /*!
+     * \brief Return whether or not a source has emitted all of its
+     * histories. 
+     */
+    static bool empty( const source_type& source )
+    { 
+	return source.empty();
+    }
+
+    /*!
+     * \brief Get the local number of histories to be transported by this
+     * source. 
+     */
+    static int numToTransport( const source_type& source )
+    { 
+	return source.numToTransport();
+    }
+
+    /*!
+     * \brief Get the number of histories to be transported by this source for
+     * the entire set.
+     */
+    static int numToTransportInSet( const source_type& source )
+    { 
+	return source.numToTransportInSet();
+    }
 };
 
 //---------------------------------------------------------------------------//

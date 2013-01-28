@@ -45,6 +45,7 @@
 #include <MCLS_History.hpp>
 #include <MCLS_VectorExport.hpp>
 #include <MCLS_VectorTraits.hpp>
+#include <MCLS_TallyTraits.hpp>
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
@@ -156,6 +157,115 @@ inline void AdjointTally<Vector>::tallyHistory( const HistoryType& history )
 		"History state is not local to tally!" );
     }
 }
+
+//---------------------------------------------------------------------------//
+// TallyTraits implementation.
+//---------------------------------------------------------------------------//
+/*!
+ * \class TallyTraits
+ * \brief Specialization for AdjointTally.
+ */
+template<class Vector>
+class TallyTraits<AdjointTally<Vector> >
+{
+  public:
+
+    //@{
+    //! Typedefs.
+    typedef AdjointTally<Vector>                       tally_type;
+    typedef typename tally_type::vector_type           vector_type;
+    typedef typename tally_type::Ordinal               ordinal_type;
+    typedef typename tally_type::HistoryType           history_type;
+    typedef Teuchos::Comm<int>                         Comm;
+    //@}
+
+    /*!
+     * \brief Add a history's contribution to the tally.
+     */
+    static inline void tallyHistory( tally_type& tally, 
+				     const history_type& history )
+    { 
+	tally.tallyHistory( history );
+    }
+
+    /*!
+     * \brief Combine the tallies together over a set. This is generally
+     * combining the overlap and base tallies.
+     */
+    static void combineSetTallies( tally_type& tally )
+    {
+	tally.combineSetTallies();
+    }
+
+    /*!
+     * \brief Combine the tallies together over a block communicator.
+     */
+    static void combineBlockTallies( 
+	tally_type& tally,
+	const Teuchos::RCP<const Comm>& block_comm )
+    {
+	tally.combineBlockTallies( block_comm );
+    }
+
+    /*!
+     * \brief Normalize the tally with a specified number of histories.
+     */
+    static void normalize( tally_type& tally, const int nh )
+    {
+	tally.normalize( nh );
+    }
+
+    /*!
+     * \brief Set the tally base vector. The maps are required to be
+     * compatible. 
+     */
+    static void setBaseVector( tally_type& tally, 
+			       const Teuchos::RCP<vector_type>& x_base )
+    {
+	tally.setBaseVector( x_base );
+    }
+
+    /*!
+     * \brief Set the tallies to zero.
+     */
+    static void zeroOut( tally_type& tally )
+    {
+	tally.zeroOut();
+    }
+
+    /*!
+     * \brief Get the number of global rows in the base decompostion.
+     */
+    static ordinal_type numBaseRows( const tally_type& tally )
+    {
+	return tally.numBaseRows();
+    }
+
+    /*!
+     * \brief Get the number of global rows in the overlap decompostion.
+     */
+    static ordinal_type numOverlapRows( const tally_type& tally )
+    {
+	return tally.numOverlapRows();
+    }
+
+    /*!
+     * \brief Get the global tally rows in the base decompostion.
+     */
+    static Teuchos::Array<ordinal_type> baseRows( const tally_type& tally )
+    {
+	return tally.baseRows();
+    }
+
+    /*!
+     * \brief Get the global tally rows in the overlap decompostion.
+     */
+    static Teuchos::Array<ordinal_type> 
+    overlapRows( const tally_type& tally )
+    {
+	return tally.overlapRows();
+    }
+};
 
 //---------------------------------------------------------------------------//
 

@@ -42,7 +42,7 @@
 #define MCLS_MSODMANAGER_HPP
 
 #include "MCLS_DomainTraits.hpp"
-#include "MCLS_VectorExport.hpp"
+#include "MCLS_SourceTraits.hpp"
 #include "MCLS_RNGControl.hpp"
 
 #include <Teuchos_RCP.hpp>
@@ -68,6 +68,7 @@ class MSODManager
     typedef Domain                                      domain_type;
     typedef DomainTraits<Domain>                        DT;
     typedef Source                                      source_type;
+    typedef SourceTraits<Source>                        ST;
     typedef Teuchos::Comm<int>                          Comm;
     //@}
 
