@@ -41,8 +41,15 @@
 #ifndef MCLS_ADJOINTSOLVERMANAGER_HPP
 #define MCLS_ADJOINTSOLVERMANAGER_HPP
 
-#include <MCLS_LinearProblem.hpp>
-#include <MCLS_VectorTraits.hpp>
+#include "MCLS_SolverManager.hpp"
+#include "MCLS_LinearProblem.hpp"
+#include "MCLS_VectorTraits.hpp"
+#include "MCLS_MatrixTraits.hpp"
+#include "MCLS_SourceTraits.hpp"
+#include "MCLS_DomainTraits.hpp"
+#include "MCLS_TallyTraits.hpp"
+#include "MCLS_MSODManager.hpp"
+#include "MCLS_MCSolver.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Describable.hpp>
@@ -58,58 +65,75 @@ namespace MCLS
  * \brief Linear solver base class.
  */
 template<class Vector, class Matrix>
-class AdjointSolverManager : public Teuchos::Describable
+class AdjointSolverManager : public SolverManager<Vector,Matrix>
 {
   public:
 
     //@{
     //! Typedefs.
+    typedef SolverManager<Vector,Matrix>            Base;
     typedef Vector                                  vector_type;
     typedef VectorTraits<Vector>                    VT;
     typedef typename VT::scalar_type                Scalar;
     typedef Matrix                                  matrix_type;
+    typedef MatrixTraits<Matrix>                    MT;
+    typedef LinearProblem<Vector,Matrix>            LinearProblemType;
     //@}
 
-    //! Constructor.
-    AdjointSolverManager() { /* ... */ }
+    // Constructor.
+    AdjointSolverManager( const Teuchos::RCP<LinearProblemType>& problem,
+			  const Teuchos::RCP<Teuchos::ParameterList>& plist )
 
     //! Destructor.
-    virtual ~AdjointSolverManager { /* ... */ }
+    ~AdjointSolverManager { /* ... */ }
 
     //! Get the linear problem being solved by the manager.
-    virtual const LinearProblem<Vector,Matrix>& getProblem() const = 0;
+    const LinearProblem<Vector,Matrix>& getProblem() const
+    { return *d_problem; }
 
-    //! Get the valid parameters for this manager.
-    virtual Teuchos::RCP<const Teuchos::ParameterList> 
-    getValidParameters() const = 0;
+    // Get the valid parameters for this manager.
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
     //! Get the current parameters being used for this manager.
-    virtual Teuchos::RCP<const Teuchos::ParameterList> 
-    getCurrentParameters() const = 0;
+    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const
+    { return d_plist; }
 
-    //! Get the tolerance achieved on the last linear solve. This may be less
-    //! or more than the set convergence tolerance.
-    virtual Teuchos::ScalarTraits<Scalar>::magnitudeType 
-    achievedTol() const = 0;
+    // Get the tolerance achieved on the last linear solve. This may be less
+    // or more than the set convergence tolerance.
+    Teuchos::ScalarTraits<Scalar>::magnitudeType achievedTol() const;
 
-    //! Get the number of iterations from the last linear solve.
-    virtual in getNumIters() const = 0;
+    // Get the number of iterations from the last linear solve.
+    int getNumIters() const;
 
-    //! Set the linear problem with the manager.
-    virtual void setProblem( 
-	const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem ) = 0;
+    // Set the linear problem with the manager.
+    void setProblem( 
+	const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem );
 
-    //! Set the parameters for the manager. The manager will modify this list
-    //! with default parameters that are not defined.
-    virtual void setParameters( 
-	const Teuchos::RCP<Teuchos::ParameterList>& params ) = 0;
+    // Set the parameters for the manager. The manager will modify this list
+    // with default parameters that are not defined.
+    void setParameters( const Teuchos::RCP<Teuchos::ParameterList>& params );
 
-    //! Solve the linear problem. Return true if the solution converged. False
-    //! if it did not.
-    virtual bool solve() = 0;
+    // Solve the linear problem. Return true if the solution converged. False
+    // if it did not.
+    bool solve();
 
-    //! Return if the last linear solve converged.
-    virtual bool getConvergedStatus() const = 0;
+    // Return if the last linear solve converged.
+    bool getConvergedStatus() const
+    { return d_converged_status; }
+
+  private:
+
+    // Linear problem
+    Teuchos::RCP<LinearProblemType> d_linear_problem;
+
+    // Paramters.
+    Teuchos::RCP<Teuchos::ParameterList> d_plist;
+
+    // MSOD Manager.
+    Teuchos::RCP<MSODManager> d_msod_manager;
+
+    // Convergence status. True if the last solve converged.
+    bool d_converged_status;
 };
 
 //---------------------------------------------------------------------------//

@@ -41,8 +41,8 @@
 #ifndef MCLS_SOLVERMANAGER_HPP
 #define MCLS_SOLVERMANAGER_HPP
 
-#include <MCLS_LinearProblem.hpp>
-#include <MCLS_VectorTraits.hpp>
+#include "MCLS_LinearProblem.hpp"
+#include "MCLS_VectorTraits.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Describable.hpp>
@@ -93,7 +93,7 @@ class SolverManager : public Teuchos::Describable
     achievedTol() const = 0;
 
     //! Get the number of iterations from the last linear solve.
-    virtual in getNumIters() const = 0;
+    virtual int getNumIters() const = 0;
 
     //! Set the linear problem with the manager.
     virtual void setProblem( 
