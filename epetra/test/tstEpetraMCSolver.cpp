@@ -99,7 +99,7 @@ Teuchos::RCP<Epetra_Comm> getEpetraComm(
 //---------------------------------------------------------------------------//
 // Test templates
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST( SourceTransporter, transport )
+TEUCHOS_UNIT_TEST( MCSolver, solve )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;

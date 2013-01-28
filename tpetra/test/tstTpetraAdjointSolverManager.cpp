@@ -32,9 +32,9 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file tstTpetraMCSolver.cpp
+ * \file tstTpetraAdjointSolverManager.cpp
  * \author Stuart R. Slattery
- * \brief Tpetra Monte Carlo set solver tests.
+ * \brief Tpetra Adjoint Monte Carlo solver manager tests.
  */
 //---------------------------------------------------------------------------//
 
@@ -48,11 +48,8 @@
 #include <string>
 #include <cassert>
 
-#include <MCLS_MCSolver.hpp>
-#include <MCLS_UniformAdjointSource.hpp>
-#include <MCLS_AdjointDomain.hpp>
-#include <MCLS_VectorTraits.hpp>
-#include <MCLS_MatrixTraits.hpp>
+#include <MCLS_AdjointSolverManager.hpp>
+#include <MCLS_LinearProblem.hpp>
 #include <MCLS_TpetraAdapter.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
@@ -82,7 +79,7 @@
 //---------------------------------------------------------------------------//
 // Test templates
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSolver, solve, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointSolverManager, one_by_one, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
@@ -142,36 +139,27 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSolver, solve, LO, GO, Scalar )
     Teuchos::RCP<VectorType> b = MT::cloneVectorFromMatrixRows( *A );
     VT::putScalar( *b, -1.0 );
 
-    // Create the solver.
+    // Solver parameters.
     Teuchos::RCP<Teuchos::ParameterList> plist = 
 	Teuchos::rcp( new Teuchos::ParameterList() );
     double cutoff = 1.0e-6;
     plist->set<double>("Weight Cutoff", cutoff);
     plist->set<int>("MC Check Frequency", 10);
     plist->set<bool>("Reproducible MC Mode",true);
-    MCLS::MCSolver<SourceType> solver( comm, plist );
+    plist->set<int>("Overlap Size", 2);
+    plist->set<int>("Number of Sets", 1);
 
-    // Build the adjoint domain.
-    plist->set<int>( "Overlap Size", 2 );
-    Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( A, x, *plist ) );
+    // Create the linear problem.
+    Teuchos::RCP<MCLS::LinearProblem<VectorType,MatrixType> > linear_problem =
+	Teuchos::rcp( new MCLS::LinearProblem<VectorType,MatrixType>(
+			  A, x, b ) );
 
-    // Create the adjoint source with a set number of histories.
-    int mult = 10;
-    plist->set<int>("Set Number of Histories", mult*global_num_rows);
-    Teuchos::RCP<SourceType> source = Teuchos::rcp(
-	new SourceType( b, domain, solver.rngControl(), comm, 
-			comm->getSize(), comm->getRank(), *plist ) );
-    source->buildSource();
-    plist->set<double>("Relative Weight Cutoff", source->sourceWeight()*cutoff);
+    // Create the solver.
+    MCLS::AdjointSolverManager solver_manager( linear_problem, comm, plist );
 
-    // Set the Domain.
-    solver.setDomain( domain );
-
-    // Set the Source.
-    solver.setSource( source );
-
-    // Do solve the problem.
-    solver.solve();
+    // Solve the problem.
+    solver_manager.solve();
+    std::cout << "TOL " << solver_manger.acheivedTol() << std::endl;
 
     // Check that we got a negative solution.
     Teuchos::ArrayRCP<const Scalar> x_view = VT::view(*x);
@@ -181,42 +169,30 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSolver, solve, LO, GO, Scalar )
 	TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<Scalar>::zero() );
     }
 
-    // Now solve the problem with a positive source.
-    VT::putScalar( *b, 2.0 );
-    source->buildSource();
-    solver.setSource( source );
-    plist->set<double>("Relative Weight Cutoff", source->sourceWeight()*cutoff);
-    solver.solve();
-    for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
-    {
-	TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<Scalar>::zero() );
-    }
+    // // Now solve the problem with a positive source.
+    // VT::putScalar( *b, 2.0 );
+    // for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
+    // {
+    // 	TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<Scalar>::zero() );
+    // }
 
-    // Reset the domain and solve again with a positive source.
-    solver.setDomain( domain );
-    solver.setSource( source );
-    solver.solve();
-    for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
-    {
-	TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<Scalar>::zero() );
-    }
+    // // Reset the domain and solve again with a positive source.
+    // for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
+    // {
+    // 	TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<Scalar>::zero() );
+    // }
 
-    // Reset both and solve with a negative source.
-    VT::putScalar( *b, -2.0 );
-    source->buildSource();
-    plist->set<double>("Relative Weight Cutoff", source->sourceWeight()*cutoff*2);
-    solver.setDomain( domain );
-    solver.setSource( source );
-    solver.solve();
-    for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
-    {
-	TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<Scalar>::zero() );
-    }
+    // // Reset both and solve with a negative source.
+    // VT::putScalar( *b, -2.0 );
+    // for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
+    // {
+    // 	TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<Scalar>::zero() );
+    // }
 }
 
-UNIT_TEST_INSTANTIATION( MCSolver, solve )
+UNIT_TEST_INSTANTIATION( AdjointSolverManager, one_by_one )
 
 //---------------------------------------------------------------------------//
-// end tstTpetraMCSolver.cpp
+// end tstTpetraAdjointSolverManager.cpp
 //---------------------------------------------------------------------------//
 
