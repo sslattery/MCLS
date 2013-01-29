@@ -75,11 +75,14 @@ class LinearProblem
     // Destructor.
     ~LinearProblem();
 
+    //! Set the linear operator.
+    void setOperator( const Teuchos::RCP<const Matrix>& A );
+
     //! Set the left-hand side.
     void setLHS( const Teuchos::RCP<Vector>& x );
 
     //! Set the righ-hand side.
-    void setRHS( const Teuchos::RCP<Vector>& b );
+    void setRHS( const Teuchos::RCP<const Vector>& b );
 
     //! Get the linear operator.
     Teuchos::RCP<const Matrix> getOperator() const { return d_A; }

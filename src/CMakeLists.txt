@@ -46,6 +46,8 @@ APPEND_SET(HEADERS
   MCLS_LinearProblem.hpp
   MCLS_LinearProblem_impl.hpp
   MCLS_MatrixTraits.hpp
+  MCLS_MCSASolverManager.hpp
+  MCLS_MCSASolverManager_impl.hpp
   MCLS_MCSolver.hpp
   MCLS_MCSolver_impl.hpp
   MCLS_MSODManager.hpp

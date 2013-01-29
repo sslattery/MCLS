@@ -75,8 +75,7 @@ template<class Vector, class Matrix>
 Teuchos::RCP<const Teuchos::ParameterList> 
 AdjointSolverManager<Vector,Matrix>::getValidParameters() const
 {
-    Teuchos::RCP<Teuchos::ParameterList> plist = 
-	Teuchos::rcp( new Teuchos::ParameterList() );
+    Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::parameterList();
 
     // Set the list values to the default code values. Put zero if no default.
     plist->set<double>("Weight Cutoff", 0.0);

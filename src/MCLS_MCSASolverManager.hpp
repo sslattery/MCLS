@@ -120,6 +120,9 @@ class MCSASolverManager : public SolverManager<Vector,Matrix>
     // Linear problem
     Teuchos::RCP<LinearProblemType> d_problem;
 
+    // Residual linear problem
+    Teuchos::RCP<LinearProblemType> d_residual_problem;
+
     // Global communicator.
     Teuchos::RCP<const Comm> d_global_comm;
 
@@ -129,8 +132,8 @@ class MCSASolverManager : public SolverManager<Vector,Matrix>
     // Primary set indicator.
     bool d_primary_set;
 
-    // Monte Carlo direct solver manager.
-    Teuchos::RCP<Base> d_direct_solver;
+    // Monte Carlo solver manager.
+    Teuchos::RCP<Base> d_mc_solver;
 
     // Number of iterations from last solve.
     int d_num_iters;

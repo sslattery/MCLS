@@ -77,6 +77,20 @@ LinearProblem<Vector,Matrix>::~LinearProblem()
 
 //---------------------------------------------------------------------------//
 /*!
+ * \brief Set the linear operator
+ */
+template<class Vector, class Matrix>
+void LinearProblem<Vector,Matrix>::setOperator( 
+    const Teuchos::RCP<const Matrix>& A )
+{
+    Require( !A.is_null() );
+
+    d_A = A;
+    d_status = false;
+}
+
+//---------------------------------------------------------------------------//
+/*!
  * \brief Set the left-hand side
  */
 template<class Vector, class Matrix>
@@ -93,7 +107,7 @@ void LinearProblem<Vector,Matrix>::setLHS( const Teuchos::RCP<Vector>& x )
  * \brief Set the right-hand side
  */
 template<class Vector, class Matrix>
-void LinearProblem<Vector,Matrix>::setRHS( const Teuchos::RCP<Vector>& b )
+void LinearProblem<Vector,Matrix>::setRHS( const Teuchos::RCP<const Vector>& b )
 {
     Require( !b.is_null() );
 

@@ -66,24 +66,25 @@ MCSASolverManager<Vector,Matrix>::MCSASolverManager(
     , d_converged_status( false )
 {
     // Generate the residual Monte Carlo problem on the primary set.
-    Teuchos::RCP<LinearProblemType> residual_problem;
     if ( d_primary_set )
     {
-	Teuchos::RCP<VectorType> delta_x = VT::clone( d_problem->getLHS() );
-	residual_problem = Teuchos::rcp(
+	Teuchos::RCP<Vector> delta_x = VT::clone( *d_problem->getLHS() );
+	d_residual_problem = Teuchos::rcp(
 	    new LinearProblemType( d_problem->getOperator(),
 				   delta_x,
 				   d_problem->getResidual() ) );
     }
+    d_global_comm->barrier();
 
-    // Create the Monte Carlo direct solver.
+    // Create the Monte Carlo direct solver for the residual problem.
     if ( d_plist->get<std::string>("MC Type") == "Adjoint" )
     {
-	d_direct_solver = Teuchos::rcp( 
-	    new AdjointSolverManager(residual_problem, global_comm, plist) );
+	d_mc_solver = Teuchos::rcp( 
+	    new AdjointSolverManager<Vector,Matrix>(
+		d_residual_problem, global_comm, plist) );
     }
 
-    Ensure( !d_direct_solver.is_null() );
+    Ensure( !d_mc_solver.is_null() );
 }
 
 //---------------------------------------------------------------------------//
@@ -94,7 +95,17 @@ template<class Vector, class Matrix>
 Teuchos::RCP<const Teuchos::ParameterList> 
 MCSASolverManager<Vector,Matrix>::getValidParameters() const
 {
+    // Create a parameter list with the Monte Carlo solver parameters as a
+    // starting point.
+    Teuchos::RCP<Teuchos::ParameterList> plist = 
+	Teuchos::parameterList( *d_mc_solver->getValidParameters() );
 
+    // Add the default code values. Put zero if no default.
+    plist->set<std::string>("MC Type", "Adjoint");
+    plist->set<double>("Convergence Tolerance", 0.0);
+    plist->set<int>("Max Number of Iterations", 0);
+
+    return plist;
 }
 
 //---------------------------------------------------------------------------//
@@ -107,7 +118,18 @@ typename Teuchos::ScalarTraits<
     typename MCSASolverManager<Vector,Matrix>::Scalar>::magnitudeType 
 MCSASolverManager<Vector,Matrix>::achievedTol() const
 {
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType residual_norm = 
+	Teuchos::ScalarTraits<Scalar>::zero();
 
+    // We only do this on the primary set where the linear problem exists.
+    if ( d_primary_set )
+    {
+	residual_norm = VT::normInf( *d_problem->getResidual() );
+	residual_norm /= VT::normInf( *d_problem->getRHS() );
+    }
+    d_global_comm->barrier();
+
+    return residual_norm;
 }
 
 //---------------------------------------------------------------------------//
@@ -118,7 +140,23 @@ template<class Vector, class Matrix>
 void MCSASolverManager<Vector,Matrix>::setProblem( 
     const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem )
 {
+    Require( !d_global_comm.is_null() );
+    Require( !d_plist.is_null() );
 
+    // Set the MCSA problem.
+    d_problem = problem;
+    d_primary_set = !d_problem.is_null();
+
+    // Update the residual problem.
+    if ( d_primary_set )
+    {
+	d_residual_problem->setOperator( d_problem->getOperator() );
+	d_residual_problem->setRHS( d_problem->getResidual() );
+    }
+    d_global_comm->barrier();
+
+    // Set the updated residual problem with the Monte Carlo solver.
+    d_mc_solver->setProblem( d_residual_problem );
 }
 
 //---------------------------------------------------------------------------//
@@ -132,6 +170,9 @@ void MCSASolverManager<Vector,Matrix>::setParameters(
 {
     Require( !params.is_null() );
     d_plist = params;
+
+    // Propagate the parameters to the Monte Carlo solver.
+    d_mc_solver->setParameters( d_plist );
 }
 
 //---------------------------------------------------------------------------//
@@ -142,7 +183,77 @@ void MCSASolverManager<Vector,Matrix>::setParameters(
 template<class Vector, class Matrix>
 bool MCSASolverManager<Vector,Matrix>::solve()
 {
+    // Convergence parameters.
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance = 
+	d_plist->get<double>("Convergence Tolerance");
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType source_norm =
+	VT::normInf( *d_problem->getRHS() );
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType 
+	convergence_criteria = tolerance * source_norm;
+    d_converged_status = false;
 
+    // Iteration setup.
+    int max_num_iters = d_plist->get<int>("Max Number of Iterations");
+    d_num_iters = 0;
+    int print_freq = 10;
+
+    // Compute the initial residual.
+    d_problem->updateResidual();
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType residual_norm =
+	VT::normInf( *d_problem->getResidual() );
+
+    // Temporary vector for Richardson iteration.
+    Teuchos::RCP<Vector> tmp = VT::clone( *d_problem->getLHS() );	
+
+    // Iterate.
+    while( residual_norm > convergence_criteria &&
+	   d_num_iters < max_num_iters )
+    {
+	// Do a Richardson iteration.
+	d_problem->applyOperator( *d_problem->getLHS(), *tmp );
+	VT::update( 
+	    *d_problem->getLHS(), Teuchos::ScalarTraits<Scalar>::one(),
+	    *tmp, -Teuchos::ScalarTraits<Scalar>::one(),
+	    *d_problem->getRHS(), Teuchos::ScalarTraits<Scalar>::one() );
+
+	// Update the residual.
+	d_problem->updateResidual();
+
+	// Solve the residual Monte Carlo problem.
+	d_mc_solver->solve();
+
+	// Apply the correction.
+	VT::update( *d_problem->getLHS(), 
+		    Teuchos::ScalarTraits<Scalar>::one(),
+		    *d_residual_problem->getLHS(), 
+		    Teuchos::ScalarTraits<Scalar>::one() );
+
+	// Update the residual.
+	d_problem->updateResidual();
+	residual_norm = VT::normInf( *d_problem->getResidual() );
+
+	// Update the iteration count.
+	++d_num_iters;
+
+	// Print iteration data.
+	if ( d_global_comm->getRank() == 0 && d_num_iters % print_freq == 0 )
+	{
+	    std::cout << "MCSA Iteration " << d_num_iters 
+		      << ": Residual = " 
+		      << residual_norm/source_norm << std::endl;
+	}
+
+	// Barrier before proceeding.
+	d_global_comm->barrier();
+    }
+
+    // Check for convergence.
+    if ( VT::normInf(*d_problem->getResidual()) <= convergence_criteria )
+    {
+	d_converged_status = true;
+    }
+
+    return d_converged_status;
 }
 
 //---------------------------------------------------------------------------//
