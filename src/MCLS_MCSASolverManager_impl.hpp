@@ -32,136 +32,126 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_MCSASolverManager.hpp
+ * \file MCLS_MCSASolverManager_impl.hpp
  * \author Stuart R. Slattery
- * \brief Monte Carlo Synthetic Acceleration solver manager declaration.
+ * \brief Monte Carlo Synthetic Acceleration solver manager implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_ADJOINTSOLVERMANAGER_HPP
-#define MCLS_ADJOINTSOLVERMANAGER_HPP
+#ifndef MCLS_MCSASOLVERMANAGER_IMPL_HPP
+#define MCLS_MCSASOLVERMANAGER_IMPL_HPP
 
-#include "MCLS_SolverManager.hpp"
-#include "MCLS_LinearProblem.hpp"
-#include "MCLS_VectorTraits.hpp"
-#include "MCLS_MSODManager.hpp"
-#include "MCLS_MCSolver.hpp"
-#include "MCLS_UniformAdjointSource.hpp"
-#include "MCLS_AdjointDomain.hpp"
+#include <string>
 
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Describable.hpp>
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_Comm.hpp>
+#include "MCLS_DBC.hpp"
+#include "MCLS_AdjointSolverManager.hpp"
 
 namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class AdjointSolverManager
- * \brief Solver manager for analog adjoint Monte Carlo.
+ * \brief Constructor.
  */
 template<class Vector, class Matrix>
-class AdjointSolverManager : public SolverManager<Vector,Matrix>
+MCSASolverManager<Vector,Matrix>::MCSASolverManager( 
+    const Teuchos::RCP<LinearProblemType>& problem,
+    const Teuchos::RCP<const Comm>& global_comm,
+    const Teuchos::RCP<Teuchos::ParameterList>& plist )
+    : d_problem( problem )
+    , d_global_comm( global_comm )
+    , d_plist( plist )
+    , d_primary_set( !d_problem.is_null() )
+    , d_num_iters( 0 )
+    , d_converged_status( false )
 {
-  public:
+    // Generate the residual Monte Carlo problem on the primary set.
+    Teuchos::RCP<LinearProblemType> residual_problem;
+    if ( d_primary_set )
+    {
+	Teuchos::RCP<VectorType> delta_x = VT::clone( d_problem->getLHS() );
+	residual_problem = Teuchos::rcp(
+	    new LinearProblemType( d_problem->getOperator(),
+				   delta_x,
+				   d_problem->getResidual() ) );
+    }
 
-    //@{
-    //! Typedefs.
-    typedef SolverManager<Vector,Matrix>            Base;
-    typedef Vector                                  vector_type;
-    typedef VectorTraits<Vector>                    VT;
-    typedef typename VT::scalar_type                Scalar;
-    typedef Matrix                                  matrix_type;
-    typedef LinearProblem<Vector,Matrix>            LinearProblemType;
-    typedef Teuchos::Comm<int>                      Comm;
-    //@}
+    // Create the Monte Carlo direct solver.
+    if ( d_plist->get<std::string>("MC Type") == "Adjoint" )
+    {
+	d_direct_solver = Teuchos::rcp( 
+	    new AdjointSolverManager(residual_problem, global_comm, plist) );
+    }
 
-    // Constructor.
-    AdjointSolverManager( const Teuchos::RCP<LinearProblemType>& problem,
-			  const Teuchos::RCP<const Comm>& global_comm,
-			  const Teuchos::RCP<Teuchos::ParameterList>& plist );
+    Ensure( !d_direct_solver.is_null() );
+}
 
-    //! Destructor.
-    ~AdjointSolverManager() { /* ... */ }
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Get the valid parameters for this manager.
+ */
+template<class Vector, class Matrix>
+Teuchos::RCP<const Teuchos::ParameterList> 
+MCSASolverManager<Vector,Matrix>::getValidParameters() const
+{
 
-    //! Get the linear problem being solved by the manager.
-    const LinearProblem<Vector,Matrix>& getProblem() const
-    { return *d_problem; }
+}
 
-    // Get the valid parameters for this manager.
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Get the tolerance achieved on the last linear solve. This may be
+ * less or more than the set convergence tolerance. 
+ */
+template<class Vector, class Matrix>
+typename Teuchos::ScalarTraits<
+    typename MCSASolverManager<Vector,Matrix>::Scalar>::magnitudeType 
+MCSASolverManager<Vector,Matrix>::achievedTol() const
+{
 
-    //! Get the current parameters being used for this manager.
-    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const
-    { return d_plist; }
+}
 
-    // Get the tolerance achieved on the last linear solve. This may be less
-    // or more than the set convergence tolerance.
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType achievedTol() const;
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Set the linear problem with the manager.
+ */
+template<class Vector, class Matrix>
+void MCSASolverManager<Vector,Matrix>::setProblem( 
+    const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem )
+{
 
-    // Get the number of iterations from the last linear solve.
-    int getNumIters() const { return d_num_iters; };
+}
 
-    // Set the linear problem with the manager.
-    void setProblem( 
-	const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem );
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Set the parameters for the manager. The manager will modify this
+ * list with default parameters that are not defined.
+ */
+template<class Vector, class Matrix>
+void MCSASolverManager<Vector,Matrix>::setParameters( 
+    const Teuchos::RCP<Teuchos::ParameterList>& params )
+{
+    Require( !params.is_null() );
+    d_plist = params;
+}
 
-    // Set the parameters for the manager. The manager will modify this list
-    // with default parameters that are not defined.
-    void setParameters( const Teuchos::RCP<Teuchos::ParameterList>& params );
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Solve the linear problem. Return true if the solution
+ * converged. False if it did not.
+ */
+template<class Vector, class Matrix>
+bool MCSASolverManager<Vector,Matrix>::solve()
+{
 
-    // Solve the linear problem. Return true if the solution converged. False
-    // if it did not.
-    bool solve();
-
-    //! Return if the last linear solve converged. The adjoint Monte Carlo
-    //! solver is a direct solver, and therefore always converges in the
-    //! iterative sense.
-    bool getConvergedStatus() const
-    { return true; }
-
-  private:
-
-    // Linear problem
-    Teuchos::RCP<LinearProblemType> d_problem;
-
-    // Global communicator.
-    Teuchos::RCP<const Comm> d_global_comm;
-
-    // Parameters.
-    Teuchos::RCP<Teuchos::ParameterList> d_plist;
-
-    // Primary set indicator.
-    bool d_primary_set;
-
-    // Monte Carlo direct solver manager.
-    Teuchos::RCP<Base> d_direct_solver;
-
-    // Number of iterations from last solve.
-    int d_num_iters;
-
-    // Converged status. True if last solve converged.
-    bool d_converged_status;    
-};
+}
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
-//---------------------------------------------------------------------------//
-// Template includes.
-//---------------------------------------------------------------------------//
-
-#include "MCLS_AdjointSolverManager_impl.hpp"
+#endif // end MCLS_MCSASOLVERMANAGER_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-
-#endif // end MCLS_ADJOINTSOLVERMANAGER_HPP
-
-//---------------------------------------------------------------------------//
-// end MCLS_MCSASolverManager.hpp
+// end MCLS_MCSASolverManager_impl.hpp
 //---------------------------------------------------------------------------//
 

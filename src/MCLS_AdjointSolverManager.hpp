@@ -50,7 +50,6 @@
 #include "MCLS_AdjointDomain.hpp"
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Describable.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_Comm.hpp>

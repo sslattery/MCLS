@@ -38,19 +38,14 @@
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_ADJOINTSOLVERMANAGER_HPP
-#define MCLS_ADJOINTSOLVERMANAGER_HPP
+#ifndef MCLS_MCSASOLVERMANAGER_HPP
+#define MCLS_MCSASOLVERMANAGER_HPP
 
 #include "MCLS_SolverManager.hpp"
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
-#include "MCLS_MSODManager.hpp"
-#include "MCLS_MCSolver.hpp"
-#include "MCLS_UniformAdjointSource.hpp"
-#include "MCLS_AdjointDomain.hpp"
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Describable.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_Comm.hpp>
@@ -60,11 +55,11 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 /*!
- * \class AdjointSolverManager
- * \brief Solver manager for analog adjoint Monte Carlo.
+ * \class MCSASolverManager
+ * \brief Solver manager for Monte Carlo synthetic acceleration.
  */
 template<class Vector, class Matrix>
-class AdjointSolverManager : public SolverManager<Vector,Matrix>
+class MCSASolverManager : public SolverManager<Vector,Matrix>
 {
   public:
 
@@ -80,12 +75,12 @@ class AdjointSolverManager : public SolverManager<Vector,Matrix>
     //@}
 
     // Constructor.
-    AdjointSolverManager( const Teuchos::RCP<LinearProblemType>& problem,
+    MCSASolverManager( const Teuchos::RCP<LinearProblemType>& problem,
 			  const Teuchos::RCP<const Comm>& global_comm,
 			  const Teuchos::RCP<Teuchos::ParameterList>& plist );
 
     //! Destructor.
-    ~AdjointSolverManager() { /* ... */ }
+    ~MCSASolverManager() { /* ... */ }
 
     //! Get the linear problem being solved by the manager.
     const LinearProblem<Vector,Matrix>& getProblem() const
@@ -117,11 +112,8 @@ class AdjointSolverManager : public SolverManager<Vector,Matrix>
     // if it did not.
     bool solve();
 
-    //! Return if the last linear solve converged. The adjoint Monte Carlo
-    //! solver is a direct solver, and therefore always converges in the
-    //! iterative sense.
-    bool getConvergedStatus() const
-    { return true; }
+    //! Return if the last linear solve converged. 
+    bool getConvergedStatus() const { return d_converged_status; }
 
   private:
 
@@ -155,11 +147,11 @@ class AdjointSolverManager : public SolverManager<Vector,Matrix>
 // Template includes.
 //---------------------------------------------------------------------------//
 
-#include "MCLS_AdjointSolverManager_impl.hpp"
+#include "MCLS_MCSASolverManager_impl.hpp"
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_ADJOINTSOLVERMANAGER_HPP
+#endif // end MCLS_MCSASOLVERMANAGER_HPP
 
 //---------------------------------------------------------------------------//
 // end MCLS_MCSASolverManager.hpp
