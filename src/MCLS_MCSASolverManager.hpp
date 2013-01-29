@@ -75,6 +75,10 @@ class MCSASolverManager : public SolverManager<Vector,Matrix>
     typedef Teuchos::Comm<int>                      Comm;
     //@}
 
+    // Comm constructor. setProblem() must be called before solve().
+    MCSASolverManager( const Teuchos::RCP<const Comm>& global_comm,
+		       const Teuchos::RCP<Teuchos::ParameterList>& plist );
+
     // Constructor.
     MCSASolverManager( const Teuchos::RCP<LinearProblemType>& problem,
 		       const Teuchos::RCP<const Comm>& global_comm,
@@ -116,6 +120,11 @@ class MCSASolverManager : public SolverManager<Vector,Matrix>
     //! Return if the last linear solve converged. 
     bool getConvergedStatus() const 
     { return Teuchos::as<bool>(d_converged_status); }
+
+  private:
+
+    // Build the residual Monte Carlo problem from the input problem.
+    void buildResidualMonteCarloProblem();
 
   private:
 

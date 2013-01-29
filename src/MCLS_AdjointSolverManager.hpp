@@ -81,6 +81,10 @@ class AdjointSolverManager : public SolverManager<Vector,Matrix>
     typedef Teuchos::Comm<int>                      Comm;
     //@}
 
+    // Comm constructor. setProblem() must be called before solve().
+    AdjointSolverManager( const Teuchos::RCP<const Comm>& global_comm,
+			  const Teuchos::RCP<Teuchos::ParameterList>& plist );
+
     // Constructor.
     AdjointSolverManager( const Teuchos::RCP<LinearProblemType>& problem,
 			  const Teuchos::RCP<const Comm>& global_comm,

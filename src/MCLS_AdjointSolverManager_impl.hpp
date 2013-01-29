@@ -48,6 +48,22 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 /*!
+ * \brief Comm constructor. setProblem() and setParameters() must be called
+ * before solve(). 
+ */
+template<class Vector, class Matrix>
+AdjointSolverManager<Vector,Matrix>::AdjointSolverManager( 
+    const Teuchos::RCP<const Comm>& global_comm,
+    const Teuchos::RCP<Teuchos::ParameterList>& plist )
+    : d_global_comm( global_comm )
+    , d_plist( plist )
+{
+    Require( !d_global_comm.is_null() );
+    Require( !d_plist.is_null() );
+}
+
+//---------------------------------------------------------------------------//
+/*!
  * \brief Constructor.
  */
 template<class Vector, class Matrix>
@@ -65,7 +81,6 @@ AdjointSolverManager<Vector,Matrix>::AdjointSolverManager(
 
     buildMonteCarloDomain();
 }
-
 
 //---------------------------------------------------------------------------//
 /*!
@@ -167,6 +182,8 @@ void AdjointSolverManager<Vector,Matrix>::setParameters(
 template<class Vector, class Matrix>
 bool AdjointSolverManager<Vector,Matrix>::solve()
 {    
+    Require( !d_global_comm.is_null() );
+    Require( !d_plist.is_null() );
     Require( !d_msod_manager.is_null() );
     Require( !d_mc_solver.is_null() );
 
@@ -232,8 +249,11 @@ void AdjointSolverManager<Vector,Matrix>::buildMonteCarloDomain()
 	new MSODManager<SourceType>(d_primary_set, d_global_comm, *d_plist) );
 
     // Build the Monte Carlo set solver.
-    d_mc_solver = Teuchos::rcp(
-	new MCSolver<SourceType>(d_msod_manager->setComm(), d_plist) );
+    if ( d_mc_solver.is_null() )
+    {
+	d_mc_solver = Teuchos::rcp(
+	    new MCSolver<SourceType>(d_msod_manager->setComm(), d_plist) );
+    }
 
     // Set a global scope variable for the primary domain.
     Teuchos::RCP<DomainType> primary_domain;
