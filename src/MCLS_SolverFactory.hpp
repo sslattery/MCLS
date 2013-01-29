@@ -50,6 +50,8 @@
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_Comm.hpp>
 
+#include <boost/tr1/unordered_map.hpp>
+
 namespace MCLS
 {
 
@@ -69,10 +71,11 @@ class SolverFactory : public Teuchos::Describable
     typedef Matrix                                    matrix_type;
     typedef SolverManager<Vector,Matrix>              Solver;     
     typedef Teuchos::Comm<int>                        Comm;
+    typedef std::tr1::unordered_map<std::string,int>  MapType;
     //@}
 
     //! Constructor.
-    SolverFactory() { /* ... */ }
+    SolverFactory();
 
     //! Destructor.
     ~SolverFactory() { /* ... */ }
@@ -82,6 +85,18 @@ class SolverFactory : public Teuchos::Describable
     create( const std::string& solver_name,
 	    const Teuchos::RCP<const Comm>& global_comm,
 	    const Teuchos::RCP<Teuchos::ParameterList>& solver_parameters );
+
+  private:
+
+    // Solver enum.
+    enum MCLSSolverType {
+	ADJOINT_MC,
+	MCSA,
+	SEQUENTIAL_MC
+    };
+
+    // String name to enum/integer map.
+    MapType d_name_map;
 };
 
 //---------------------------------------------------------------------------//

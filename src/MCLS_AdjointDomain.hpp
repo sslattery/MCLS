@@ -193,7 +193,7 @@ inline void AdjointDomain<Vector,Matrix>::processTransition(
     Require( TRANSITION == history.event() );
     Require( isLocalState(history.state()) );
 
-    typename std::tr1::unordered_map<Ordinal,int>::const_iterator index =
+    typename MapType::const_iterator index = 
 	d_row_indexer.find( history.state() );
     Check( index != d_row_indexer.end() );
 
@@ -215,8 +215,7 @@ template<class Vector, class Matrix>
 inline bool AdjointDomain<Vector,Matrix>::isLocalState( 
     const Ordinal& state ) const
 {
-   typename std::tr1::unordered_map<Ordinal,int>::const_iterator index =
-       d_row_indexer.find( state );
+   typename MapType::const_iterator index = d_row_indexer.find( state );
    return ( index != d_row_indexer.end() );
 }
 

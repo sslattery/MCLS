@@ -51,6 +51,19 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 /*!
+ * \brief Constructor.
+ */
+template<class Vector, class Matrix>
+SolverFactory<Vector,Matrix>::SolverFactory()
+{
+    // Create the sovler name-to-enum map.
+    d_name_map["Adjoint MC"] = ADJOINT_MC;
+    d_name_map["MCSA"] = MCSA;
+    d_name_map["Sequential MC"] = SEQUENTIAL_MC;
+}
+
+//---------------------------------------------------------------------------//
+/*!
  * \brief Creation method.
  */
 template<class Vector, class Matrix>
@@ -65,21 +78,24 @@ SolverFactory<Vector,Matrix>::create(
 
     Teuchos::RCP<Solver> solver;
 
-    switch( solver_name )
+    MapType::const_iterator id = d_name_map.find( solver_name );
+    Insist( id != d_name_map.end(), "Solver type not supported!" );
+
+    switch( id->second )
     {
-	case "Adjoint MC":
+	case ADJOINT_MC:
 
 	    solver = Teuchos::rcp( new AdjointSolverManager<Vector,Matrix>( 
 				       global_comm, solver_parameters ) );
 	    break;
 
-	case "MCSA":
+	case MCSA:
 
 	    solver = Teuchos::rcp( new MCSASolverManager<Vector,Matrix>( 
 				       global_comm, solver_parameters ) );
 	    break;
 
-	case "Sequential MC":
+	case SEQUENTIAL_MC:
 
 	    solver = Teuchos::rcp( new SequentialMCSolverManager<Vector,Matrix>(
 				       global_comm, solver_parameters ) );

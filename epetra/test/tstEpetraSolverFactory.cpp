@@ -32,9 +32,9 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file tstTpetraSolverFactory.cpp
+ * \file tstEpetraSolverFactory.cpp
  * \author Stuart R. Slattery
- * \brief Tpetra solver factory tests.
+ * \brief Epetra solver factory tests.
  */
 //---------------------------------------------------------------------------//
 
@@ -50,7 +50,7 @@
 
 #include <MCLS_SolverFactory.hpp>
 #include <MCLS_LinearProblem.hpp>
-#include <MCLS_TpetraAdapter.hpp>
+#include <MCLS_EpetraAdapter.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -63,29 +63,46 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
-#include <Tpetra_Map.hpp>
-#include <Tpetra_Vector.hpp>
+#include <Epetra_Map.h>
+#include <Epetra_Vector.h>
+#include <Epetra_RowMatrix.h>
+#include <Epetra_CrsMatrix.h>
+#include <Epetra_Comm.h>
+#include <Epetra_SerialComm.h>
+
+#ifdef HAVE_MPI
+#include <Epetra_MpiComm.h>
+#include <Teuchos_DefaultMpiComm.hpp>
+#endif
 
 //---------------------------------------------------------------------------//
-// Instantiation macro. 
-// 
-// These types are those enabled by Tpetra under explicit instantiation. I
-// have removed scalar types that are not floating point
+// Helper functions.
 //---------------------------------------------------------------------------//
-#define UNIT_TEST_INSTANTIATION( type, name )			           \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, double )   \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
+
+Teuchos::RCP<Epetra_Comm> getEpetraComm( 
+    const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
+{
+#ifdef HAVE_MPI
+    Teuchos::RCP< const Teuchos::MpiComm<int> > mpi_comm = 
+    	Teuchos::rcp_dynamic_cast< const Teuchos::MpiComm<int> >( comm );
+    Teuchos::RCP< const Teuchos::OpaqueWrapper<MPI_Comm> > opaque_comm = 
+    	mpi_comm->getRawMpiComm();
+    return Teuchos::rcp( new Epetra_MpiComm( (*opaque_comm)() ) );
+#else
+    return Teuchos::rcp( new Epetra_SerialComm() );
+#endif
+}
 
 //---------------------------------------------------------------------------//
 // Test templates
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, mcsa_two_by_two, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST( SolverFactory, mcsa_two_by_two )
 {
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
+    typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<GO> HistoryType;
+    typedef MCLS::History<int> HistoryType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::UniformAdjointSource<DomainType> SourceType;
 
@@ -121,52 +138,60 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, mcsa_two_by_two, LO, GO, Scala
 	{
 	    int local_num_rows = 10;
 	    int global_num_rows = local_num_rows*set_size;
-	    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
-		Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm_set );
+	    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm_set );
+	    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
+		new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
-	    // Build the linear system.
-	    Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
-	    Teuchos::Array<GO> global_columns( 3 );
-	    Teuchos::Array<Scalar> values( 3 );
+	    // Build the linear system. This operator is symmetric with a spectral
+	    // radius less than 1.
+	    Teuchos::RCP<Epetra_CrsMatrix> A = 	
+		Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
+	    Teuchos::Array<int> global_columns( 3 );
+	    Teuchos::Array<double> values( 3 );
 	    global_columns[0] = 0;
 	    global_columns[1] = 1;
 	    global_columns[2] = 2;
-	    values[0] = 1.0/comm_size;
-	    values[1] = 0.05/comm_size;
-	    values[2] = 0.05/comm_size;
-	    A->insertGlobalValues( 0, global_columns(), values() );
+	    values[0] = 1.0;
+	    values[1] = 0.05;
+	    values[2] = 0.05;
+	    A->InsertGlobalValues( 0, global_columns.size(), 
+				   &values[0], &global_columns[0] );
 	    for ( int i = 1; i < global_num_rows-1; ++i )
 	    {
 		global_columns[0] = i-1;
 		global_columns[1] = i;
 		global_columns[2] = i+1;
-		values[0] = 0.05/comm_size;
-		values[1] = 1.0/comm_size;
-		values[2] = 0.05/comm_size;
-		A->insertGlobalValues( i, global_columns(), values() );
+		values[0] = 0.05;
+		values[1] = 1.0;
+		values[2] = 0.05;
+		A->InsertGlobalValues( i, global_columns.size(), 
+				       &values[0], &global_columns[0] );
 	    }
 	    global_columns[0] = global_num_rows-3;
 	    global_columns[1] = global_num_rows-2;
 	    global_columns[2] = global_num_rows-1;
-	    values[0] = 0.05/comm_size;
-	    values[1] = 0.05/comm_size;
-	    values[2] = 1.0/comm_size;
-	    A->insertGlobalValues( global_num_rows-1, global_columns(), values() );
-	    A->fillComplete();
+	    values[0] = 0.05;
+	    values[1] = 0.05;
+	    values[2] = 1.0;
+	    A->InsertGlobalValues( global_num_rows-1, global_columns.size(), 
+				   &values[0], &global_columns[0] );
+	    A->FillComplete();
+
+	    Teuchos::RCP<MatrixType> B = A;
 
 	    // Build the LHS. Put a large positive number here to be sure we are
 	    // clear the vector before solving.
-	    Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *A );
+	    Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *B );
 	    VT::putScalar( *x, 0.0 );
 
 	    // Build the RHS with negative numbers. this gives us a negative
 	    // solution. 
-	    Teuchos::RCP<VectorType> b = MT::cloneVectorFromMatrixRows( *A );
+	    Teuchos::RCP<VectorType> b = MT::cloneVectorFromMatrixRows( *B );
 	    VT::putScalar( *b, -1.0 );
 
 	    // Create the linear problem.
 	    linear_problem = Teuchos::rcp( 
-		new MCLS::LinearProblem<VectorType,MatrixType>(A, x, b) );
+		new MCLS::LinearProblem<VectorType,MatrixType>(B, x, b) );
 	}
 	comm->barrier();
 
@@ -186,6 +211,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, mcsa_two_by_two, LO, GO, Scala
 
 	// Create the solver.
 	MCLS::SolverFactory<VectorType,MatrixType> factory;
+
 	Teuchos::RCP<MCLS::SolverManager<VectorType,MatrixType> > solver_manager =
 	    factory.create( "MCSA", comm, plist );
 	solver_manager->setProblem( linear_problem );
@@ -195,7 +221,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, mcsa_two_by_two, LO, GO, Scala
 
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager->getConvergedStatus() );
-	TEST_EQUALITY( solver_manager->getNumIters(), 10 );
+	TEST_EQUALITY( solver_manager->getNumIters(), 6 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager->achievedTol() > 0.0 );
@@ -208,12 +234,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, mcsa_two_by_two, LO, GO, Scala
 	if ( comm_rank < 2 )
 	{
 	    // Check that we got a negative solution.
-	    Teuchos::ArrayRCP<const Scalar> x_view = 
+	    Teuchos::ArrayRCP<const double> x_view = 
 		VT::view( *linear_problem->getLHS() );
-	    typename Teuchos::ArrayRCP<const Scalar>::const_iterator x_view_it;
+	    Teuchos::ArrayRCP<const double>::const_iterator x_view_it;
 	    for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
 	    {
-		TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<Scalar>::zero() );
+		TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<double>::zero() );
 	    }
 	}
 	comm->barrier();
@@ -233,7 +259,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, mcsa_two_by_two, LO, GO, Scala
 
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager->getConvergedStatus() );
-	TEST_EQUALITY( solver_manager->getNumIters(), 10 );
+	TEST_EQUALITY( solver_manager->getNumIters(), 6 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager->achievedTol() > 0.0 );
@@ -245,12 +271,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, mcsa_two_by_two, LO, GO, Scala
 
 	if ( comm_rank < 2 )
 	{
-	    Teuchos::ArrayRCP<const Scalar> x_view = 
+	    Teuchos::ArrayRCP<const double> x_view = 
 		VT::view( *linear_problem->getLHS() );
-	    typename Teuchos::ArrayRCP<const Scalar>::const_iterator x_view_it;
+	    Teuchos::ArrayRCP<const double>::const_iterator x_view_it;
 	    for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
 	    {
-		TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<Scalar>::zero() );
+		TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<double>::zero() );
 	    }
 	}
 	comm->barrier();
@@ -265,7 +291,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, mcsa_two_by_two, LO, GO, Scala
 	converged_status = solver_manager->solve();
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager->getConvergedStatus() );
-	TEST_EQUALITY( solver_manager->getNumIters(), 10 );
+	TEST_EQUALITY( solver_manager->getNumIters(), 6 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager->achievedTol() > 0.0 );
@@ -277,12 +303,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, mcsa_two_by_two, LO, GO, Scala
 
 	if ( comm_rank < 2 )
 	{
-	    Teuchos::ArrayRCP<const Scalar> x_view = 
+	    Teuchos::ArrayRCP<const double> x_view = 
 		VT::view( *linear_problem->getLHS() );
-	    typename Teuchos::ArrayRCP<const Scalar>::const_iterator x_view_it;
+	    Teuchos::ArrayRCP<const double>::const_iterator x_view_it;
 	    for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
 	    {
-		TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<Scalar>::zero() );
+		TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<double>::zero() );
 	    }
 	}
 	comm->barrier();
@@ -301,7 +327,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, mcsa_two_by_two, LO, GO, Scala
 	converged_status = solver_manager->solve();
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager->getConvergedStatus() );
-	TEST_EQUALITY( solver_manager->getNumIters(), 10 );
+	TEST_EQUALITY( solver_manager->getNumIters(), 6 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager->achievedTol() > 0.0 );
@@ -313,28 +339,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, mcsa_two_by_two, LO, GO, Scala
 
 	if ( comm_rank < 2 )
 	{
-	    Teuchos::ArrayRCP<const Scalar> x_view =
+	    Teuchos::ArrayRCP<const double> x_view =
 		VT::view( *linear_problem->getLHS() );
-	    typename Teuchos::ArrayRCP<const Scalar>::const_iterator x_view_it;
+	    Teuchos::ArrayRCP<const double>::const_iterator x_view_it;
 	    for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
 	    {
-		TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<Scalar>::zero() );
+		TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<double>::zero() );
 	    }
 	}
 	comm->barrier();
     }
 }
 
-UNIT_TEST_INSTANTIATION( SolverFactory, mcsa_two_by_two )
-
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, smc_two_by_two, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST( SolverFactory, smc_two_by_two )
 {
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
+    typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<GO> HistoryType;
+    typedef MCLS::History<int> HistoryType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::UniformAdjointSource<DomainType> SourceType;
 
@@ -370,52 +394,60 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, smc_two_by_two, LO, GO, Scalar
 	{
 	    int local_num_rows = 10;
 	    int global_num_rows = local_num_rows*set_size;
-	    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
-		Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm_set );
+	    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm_set );
+	    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
+		new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
-	    // Build the linear system.
-	    Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
-	    Teuchos::Array<GO> global_columns( 3 );
-	    Teuchos::Array<Scalar> values( 3 );
+	    // Build the linear system. This operator is symmetric with a spectral
+	    // radius less than 1.
+	    Teuchos::RCP<Epetra_CrsMatrix> A = 	
+		Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
+	    Teuchos::Array<int> global_columns( 3 );
+	    Teuchos::Array<double> values( 3 );
 	    global_columns[0] = 0;
 	    global_columns[1] = 1;
 	    global_columns[2] = 2;
-	    values[0] = 1.0/comm_size;
-	    values[1] = 0.05/comm_size;
-	    values[2] = 0.05/comm_size;
-	    A->insertGlobalValues( 0, global_columns(), values() );
+	    values[0] = 1.0;
+	    values[1] = 0.05;
+	    values[2] = 0.05;
+	    A->InsertGlobalValues( 0, global_columns.size(), 
+				   &values[0], &global_columns[0] );
 	    for ( int i = 1; i < global_num_rows-1; ++i )
 	    {
 		global_columns[0] = i-1;
 		global_columns[1] = i;
 		global_columns[2] = i+1;
-		values[0] = 0.05/comm_size;
-		values[1] = 1.0/comm_size;
-		values[2] = 0.05/comm_size;
-		A->insertGlobalValues( i, global_columns(), values() );
+		values[0] = 0.05;
+		values[1] = 1.0;
+		values[2] = 0.05;
+		A->InsertGlobalValues( i, global_columns.size(), 
+				       &values[0], &global_columns[0] );
 	    }
 	    global_columns[0] = global_num_rows-3;
 	    global_columns[1] = global_num_rows-2;
 	    global_columns[2] = global_num_rows-1;
-	    values[0] = 0.05/comm_size;
-	    values[1] = 0.05/comm_size;
-	    values[2] = 1.0/comm_size;
-	    A->insertGlobalValues( global_num_rows-1, global_columns(), values() );
-	    A->fillComplete();
+	    values[0] = 0.05;
+	    values[1] = 0.05;
+	    values[2] = 1.0;
+	    A->InsertGlobalValues( global_num_rows-1, global_columns.size(), 
+				   &values[0], &global_columns[0] );
+	    A->FillComplete();
+
+	    Teuchos::RCP<MatrixType> B = A;
 
 	    // Build the LHS. Put a large positive number here to be sure we are
 	    // clear the vector before solving.
-	    Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *A );
+	    Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *B );
 	    VT::putScalar( *x, 0.0 );
 
 	    // Build the RHS with negative numbers. this gives us a negative
 	    // solution. 
-	    Teuchos::RCP<VectorType> b = MT::cloneVectorFromMatrixRows( *A );
+	    Teuchos::RCP<VectorType> b = MT::cloneVectorFromMatrixRows( *B );
 	    VT::putScalar( *b, -1.0 );
 
 	    // Create the linear problem.
 	    linear_problem = Teuchos::rcp( 
-		new MCLS::LinearProblem<VectorType,MatrixType>(A, x, b) );
+		new MCLS::LinearProblem<VectorType,MatrixType>(B, x, b) );
 	}
 	comm->barrier();
 
@@ -458,12 +490,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, smc_two_by_two, LO, GO, Scalar
 	if ( comm_rank < 2 )
 	{
 	    // Check that we got a negative solution.
-	    Teuchos::ArrayRCP<const Scalar> x_view = 
+	    Teuchos::ArrayRCP<const double> x_view = 
 		VT::view( *linear_problem->getLHS() );
-	    typename Teuchos::ArrayRCP<const Scalar>::const_iterator x_view_it;
+	    Teuchos::ArrayRCP<const double>::const_iterator x_view_it;
 	    for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
 	    {
-		TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<Scalar>::zero() );
+		TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<double>::zero() );
 	    }
 	}
 	comm->barrier();
@@ -495,12 +527,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, smc_two_by_two, LO, GO, Scalar
 
 	if ( comm_rank < 2 )
 	{
-	    Teuchos::ArrayRCP<const Scalar> x_view = 
+	    Teuchos::ArrayRCP<const double> x_view = 
 		VT::view( *linear_problem->getLHS() );
-	    typename Teuchos::ArrayRCP<const Scalar>::const_iterator x_view_it;
+	    Teuchos::ArrayRCP<const double>::const_iterator x_view_it;
 	    for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
 	    {
-		TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<Scalar>::zero() );
+		TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<double>::zero() );
 	    }
 	}
 	comm->barrier();
@@ -527,12 +559,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, smc_two_by_two, LO, GO, Scalar
 
 	if ( comm_rank < 2 )
 	{
-	    Teuchos::ArrayRCP<const Scalar> x_view = 
+	    Teuchos::ArrayRCP<const double> x_view = 
 		VT::view( *linear_problem->getLHS() );
-	    typename Teuchos::ArrayRCP<const Scalar>::const_iterator x_view_it;
+	    Teuchos::ArrayRCP<const double>::const_iterator x_view_it;
 	    for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
 	    {
-		TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<Scalar>::zero() );
+		TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<double>::zero() );
 	    }
 	}
 	comm->barrier();
@@ -563,28 +595,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, smc_two_by_two, LO, GO, Scalar
 
 	if ( comm_rank < 2 )
 	{
-	    Teuchos::ArrayRCP<const Scalar> x_view =
+	    Teuchos::ArrayRCP<const double> x_view =
 		VT::view( *linear_problem->getLHS() );
-	    typename Teuchos::ArrayRCP<const Scalar>::const_iterator x_view_it;
+	    Teuchos::ArrayRCP<const double>::const_iterator x_view_it;
 	    for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
 	    {
-		TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<Scalar>::zero() );
+		TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<double>::zero() );
 	    }
 	}
 	comm->barrier();
     }
 }
 
-UNIT_TEST_INSTANTIATION( SolverFactory, smc_two_by_two )
-
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, adjmc_two_by_two, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST( SolverFactory, adjmc_two_by_two )
 {
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
+    typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<GO> HistoryType;
+    typedef MCLS::History<int> HistoryType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::UniformAdjointSource<DomainType> SourceType;
 
@@ -620,52 +650,60 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, adjmc_two_by_two, LO, GO, Scal
 	{
 	    int local_num_rows = 10;
 	    int global_num_rows = local_num_rows*set_size;
-	    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
-		Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm_set );
+	    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm_set );
+	    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
+		new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
-	    // Build the linear system.
-	    Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
-	    Teuchos::Array<GO> global_columns( 3 );
-	    Teuchos::Array<Scalar> values( 3 );
+	    // Build the linear system. This operator is symmetric with a spectral
+	    // radius less than 1.
+	    Teuchos::RCP<Epetra_CrsMatrix> A = 	
+		Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
+	    Teuchos::Array<int> global_columns( 3 );
+	    Teuchos::Array<double> values( 3 );
 	    global_columns[0] = 0;
 	    global_columns[1] = 1;
 	    global_columns[2] = 2;
-	    values[0] = 1.0/comm_size;
-	    values[1] = 0.05/comm_size;
-	    values[2] = 0.05/comm_size;
-	    A->insertGlobalValues( 0, global_columns(), values() );
+	    values[0] = 1.0;
+	    values[1] = 0.05;
+	    values[2] = 0.05;
+	    A->InsertGlobalValues( 0, global_columns.size(), 
+				   &values[0], &global_columns[0] );
 	    for ( int i = 1; i < global_num_rows-1; ++i )
 	    {
 		global_columns[0] = i-1;
 		global_columns[1] = i;
 		global_columns[2] = i+1;
-		values[0] = 0.05/comm_size;
-		values[1] = 1.0/comm_size;
-		values[2] = 0.05/comm_size;
-		A->insertGlobalValues( i, global_columns(), values() );
+		values[0] = 0.05;
+		values[1] = 1.0;
+		values[2] = 0.05;
+		A->InsertGlobalValues( i, global_columns.size(), 
+				       &values[0], &global_columns[0] );
 	    }
 	    global_columns[0] = global_num_rows-3;
 	    global_columns[1] = global_num_rows-2;
 	    global_columns[2] = global_num_rows-1;
-	    values[0] = 0.05/comm_size;
-	    values[1] = 0.05/comm_size;
-	    values[2] = 1.0/comm_size;
-	    A->insertGlobalValues( global_num_rows-1, global_columns(), values() );
-	    A->fillComplete();
+	    values[0] = 0.05;
+	    values[1] = 0.05;
+	    values[2] = 1.0;
+	    A->InsertGlobalValues( global_num_rows-1, global_columns.size(), 
+				   &values[0], &global_columns[0] );
+	    A->FillComplete();
+
+	    Teuchos::RCP<MatrixType> B = A;
 
 	    // Build the LHS. Put a large positive number here to be sure we are
 	    // clear the vector before solving.
-	    Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *A );
+	    Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *B );
 	    VT::putScalar( *x, 0.0 );
 
 	    // Build the RHS with negative numbers. this gives us a negative
 	    // solution. 
-	    Teuchos::RCP<VectorType> b = MT::cloneVectorFromMatrixRows( *A );
+	    Teuchos::RCP<VectorType> b = MT::cloneVectorFromMatrixRows( *B );
 	    VT::putScalar( *b, -1.0 );
 
 	    // Create the linear problem.
 	    linear_problem = Teuchos::rcp( 
-		new MCLS::LinearProblem<VectorType,MatrixType>(A, x, b) );
+		new MCLS::LinearProblem<VectorType,MatrixType>(B, x, b) );
 	}
 	comm->barrier();
 
@@ -708,12 +746,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, adjmc_two_by_two, LO, GO, Scal
 	if ( comm_rank < 2 )
 	{
 	    // Check that we got a negative solution.
-	    Teuchos::ArrayRCP<const Scalar> x_view = 
+	    Teuchos::ArrayRCP<const double> x_view = 
 		VT::view( *linear_problem->getLHS() );
-	    typename Teuchos::ArrayRCP<const Scalar>::const_iterator x_view_it;
+	    Teuchos::ArrayRCP<const double>::const_iterator x_view_it;
 	    for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
 	    {
-		TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<Scalar>::zero() );
+		TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<double>::zero() );
 	    }
 	}
 	comm->barrier();
@@ -745,12 +783,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, adjmc_two_by_two, LO, GO, Scal
 
 	if ( comm_rank < 2 )
 	{
-	    Teuchos::ArrayRCP<const Scalar> x_view = 
+	    Teuchos::ArrayRCP<const double> x_view = 
 		VT::view( *linear_problem->getLHS() );
-	    typename Teuchos::ArrayRCP<const Scalar>::const_iterator x_view_it;
+	    Teuchos::ArrayRCP<const double>::const_iterator x_view_it;
 	    for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
 	    {
-		TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<Scalar>::zero() );
+		TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<double>::zero() );
 	    }
 	}
 	comm->barrier();
@@ -777,12 +815,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, adjmc_two_by_two, LO, GO, Scal
 
 	if ( comm_rank < 2 )
 	{
-	    Teuchos::ArrayRCP<const Scalar> x_view = 
+	    Teuchos::ArrayRCP<const double> x_view = 
 		VT::view( *linear_problem->getLHS() );
-	    typename Teuchos::ArrayRCP<const Scalar>::const_iterator x_view_it;
+	    Teuchos::ArrayRCP<const double>::const_iterator x_view_it;
 	    for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
 	    {
-		TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<Scalar>::zero() );
+		TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<double>::zero() );
 	    }
 	}
 	comm->barrier();
@@ -813,21 +851,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, adjmc_two_by_two, LO, GO, Scal
 
 	if ( comm_rank < 2 )
 	{
-	    Teuchos::ArrayRCP<const Scalar> x_view =
+	    Teuchos::ArrayRCP<const double> x_view =
 		VT::view( *linear_problem->getLHS() );
-	    typename Teuchos::ArrayRCP<const Scalar>::const_iterator x_view_it;
+	    Teuchos::ArrayRCP<const double>::const_iterator x_view_it;
 	    for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
 	    {
-		TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<Scalar>::zero() );
+		TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<double>::zero() );
 	    }
 	}
 	comm->barrier();
     }
 }
-
-UNIT_TEST_INSTANTIATION( SolverFactory, adjmc_two_by_two )
-
 //---------------------------------------------------------------------------//
-// end tstTpetraSolverFactory.cpp
+// end tstEpetraSolverFactory.cpp
 //---------------------------------------------------------------------------//
 

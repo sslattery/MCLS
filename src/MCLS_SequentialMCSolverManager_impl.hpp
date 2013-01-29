@@ -54,6 +54,21 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 /*!
+ * \brief Comm constructor. setProblem() must be called before solve().
+ */
+template<class Vector, class Matrix>
+SequentialMCSolverManager<Vector,Matrix>::SequentialMCSolverManager( 
+    const Teuchos::RCP<const Comm>& global_comm,
+    const Teuchos::RCP<Teuchos::ParameterList>& plist )
+    : d_global_comm( global_comm )
+    , d_plist( plist )
+{
+    Require( !d_global_comm.is_null() );
+    Require( !d_plist.is_null() );
+}
+
+//---------------------------------------------------------------------------//
+/*!
  * \brief Constructor.
  */
 template<class Vector, class Matrix>
@@ -68,33 +83,10 @@ SequentialMCSolverManager<Vector,Matrix>::SequentialMCSolverManager(
     , d_num_iters( 0 )
     , d_converged_status( 0 )
 {
-    // Generate the residual Monte Carlo problem on the primary set.
-    if ( d_primary_set )
-    {
-	Teuchos::RCP<Vector> delta_x = VT::clone( *d_problem->getLHS() );
-	d_residual_problem = Teuchos::rcp(
-	    new LinearProblemType( d_problem->getOperator(),
-				   delta_x,
-				   d_problem->getResidual() ) );
-    }
-    d_global_comm->barrier();
+    Require( !global_comm.is_null() );
+    Require( !d_plist.is_null() );
 
-    // Create the Monte Carlo direct solver for the residual problem.
-    if ( d_plist->get<std::string>("MC Type") == "Adjoint" )
-    {
-	d_mc_solver = Teuchos::rcp( 
-	    new AdjointSolverManager<Vector,Matrix>(
-		d_residual_problem, global_comm, plist) );
-
-	// Get the block level communicator.
-	Check( !d_mc_solver.is_null() );
-	d_block_comm = 
-	    Teuchos::rcp_dynamic_cast<AdjointSolverManager<Vector,Matrix> >(
-		d_mc_solver)->blockComm();
-    }
-
-    Ensure( !d_mc_solver.is_null() );
-    Ensure( !d_block_comm.is_null() );
+    buildResidualMonteCarloProblem();
 }
 
 //---------------------------------------------------------------------------//
@@ -153,20 +145,29 @@ void SequentialMCSolverManager<Vector,Matrix>::setProblem(
     Require( !d_global_comm.is_null() );
     Require( !d_plist.is_null() );
 
-    // Set the SequentialMC problem.
+    // Set the MCSA problem.
     d_problem = problem;
     d_primary_set = !d_problem.is_null();
 
-    // Update the residual problem.
-    if ( d_primary_set )
+    // Update the residual problem is it already exists.
+    if ( !d_mc_solver.is_null() )
     {
-	d_residual_problem->setOperator( d_problem->getOperator() );
-	d_residual_problem->setRHS( d_problem->getResidual() );
-    }
-    d_global_comm->barrier();
+	if ( d_primary_set )
+	{
+	    d_residual_problem->setOperator( d_problem->getOperator() );
+	    d_residual_problem->setRHS( d_problem->getResidual() );
+	}
+	d_global_comm->barrier();
 
-    // Set the updated residual problem with the Monte Carlo solver.
-    d_mc_solver->setProblem( d_residual_problem );
+	// Set the updated residual problem with the Monte Carlo solver.
+	d_mc_solver->setProblem( d_residual_problem );
+    }
+
+    // Otherwise this is initialization.
+    else
+    {
+	buildResidualMonteCarloProblem();
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -179,6 +180,9 @@ void SequentialMCSolverManager<Vector,Matrix>::setParameters(
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
     Require( !params.is_null() );
+    Require( !d_mc_solver.is_null() );
+
+    // Set the parameters.
     d_plist = params;
 
     // Propagate the parameters to the Monte Carlo solver.
@@ -284,6 +288,45 @@ bool SequentialMCSolverManager<Vector,Matrix>::solve()
 	*d_block_comm, 0, Teuchos::Ptr<int>(&d_converged_status) );
 
     return Teuchos::as<bool>(d_converged_status);
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Build the residual Monte Carlo problem.
+ */
+template<class Vector, class Matrix>
+void SequentialMCSolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
+{
+    Require( !d_global_comm.is_null() );
+    Require( !d_plist.is_null() );
+
+    // Generate the residual Monte Carlo problem on the primary set.
+    if ( d_primary_set )
+    {
+	Teuchos::RCP<Vector> delta_x = VT::clone( *d_problem->getLHS() );
+	d_residual_problem = Teuchos::rcp(
+	    new LinearProblemType( d_problem->getOperator(),
+				   delta_x,
+				   d_problem->getResidual() ) );
+    }
+    d_global_comm->barrier();
+
+    // Create the Monte Carlo direct solver for the residual problem.
+    if ( d_plist->get<std::string>("MC Type") == "Adjoint" )
+    {
+	d_mc_solver = Teuchos::rcp( 
+	    new AdjointSolverManager<Vector,Matrix>(
+		d_residual_problem, d_global_comm, d_plist) );
+
+	// Get the block level communicator.
+	Check( !d_mc_solver.is_null() );
+	d_block_comm = 
+	    Teuchos::rcp_dynamic_cast<AdjointSolverManager<Vector,Matrix> >(
+		d_mc_solver)->blockComm();
+    }
+
+    Ensure( !d_mc_solver.is_null() );
+    Ensure( !d_block_comm.is_null() );
 }
 
 //---------------------------------------------------------------------------//
