@@ -142,7 +142,7 @@ class AdjointSolverManager : public SolverManager<Vector,Matrix>
     // Global communicator.
     Teuchos::RCP<const Comm> d_global_comm;
 
-    // Paramters.
+    // Parameters.
     Teuchos::RCP<Teuchos::ParameterList> d_plist;
 
     // Primary set indicator.
@@ -171,5 +171,5 @@ class AdjointSolverManager : public SolverManager<Vector,Matrix>
 
 //---------------------------------------------------------------------------//
 // end MCLS_AdjointSolverManager.hpp
-// ---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
 
