@@ -46,6 +46,9 @@
 #include "MCLS_DBC.hpp"
 #include "MCLS_AdjointSolverManager.hpp"
 
+#include <Teuchos_CommHelpers.hpp>
+#include <Teuchos_Ptr.hpp>
+
 namespace MCLS
 {
 
@@ -63,7 +66,7 @@ MCSASolverManager<Vector,Matrix>::MCSASolverManager(
     , d_plist( plist )
     , d_primary_set( !d_problem.is_null() )
     , d_num_iters( 0 )
-    , d_converged_status( false )
+    , d_converged_status( 0 )
 {
     // Generate the residual Monte Carlo problem on the primary set.
     if ( d_primary_set )
@@ -82,9 +85,16 @@ MCSASolverManager<Vector,Matrix>::MCSASolverManager(
 	d_mc_solver = Teuchos::rcp( 
 	    new AdjointSolverManager<Vector,Matrix>(
 		d_residual_problem, global_comm, plist) );
+
+	// Get the block level communicator.
+	Check( !d_mc_solver.is_null() );
+	d_block_comm = 
+	    Teuchos::rcp_dynamic_cast<AdjointSolverManager<Vector,Matrix> >(
+		d_mc_solver)->blockComm();
     }
 
     Ensure( !d_mc_solver.is_null() );
+    Ensure( !d_block_comm.is_null() );
 }
 
 //---------------------------------------------------------------------------//
@@ -183,57 +193,84 @@ void MCSASolverManager<Vector,Matrix>::setParameters(
 template<class Vector, class Matrix>
 bool MCSASolverManager<Vector,Matrix>::solve()
 {
-    // Convergence parameters.
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance = 
-	d_plist->get<double>("Convergence Tolerance");
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType source_norm =
-	VT::normInf( *d_problem->getRHS() );
+    // Get the convergence parameters on the primary set.
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType 
+	convergence_criteria = 0;
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType source_norm = 0;
+    if ( d_primary_set )
+    {
+	typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance = 
+	    d_plist->get<double>("Convergence Tolerance");
+	source_norm = VT::normInf( *d_problem->getRHS() );
 	convergence_criteria = tolerance * source_norm;
-    d_converged_status = false;
+    }
+    d_global_comm->barrier();
+    d_converged_status = 0;
 
     // Iteration setup.
     int max_num_iters = d_plist->get<int>("Max Number of Iterations");
     d_num_iters = 0;
     int print_freq = 10;
 
-    // Compute the initial residual.
-    d_problem->updateResidual();
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType residual_norm =
-	VT::normInf( *d_problem->getResidual() );
+    // Setup for iteration.
+    Teuchos::RCP<Vector> tmp;
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType residual_norm = 0;
+    if ( d_primary_set )
+    {
+	// Compute the initial residual.
+	d_problem->updateResidual();
+	residual_norm = VT::normInf( *d_problem->getResidual() );
 
-    // Temporary vector for Richardson iteration.
-    Teuchos::RCP<Vector> tmp = VT::clone( *d_problem->getLHS() );	
+	// Temporary vector for Richardson iteration.
+	tmp = VT::clone( *d_problem->getLHS() );	
+    }
+    d_global_comm->barrier();
 
     // Iterate.
-    while( residual_norm > convergence_criteria &&
-	   d_num_iters < max_num_iters )
+    int do_iterations = 1;
+    while( do_iterations )
     {
-	// Do a Richardson iteration.
-	d_problem->applyOperator( *d_problem->getLHS(), *tmp );
-	VT::update( 
-	    *d_problem->getLHS(), Teuchos::ScalarTraits<Scalar>::one(),
-	    *tmp, -Teuchos::ScalarTraits<Scalar>::one(),
-	    *d_problem->getRHS(), Teuchos::ScalarTraits<Scalar>::one() );
+	// Update the iteration count.
+	++d_num_iters;
 
-	// Update the residual.
-	d_problem->updateResidual();
+	// Do a Richardson iteration and update the resiudal on the primary
+	// set. 
+	if ( d_primary_set )
+	{
+	    d_problem->applyOperator( *d_problem->getLHS(), *tmp );
+
+	    VT::update( 
+		*d_problem->getLHS(), Teuchos::ScalarTraits<Scalar>::one(),
+		*tmp, -Teuchos::ScalarTraits<Scalar>::one(),
+		*d_problem->getRHS(), Teuchos::ScalarTraits<Scalar>::one() );
+
+	    d_problem->updateResidual();
+	}
+	d_global_comm->barrier();
 
 	// Solve the residual Monte Carlo problem.
 	d_mc_solver->solve();
 
-	// Apply the correction.
-	VT::update( *d_problem->getLHS(), 
-		    Teuchos::ScalarTraits<Scalar>::one(),
-		    *d_residual_problem->getLHS(), 
-		    Teuchos::ScalarTraits<Scalar>::one() );
+	// Apply the correction and update the residual on the primary set.
+	if ( d_primary_set )
+	{
+	    VT::update( *d_problem->getLHS(), 
+			Teuchos::ScalarTraits<Scalar>::one(),
+			*d_residual_problem->getLHS(), 
+			Teuchos::ScalarTraits<Scalar>::one() );
 
-	// Update the residual.
-	d_problem->updateResidual();
-	residual_norm = VT::normInf( *d_problem->getResidual() );
+	    d_problem->updateResidual();
+	    residual_norm = VT::normInf( *d_problem->getResidual() );
 
-	// Update the iteration count.
-	++d_num_iters;
+	    // Check if we're done iterating.
+	    do_iterations = (residual_norm > convergence_criteria) &&
+			    (d_num_iters < max_num_iters);
+	}
+	d_global_comm->barrier();
+
+	// Broadcast iteration status to the blocks.
+	Teuchos::broadcast<int,int>( 
+	    *d_block_comm, 0, Teuchos::Ptr<int>(&do_iterations) );
 
 	// Print iteration data.
 	if ( d_global_comm->getRank() == 0 && d_num_iters % print_freq == 0 )
@@ -248,12 +285,20 @@ bool MCSASolverManager<Vector,Matrix>::solve()
     }
 
     // Check for convergence.
-    if ( VT::normInf(*d_problem->getResidual()) <= convergence_criteria )
+    if ( d_primary_set )
     {
-	d_converged_status = true;
+	if ( VT::normInf(*d_problem->getResidual()) <= convergence_criteria )
+	{
+	    d_converged_status = 1;
+	}
     }
+    d_global_comm->barrier();
 
-    return d_converged_status;
+    // Broadcast convergence status to the blocks.
+    Teuchos::broadcast<int,int>( 
+	*d_block_comm, 0, Teuchos::Ptr<int>(&d_converged_status) );
+
+    return Teuchos::as<bool>(d_converged_status);
 }
 
 //---------------------------------------------------------------------------//

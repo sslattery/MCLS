@@ -125,6 +125,9 @@ class AdjointSolverManager : public SolverManager<Vector,Matrix>
     bool getConvergedStatus() const
     { return true; }
 
+    //! Get the block-constant communicator for this set.
+    Teuchos::RCP<const Comm> blockComm() const { return d_msod_manager->blockComm(); }
+
   private:
 
     // Build the Monte Carlo domain from the provided linear problem.

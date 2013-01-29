@@ -38,14 +38,12 @@ ADD_SUBDIRECTORY(src)
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 
+ADD_SUBDIRECTORY(tpetra)
+
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 
 IF (MCLS_ENABLE_Epetra)
   ADD_SUBDIRECTORY(epetra)
-ENDIF()
-
-IF (MCLS_ENABLE_Tpetra)
-  ADD_SUBDIRECTORY(tpetra)
 ENDIF()
 
 ##---------------------------------------------------------------------------##

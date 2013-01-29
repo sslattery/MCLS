@@ -48,6 +48,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_as.hpp>
 #include <Teuchos_Comm.hpp>
 
 namespace MCLS
@@ -76,8 +77,8 @@ class MCSASolverManager : public SolverManager<Vector,Matrix>
 
     // Constructor.
     MCSASolverManager( const Teuchos::RCP<LinearProblemType>& problem,
-			  const Teuchos::RCP<const Comm>& global_comm,
-			  const Teuchos::RCP<Teuchos::ParameterList>& plist );
+		       const Teuchos::RCP<const Comm>& global_comm,
+		       const Teuchos::RCP<Teuchos::ParameterList>& plist );
 
     //! Destructor.
     ~MCSASolverManager() { /* ... */ }
@@ -113,7 +114,8 @@ class MCSASolverManager : public SolverManager<Vector,Matrix>
     bool solve();
 
     //! Return if the last linear solve converged. 
-    bool getConvergedStatus() const { return d_converged_status; }
+    bool getConvergedStatus() const 
+    { return Teuchos::as<bool>(d_converged_status); }
 
   private:
 
@@ -125,6 +127,9 @@ class MCSASolverManager : public SolverManager<Vector,Matrix>
 
     // Global communicator.
     Teuchos::RCP<const Comm> d_global_comm;
+
+    // Block communicator.
+    Teuchos::RCP<const Comm> d_block_comm;
 
     // Parameters.
     Teuchos::RCP<Teuchos::ParameterList> d_plist;
@@ -139,7 +144,7 @@ class MCSASolverManager : public SolverManager<Vector,Matrix>
     int d_num_iters;
 
     // Converged status. True if last solve converged.
-    bool d_converged_status;    
+    int d_converged_status;    
 };
 
 //---------------------------------------------------------------------------//

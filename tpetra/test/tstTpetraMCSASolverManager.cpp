@@ -98,8 +98,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, one_by_one, LO, GO, Scalar
     Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
 	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
 
-    // Build the linear system. This operator is symmetric with a spectral
-    // radius less than 1.
+    // Build the linear system. 
     Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
     Teuchos::Array<GO> global_columns( 3 );
     Teuchos::Array<Scalar> values( 3 );
@@ -144,7 +143,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, one_by_one, LO, GO, Scalar
     double cutoff = 1.0e-6;
     plist->set<std::string>("MC Type", "Adjoint");
     plist->set<double>("Convergence Tolerance", 1.0e-8);
-    plist->set<int>("Max Number of Iterations", 100);
+    plist->set<int>("Max Number of Iterations", 10);
     plist->set<double>("Weight Cutoff", cutoff);
     plist->set<int>("MC Check Frequency", 50);
     plist->set<bool>("Reproducible MC Mode",true);
@@ -162,11 +161,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, one_by_one, LO, GO, Scalar
 	solver_manager( linear_problem, comm, plist );
 
     // Solve the problem.
-    int iterations_to_converge = 83;
     bool converged_status = solver_manager.solve();
-    TEST_ASSERT( converged_status );
-    TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), iterations_to_converge );
+
+    TEST_ASSERT( !converged_status );
+    TEST_ASSERT( !solver_manager.getConvergedStatus() );
+    TEST_EQUALITY( solver_manager.getNumIters(), 10 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
 
     // Check that we got a negative solution.
@@ -181,9 +180,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, one_by_one, LO, GO, Scalar
     VT::putScalar( *b, 2.0 );
     VT::putScalar( *x, 0.0 );
     converged_status = solver_manager.solve();
-    TEST_ASSERT( converged_status );
-    TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), iterations_to_converge );
+    TEST_ASSERT( !converged_status );
+    TEST_ASSERT( !solver_manager.getConvergedStatus() );
+    TEST_EQUALITY( solver_manager.getNumIters(), 10 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -194,9 +193,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, one_by_one, LO, GO, Scalar
     VT::putScalar( *x, 0.0 );
     solver_manager.setProblem( linear_problem );
     converged_status = solver_manager.solve();
-    TEST_ASSERT( converged_status );
-    TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), iterations_to_converge );
+    TEST_ASSERT( !converged_status );
+    TEST_ASSERT( !solver_manager.getConvergedStatus() );
+    TEST_EQUALITY( solver_manager.getNumIters(), 10 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -207,9 +206,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, one_by_one, LO, GO, Scalar
     VT::putScalar( *b, -2.0 );
     VT::putScalar( *x, 0.0 );
     converged_status = solver_manager.solve();
-    TEST_ASSERT( converged_status );
-    TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), iterations_to_converge );
+    TEST_ASSERT( !converged_status );
+    TEST_ASSERT( !solver_manager.getConvergedStatus() );
+    TEST_EQUALITY( solver_manager.getNumIters(), 10 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -257,7 +256,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two, LO, GO, Scalar
 	// Declare the linear problem in the global scope.
 	Teuchos::RCP<MCLS::LinearProblem<VectorType,MatrixType> > linear_problem;
 
-	// Build the primary source and domain on set 0.
+	// Build the linear system on set 0.
 	if ( comm_rank < 2 )
 	{
 	    int local_num_rows = 10;
@@ -265,8 +264,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two, LO, GO, Scalar
 	    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
 		Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm_set );
 
-	    // Build the linear system. This operator is symmetric with a spectral
-	    // radius less than 1.
+	    // Build the linear system.
 	    Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
 	    Teuchos::Array<GO> global_columns( 3 );
 	    Teuchos::Array<Scalar> values( 3 );
@@ -275,7 +273,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two, LO, GO, Scalar
 	    global_columns[2] = 2;
 	    values[0] = 0.14/comm_size;
 	    values[1] = 0.14/comm_size;
-	    values[2] = 1.0/comm_size;
+	    values[2] = 2.2/comm_size;
 	    A->insertGlobalValues( 0, global_columns(), values() );
 	    for ( int i = 1; i < global_num_rows-1; ++i )
 	    {
@@ -283,7 +281,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two, LO, GO, Scalar
 		global_columns[1] = i;
 		global_columns[2] = i+1;
 		values[0] = 0.14/comm_size;
-		values[1] = 1.0/comm_size;
+		values[1] = 2.2/comm_size;
 		values[2] = 0.14/comm_size;
 		A->insertGlobalValues( i, global_columns(), values() );
 	    }
@@ -292,7 +290,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two, LO, GO, Scalar
 	    global_columns[2] = global_num_rows-1;
 	    values[0] = 0.14/comm_size;
 	    values[1] = 0.14/comm_size;
-	    values[2] = 1.0/comm_size;
+	    values[2] = 2.2/comm_size;
 	    A->insertGlobalValues( global_num_rows-1, global_columns(), values() );
 	    A->fillComplete();
 
@@ -331,12 +329,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two, LO, GO, Scalar
 	    solver_manager( linear_problem, comm, plist );
 
 	// Solve the problem.
-	int iterations_to_converge = 83;
 	bool converged_status = solver_manager.solve();
 
-	TEST_ASSERT( converged_status );
-	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), iterations_to_converge );
+	TEST_ASSERT( !converged_status );
+	TEST_ASSERT( !solver_manager.getConvergedStatus() );
+	TEST_EQUALITY( solver_manager.getNumIters(), 10 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
@@ -372,9 +369,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two, LO, GO, Scalar
 
 	converged_status = solver_manager.solve();
 
-	TEST_ASSERT( converged_status );
-	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), iterations_to_converge );
+	TEST_ASSERT( !converged_status );
+	TEST_ASSERT( !solver_manager.getConvergedStatus() );
+	TEST_EQUALITY( solver_manager.getNumIters(), 10 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
@@ -404,9 +401,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two, LO, GO, Scalar
 	comm->barrier();
 	solver_manager.setProblem( linear_problem );
 	converged_status = solver_manager.solve();
-	TEST_ASSERT( converged_status );
-	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), iterations_to_converge );
+	TEST_ASSERT( !converged_status );
+	TEST_ASSERT( !solver_manager.getConvergedStatus() );
+	TEST_EQUALITY( solver_manager.getNumIters(), 10 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
@@ -440,9 +437,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two, LO, GO, Scalar
 	comm->barrier();
 
 	converged_status = solver_manager.solve();
-	TEST_ASSERT( converged_status );
-	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), iterations_to_converge );
+	TEST_ASSERT( !converged_status );
+	TEST_ASSERT( !solver_manager.getConvergedStatus() );
+	TEST_EQUALITY( solver_manager.getNumIters(), 10 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
