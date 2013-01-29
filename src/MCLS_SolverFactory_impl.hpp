@@ -32,73 +32,77 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_SolverFactory.hpp
+ * \file MCLS_SolverFactory_impl.hpp
  * \author Stuart R. Slattery
- * \brief Linear solver factory declaration.
+ * \brief Linear solver factory implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_SOLVERFACTORY_HPP
-#define MCLS_SOLVERFACTORY_HPP
+#ifndef MCLS_SOLVERFACTORY_IMPL_HPP
+#define MCLS_SOLVERFACTORY_IMPL_HPP
 
-#include <string>
-
-#include "MCLS_SolverManager.hpp"
-
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_Describable.hpp>
-#include <Teuchos_Comm.hpp>
+#include "MCLS_DBC.hpp"
+#include "MCLS_AdjointSolverManager.hpp"
+#include "MCLS_MCSASolverManager.hpp"
+#include "MCLS_SequentialMCSolverManager.hpp"
 
 namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class SolverFactory
- * \brief Factory class for generating solver managers.
+ * \brief Creation method.
  */
 template<class Vector, class Matrix>
-class SolverFactory : public Teuchos::Describable
+Teuchos::RCP<typename SolverFactory<Vector,Matrix>::Solver> 
+SolverFactory<Vector,Matrix>::create( 
+    const std::string& solver_name,
+    const Teuchos::RCP<const Comm>& global_comm,
+    const Teuchos::RCP<Teuchos::ParameterList>& solver_parameters )
 {
-  public:
+    Require( !global_comm.is_null() );
+    Require( !solver_parameters.is_null() );
 
-    //@{
-    //! Typedefs.
-    typedef Vector                                    vector_type;
-    typedef Matrix                                    matrix_type;
-    typedef SolverManager<Vector,Matrix>              Solver;     
-    typedef Teuchos::Comm<int>                        Comm;
-    //@}
+    Teuchos::RCP<Solver> solver;
 
-    //! Constructor.
-    SolverFactory() { /* ... */ }
+    switch( solver_name )
+    {
+	case "Adjoint MC":
 
-    //! Destructor.
-    ~SolverFactory() { /* ... */ }
+	    solver = Teuchos::rcp( new AdjointSolverManager<Vector,Matrix>( 
+				       global_comm, solver_parameters ) );
+	    break;
 
-    // Creation method.
-    Teuchos::RCP<Solver> 
-    create( const std::string& solver_name,
-	    const const Teuchos::RCP<const Comm>& global_comm,
-	    const Teuchos::RCP<Teuchos::ParameterList>& solver_parameters );
-};
+	case "MCSA":
+
+	    solver = Teuchos::rcp( new MCSASolverManager<Vector,Matrix>( 
+				       global_comm, solver_parameters ) );
+	    break;
+
+	case "Sequential MC":
+
+	    solver = Teuchos::rcp( new SequentialMCSolverManager<Vector,Matrix>(
+				       global_comm, solver_parameters ) );
+	    break;
+
+	default:
+
+	    throw Assertion("Solver type not supported!");
+	    break;
+    }
+
+    Ensure( !solver.is_null() );
+
+    return solver;
+}
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
-//---------------------------------------------------------------------------//
-// Template includes.
-//---------------------------------------------------------------------------//
-
-#include "MCLS_SolverFactory_impl.hpp"
+#endif // end MCLS_SOLVERFACTORY_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-
-#endif // end MCLS_SOLVERFACTORY_HPP
-
-//---------------------------------------------------------------------------//
-// end MCLS_SolverFactory.hpp
+// end MCLS_SolverFactory_impl.hpp
 // ---------------------------------------------------------------------------//
 

@@ -80,7 +80,7 @@ class SolverFactory : public Teuchos::Describable
     // Creation method.
     Teuchos::RCP<Solver> 
     create( const std::string& solver_name,
-	    const const Teuchos::RCP<const Comm>& global_comm,
+	    const Teuchos::RCP<const Comm>& global_comm,
 	    const Teuchos::RCP<Teuchos::ParameterList>& solver_parameters );
 };
 
