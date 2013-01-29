@@ -391,9 +391,9 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Boundary )
 	global_columns[0] = 0;
 	global_columns[1] = 1;
 	global_columns[2] = 2;
-	values[0] = 2.2;
-	values[1] = 0.24;
-	values[2] = 0.24;
+	values[0] = 1.0;
+	values[1] = 0.49;
+	values[2] = 0.49;
 	A->InsertGlobalValues( 0, global_columns.size(),
 			       &values[0], &global_columns[0] );
 	for ( int i = 1; i < global_num_rows-1; ++i )
@@ -401,18 +401,18 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Boundary )
 	    global_columns[0] = i-1;
 	    global_columns[1] = i;
 	    global_columns[2] = i+1;
-	    values[0] = 0.24;
-	    values[1] = 2.2;
-	    values[2] = 0.24;
+	    values[0] = 0.49;
+	    values[1] = 1.0;
+	    values[2] = 0.49;
 	    A->InsertGlobalValues( i, global_columns.size(),
 				   &values[0], &global_columns[0] );
 	}
 	global_columns[0] = global_num_rows-3;
 	global_columns[1] = global_num_rows-2;
 	global_columns[2] = global_num_rows-1;
-	values[0] = 0.24;
-	values[1] = 0.24;
-	values[2] = 2.2;
+	values[0] = 0.49;
+	values[1] = 0.49;
+	values[2] = 1.0;
 	A->InsertGlobalValues( global_num_rows-1, global_columns().size(), 
 			       &values[0], &global_columns[0] );
 	A->FillComplete();
