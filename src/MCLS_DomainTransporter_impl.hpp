@@ -41,6 +41,8 @@
 #ifndef MCLS_DOMAINTRANSPORTER_IMPL_HPP
 #define MCLS_DOMAINTRANSPORTER_IMPL_HPP
 
+#include <limits>
+
 #include <MCLS_DBC.hpp>
 #include <MCLS_Events.hpp>
 
@@ -85,6 +87,7 @@ void DomainTransporter<Domain>::transport( HistoryType& history )
     {
 	Check( history.event() == TRANSITION );
 	Check( history.weightAbs() >= d_weight_cutoff );
+	Check( history.weightAbs() < std::numeric_limits<double>::max() );
 	Check( DT::isLocalState(*d_domain, history.state()) );
 
 	// Tally the history.
