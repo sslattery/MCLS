@@ -32,14 +32,14 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_MCSASolverManager_impl.hpp
+ * \file MCLS_SequentialMCSolverManager_impl.hpp
  * \author Stuart R. Slattery
- * \brief Monte Carlo Synthetic Acceleration solver manager implementation.
+ * \brief Sequential Monte Carlo solver manager implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_MCSASOLVERMANAGER_IMPL_HPP
-#define MCLS_MCSASOLVERMANAGER_IMPL_HPP
+#ifndef MCLS_SEQUENTIALMCSOLVERMANAGER_IMPL_HPP
+#define MCLS_SEQUENTIALMCSOLVERMANAGER_IMPL_HPP
 
 #include <string>
 
@@ -57,7 +57,7 @@ namespace MCLS
  * \brief Constructor.
  */
 template<class Vector, class Matrix>
-MCSASolverManager<Vector,Matrix>::MCSASolverManager( 
+SequentialMCSolverManager<Vector,Matrix>::SequentialMCSolverManager( 
     const Teuchos::RCP<LinearProblemType>& problem,
     const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
@@ -103,7 +103,7 @@ MCSASolverManager<Vector,Matrix>::MCSASolverManager(
  */
 template<class Vector, class Matrix>
 Teuchos::RCP<const Teuchos::ParameterList> 
-MCSASolverManager<Vector,Matrix>::getValidParameters() const
+SequentialMCSolverManager<Vector,Matrix>::getValidParameters() const
 {
     // Create a parameter list with the Monte Carlo solver parameters as a
     // starting point.
@@ -125,8 +125,8 @@ MCSASolverManager<Vector,Matrix>::getValidParameters() const
  */
 template<class Vector, class Matrix>
 typename Teuchos::ScalarTraits<
-    typename MCSASolverManager<Vector,Matrix>::Scalar>::magnitudeType 
-MCSASolverManager<Vector,Matrix>::achievedTol() const
+    typename SequentialMCSolverManager<Vector,Matrix>::Scalar>::magnitudeType 
+SequentialMCSolverManager<Vector,Matrix>::achievedTol() const
 {
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType residual_norm = 
 	Teuchos::ScalarTraits<Scalar>::zero();
@@ -147,13 +147,13 @@ MCSASolverManager<Vector,Matrix>::achievedTol() const
  * \brief Set the linear problem with the manager.
  */
 template<class Vector, class Matrix>
-void MCSASolverManager<Vector,Matrix>::setProblem( 
+void SequentialMCSolverManager<Vector,Matrix>::setProblem( 
     const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem )
 {
     Require( !d_global_comm.is_null() );
     Require( !d_plist.is_null() );
 
-    // Set the MCSA problem.
+    // Set the SequentialMC problem.
     d_problem = problem;
     d_primary_set = !d_problem.is_null();
 
@@ -175,7 +175,7 @@ void MCSASolverManager<Vector,Matrix>::setProblem(
  * list with default parameters that are not defined.
  */
 template<class Vector, class Matrix>
-void MCSASolverManager<Vector,Matrix>::setParameters( 
+void SequentialMCSolverManager<Vector,Matrix>::setParameters( 
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
     Require( !params.is_null() );
@@ -191,7 +191,7 @@ void MCSASolverManager<Vector,Matrix>::setParameters(
  * converged. False if it did not.
  */
 template<class Vector, class Matrix>
-bool MCSASolverManager<Vector,Matrix>::solve()
+bool SequentialMCSolverManager<Vector,Matrix>::solve()
 {
     // Get the convergence parameters on the primary set.
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType 
@@ -233,21 +233,6 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	// Update the iteration count.
 	++d_num_iters;
 
-	// Do a Richardson iteration and update the resiudal on the primary
-	// set. 
-	if ( d_primary_set )
-	{
-	    d_problem->applyOperator( *d_problem->getLHS(), *tmp );
-
-	    VT::update( 
-		*d_problem->getLHS(), Teuchos::ScalarTraits<Scalar>::one(),
-		*tmp, -Teuchos::ScalarTraits<Scalar>::one(),
-		*d_problem->getRHS(), Teuchos::ScalarTraits<Scalar>::one() );
-
-	    d_problem->updateResidual();
-	}
-	d_global_comm->barrier();
-
 	// Solve the residual Monte Carlo problem.
 	d_mc_solver->solve();
 
@@ -275,7 +260,7 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	// Print iteration data.
 	if ( d_global_comm->getRank() == 0 && d_num_iters % print_freq == 0 )
 	{
-	    std::cout << "MCSA Iteration " << d_num_iters 
+	    std::cout << "SequentialMC Iteration " << d_num_iters 
 		      << ": Residual = " 
 		      << residual_norm/source_norm << std::endl;
 	}
@@ -305,9 +290,9 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 
 } // end namespace MCLS
 
-#endif // end MCLS_MCSASOLVERMANAGER_IMPL_HPP
+#endif // end MCLS_SEQUENTIALMCSOLVERMANAGER_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_MCSASolverManager_impl.hpp
+// end MCLS_SequentialMCSolverManager_impl.hpp
 //---------------------------------------------------------------------------//
 

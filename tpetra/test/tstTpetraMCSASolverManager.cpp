@@ -34,7 +34,7 @@
 /*!
  * \file tstTpetraMCSASolverManager.cpp
  * \author Stuart R. Slattery
- * \brief Tpetra Adjoint Monte Carlo solver manager tests.
+ * \brief Tpetra Monte Carlo synthetic acceleration solver manager tests.
  */
 //---------------------------------------------------------------------------//
 

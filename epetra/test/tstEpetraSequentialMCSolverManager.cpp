@@ -32,9 +32,9 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file tstEpetraMCSASolverManager.cpp
+ * \file tstEpetraSequentialMCSolverManager.cpp
  * \author Stuart R. Slattery
- * \brief Epetra Monte Carlo synthetic acceleration solver manager tests.
+ * \brief Epetra Sequential Monte Carlo solver manager tests.
  */
 //---------------------------------------------------------------------------//
 
@@ -48,7 +48,7 @@
 #include <string>
 #include <cassert>
 
-#include <MCLS_MCSASolverManager.hpp>
+#include <MCLS_SequentialMCSolverManager.hpp>
 #include <MCLS_LinearProblem.hpp>
 #include <MCLS_EpetraAdapter.hpp>
 
@@ -96,7 +96,7 @@ Teuchos::RCP<Epetra_Comm> getEpetraComm(
 //---------------------------------------------------------------------------//
 // Test templates
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one )
+TEUCHOS_UNIT_TEST( SequentialMCSolverManager, one_by_one )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
@@ -124,9 +124,9 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one )
     global_columns[0] = 0;
     global_columns[1] = 1;
     global_columns[2] = 2;
-    values[0] = 0.14;
-    values[1] = 0.14;
-    values[2] = 1.0;
+    values[0] = 1.0;
+    values[1] = 0.05;
+    values[2] = 0.05;
     A->InsertGlobalValues( 0, global_columns.size(), 
 			   &values[0], &global_columns[0] );
     for ( int i = 1; i < global_num_rows-1; ++i )
@@ -134,17 +134,17 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one )
 	global_columns[0] = i-1;
 	global_columns[1] = i;
 	global_columns[2] = i+1;
-	values[0] = 0.14;
+	values[0] = 0.05;
 	values[1] = 1.0;
-	values[2] = 0.14;
+	values[2] = 0.05;
 	A->InsertGlobalValues( i, global_columns.size(), 
 			       &values[0], &global_columns[0] );
     }
     global_columns[0] = global_num_rows-3;
     global_columns[1] = global_num_rows-2;
     global_columns[2] = global_num_rows-1;
-    values[0] = 0.14;
-    values[1] = 0.14;
+    values[0] = 0.05;
+    values[1] = 0.05;
     values[2] = 1.0;
     A->InsertGlobalValues( global_num_rows-1, global_columns.size(), 
 			   &values[0], &global_columns[0] );
@@ -182,7 +182,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one )
 			  B, x, b ) );
 
     // Create the solver.
-    MCLS::MCSASolverManager<VectorType,MatrixType> 
+    MCLS::SequentialMCSolverManager<VectorType,MatrixType> 
 	solver_manager( linear_problem, comm, plist );
 
     // Solve the problem.
@@ -242,7 +242,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one )
 }
 
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two )
+TEUCHOS_UNIT_TEST( SequentialMCSolverManager, two_by_two )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
@@ -298,8 +298,8 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two )
 	    global_columns[1] = 1;
 	    global_columns[2] = 2;
 	    values[0] = 1.0;
-	    values[1] = 0.14;
-	    values[2] = 0.14;
+	    values[1] = 0.05;
+	    values[2] = 0.05;
 	    A->InsertGlobalValues( 0, global_columns.size(), 
 				   &values[0], &global_columns[0] );
 	    for ( int i = 1; i < global_num_rows-1; ++i )
@@ -307,17 +307,17 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two )
 		global_columns[0] = i-1;
 		global_columns[1] = i;
 		global_columns[2] = i+1;
-		values[0] = 0.14;
+		values[0] = 0.05;
 		values[1] = 1.0;
-		values[2] = 0.14;
+		values[2] = 0.05;
 		A->InsertGlobalValues( i, global_columns.size(), 
 				       &values[0], &global_columns[0] );
 	    }
 	    global_columns[0] = global_num_rows-3;
 	    global_columns[1] = global_num_rows-2;
 	    global_columns[2] = global_num_rows-1;
-	    values[0] = 0.14;
-	    values[1] = 0.14;
+	    values[0] = 0.05;
+	    values[1] = 0.05;
 	    values[2] = 1.0;
 	    A->InsertGlobalValues( global_num_rows-1, global_columns.size(), 
 				   &values[0], &global_columns[0] );
@@ -356,7 +356,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two )
 	plist->set<int>("Set Number of Histories", 100 );
 
 	// Create the solver.
-	MCLS::MCSASolverManager<VectorType,MatrixType> 
+	MCLS::SequentialMCSolverManager<VectorType,MatrixType> 
 	    solver_manager( linear_problem, comm, plist );
 
 	// Solve the problem.
@@ -495,6 +495,6 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two )
 }
 
 //---------------------------------------------------------------------------//
-// end tstEpetraMCSASolverManager.cpp
+// end tstEpetraSequentialMCSolverManager.cpp
 //---------------------------------------------------------------------------//
 

@@ -358,9 +358,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Boundary, LO, GO, Scalar )
 	Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
 	    Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
 
-	// Build the linear operator and solution vector. This operator will
-	// be assymetric so we quickly move the histories out of the domain
-	// before they hit the low weight cutoff.
+	// Build the linear operator and solution vector.
 	Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
 	Teuchos::Array<GO> global_columns( 3 );
 	Teuchos::Array<Scalar> values( 3 );
@@ -368,26 +366,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Boundary, LO, GO, Scalar )
 	global_columns[0] = 0;
 	global_columns[1] = 1;
 	global_columns[2] = 2;
-	values[0] = 0.25/comm_size;
-	values[1] = -0.25/comm_size;
-	values[2] = -0.5/comm_size;
+	values[0] = 2.2/comm_size;
+	values[1] = 0.24/comm_size;
+	values[2] = 0.24/comm_size;
 	A->insertGlobalValues( 0, global_columns(), values() );
 	for ( int i = 1; i < global_num_rows-1; ++i )
 	{
 	    global_columns[0] = i-1;
 	    global_columns[1] = i;
 	    global_columns[2] = i+1;
-	    values[0] = -0.25/comm_size;
-	    values[1] = 0.25/comm_size;
-	    values[2] = -0.5/comm_size;
+	    values[0] = 0.24/comm_size;
+	    values[1] = 2.2/comm_size;
+	    values[2] = 0.24/comm_size;
 	    A->insertGlobalValues( i, global_columns(), values() );
 	}
 	global_columns[0] = global_num_rows-3;
 	global_columns[1] = global_num_rows-2;
 	global_columns[2] = global_num_rows-1;
-	values[0] = -0.25/comm_size;
-	values[1] = -0.25/comm_size;
-	values[2] = 0.5/comm_size;
+	values[0] = 0.24/comm_size;
+	values[1] = 0.24/comm_size;
+	values[2] = 2.2/comm_size;
 	A->insertGlobalValues( global_num_rows-1, global_columns(), values() );
 	A->fillComplete();
 

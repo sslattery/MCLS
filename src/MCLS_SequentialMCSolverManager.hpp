@@ -32,14 +32,14 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_MCSASolverManager.hpp
+ * \file MCLS_SequentialMCSolverManager.hpp
  * \author Stuart R. Slattery
- * \brief Monte Carlo Synthetic Acceleration solver manager declaration.
+ * \brief Sequential Monte Carlo solver manager declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_MCSASOLVERMANAGER_HPP
-#define MCLS_MCSASOLVERMANAGER_HPP
+#ifndef MCLS_SEQUENTIALMCSOLVERMANAGER_HPP
+#define MCLS_SEQUENTIALMCSOLVERMANAGER_HPP
 
 #include "MCLS_SolverManager.hpp"
 #include "MCLS_LinearProblem.hpp"
@@ -56,11 +56,11 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 /*!
- * \class MCSASolverManager
- * \brief Solver manager for Monte Carlo synthetic acceleration.
+ * \class SequentialMCSolverManager
+ * \brief Solver manager for Sequential Monte Carlo.
  */
 template<class Vector, class Matrix>
-class MCSASolverManager : public SolverManager<Vector,Matrix>
+class SequentialMCSolverManager : public SolverManager<Vector,Matrix>
 {
   public:
 
@@ -76,12 +76,12 @@ class MCSASolverManager : public SolverManager<Vector,Matrix>
     //@}
 
     // Constructor.
-    MCSASolverManager( const Teuchos::RCP<LinearProblemType>& problem,
+    SequentialMCSolverManager( const Teuchos::RCP<LinearProblemType>& problem,
 		       const Teuchos::RCP<const Comm>& global_comm,
 		       const Teuchos::RCP<Teuchos::ParameterList>& plist );
 
     //! Destructor.
-    ~MCSASolverManager() { /* ... */ }
+    ~SequentialMCSolverManager() { /* ... */ }
 
     //! Get the linear problem being solved by the manager.
     const LinearProblem<Vector,Matrix>& getProblem() const
@@ -155,13 +155,13 @@ class MCSASolverManager : public SolverManager<Vector,Matrix>
 // Template includes.
 //---------------------------------------------------------------------------//
 
-#include "MCLS_MCSASolverManager_impl.hpp"
+#include "MCLS_SequentialMCSolverManager_impl.hpp"
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_MCSASOLVERMANAGER_HPP
+#endif // end MCLS_SEQUENTIALMCSOLVERMANAGER_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_MCSASolverManager.hpp
+// end MCLS_SequentialMCSolverManager.hpp
 //---------------------------------------------------------------------------//
 
