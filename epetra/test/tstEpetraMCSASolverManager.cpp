@@ -297,9 +297,9 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two )
 	    global_columns[0] = 0;
 	    global_columns[1] = 1;
 	    global_columns[2] = 2;
-	    values[0] = 0.14;
+	    values[0] = 1.0;
 	    values[1] = 0.14;
-	    values[2] = 2.2;
+	    values[2] = 0.14;
 	    A->InsertGlobalValues( 0, global_columns.size(), 
 				   &values[0], &global_columns[0] );
 	    for ( int i = 1; i < global_num_rows-1; ++i )
@@ -308,7 +308,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two )
 		global_columns[1] = i;
 		global_columns[2] = i+1;
 		values[0] = 0.14;
-		values[1] = 2.2;
+		values[1] = 1.0;
 		values[2] = 0.14;
 		A->InsertGlobalValues( i, global_columns.size(), 
 				       &values[0], &global_columns[0] );
@@ -318,7 +318,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two )
 	    global_columns[2] = global_num_rows-1;
 	    values[0] = 0.14;
 	    values[1] = 0.14;
-	    values[2] = 2.2;
+	    values[2] = 1.0;
 	    A->InsertGlobalValues( global_num_rows-1, global_columns.size(), 
 				   &values[0], &global_columns[0] );
 	    A->FillComplete();
