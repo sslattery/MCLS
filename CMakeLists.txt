@@ -46,6 +46,10 @@ IF (MCLS_ENABLE_Epetra)
   ADD_SUBDIRECTORY(epetra)
 ENDIF()
 
+IF (MCLS_ENABLE_Stratimikos)
+  ADD_SUBDIRECTORY(stratimikos)
+ENDIF()
+
 ##---------------------------------------------------------------------------##
 ## D) Do standard postprocessing
 ##---------------------------------------------------------------------------##
