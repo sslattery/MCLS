@@ -58,7 +58,7 @@ namespace MCLS
  * \brief Linear solver base class.
  */
 template<class Vector, class Matrix>
-class SolverManager : public Teuchos::Describable
+class SolverManager : public virtual Teuchos::Describable
 {
   public:
 

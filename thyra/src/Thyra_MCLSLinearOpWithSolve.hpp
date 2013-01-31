@@ -32,88 +32,45 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_SolverFactory.hpp
+ * \file Thyra_MCLSLinearOpWithSolve.hpp
  * \author Stuart R. Slattery
- * \brief Linear solver factory declaration.
+ * \brief Thyra LinearOpWithSolve implementation for MCLS.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_SOLVERFACTORY_HPP
-#define MCLS_SOLVERFACTORY_HPP
-
-#include <string>
+#ifndef THYRA_MCLS_LINEAR_OP_WITH_SOLVE_HPP
+#define THYRA_MCLS_LINEAR_OP_WITH_SOLVE_HPP
 
 #include "MCLS_SolverManager.hpp"
 
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_Describable.hpp>
-#include <Teuchos_Comm.hpp>
+#include "Teuchos_StandardMemberCompositionMacros.hpp"
 
-#include <boost/tr1/unordered_map.hpp>
+#include "Thyra_LinearOpWithSolveBase.hpp"
+#include "Thyra_LinearOpSourceBase.hpp"
 
-namespace MCLS
+namespace Thyra
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class SolverFactory
- * \brief Factory class for generating solver managers.
+ * \class SolverManager
+ * \brief Linear solver base class.
  */
-template<class Vector, class Matrix>
-class SolverFactory : public virtual Teuchos::Describable
+template<class Scalar>
+class MCLSLinearOpWithSolve : virtual public LinearOpWithSolveBase<Scalar>
 {
-  public:
 
-    //@{
-    //! Typedefs.
-    typedef Vector                                    vector_type;
-    typedef Matrix                                    matrix_type;
-    typedef SolverManager<Vector,Matrix>              Solver;     
-    typedef Teuchos::Comm<int>                        Comm;
-    typedef std::tr1::unordered_map<std::string,int>  MapType;
-    //@}
-
-    //! Constructor.
-    SolverFactory();
-
-    //! Destructor.
-    ~SolverFactory() { /* ... */ }
-
-    // Creation method.
-    Teuchos::RCP<Solver> 
-    create( const std::string& solver_name,
-	    const Teuchos::RCP<const Comm>& global_comm,
-	    const Teuchos::RCP<Teuchos::ParameterList>& solver_parameters );
-
-  private:
-
-    // Solver enum.
-    enum MCLSSolverType {
-	ADJOINT_MC,
-	MCSA,
-	SEQUENTIAL_MC
-    };
-
-    // String name to enum/integer map.
-    MapType d_name_map;
 };
 
 //---------------------------------------------------------------------------//
 
-} // end namespace MCLS
-
-//---------------------------------------------------------------------------//
-// Template includes.
-//---------------------------------------------------------------------------//
-
-#include "MCLS_SolverFactory_impl.hpp"
+} // end namespace Thyra
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_SOLVERFACTORY_HPP
+#endif // end THYRA_MCLS_LINEAR_OP_WITH_SOLVE_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_SolverFactory.hpp
-// ---------------------------------------------------------------------------//
+// end Thyra_MCLSLinearOpWithSolve.hpp
+//---------------------------------------------------------------------------//
 
