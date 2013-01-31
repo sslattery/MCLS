@@ -46,8 +46,8 @@ IF (MCLS_ENABLE_Epetra)
   ADD_SUBDIRECTORY(epetra)
 ENDIF()
 
-IF (MCLS_ENABLE_Stratimikos)
-  ADD_SUBDIRECTORY(stratimikos)
+IF (MCLS_ENABLE_Thyra)
+  ADD_SUBDIRECTORY(thyra)
 ENDIF()
 
 ##---------------------------------------------------------------------------##
