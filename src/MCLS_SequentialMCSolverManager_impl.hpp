@@ -214,7 +214,7 @@ bool SequentialMCSolverManager<Vector,Matrix>::solve()
     // Iteration setup.
     int max_num_iters = d_plist->get<int>("Max Number of Iterations");
     d_num_iters = 0;
-    int print_freq = int print_freq = d_plist->get<int>("Iteration Print Frequency");
+    int print_freq = d_plist->get<int>("Iteration Print Frequency");
 
     // Setup for iteration.
     Teuchos::RCP<Vector> tmp;
