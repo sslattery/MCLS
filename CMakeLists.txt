@@ -20,7 +20,7 @@ TRIBITS_PACKAGE(MCLS)
 
 # Design-by-Contract
 TRIBITS_ADD_OPTION_AND_DEFINE(
-	MCLS_ENABLE_DBC
+	${PACKAGE_NAME}_ENABLE_DBC
 	HAVE_MCLS_DBC
 	"Enable Design-by-Contract checks. WARNING: use for debug checking but disable for production runs as it incurs a significant overhead."
 	${${PROJECT_NAME}_ENABLE_DEBUG}
@@ -42,10 +42,12 @@ ADD_SUBDIRECTORY(tpetra)
 
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 
-IF (MCLS_ENABLE_Epetra)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Epetra)
+IF (${PACKAGE_NAME}_ENABLE_Epetra)
   ADD_SUBDIRECTORY(epetra)
 ENDIF()
 
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Thyra)
 IF (MCLS_ENABLE_Thyra)
   ADD_SUBDIRECTORY(thyra)
 ENDIF()
