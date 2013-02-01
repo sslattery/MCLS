@@ -241,7 +241,7 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	// Update the iteration count.
 	++d_num_iters;
 
-	// Do a Richardson iteration and update the resiudal on the primary
+	// Do a Richardson iteration and update the residual on the primary
 	// set. 
 	if ( d_primary_set )
 	{
