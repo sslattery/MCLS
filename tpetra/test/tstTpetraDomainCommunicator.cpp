@@ -180,7 +180,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Communicate, LO, GO, Scal
 	// Build the domain communicator.
 	typename MCLS::DomainCommunicator<DomainType>::BankType bank;
 	int buffer_size = 3;
-	plist.set<int>( "History Buffer Size", buffer_size );
+	plist.set<int>( "MC Buffer Size", buffer_size );
 	MCLS::DomainCommunicator<DomainType> communicator( domain, comm, plist );
 
 	// Test initialization.

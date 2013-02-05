@@ -218,7 +218,7 @@ TEUCHOS_UNIT_TEST( DomainCommunicator, Communicate )
 	// Build the domain communicator.
 	MCLS::DomainCommunicator<DomainType>::BankType bank;
 	int buffer_size = 3;
-	plist.set<int>( "History Buffer Size", buffer_size );
+	plist.set<int>( "MC Buffer Size", buffer_size );
 
 	MCLS::DomainCommunicator<DomainType> communicator( 
 	    domain, MT::getComm(*B), plist );
