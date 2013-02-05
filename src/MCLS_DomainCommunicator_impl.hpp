@@ -75,10 +75,10 @@ DomainCommunicator<Domain>::DomainCommunicator(
     HistoryBufferType::setSizePackedHistory( HistoryType::getPackedBytes() );
 
     // Get the max number of histories that will be stored in each buffer.
-    if ( plist.isParameter("History Buffer Size") )
+    if ( plist.isParameter("MC Buffer Size") )
     {
 	HistoryBufferType::setMaxNumHistories( 
-	    plist.get<int>("History Buffer Size") );
+	    plist.get<int>("MC Buffer Size") );
     }
 
     // Duplicate the input communicator so we have a blocking and nonblocking
