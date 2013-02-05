@@ -273,7 +273,9 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
      */
     static Teuchos::RCP<matrix_type> copyTranspose( const matrix_type& matrix )
     { 
-	Tpetra::RowMatrixTransposer<Scalar,LO,GO> transposer( matrix );
+	Teuchos::RCP<const matrix_type> matrix_rcp = 
+	    Teuchos::rcpFromRef( matrix );
+	Tpetra::RowMatrixTransposer<Scalar,LO,GO> transposer( matrix_rcp );
 	return transposer.createTranspose();
     }
 
