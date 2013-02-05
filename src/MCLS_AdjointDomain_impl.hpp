@@ -80,7 +80,7 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 	MT::cloneVectorFromMatrixRows( *A_T_overlap );
 
     // Build the adjoint tally from the solution vector and the overlap.
-    d_tally = Teuchos::rcp( new TallyType( x, x_overlap ) );
+    d_tally = Teuchos::rcp( new TallyType(x, x_overlap) );
 
     // Allocate space in local row data arrays.
     int num_rows = 
