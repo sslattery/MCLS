@@ -53,8 +53,8 @@ namespace Thyra
 
 //---------------------------------------------------------------------------//
 /*!
- * \class SolverManager
- * \brief Linear solver base class.
+ * \class MCLSLinearOpWithSolve
+ * \brief Thyra::LinearOpWithSolve implementation for MCLS solvers.
  */
 template<class Scalar>
 class MCLSLinearOpWithSolve : virtual public LinearOpWithSolveBase<Scalar>
