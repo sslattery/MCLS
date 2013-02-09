@@ -41,7 +41,6 @@
 #ifndef THYRA_MCLS_LINEAR_OP_WITH_SOLVE_HPP
 #define THYRA_MCLS_LINEAR_OP_WITH_SOLVE_HPP
 
-#include "MCLS_SolverManager.hpp"
 #include "Thyra_MCLSLinearProblemAdapter.hpp"
 #include "Thyra_MCLSSolverManagerAdapter.hpp"
 
@@ -61,16 +60,15 @@ class MCLSLinearOpWithSolve : virtual public LinearOpWithSolveBase<Scalar>
 {
   public:
 
-    //@{
     //! Typedefs.
-    typedef MultiVectorBase<Scalar>                  MultiVector;
-    typedef LinearOpBase<Scalar>                     LinearOp;
+    typedef MultiVectorBase<Scalar>                  MV_t;
+    typedef LinearOpBase<Scalar>                     LO_t;
     //@}
 
     // Uninitialized constructor.
     MCLSLinearOpWithSolve();
 
-    /** \brief Initializes given precreated solver objects. */
+    // Initializes given precreated solver objects.
     void initialize(
 	const RCP<MCLS::LinearProblemAdapter<Scalar,MV_t,LO_t> >& linear_problem,
 	const RCP<Teuchos::ParameterList>& plist,
@@ -79,75 +77,87 @@ class MCLSLinearOpWithSolve : virtual public LinearOpWithSolveBase<Scalar>
 	const RCP<const PreconditionerBase<Scalar> >& prec,
 	const bool is_external_prec,
 	const RCP<const LinearOpSourceBase<Scalar> >& approx_fwd_op_src,
-	const ESupportSolveUse& support_solve_use,
-	const int conv_check_freq );
-  
+	const ESupportSolveUse& support_solve_use );
 
     /** @name Extraction methods */
-    //@{
-    /** \brief Extract the forward <tt>LinearOpBase<double></tt> object so that
-     * it can be modified.
-     */
-    RCP<const LinearOpSourceBase<double> > extract_fwdOpSrc();
+    //@{ 
+    // Extract the forward <tt>LinearOpSourceBase<Scalar></tt> object so that
+    // it can be modified. 
+    RCP<const LinearOpSourceBase<Scalar> > extract_fwdOpSrc();
 
-    /** \brief Extract the preconditioner.
-     */
-    RCP<const PreconditionerBase<double> > extract_prec();
+    // Extract the preconditioner.
+    RCP<const PreconditionerBase<Scalar> > extract_prec();
 
-    /** \brief Determine if the preconditioner was external or not.
-     */
+    // Determine if the preconditioner was external or not.
     bool isExternalPrec() const;
 
-    /** \brief Extract the approximate forward <tt>LinearOpBase<double></tt>
-     * object used to build the preconditioner.
-     */
-    RCP<const LinearOpSourceBase<double> > extract_approxFwdOpSrc();
+    // Extract the approximate forward <tt>LinearOpSourceBase<Scalar></tt>
+    // object so that it can be modified.
+    RCP<const LinearOpSourceBase<Scalar> > extract_approxFwdOpSrc();
+
+    // Check for support.
+    ESupportSolveUse supportSolveUse() const;
+
+    // Uninitializes and returns stored quantities.
+    void uninitialize(
+	RCP<MCLS::LinearProblemAdapter<Scalar,MV_t,LO_t> >& linear_problem = Teuchos::null,
+	RCP<Teuchos::ParameterList>& plist = Teuchos::null,
+	RCP<MCLS::SolverManagerAdapter<Scalar,MV_t,LO_t> >&solver = Teuchos::null,
+	RCP<const LinearOpSourceBase<Scalar> >& fwd_op_src = Teuchos::null,
+	RCP<const PreconditionerBase<Scalar> >& prec = Teuchos::null,
+	bool& is_external_prec = false,
+	RCP<const LinearOpSourceBase<Scalar> >& approx_fwd_op_src = Teuchos::null,
+	ESupportSolveUse& support_solve_use = SUPPORT_SOLVE_UNSPECIFIED )
     //@}
 
 
     /** @name Overridden from LinearOpBase */
     //@{
-    /** \brief. */
-    RCP<const VectorSpaceBase<double> > range() const;
+    // Get the range of the operator for the linear problem being solved by
+    // this solver. 
+    RCP<const VectorSpaceBase<Scalar> > range() const;
 
-    /** \brief. */
-    RCP<const VectorSpaceBase<double> > domain() const;
+    // Get the domain of the operator for the linear problem being solved by
+    // this solver. 
+    RCP<const VectorSpaceBase<Scalar> > domain() const;
 
-    /** \brief. */
-    RCP<const LinearOpBase<double> > clone() const;
+    // Clone the operator for the linear problem being solved by this solver. 
+    RCP<const LinearOpBase<Scalar> > clone() const;
     //@}
 
   protected: 
 
     /** @name Overridden from LinearOpBase  */
     //@{
-    /** \brief . */
+    // Return whether a given operator transpose type is supported.
     virtual bool opSupportedImpl( EOpTransp M_trans ) const;
 
-    /** \brief . */
+    // Apply the linear operator from the linear problem being solved by this
+    // solver to a multivector.
     virtual void applyImpl( const EOpTransp M_trans,
-			    const MultiVectorBase<double> &X,
-			    const Ptr<MultiVectorBase<double> > &Y,
-			    const double alpha,
-			    const double beta ) const;
+			    const MultiVectorBase<Scalar> &X,
+			    const Ptr<MultiVectorBase<Scalar> > &Y,
+			    const Scalar alpha,
+			    const Scalar beta ) const;
     //@}
-
 
     /** @name Overridden from LinearOpWithSolveBase. */
     //@{
-    /** \brief . */
+    // Return whether this solver supports the given transpose type.
     virtual bool solveSupportsImpl( EOpTransp M_trans ) const;
 
-    /** \brief . */
+    // Return whether this solver supports the given transpose type and solve
+    // criteria. 
     virtual bool solveSupportsNewImpl(
 	EOpTransp transp,
 	const Ptr<const SolveCriteria<Scalar> > solveCriteria ) const;
 
-    /** \brief . */
+    // Return whether this solver supports the given transpose type and solve
+    // measure type.
     virtual bool solveSupportsSolveMeasureTypeImpl(
 	EOpTransp M_trans, const SolveMeasureType& solveMeasureType ) const;
 
-    /** \brief . */
+    // Solve the linear problem.
     virtual SolveStatus<Scalar> solveImpl(
 	const EOpTransp transp,
 	const MultiVectorBase<Scalar> &B,
@@ -171,14 +181,14 @@ class MCLSLinearOpWithSolve : virtual public LinearOpWithSolveBase<Scalar>
     // Blocked solver manager.
     RCP<MCLS::SolverManagerAdapter<Scalar,MV_t,LO_t> > d_solver;
 
-    // Check frequency for convergence.
-    int d_conv_check_freq;
-
     // Linear operator source.
     RCP<const LinearOpSourceBase<Scalar> > d_fwd_op_src;
 
     // Preconditioner.
     RCP<const PreconditionerBase<Scalar> > d_prec;
+
+    // Approximate linear operator source.
+    RCP<const LinearOpSourceBase<Scalar> > d_approx_fwd_op_src;
 
     // External preconditioner status.
     bool d_is_external_prec;
