@@ -289,7 +289,7 @@ bool MCLSLinearOpWithSolve::solveSupportsNewImpl(
 						 SOLVE_MEASURE_NORM_RHS) );
     }
 
-    return false;;
+    return false;
 }
 
 //---------------------------------------------------------------------------//
