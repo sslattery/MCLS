@@ -41,6 +41,7 @@
 #ifndef MCLS_LINEARPROBLEMADAPTER_HPP
 #define MCLS_LINEARPROBLEMADAPTER_HPP
 
+#include <MCLS_DBC.hpp>
 #include <MCLS_LinearProblem.hpp>
 
 #include <Teuchos_RCP.hpp>
@@ -60,6 +61,9 @@ namespace MCLS
 /*!
  * \class LinearProblemAdapter
  * \brief Linear system container for A*x = b.
+ *
+ * This container holds a blocked linear system and provides access to the
+ * individual linear systems contained within for MCLS solves.
  */
 template<class Vector, class MultiVector, class Matrix>
 class LinearProblemAdapter
@@ -76,30 +80,32 @@ class LinearProblemAdapter
     //! Constructor.
     LinearProblemAdapter( const Teuchos::RCP<const Matrix>& A,
 			  const Teuchos::RCP<MultiVector>& x,
-			  const Teuchos::RCP<const MultiVector>& b )
+			  const Teuchos::RCP<const MultiVector>& b,
+			  const int num_problems )
 	: d_A( A )
 	, d_x( x )
 	, d_b( b )
+	, d_num_problems( num_problems )
     { /* ... */ }
 
-    // Destructor.
+    //! Destructor.
     ~LinearProblemAdapter()
     { /* ... */ }
 
     //! Get a subproblem given a LHS/RHS id.
     Teuchos::RCP<LinearProblem<Vector,Matrix> > getSubProblem( const int id );
 
+    //! Get the number of LHS/RHS in the problem.
+    int getNumSubProblems() const { return d_num_problems; }  
+
     //! Set the linear operator.
-    void setOperator( const Teuchos::RCP<const Matrix>& A )
-    { d_A = A; }
+    void setOperator( const Teuchos::RCP<const Matrix>& A ) { d_A = A; }
 
     //! Set the left-hand side.
-    void setLHS( const Teuchos::RCP<MultiVector>& x )
-    { d_x = x; }
+    void setLHS( const Teuchos::RCP<MultiVector>& x ) { d_x = x; }
 
     //! Set the right-hand side.
-    void setRHS( const Teuchos::RCP<const MultiVector>& b );
-    { d_b = b; }
+    void setRHS( const Teuchos::RCP<const MultiVector>& b ) { d_b = b; }
 
     //! Get the linear operator.
     Teuchos::RCP<const Matrix> getOperator() const { return d_A; }
@@ -120,6 +126,9 @@ class LinearProblemAdapter
 
     // Right-hand side.
     Teuchos::RCP<const MultiVector> d_b;
+
+    // Number of LHS/RHS in the problem.
+    int d_num_problems;
 };
 
 //---------------------------------------------------------------------------//
@@ -128,9 +137,19 @@ class LinearProblemAdapter
  */
 template<>
 Teuchos::RCP<LinearProblem<Epetra_Vector,Epetra_RowMatrix> >
-LinearProblemAdapter<Epetra_Vector,Epetra_MultiVector,Epetra_RowMatrix>
+LinearProblemAdapter<Epetra_Vector,
+		     Epetra_MultiVector,
+		     Epetra_RowMatrix>::getSubProblem( const int id )
 {
-    return Teuchos::null;
+    Require( id < d_x->NumVectors() );
+    Require( id < d_b->NumVectors() );
+
+    Teuchos::RCP<Epetra_Vector> vector_x = Teuchos::rcp( (*d_x)(id), false );
+    Teuchos::RCP<const Epetra_Vector> vector_b = 
+	Teuchos::rcp( (*d_b)(id), false );
+
+    return Teuchos::rcp( new LinearProblem<Epetra_Vector,EpetraRowMatrix>(
+			     d_A, vector_x, vector_b) );
 }
 
 //---------------------------------------------------------------------------//
@@ -142,9 +161,20 @@ Teuchos::RCP<LinearProblem<Tpetra::Vector<Scalar,LO,GO>,
 			   Tpetra::CrsMatrix<Scalar,LO,GO> >
 LinearProblemAdapter<Tpetra::Vector<Scalar,LO,GO>,
 		     Tpetra::MultiVector<Scalar,LO,GO>,
-		     Tpetra::CrsMatrix<Scalar,LO,GO> >
+		     Tpetra::CrsMatrix<Scalar,LO,GO> >::getSubProblem(
+			 const int id )
 {
-    return Teuchos::null;
+    Require( id < d_x->getNumVectors() );
+    Require( id < d_b->getNumVectors() );
+
+    Teuchos::RCP<Tpetra::Vector<Scalar,LO,GO> > vector_x = 
+	Teuchos::rcp( d_x->getVectorNonConst(id), false );
+    Teuchos::RCP<const Tpetra::Vector<Scalar,LO,GO> > vector_b = 
+	Teuchos::rcp( d_b->getVector(id), false );
+
+    return Teuchos::rcp( new LinearProblem<Tpetra::Vector<Scalar,LO,GO>,
+					   Tpetra::CrsMatrix<Scalar,LO,GO> >(
+					       d_A, vector_x, vector_b) );
 }
 
 //---------------------------------------------------------------------------//

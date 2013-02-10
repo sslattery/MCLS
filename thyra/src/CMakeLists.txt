@@ -16,6 +16,12 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
+  MCLS_LinearProblemAdapter.hpp
+  MCLS_SolverManagerAdapter.hpp
+  Thyra_MCLSLinearOpWithSolve.hpp
+  Thyra_MCLSLinearOpWithSolve_impl.hpp
+  Thyra_MCLSLinearOpWithSolveFactory.hpp
+  Thyra_MCLSLinearOpWithSolveFactory_impl.hpp
   ) 
 
 APPEND_SET(SOURCES
