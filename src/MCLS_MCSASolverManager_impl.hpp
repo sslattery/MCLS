@@ -63,8 +63,8 @@ MCSASolverManager<Vector,Matrix>::MCSASolverManager(
     : d_global_comm( global_comm )
     , d_plist( plist )
 {
-    Require( !d_global_comm.is_null() );
-    Require( !d_plist.is_null() );
+    Require( Teuchos::nonnull(d_global_comm) );
+    Require( Teuchos::nonnull(d_plist) );
 }
 
 //---------------------------------------------------------------------------//
@@ -79,12 +79,12 @@ MCSASolverManager<Vector,Matrix>::MCSASolverManager(
     : d_problem( problem )
     , d_global_comm( global_comm )
     , d_plist( plist )
-    , d_primary_set( !d_problem.is_null() )
+    , d_primary_set( Teuchos::nonnull(d_problem) )
     , d_num_iters( 0 )
     , d_converged_status( 0 )
 {
-    Require( !global_comm.is_null() );
-    Require( !d_plist.is_null() );
+    Require( Teuchos::nonnull(global_comm) );
+    Require( Teuchos::nonnull(d_plist) );
 
     buildResidualMonteCarloProblem();
 }
@@ -142,15 +142,15 @@ template<class Vector, class Matrix>
 void MCSASolverManager<Vector,Matrix>::setProblem( 
     const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem )
 {
-    Require( !d_global_comm.is_null() );
-    Require( !d_plist.is_null() );
+    Require( Teuchos::nonnull(d_global_comm) );
+    Require( Teuchos::nonnull(d_plist) );
 
     // Set the MCSA problem.
     d_problem = problem;
-    d_primary_set = !d_problem.is_null();
+    d_primary_set = Teuchos::nonnull(d_problem);
 
     // Update the residual problem is it already exists.
-    if ( !d_mc_solver.is_null() )
+    if ( Teuchos::nonnull(d_mc_solver) )
     {
 	if ( d_primary_set )
 	{
@@ -179,8 +179,8 @@ template<class Vector, class Matrix>
 void MCSASolverManager<Vector,Matrix>::setParameters( 
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
-    Require( !params.is_null() );
-    Require( !d_mc_solver.is_null() );
+    Require( Teuchos::nonnull(params) );
+    Require( Teuchos::nonnull(d_mc_solver) );
 
     // Set the parameters.
     d_plist = params;
@@ -197,9 +197,9 @@ void MCSASolverManager<Vector,Matrix>::setParameters(
 template<class Vector, class Matrix>
 bool MCSASolverManager<Vector,Matrix>::solve()
 {
-    Require( !d_global_comm.is_null() );
-    Require( !d_mc_solver.is_null() );
-    Require( !d_plist.is_null() );
+    Require( Teuchos::nonnull(d_global_comm) );
+    Require( Teuchos::nonnull(d_mc_solver) );
+    Require( Teuchos::nonnull(d_plist) );
 
     // Get the convergence parameters on the primary set.
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType 
@@ -320,8 +320,8 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 template<class Vector, class Matrix>
 void MCSASolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
 {
-    Require( !d_global_comm.is_null() );
-    Require( !d_plist.is_null() );
+    Require( Teuchos::nonnull(d_global_comm) );
+    Require( Teuchos::nonnull(d_plist) );
 
     // Generate the residual Monte Carlo problem on the primary set.
     if ( d_primary_set )
@@ -342,14 +342,14 @@ void MCSASolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
 		d_residual_problem, d_global_comm, d_plist) );
 
 	// Get the block level communicator.
-	Check( !d_mc_solver.is_null() );
+	Check( Teuchos::nonnull(d_mc_solver) );
 	d_block_comm = 
 	    Teuchos::rcp_dynamic_cast<AdjointSolverManager<Vector,Matrix> >(
 		d_mc_solver)->blockComm();
     }
 
-    Ensure( !d_mc_solver.is_null() );
-    Ensure( !d_block_comm.is_null() );
+    Ensure( Teuchos::nonnull(d_mc_solver) );
+    Ensure( Teuchos::nonnull(d_block_comm) );
 }
 
 //---------------------------------------------------------------------------//

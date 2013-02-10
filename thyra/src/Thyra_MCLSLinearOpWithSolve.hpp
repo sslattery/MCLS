@@ -41,8 +41,8 @@
 #ifndef THYRA_MCLS_LINEAR_OP_WITH_SOLVE_HPP
 #define THYRA_MCLS_LINEAR_OP_WITH_SOLVE_HPP
 
-#include "Thyra_MCLSLinearProblemAdapter.hpp"
-#include "Thyra_MCLSSolverManagerAdapter.hpp"
+#include "MCLS_LinearProblemAdapter.hpp"
+#include "MCLS_SolverManagerAdapter.hpp"
 
 #include <Thyra_LinearOpWithSolveBase.hpp>
 #include <Thyra_LinearOpSourceBase.hpp>
@@ -69,10 +69,11 @@ class MCLSLinearOpWithSolve : virtual public LinearOpWithSolveBase<Scalar>
     MCLSLinearOpWithSolve();
 
     // Initializes given precreated solver objects.
+    template<class Vector>
     void initialize(
-	const RCP<MCLS::LinearProblemAdapter<Scalar,MV_t,LO_t> >& linear_problem,
+	const RCP<MCLS::LinearProblemAdapter<Vector,MultiVector,Matrix> >& linear_problem,
 	const RCP<Teuchos::ParameterList>& plist,
-	const RCP<MCLS::SolverManagerAdapter<Scalar,MV_t,LO_t> >&solver,
+	const RCP<MCLS::SolverManagerAdapter<Vector,MultiVector,Matrix> >&solver,
 	const RCP<const LinearOpSourceBase<Scalar> >& fwd_op_src,
 	const RCP<const PreconditionerBase<Scalar> >& prec,
 	const bool is_external_prec,
@@ -125,6 +126,18 @@ class MCLSLinearOpWithSolve : virtual public LinearOpWithSolveBase<Scalar>
     RCP<const LinearOpBase<Scalar> > clone() const;
     //@}
 
+    /** @name Overridden from Teuchos::Describable */
+    //@{
+    // Get a description of this object.
+    std::string description() const;
+
+    // Describe this object.
+    void describe(
+	Teuchos::FancyOStream &out,
+	const Teuchos::EVerbosityLevel verbLevel
+	) const;
+    //@}
+
   protected: 
 
     /** @name Overridden from LinearOpBase  */
@@ -159,7 +172,7 @@ class MCLSLinearOpWithSolve : virtual public LinearOpWithSolveBase<Scalar>
 
     // Solve the linear problem.
     virtual SolveStatus<Scalar> solveImpl(
-	const EOpTransp transp,
+	const EOpTransp M_trans,
 	const MultiVectorBase<Scalar> &B,
 	const Ptr<MultiVectorBase<Scalar> > &X,
 	const Ptr<const SolveCriteria<Scalar> > solveCriteria ) const;

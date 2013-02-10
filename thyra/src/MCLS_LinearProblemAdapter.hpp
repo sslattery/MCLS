@@ -34,113 +34,128 @@
 /*!
  * \file MCLS_LinearProblem.hpp
  * \author Stuart R. Slattery
- * \brief Linear Problem declaration.
+ * \brief LinearProblem adapter for Thyra
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_LINEARPROBLEM_HPP
-#define MCLS_LINEARPROBLEM_HPP
+#ifndef MCLS_LINEARPROBLEMADAPTER_HPP
+#define MCLS_LINEARPROBLEMADAPTER_HPP
 
-#include "MCLS_VectorTraits.hpp"
-#include "MCLS_MatrixTraits.hpp"
+#include <MCLS_LinearProblem.hpp>
 
 #include <Teuchos_RCP.hpp>
+
+#include <Epetra_Vector.h>
+#include <Epetra_MultiVector.h>
+#include <Epetra_RowMatrix.h>
+
+#include <Tpetra_Vector.hpp>
+#include <Tpetra_MultiVector.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 
 namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class LinearProblem
+ * \class LinearProblemAdapter
  * \brief Linear system container for A*x = b.
  */
-template<class Vector, class Matrix>
-class LinearProblem
+template<class Vector, class MultiVector, class Matrix>
+class LinearProblemAdapter
 {
   public:
 
     //@{
     //! Typedefs.
     typedef Vector                                      vector_type;
+    typedef MultiVector                                 multivector_type;
     typedef Matrix                                      matrix_type;
-    typedef VectorTraits<Vector>                        VT;
-    typedef MatrixTraits<Vector,Matrix>                 MT;
     //@}
 
-    // Constructor.
-    LinearProblem( const Teuchos::RCP<const Matrix>& A,
-		   const Teuchos::RCP<Vector>& x,
-		   const Teuchos::RCP<const Vector>& b );
+    //! Constructor.
+    LinearProblemAdapter( const Teuchos::RCP<const Matrix>& A,
+			  const Teuchos::RCP<MultiVector>& x,
+			  const Teuchos::RCP<const MultiVector>& b )
+	: d_A( A )
+	, d_x( x )
+	, d_b( b )
+    { /* ... */ }
 
     // Destructor.
-    ~LinearProblem();
+    ~LinearProblemAdapter()
+    { /* ... */ }
+
+    //! Get a subproblem given a LHS/RHS id.
+    Teuchos::RCP<LinearProblem<Vector,Matrix> > getSubProblem( const int id );
 
     //! Set the linear operator.
-    void setOperator( const Teuchos::RCP<const Matrix>& A );
+    void setOperator( const Teuchos::RCP<const Matrix>& A )
+    { d_A = A; }
 
     //! Set the left-hand side.
-    void setLHS( const Teuchos::RCP<Vector>& x );
+    void setLHS( const Teuchos::RCP<MultiVector>& x )
+    { d_x = x; }
 
     //! Set the right-hand side.
-    void setRHS( const Teuchos::RCP<const Vector>& b );
+    void setRHS( const Teuchos::RCP<const MultiVector>& b );
+    { d_b = b; }
 
     //! Get the linear operator.
     Teuchos::RCP<const Matrix> getOperator() const { return d_A; }
 
     //! Get the left-hand side.
-    Teuchos::RCP<Vector> getLHS() const { return d_x; }
+    Teuchos::RCP<MultiVector> getLHS() const { return d_x; }
 
     //! Get the right-hand side.
-    Teuchos::RCP<const Vector> getRHS() const { return d_b; }
-
-    //! Get the residual.
-    Teuchos::RCP<const Vector> getResidual() const { return d_r; }
-
-    // Apply the linear operator to a vector.
-    void applyOperator( const Vector& x, Vector& y );
-
-    // Update the residual.
-    void updateResidual();
-
-    //! Get the status of the linear problem.
-    bool status() const { return d_status; }
-
-    //! Set the linear problem status to true.
-    void setProblem() { d_status = true; }
+    Teuchos::RCP<const MultiVector> getRHS() const { return d_b; }
 
   private:
 
     // Linear operator.
     Teuchos::RCP<const Matrix> d_A;
 
-    // Left-hand side (solution vector).
-    Teuchos::RCP<Vector> d_x;
+    // Left-hand side.
+    Teuchos::RCP<MultiVector> d_x;
 
     // Right-hand side.
-    Teuchos::RCP<const Vector> d_b;
-
-    // Residual r = b - A*x.
-    Teuchos::RCP<Vector> d_r;
-
-    // Boolean for linear system status. True if we are ready to solve.
-    bool d_status;
+    Teuchos::RCP<const MultiVector> d_b;
 };
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Partial specialization for Epetra_RowMatrix.
+ */
+template<>
+Teuchos::RCP<LinearProblem<Epetra_Vector,Epetra_RowMatrix> >
+LinearProblemAdapter<Epetra_Vector,Epetra_MultiVector,Epetra_RowMatrix>
+{
+    return Teuchos::null;
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Partial specialization for Tpetra::CrsMatrix
+ */
+template<class Scalar, class LO, class GO>
+Teuchos::RCP<LinearProblem<Tpetra::Vector<Scalar,LO,GO>,
+			   Tpetra::CrsMatrix<Scalar,LO,GO> >
+LinearProblemAdapter<Tpetra::Vector<Scalar,LO,GO>,
+		     Tpetra::MultiVector<Scalar,LO,GO>,
+		     Tpetra::CrsMatrix<Scalar,LO,GO> >
+{
+    return Teuchos::null;
+}
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
 //---------------------------------------------------------------------------//
-// Template includes.
-//---------------------------------------------------------------------------//
 
-#include "MCLS_LinearProblem_impl.hpp"
+#endif // end MCLS_LINEARPROBLEMADAPTER_HPP
 
 //---------------------------------------------------------------------------//
-
-#endif // end MCLS_LINEARPROBLEM_HPP
-
-//---------------------------------------------------------------------------//
-// end MCLS_LinearProblem.hpp
+// end MCLS_LinearProblemAdapter.hpp
 // ---------------------------------------------------------------------------//
 

@@ -32,98 +32,84 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_LinearProblem.hpp
+ * \file MCLS_SolverManager.hpp
  * \author Stuart R. Slattery
- * \brief Linear Problem declaration.
+ * \brief Linear solver manager base class.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_LINEARPROBLEM_HPP
-#define MCLS_LINEARPROBLEM_HPP
+#ifndef MCLS_SOLVERMANAGER_HPP
+#define MCLS_SOLVERMANAGER_HPP
 
+#include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
-#include "MCLS_MatrixTraits.hpp"
 
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_Describable.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 
 namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class LinearProblem
- * \brief Linear system container for A*x = b.
+ * \class SolverManager
+ * \brief Linear solver base class.
  */
 template<class Vector, class Matrix>
-class LinearProblem
+class SolverManager : public virtual Teuchos::Describable
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Vector                                      vector_type;
-    typedef Matrix                                      matrix_type;
-    typedef VectorTraits<Vector>                        VT;
-    typedef MatrixTraits<Vector,Matrix>                 MT;
+    typedef Vector                                  vector_type;
+    typedef VectorTraits<Vector>                    VT;
+    typedef typename VT::scalar_type                Scalar;
+    typedef Matrix                                  matrix_type;
     //@}
 
-    // Constructor.
-    LinearProblem( const Teuchos::RCP<const Matrix>& A,
-		   const Teuchos::RCP<Vector>& x,
-		   const Teuchos::RCP<const Vector>& b );
+    //! Constructor.
+    SolverManager() { /* ... */ }
 
-    // Destructor.
-    ~LinearProblem();
+    //! Destructor.
+    virtual ~SolverManager() { /* ... */ }
 
-    //! Set the linear operator.
-    void setOperator( const Teuchos::RCP<const Matrix>& A );
+    //! Get the linear problem being solved by the manager.
+    virtual const LinearProblem<Vector,Matrix>& getProblem() const = 0;
 
-    //! Set the left-hand side.
-    void setLHS( const Teuchos::RCP<Vector>& x );
+    //! Get the valid parameters for this manager.
+    virtual Teuchos::RCP<const Teuchos::ParameterList> 
+    getValidParameters() const = 0;
 
-    //! Set the right-hand side.
-    void setRHS( const Teuchos::RCP<const Vector>& b );
+    //! Get the current parameters being used for this manager.
+    virtual Teuchos::RCP<const Teuchos::ParameterList> 
+    getCurrentParameters() const = 0;
 
-    //! Get the linear operator.
-    Teuchos::RCP<const Matrix> getOperator() const { return d_A; }
+    //! Get the tolerance achieved on the last linear solve. This may be less
+    //! or more than the set convergence tolerance.
+    virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+    achievedTol() const = 0;
 
-    //! Get the left-hand side.
-    Teuchos::RCP<Vector> getLHS() const { return d_x; }
+    //! Get the number of iterations from the last linear solve.
+    virtual int getNumIters() const = 0;
 
-    //! Get the right-hand side.
-    Teuchos::RCP<const Vector> getRHS() const { return d_b; }
+    //! Set the linear problem with the manager.
+    virtual void setProblem( 
+	const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem ) = 0;
 
-    //! Get the residual.
-    Teuchos::RCP<const Vector> getResidual() const { return d_r; }
+    //! Set the parameters for the manager. The manager will modify this list
+    //! with default parameters that are not defined.
+    virtual void setParameters( 
+	const Teuchos::RCP<Teuchos::ParameterList>& params ) = 0;
 
-    // Apply the linear operator to a vector.
-    void applyOperator( const Vector& x, Vector& y );
+    //! Solve the linear problem. Return true if the solution converged. False
+    //! if it did not.
+    virtual bool solve() = 0;
 
-    // Update the residual.
-    void updateResidual();
-
-    //! Get the status of the linear problem.
-    bool status() const { return d_status; }
-
-    //! Set the linear problem status to true.
-    void setProblem() { d_status = true; }
-
-  private:
-
-    // Linear operator.
-    Teuchos::RCP<const Matrix> d_A;
-
-    // Left-hand side (solution vector).
-    Teuchos::RCP<Vector> d_x;
-
-    // Right-hand side.
-    Teuchos::RCP<const Vector> d_b;
-
-    // Residual r = b - A*x.
-    Teuchos::RCP<Vector> d_r;
-
-    // Boolean for linear system status. True if we are ready to solve.
-    bool d_status;
+    //! Return if the last linear solve converged.
+    virtual bool getConvergedStatus() const = 0;
 };
 
 //---------------------------------------------------------------------------//
@@ -131,16 +117,10 @@ class LinearProblem
 } // end namespace MCLS
 
 //---------------------------------------------------------------------------//
-// Template includes.
-//---------------------------------------------------------------------------//
 
-#include "MCLS_LinearProblem_impl.hpp"
+#endif // end MCLS_SOLVERMANAGER_HPP
 
 //---------------------------------------------------------------------------//
-
-#endif // end MCLS_LINEARPROBLEM_HPP
-
+// end MCLS_SolverManager.hpp
 //---------------------------------------------------------------------------//
-// end MCLS_LinearProblem.hpp
-// ---------------------------------------------------------------------------//
 
