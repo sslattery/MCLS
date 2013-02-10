@@ -32,21 +32,21 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_SolverManagerAdapter.hpp
+ * \file MCLS_SolverManagerAdapter_impl.hpp
  * \author Stuart R. Slattery
  * \brief Linear solver manager adapter class for Thyra blocked systems.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_SOLVERMANAGERADAPTER_HPP
-#define MCLS_SOLVERMANAGERADAPTER_HPP
+#ifndef MCLS_SOLVERMANAGERADAPTER_IMPL_HPP
+#define MCLS_SOLVERMANAGERADAPTER_IMPL_HPP
+
+#include <algorithm>
 
 #include <MCLS_DBC.hpp>
-#include "MCLS_LinearProblemAdapter.hpp"
 
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Describable.hpp>
-#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_Time.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
 namespace MCLS
@@ -54,101 +54,107 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 /*!
- * \class SolverManagerAdapter
- * \brief Linear solver base class.
+ * \brief Constructor.
  */
 template<class Vector, class MultiVector, class Matrix>
-class SolverManagerAdapter : public virtual Teuchos::Describable
+SolverManagerAdapter<Vector,MultiVector,Matrix>::SolverManagerAdapter( 
+    const Teuchos::RCP<SolverManager<Vector,Matrix> >& solver )
+    : d_solver( solver )
 {
-  public:
+    Require( Teuchos::nonnull(d_solver) );
+}
 
-    //@{
-    //! Typedefs.
-    typedef Vector                                  vector_type;
-    typedef MultiVector                             multivector_type;
-    typedef Matrix                                  matrix_type;
-    //@}
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Set the linear problem with the manager.
+ */
+template<class Vector, class MultiVector, class Matrix>
+void SolverManagerAdapter<Vector,MultiVector,Matrix>::setProblem( 
+    const Teuchos::RCP<LinearProblemAdapter<Vector,MultiVector,Matrix> >& problem )
+{
+    Require( Teuchos::nonnull(problem) );
+    d_problem = problem;
+}
 
-    //! Constructor.
-    SolverManagerAdapter( 
-	const Teuchos::RCP<SolverManager<Vector,Matrix> >& solver );
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Solve the blocked linear problem. 
+ */
+template<class Vector, class MultiVector, class Matrix>
+Thyra::SolveStatus<typename VectorTraits<Vector>::scalar_type> 
+SolverManagerAdapter<Vector,MultiVector,Matrix>::solve()
+{
+    typedef typename Teuchos::ScalarTraits<
+	typename VectorTraits<Vector>::scalar_type> ScalarTraits;
+    Require( Teuchos::nonnull(d_problem) );
 
-    //! Destructor.
-    ~SolverManagerAdapter() { /* ... */ }
+    Teuchos::Time timer("");
+    bool converged = true;
+    int num_iters = 0;
+    ScalarTraits::magnitudeType achieved_tol = ScalarTraits::zero();
+    int num_problems = d_problem->getNumSubProblems();
+    Teuchos::RCP<LinearProblem<Vector,Matrix> > linear_problem;
 
-    //! Get the blocked linear problem being solved by the manager.
-    const LinearProblem<Vector,Matrix>& getProblem() const
-    { return d_problem; }
+    // Solve the individual linear problems.
+    timer.start(true);
+    for ( int n = 0; n < num_problems; ++n )
+    {
+	linear_problem = d_problem->getSubProblem( n );
+	d_solver->setProblem( linear_problem );
 
-    //! Get the valid parameters for this manager.
-    Teuchos::RCP<const Teuchos::ParameterList> 
-    getValidParameters() const
-    { return d_solver->getValidParameters(); }
+	d_solver->solve();
 
-    //! Get the current parameters being used for this manager.
-    Teuchos::RCP<const Teuchos::ParameterList> 
-    getCurrentParameters() const
-    { return d_solver->getCurrentParameters(); }
+	num_iters += d_solver->getNumIters();
 
-    //! Get the tolerance achieved on the last linear solve. This may be less
-    //! or more than the set convergence tolerance. This will be the largest
-    //! value achieved for all linear systems solved.
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-    achievedTol() const
-    { return d_achieved_tol; }
+	if ( !d_solver->getConvergedStatus() )
+	{
+	    converged = false;
+	}
 
-    //! Get the number of iterations from the last linear solve. This is the
-    //! total for all linear systems solved.
-    int getNumIters() const
-    { return d_total_iters; }
+	achieved_tol = std::max( d_solver->achievedTol(), achieved_tol );
+    }
+    timer.stop();
 
-    //! Set the linear problem with the manager.
-    void setProblem( 
-	const Teuchos::RCP<LinearProblemAdapter<Vector,MultiVector,Matrix> >& problem );
+    // Collect the solve results.
+    Thyra::SolveStatus<typename VectorTraits<Vector>::scalar_type> solve_status;
+    solve_status.solveStatus = ( converged ? 
+				 Thyra::SOLVE_STATUS_CONVERGED :
+				 Thyra::SOLVE_STATUS_UNCONVERGED );
+    solve_status.achievedTol = achieved_tol;
 
-    //! Set the parameters for the manager. The manager will modify this list
-    //! with default parameters that are not defined.
-    void setParameters( 
-	const Teuchos::RCP<Teuchos::ParameterList>& params )
-    { d_solver->setParameters(); }
+    // Report the solve results.
+    std::ostringstream ossmessage;
+    ossmessage << "MCLS solver \""<< d_solver->description()
+	       << "\" returned a solve status of \""
+	       << toString(status.solveStatus) << "\""
+	       << " for " << num_problems << "RHSs using "
+	       << num_iters << " cumulative iterations"
+	       << " for an average of " << num_iters/m << " iterations/RHS and"
+	       << " with total CPU time of " 
+	       << timer.totalElapsedTime() << " sec.";
 
-    //! Solve the blocked linear problem. Return true if the solution
-    //! converged for all blocks. False if it did not.
-    bool solve();
+    solveStatus.message = ossmessage.str();
+    
+    // Add extra parameters from solve to status.
+    if ( solveStatus.extraParameters.is_null() ) 
+    {
+	solveStatus.extraParameters = Teuchos::parameterList();
+    }
+    solveStatus.extraParameters->set("MCLS/Iteration Count", num_iters);
+    solveStatus.extraParameters->set("Iteration Count", num_iters);
+    solveStatus.extraParameters->set("MCLS/Achieved Tolerance", 
+				     solveStatus.achievedTol);
 
-    //! Return if the last linear solve converged for all blocks.
-    bool getConvergedStatus() const;
-
-  private:
-
-    // MCLS linear solver.
-    Teuchos::RCP<SolverManager<Vector,Matrix> > d_solver;
-
-    // Blocked linear problem.
-    Teuchos::RCP<LinearProblemAdapter<Vector,MultiVector,Matrix> > d_problem;
-
-    // Achieved tolerance on last linear solve.
-    double d_achieved_tol;
-
-    // Total iterations on last linear solve.
-    int d_total_iters;
-};
+    return solve_status;
+}
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
-//---------------------------------------------------------------------------//
-// Template includes.
-//---------------------------------------------------------------------------//
-
-#include "MCLS_SolverManagerAdapter_impl.hpp"
+#endif // end MCLS_SOLVERMANAGERADAPTER_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-
-#endif // end MCLS_SOLVERMANAGERADAPTER_HPP
-
-//---------------------------------------------------------------------------//
-// end MCLS_SolverManagerAdapter.hpp
+// end MCLS_SolverManagerAdapter_impl.hpp
 //---------------------------------------------------------------------------//
 

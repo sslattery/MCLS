@@ -466,15 +466,15 @@ SolveStatus<Scalar> MCLSLinearOpWithSolve<Scalar>::solveImpl(
     SolveStatus<Scalar> status = d_solver->solve();
     total_timer.stop();
 
-    // Report the overall time.
+    // Report the overall timing.
     if ( out.get() && 
 	 static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW) )
     {
 	*out << "\nTotal solve time = "
-	     << total_timer.totalElapsedTime()<<" sec\n";
+	     << total_timer.totalElapsedTime() <<" sec\n";
     }
 
-    // Return the solve tstatus.
+    // Return the solve status.
     return status;
 }
 

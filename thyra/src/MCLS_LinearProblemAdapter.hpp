@@ -77,6 +77,9 @@ class LinearProblemAdapter
     typedef Matrix                                      matrix_type;
     //@}
 
+    //! Default constructor.
+    LinearProblemAdapter() { /* ... */ }
+
     //! Constructor.
     LinearProblemAdapter( const Teuchos::RCP<const Matrix>& A,
 			  const Teuchos::RCP<MultiVector>& x,
@@ -89,14 +92,17 @@ class LinearProblemAdapter
     { /* ... */ }
 
     //! Destructor.
-    ~LinearProblemAdapter()
-    { /* ... */ }
+    ~LinearProblemAdapter() { /* ... */ }
 
     //! Get a subproblem given a LHS/RHS id.
     Teuchos::RCP<LinearProblem<Vector,Matrix> > getSubProblem( const int id );
 
     //! Get the number of LHS/RHS in the problem.
     int getNumSubProblems() const { return d_num_problems; }  
+
+    //! Set the number of LHS/RHS in the problem.
+    void setNumSubProblems( const int num_problems ) const 
+    { d_num_problems = num_problems; }  
 
     //! Set the linear operator.
     void setOperator( const Teuchos::RCP<const Matrix>& A ) { d_A = A; }
