@@ -101,14 +101,15 @@ class MCLSLinearOpWithSolve : virtual public LinearOpWithSolveBase<Scalar>
 
     // Uninitializes and returns stored quantities.
     void uninitialize(
-	RCP<MCLS::LinearProblemAdapter<Scalar,MV_t,LO_t> >& linear_problem = Teuchos::null,
-	RCP<Teuchos::ParameterList>& plist = Teuchos::null,
-	RCP<MCLS::SolverManagerAdapter<Scalar,MV_t,LO_t> >&solver = Teuchos::null,
-	RCP<const LinearOpSourceBase<Scalar> >& fwd_op_src = Teuchos::null,
-	RCP<const PreconditionerBase<Scalar> >& prec = Teuchos::null,
-	bool& is_external_prec = false,
-	RCP<const LinearOpSourceBase<Scalar> >& approx_fwd_op_src = Teuchos::null,
-	ESupportSolveUse& support_solve_use = SUPPORT_SOLVE_UNSPECIFIED )
+	RCP<MCLS::LinearProblemAdapter<Scalar,MV_t,LO_t> > *lp = NULL,
+	RCP<Teuchos::ParameterList> *solverPL = NULL,
+	RCP<MCLS::SolverManagerAdapter<Scalar,MV_t,LO_t> > *iterativeSolver = NULL,
+	RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc = NULL,
+	RCP<const PreconditionerBase<Scalar> > *prec = NULL,
+	bool *isExternalPrec = NULL,
+	RCP<const LinearOpSourceBase<Scalar> > *approxFwdOpSrc = NULL,
+	ESupportSolveUse *supportSolveUse = NULL
+	);
     //@}
 
 

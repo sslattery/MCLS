@@ -164,32 +164,33 @@ ESupportSolveUse MCLSLinearOpWithSolve<Scalar>::supportSolveUse()
  */
 template<class Scalar>
 void MCLSLinearOpWithSolve<Scalar>::uninitialize(
-    RCP<MCLS::LinearProblemAdapter<Scalar,MV_t,LO_t> >& linear_problem,
-    RCP<Teuchos::ParameterList>& plist,
-    RCP<MCLS::SolverManagerAdapter<Scalar,MV_t,LO_t> >&solver,
-    RCP<const LinearOpSourceBase<Scalar> >& fwd_op_src,
-    RCP<const PreconditionerBase<Scalar> >& prec,
-    bool& is_external_prec,
-    <const LinearOpSourceBase<Scalar> >& approx_fwd_op_src,
-    ESupportSolveUse& support_solve_use )
+    RCP<MCLS::LinearProblemAdapter<Scalar,MV_t,LO_t> > *lp,
+    RCP<Teuchos::ParameterList> *solverPL,
+    RCP<MCLS::SolverManagerAdapter<Scalar,MV_t,LO_t> > *iterativeSolver,
+    RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc,
+    RCP<const PreconditionerBase<Scalar> > *prec,
+    bool *isExternalPrec,
+    RCP<const LinearOpSourceBase<Scalar> > *approxFwdOpSrc,
+    ESupportSolveUse *supportSolveUse
+    )
 {
-    if ( nonnull(linear_problem) ) linear_problem = d_linear_problem;
-    if ( nonnull(plist) plist = d_plist;
-    if ( nonnull(solver) solver = d_solver;
-    if ( nonnull(fwd_op_src) fwd_op_src = d_fwd_op_src;
-    if ( nonnull(prec) prec = d_prec;
-    is_external_prec = d_external_prec;
-    if ( nonnull(approx_fwd_op_src) approx_fwd_op_src = d_approx_fwd_op_src;
-    support_solve_use = d_support_solve_use;
+    if (lp) *lp = lp_;
+    if (solverPL) *solverPL = solverPL_;
+    if (iterativeSolver) *iterativeSolver = iterativeSolver_;
+    if (fwdOpSrc) *fwdOpSrc = fwdOpSrc_;
+    if (prec) *prec = prec_;
+    if (isExternalPrec) *isExternalPrec = isExternalPrec_;
+    if (approxFwdOpSrc) *approxFwdOpSrc = approxFwdOpSrc_;
+    if (supportSolveUse) *supportSolveUse = supportSolveUse_;
 
-    d_linear_problem = Teuchos::null;
-    d_plist = Teuchos::null;
-    d_solver = Teuchos::null;
-    d_fwd_op_src = Teuchos::null;
-    d_prec = Teuchos::null;
-    d_is_external_prec = false;
-    d_approx_fwd_src = Teuchos::null;
-    d_support_solve_use = SUPPORT_SOLVE_UNSPECIFIED;
+    lp_ = Teuchos::null;
+    solverPL_ = Teuchos::null;
+    iterativeSolver_ = Teuchos::null;
+    fwdOpSrc_ = Teuchos::null;
+    prec_ = Teuchos::null;
+    isExternalPrec_ = false;
+    approxFwdOpSrc_ = Teuchos::null;
+    supportSolveUse_ = SUPPORT_SOLVE_UNSPECIFIED;
 }
 
 //---------------------------------------------------------------------------//

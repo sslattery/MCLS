@@ -428,8 +428,6 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 	    Teuchos::DummyObjectGetter<Teuchos::StringToIntegralValidatorXMLConverter<
 		EMCLSSolverType> >::getDummyObject());
 
-    typedef MultiVectorBase<Scalar> MV_t;
-    typedef LinearOpBase<Scalar> LO_t;
     static RCP<Teuchos::ParameterList> validParamList;
     if( validParamList.get()==NULL ) 
     {
@@ -445,14 +443,14 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 		),
 	    tuple<std::string>(
 		"Monte Carlo Synthetic Acceleration solver for nonsymmetric linear "
-		"systems, that performs single right-hand side solves on multiple "
+		"systems that performs single right-hand side solves on multiple "
 		"right-hand sides sequentially.",
 
-		"Sequential Monte Carlo solver for nonsymmetric linear systems, "
+		"Sequential Monte Carlo solver for nonsymmetric linear systems "
 		"that performs single right-hand side solves on multiple "
 		"right-hand sides sequentially.",
 
-		"Adjoint Monte Carlo solver for nonsymmetric linear systems, "
+		"Adjoint Monte Carlo solver for nonsymmetric linear systems "
 		"that performs single right-hand side solves on multiple "
 		"right-hand sides sequentially."
 		),
@@ -467,27 +465,28 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 	    ConvergenceTestFrequency_name, as<int>(1),
 	    "Number of linear solver iterations to skip between applying"
 	    " user-defined convergence test.");
+
+	// We'll use Epetra to get the valid parameters for the solvers as
+	// they are independent of the vector/operator implementation used.
 	Teuchos::ParameterList
 	    &solverTypesSL = validParamList->sublist(SolverTypes_name);
 	{
-	    MCLS::BlockGmresSolMgr<Scalar,MV_t,LO_t> mgr;
-	    solverTypesSL.sublist(BlockGMRES_name).setParameters(
-		*mgr.getValidParameters()
-		);
+	    MCLS::MCSASolverManager<Epetra_Vector,Epetra_RowMatrix> mgr;
+	    solverTypesSL.sublist(MCSA_name).setParameters(
+		*mgr.getValidParameters() );
 	}
 	{
-	    MCLS::PseudoBlockGmresSolMgr<Scalar,MV_t,LO_t> mgr;
-	    solverTypesSL.sublist(PseudoBlockGMRES_name).setParameters(
-		*mgr.getValidParameters()
-		);
+	    MCLS::SequentialMCSolverManager<Epetra_Vector,Epetra_RowMatrix> mgr;
+	    solverTypesSL.sublist(SequentialMC_name).setParameters(
+		*mgr.getValidParameters() );
 	}
 	{
-	    MCLS::BlockCGSolMgr<Scalar,MV_t,LO_t> mgr;
-	    solverTypesSL.sublist(BlockCG_name).setParameters(
-		*mgr.getValidParameters()
-		);
+	    MCLS::AdjointMCSolverManager<Epetra_Vector,Epetra_RowMatrix> mgr;
+	    solverTypesSL.sublist(AdjointMC_name).setParameters(
+		*mgr.getValidParameters() );
 	}
     }
+
     return validParamList;
 }
 
@@ -500,26 +499,23 @@ template<class Scalar>
 void MCLSLinearOpWithSolveFactory<Scalar>::updateThisValidParamList()
 {
     d_valid_plist = Teuchos::rcp(
-	new Teuchos::ParameterList(*generateAndGetValidParameters())
-	);
+	new Teuchos::ParameterList(*generateAndGetValidParameters()) );
     Teuchos::setupVerboseObjectSublist(&*d_valid_plist);
 }
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Initialize the linear solve.
+ * \brief Initialize the linear solver.
  */
 template<class Scalar>
 void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
-    const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-    const RCP<const LinearOpSourceBase<Scalar> > &approxFwdOpSrc,
-    const RCP<const PreconditionerBase<Scalar> > &prec_in,
+    const RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc,
+    const RCP<const LinearOpSourceBase<Scalar> >& approxFwdOpSrc,
+    const RCP<const PreconditionerBase<Scalar> >& prec_in,
     const bool reusePrec,
-    LinearOpWithSolveBase<Scalar> *Op,
-    const ESupportSolveUse supportSolveUse
-    ) const
+    LinearOpWithSolveBase<Scalar>* Op,
+    const ESupportSolveUse supportSolveUse ) const
 {
-
     using Teuchos::rcp;
     using Teuchos::set_extra_data;
     typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -544,75 +540,76 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     RCP<const LinearOpBase<Scalar> > approxFwdOp = 
 	( approxFwdOpSrc.get() ? approxFwdOpSrc->getOp() : Teuchos::null );
 
-    //
     // Get the MCLSLinearOpWithSolve interface
-    //
-
     MCLSLinearOpWithSolve<Scalar>
 	*mclsOp = &Teuchos::dyn_cast<MCLSLinearOpWithSolve<Scalar> >(*Op);
 
-    //
     // Get/Create the preconditioner
-    //
-
     RCP<PreconditionerBase<Scalar> > myPrec = Teuchos::null;
     RCP<const PreconditionerBase<Scalar> > prec = Teuchos::null;
-    if(prec_in.get()) {
+    if( prec_in.get() ) 
+    {
 	// Use an externally defined preconditioner
 	prec = prec_in;
     }
-    else {
+    else 
+    {
 	// Try and generate a preconditioner on our own
-	if(precFactory_.get()) {
-	    myPrec =
-		( !mclsOp->isExternalPrec()
-		  ? Teuchos::rcp_const_cast<PreconditionerBase<Scalar> >(mclsOp->extract_prec())
-		  : Teuchos::null
-		    );
+	if( d_prec_factory.get() ) 
+	{
+	    myPrec = ( 
+		!mclsOp->isExternalPrec()
+		? Teuchos::rcp_const_cast<PreconditionerBase<Scalar> >(
+		    mclsOp->extract_prec()) : Teuchos::null );
 	    bool hasExistingPrec = false;
-	    if(myPrec.get()) {
+	    if( myPrec.get() ) 
+	    {
 		hasExistingPrec = true;
 		// ToDo: Get the forward operator and validate that it is the same
 		// operator that is used here!
 	    }
-	    else {
+	    else 
+	    {
 		hasExistingPrec = false;
-		myPrec = precFactory_->createPrec();
+		myPrec = d_prec_factory->createPrec();
 	    }
-	    if( hasExistingPrec && reusePrec ) {
+	    if( hasExistingPrec && reusePrec ) 
+	    {
 		// Just reuse the existing preconditioner again!
 	    }
-	    else {
+	    else 
+	    {
 		// Update the preconditioner
-		if(approxFwdOp.get())
-		    precFactory_->initializePrec(approxFwdOpSrc,&*myPrec);
+		if( approxFwdOp.get() )
+		{
+		    d_prec_factory->initializePrec(approxFwdOpSrc,&*myPrec);
+		}
 		else
-		    precFactory_->initializePrec(fwdOpSrc,&*myPrec);
+		{
+		    d_prec_factory->initializePrec(fwdOpSrc,&*myPrec);
+		}
 	    }
 	    prec = myPrec;
 	}
     }
 
-    //
     // Uninitialize the current solver object
-    //
-
     bool oldIsExternalPrec = false;
-    RCP<MCLS::LinearProblem<Scalar,MV_t,LO_t> > oldLP = Teuchos::null;
-    RCP<MCLS::SolverManager<Scalar,MV_t,LO_t> > oldIterSolver = Teuchos::null;
+    RCP<MCLS::LinearProblemAdapter<Scalar,MV_t,LO_t> > oldLP = Teuchos::null;
+    RCP<MCLS::SolverManagerAdapter<Scalar,MV_t,LO_t> > oldIterSolver = Teuchos::null;
     RCP<const LinearOpSourceBase<Scalar> > oldFwdOpSrc = Teuchos::null;
     RCP<const LinearOpSourceBase<Scalar> > oldApproxFwdOpSrc = Teuchos::null;   
     ESupportSolveUse oldSupportSolveUse = SUPPORT_SOLVE_UNSPECIFIED;
-
     mclsOp->uninitialize( &oldLP, NULL, &oldIterSolver, &oldFwdOpSrc,
-			  NULL, &oldIsExternalPrec, &oldApproxFwdOpSrc, &oldSupportSolveUse );
+			  NULL, &oldIsExternalPrec, &oldApproxFwdOpSrc, 
+			  &oldSupportSolveUse );
 
     //
     // Create the MCLS linear problem
     // NOTE:  If one exists already, reuse it.
     //
 
-    typedef MCLS::LinearProblem<Scalar,MV_t,LO_t> LP_t;
+    typedef MCLS::LinearProblemAdapter<Scalar,MV_t,LO_t> LP_t;
     RCP<LP_t> lp;
     if (oldLP != Teuchos::null) {
 	lp = oldLP;
@@ -666,7 +663,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     // Generate the parameter list.
     //
 
-    typedef MCLS::SolverManager<Scalar,MV_t,LO_t> IterativeSolver_t;
+    typedef MCLS::SolverManagerAdapter<Scalar,MV_t,LO_t> IterativeSolver_t;
     RCP<IterativeSolver_t> iterativeSolver = Teuchos::null;
     RCP<Teuchos::ParameterList> solverPL = Teuchos::rcp( new Teuchos::ParameterList() );
   
@@ -873,11 +870,10 @@ bool MCLSLinearOpWithSolveFactory<Scalar>::isEpetraCompatible(
     const LinearOpSourceBase<Scalar> &fwdOpSrc ) const
 {
     // MCLS interfaces are currently only implemented for Epetra_RowMatrix.
-    RCP<const Epetra_Operator> epetraFwdOp = 
+    RCP<const Epetra_RowMatrix> epetraFwdOp = 
 	getEpetraRowMatrix( fwdOpSrc );
 
-    bool row_matrix_compatible = Teuchos::as<bool>(
-	dynamic_cast<const Epetra_RowMatrix*>(&*epetraFwdOp) );
+    bool row_matrix_compatible = Teuchos::nonnull( epetraFwdOp );
 
     return row_matrix_compatible;
 }
