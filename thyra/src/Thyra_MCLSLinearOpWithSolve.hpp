@@ -180,11 +180,6 @@ class MCLSLinearOpWithSolve : virtual public LinearOpWithSolveBase<Scalar>
 
   private:
 
-    // Check the initialization.
-    void assertInitialized() const;
-
-  private:
-
     // Blocked linear problem.
     RCP<MCLS::LinearProblemAdapter<Scalar,MV_t,LO_t> > d_linear_problem;
 
@@ -216,6 +211,12 @@ class MCLSLinearOpWithSolve : virtual public LinearOpWithSolveBase<Scalar>
 //---------------------------------------------------------------------------//
 
 } // end namespace Thyra
+
+//---------------------------------------------------------------------------//
+// Template includes.
+//---------------------------------------------------------------------------//
+
+#include "Thyra_MCLSLinearOpWithSolve_impl.hpp"
 
 //---------------------------------------------------------------------------//
 

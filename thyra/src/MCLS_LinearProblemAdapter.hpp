@@ -45,6 +45,7 @@
 #include <MCLS_LinearProblem.hpp>
 
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_Describable.hpp>
 
 #include <Epetra_Vector.h>
 #include <Epetra_MultiVector.h>
@@ -66,7 +67,7 @@ namespace MCLS
  * individual linear systems contained within for MCLS solves.
  */
 template<class Vector, class MultiVector, class Matrix>
-class LinearProblemAdapter
+class LinearProblemAdapter : public virtual Teuchos::Describable
 {
   public:
 
