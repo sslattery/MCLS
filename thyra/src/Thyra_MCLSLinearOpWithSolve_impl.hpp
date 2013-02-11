@@ -63,11 +63,11 @@ MCLSLinearOpWithSolve<Scalar>::MCLSLinearOpWithSolve()
  * \brief Initializes given precreated solver objects. 
  */
 template<class Scalar>
-template<class Vector, class MultiVector, class Matrix>
+template<class MultiVector, class Matrix>
 void MCLSLinearOpWithSolve<Scalar>::initialize(
-    const RCP<MCLS::LinearProblemAdapter<Vector,MultiVector,Matrix> >& linear_problem,
+    const RCP<MCLS::LinearProblemAdapter<MultiVector,Matrix> >& linear_problem,
     const RCP<Teuchos::ParameterList>& plist,
-    const RCP<MCLS::SolverManagerAdapter<Vector,MultiVector,Matrix> >& solver,
+    const RCP<MCLS::SolverManagerAdapter<MultiVector,Matrix> >& solver,
     const RCP<const LinearOpSourceBase<Scalar> >& fwd_op_src,
     const RCP<const PreconditionerBase<Scalar> >& prec,
     const bool is_external_prec,
@@ -165,11 +165,11 @@ ESupportSolveUse MCLSLinearOpWithSolve<Scalar>::supportSolveUse() const
  * \brief Uninitializes and returns stored quantities.
  */
 template<class Scalar>
-template<class Vector, class MultiVector, class Matrix>
+template<class MultiVector, class Matrix>
 void MCLSLinearOpWithSolve<Scalar>::uninitialize(
-    RCP<MCLS::LinearProblemAdapter<Vector,MultiVector,Matrix> > *lp,
+    RCP<MCLS::LinearProblemAdapter<MultiVector,Matrix> > *lp,
     RCP<Teuchos::ParameterList> *solverPL,
-    RCP<MCLS::SolverManagerAdapter<Vector,MultiVector,Matrix> > *iterativeSolver,
+    RCP<MCLS::SolverManagerAdapter<MultiVector,Matrix> > *iterativeSolver,
     RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc,
     RCP<const PreconditionerBase<Scalar> > *prec,
     bool *isExternalPrec,

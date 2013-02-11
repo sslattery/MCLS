@@ -91,7 +91,17 @@ class LinearProblemAdapter : public virtual Teuchos::Describable
     ~LinearProblemAdapter() { /* ... */ }
 
     //! Get a subproblem given a LHS/RHS id.
-    Teuchos::RCP<LinearProblem<Vector,Matrix> > getSubProblem( const int id );
+    Teuchos::RCP<LinearProblem<Vector,Matrix> > getSubProblem( const int id )
+    {
+	Require( id < MVT::getNumVectors(*d_x) );
+	Require( id < MVT::getNumVectors(*d_b) );
+
+	Teuchos::RCP<Vector> vector_x = MVT::getVectorNonConst( *d_x, id );
+	Teuchos::RCP<const Vector> vector_b = MVT::getVector( *d_b, id );
+
+	return Teuchos::rcp( new LinearProblem<Vector,Matrix>(
+				 d_A, vector_x, vector_b) );
+    }
 
     //! Get the number of LHS/RHS in the problem.
     int getNumSubProblems() const { return d_num_problems; }  
@@ -132,75 +142,6 @@ class LinearProblemAdapter : public virtual Teuchos::Describable
     // Number of LHS/RHS in the problem.
     int d_num_problems;
 };
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Partial specialization for Epetra_RowMatrix.
- */
-template<>
-Teuchos::RCP<LinearProblem<Epetra_Vector,Epetra_RowMatrix> >
-LinearProblemAdapter<Epetra_Vector,
-		     Epetra_MultiVector,
-		     Epetra_RowMatrix>::getSubProblem( const int id )
-{
-    Require( id < d_x->NumVectors() );
-    Require( id < d_b->NumVectors() );
-
-    Teuchos::RCP<Epetra_Vector> vector_x = Teuchos::rcp( (*d_x)(id), false );
-    Teuchos::RCP<const Epetra_Vector> vector_b = 
-	Teuchos::rcp( (*d_b)(id), false );
-
-    return Teuchos::rcp( new LinearProblem<Epetra_Vector,Epetra_RowMatrix>(
-			     d_A, vector_x, vector_b) );
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Partial specialization for Tpetra::CrsMatrix<double,int,int>
- */
-Teuchos::RCP<LinearProblem<Tpetra::Vector<double,int,int>,
-			   Tpetra::CrsMatrix<double,int,int> > >
-LinearProblemAdapter<Tpetra::Vector<double,int,int>,
-		     Tpetra::MultiVector<double,int,int>,
-		     Tpetra::CrsMatrix<double,int,int> >::getSubProblem(
-			 const int id )
-{
-    Require( id < d_x->getNumVectors() );
-    Require( id < d_b->getNumVectors() );
-
-    Teuchos::RCP<Tpetra::Vector<double,int,int> > vector_x = 
-	Teuchos::rcp( d_x->getVectorNonConst(id), false );
-    Teuchos::RCP<const Tpetra::Vector<double,int,int> > vector_b = 
-	Teuchos::rcp( d_b->getVector(id), false );
-
-    return Teuchos::rcp( new LinearProblem<Tpetra::Vector<double,int,int>,
-					   Tpetra::CrsMatrix<double,int,int> >(
-					       d_A, vector_x, vector_b) );
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Partial specialization for Tpetra::CrsMatrix<double,int,long>
- */
-Teuchos::RCP<LinearProblem<Tpetra::Vector<double,int,long>,
-			   Tpetra::CrsMatrix<double,int,long> > >
-LinearProblemAdapter<Tpetra::Vector<double,int,long>,
-		     Tpetra::MultiVector<double,int,long>,
-		     Tpetra::CrsMatrix<double,int,long> >::getSubProblem(
-			 const int id )
-{
-    Require( id < d_x->getNumVectors() );
-    Require( id < d_b->getNumVectors() );
-
-    Teuchos::RCP<Tpetra::Vector<double,int,long> > vector_x = 
-	Teuchos::rcp( d_x->getVectorNonConst(id), false );
-    Teuchos::RCP<const Tpetra::Vector<double,int,long> > vector_b = 
-	Teuchos::rcp( d_b->getVector(id), false );
-
-    return Teuchos::rcp( new LinearProblem<Tpetra::Vector<double,int,long>,
-					   Tpetra::CrsMatrix<double,int,long> >(
-					       d_A, vector_x, vector_b) );
-}
 
 //---------------------------------------------------------------------------//
 

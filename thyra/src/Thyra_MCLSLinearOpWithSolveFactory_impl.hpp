@@ -528,7 +528,6 @@ void MCLSLinearOpWithSolveFactory<Scalar>::selectOpImpl(
     if ( isEpetraCompatible(fwdOpSrc) )
     {
 	initializeOpImpl<Scalar,
-			 Epetra_Vector,
 			 Epetra_MultiVector,
 			 Epetra_RowMatrix>(
 			     fwdOpSrc, approxFwdOpSrc, prec_in,
@@ -540,7 +539,6 @@ void MCLSLinearOpWithSolveFactory<Scalar>::selectOpImpl(
 	typedef int GO;
 
 	initializeOpImpl<Scalar,
-			 Tpetra::Vector<Scalar,LO,GO>,
 			 Tpetra::MultiVector<Scalar,LO,GO>,
 			 Tpetra::CrsMatrix<Scalar,LO,GO> >(
 			     fwdOpSrc, approxFwdOpSrc, prec_in, 
@@ -552,7 +550,6 @@ void MCLSLinearOpWithSolveFactory<Scalar>::selectOpImpl(
 	typedef long GO;
 
 	initializeOpImpl<Scalar,
-			 Tpetra::Vector<Scalar,LO,GO>,
 			 Tpetra::MultiVector<Scalar,LO,GO>,
 			 Tpetra::CrsMatrix<Scalar,LO,GO> >(
 			     fwdOpSrc, approxFwdOpSrc, prec_in, 
@@ -568,7 +565,8 @@ void MCLSLinearOpWithSolveFactory<Scalar>::selectOpImpl(
 /*!
  * \brief Initialize the linear solver.
  */
-template<class Scalar, class Vector, class MultiVector, class Matrix>
+template<class Scalar>
+template<class MultiVector, class Matrix>
 void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     const RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc,
     const RCP<const LinearOpSourceBase<Scalar> >& approxFwdOpSrc,
@@ -654,9 +652,9 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 
     // Uninitialize the current solver object
     bool oldIsExternalPrec = false;
-    RCP<MCLS::LinearProblemAdapter<Vector,MultiVector,Matrix> > oldLP = 
+    RCP<MCLS::LinearProblemAdapter<MultiVector,Matrix> > oldLP = 
 	Teuchos::null;
-    RCP<MCLS::SolverManagerAdapter<Vector,MultiVector,Matrix> > oldIterSolver =
+    RCP<MCLS::SolverManagerAdapter<MultiVector,Matrix> > oldIterSolver =
 	Teuchos::null;
     RCP<const LinearOpSourceBase<Scalar> > oldFwdOpSrc = Teuchos::null;
     RCP<const LinearOpSourceBase<Scalar> > oldApproxFwdOpSrc = Teuchos::null;   
@@ -670,7 +668,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     // NOTE:  If one exists already, reuse it.
     //
 
-    typedef MCLS::LinearProblemAdapter<Vector,MultiVector,Matrix> LP_t;
+    typedef MCLS::LinearProblemAdapter<MultiVector,Matrix> LP_t;
     RCP<LP_t> lp;
     if ( oldLP != Teuchos::null ) 
     {
@@ -715,7 +713,8 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     }
 
     // Generate the parameter list.
-    typedef MCLS::SolverManagerAdapter<Vector,MultiVector,Matrix> IterativeSolver_t;
+    typedef MCLS::SolverManagerAdapter<MultiVector,Matrix> IterativeSolver_t;
+    typedef typename IterativeSolver_t::Vector Vector;
     typedef MCLS::SolverManager<Vector,Matrix> Solver_t;
     RCP<IterativeSolver_t> iterativeSolver = Teuchos::null;
     RCP<Solver_t> solver = Teuchos::null;

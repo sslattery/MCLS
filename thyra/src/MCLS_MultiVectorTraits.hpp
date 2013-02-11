@@ -147,7 +147,7 @@ class MultiVectorTraits<Epetra_MultiVector>
 
     //! Return a vector given its id in the multivector.
     static Teuchos::RCP<vector_type> 
-    getVectorNonConst( const MultiVector& multivector, const int id )
+    getVectorNonConst( MultiVector& multivector, const int id )
     {
 	return Teuchos::rcp( multivector(id), false );
     }
@@ -186,7 +186,7 @@ class MultiVectorTraits<Tpetra::MultiVector<Scalar,LO,GO> >
 
     //! Return a vector given its id in the multivector.
     static Teuchos::RCP<vector_type> 
-    getVectorNonConst( const MultiVector& multivector, const int id )
+    getVectorNonConst( MultiVector& multivector, const int id )
     {
 	return Teuchos::rcp( multivector->getVector(id), false );
     }

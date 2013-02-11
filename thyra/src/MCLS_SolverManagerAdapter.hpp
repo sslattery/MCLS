@@ -45,6 +45,7 @@
 #include <MCLS_SolverManager.hpp>
 
 #include "MCLS_LinearProblemAdapter.hpp"
+#include "MCLS_MultiVectorTraits.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Describable.hpp>
@@ -61,16 +62,18 @@ namespace MCLS
  * \class SolverManagerAdapter
  * \brief SolverManager adapter for Thyra blocked systems.
  */
-template<class Vector, class MultiVector, class Matrix>
+template<class MultiVector, class Matrix>
 class SolverManagerAdapter : public virtual Teuchos::Describable
 {
   public:
 
     //@{
     //! Typedefs.
+    typedef MultiVector                                 multivector_type;
+    typedef MultiVectorTraits<MultiVector>              MVT;
+    typedef typename MVT::vector_type                   Vector;
     typedef Vector                                      vector_type;
     typedef typename VectorTraits<Vector>::scalar_type  Scalar;
-    typedef MultiVector                                 multivector_type;
     typedef Matrix                                      matrix_type;
     //@}
 
@@ -97,7 +100,7 @@ class SolverManagerAdapter : public virtual Teuchos::Describable
 
     // Set the linear problem with the manager.
     void setProblem( 
-	const Teuchos::RCP<LinearProblemAdapter<Vector,MultiVector,Matrix> >& problem );
+	const Teuchos::RCP<LinearProblemAdapter<MultiVector,Matrix> >& problem );
 
     //! Set the parameters for the manager. The manager will modify this list
     //! with default parameters that are not defined.
@@ -115,7 +118,7 @@ class SolverManagerAdapter : public virtual Teuchos::Describable
     Teuchos::RCP<SolverManager<Vector,Matrix> > d_solver;
 
     // Blocked linear problem.
-    Teuchos::RCP<LinearProblemAdapter<Vector,MultiVector,Matrix> > d_problem;
+    Teuchos::RCP<LinearProblemAdapter<MultiVector,Matrix> > d_problem;
 };
 
 //---------------------------------------------------------------------------//
