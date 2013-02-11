@@ -44,16 +44,10 @@
 #include <MCLS_DBC.hpp>
 #include <MCLS_LinearProblem.hpp>
 
+#include "MCLS_MultiVectorTraits.hpp"
+
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Describable.hpp>
-
-#include <Epetra_Vector.h>
-#include <Epetra_MultiVector.h>
-#include <Epetra_RowMatrix.h>
-
-#include <Tpetra_Vector.hpp>
-#include <Tpetra_MultiVector.hpp>
-#include <Tpetra_CrsMatrix.hpp>
 
 namespace MCLS
 {
@@ -66,15 +60,16 @@ namespace MCLS
  * This container holds a blocked linear system and provides access to the
  * individual linear systems contained within for MCLS solves.
  */
-template<class Vector, class MultiVector, class Matrix>
+template<class MultiVector, class Matrix>
 class LinearProblemAdapter : public virtual Teuchos::Describable
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Vector                                      vector_type;
     typedef MultiVector                                 multivector_type;
+    typedef MultiVectorTraits<MultiVector>              MVT;
+    typedef typename MVT::vector_type                   Vector;
     typedef Matrix                                      matrix_type;
     //@}
 
@@ -161,26 +156,49 @@ LinearProblemAdapter<Epetra_Vector,
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Partial specialization for Tpetra::CrsMatrix
+ * \brief Partial specialization for Tpetra::CrsMatrix<double,int,int>
  */
-template<class Scalar, class LO, class GO>
-Teuchos::RCP<LinearProblem<Tpetra::Vector<Scalar,LO,GO>,
-			   Tpetra::CrsMatrix<Scalar,LO,GO> > >
-LinearProblemAdapter<Tpetra::Vector<Scalar,LO,GO>,
-		     Tpetra::MultiVector<Scalar,LO,GO>,
-		     Tpetra::CrsMatrix<Scalar,LO,GO> >::getSubProblem(
+Teuchos::RCP<LinearProblem<Tpetra::Vector<double,int,int>,
+			   Tpetra::CrsMatrix<double,int,int> > >
+LinearProblemAdapter<Tpetra::Vector<double,int,int>,
+		     Tpetra::MultiVector<double,int,int>,
+		     Tpetra::CrsMatrix<double,int,int> >::getSubProblem(
 			 const int id )
 {
     Require( id < d_x->getNumVectors() );
     Require( id < d_b->getNumVectors() );
 
-    Teuchos::RCP<Tpetra::Vector<Scalar,LO,GO> > vector_x = 
+    Teuchos::RCP<Tpetra::Vector<double,int,int> > vector_x = 
 	Teuchos::rcp( d_x->getVectorNonConst(id), false );
-    Teuchos::RCP<const Tpetra::Vector<Scalar,LO,GO> > vector_b = 
+    Teuchos::RCP<const Tpetra::Vector<double,int,int> > vector_b = 
 	Teuchos::rcp( d_b->getVector(id), false );
 
-    return Teuchos::rcp( new LinearProblem<Tpetra::Vector<Scalar,LO,GO>,
-					   Tpetra::CrsMatrix<Scalar,LO,GO> >(
+    return Teuchos::rcp( new LinearProblem<Tpetra::Vector<double,int,int>,
+					   Tpetra::CrsMatrix<double,int,int> >(
+					       d_A, vector_x, vector_b) );
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Partial specialization for Tpetra::CrsMatrix<double,int,long>
+ */
+Teuchos::RCP<LinearProblem<Tpetra::Vector<double,int,long>,
+			   Tpetra::CrsMatrix<double,int,long> > >
+LinearProblemAdapter<Tpetra::Vector<double,int,long>,
+		     Tpetra::MultiVector<double,int,long>,
+		     Tpetra::CrsMatrix<double,int,long> >::getSubProblem(
+			 const int id )
+{
+    Require( id < d_x->getNumVectors() );
+    Require( id < d_b->getNumVectors() );
+
+    Teuchos::RCP<Tpetra::Vector<double,int,long> > vector_x = 
+	Teuchos::rcp( d_x->getVectorNonConst(id), false );
+    Teuchos::RCP<const Tpetra::Vector<double,int,long> > vector_b = 
+	Teuchos::rcp( d_b->getVector(id), false );
+
+    return Teuchos::rcp( new LinearProblem<Tpetra::Vector<double,int,long>,
+					   Tpetra::CrsMatrix<double,int,long> >(
 					       d_A, vector_x, vector_b) );
 }
 

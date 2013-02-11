@@ -1,0 +1,204 @@
+//---------------------------------------------------------------------------//
+/*
+  Copyright (c) 2012, Stuart R. Slattery
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are
+  met:
+
+  *: Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer.
+
+  *: Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in the
+  documentation and/or other materials provided with the distribution.
+
+  *: Neither the name of the University of Wisconsin - Madison nor the
+  names of its contributors may be used to endorse or promote products
+  derived from this software without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+  HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+//---------------------------------------------------------------------------//
+/*!
+ * \file MCLS_MultiVectorTraits.hpp
+ * \author Stuart R. Slattery
+ * \brief MultiVector traits definition.
+ */
+//---------------------------------------------------------------------------//
+
+#ifndef MCLS_VECTORTRAITS_HPP
+#define MCLS_VECTORTRAITS_HPP
+
+#include <MCLS_VectorTraits.hpp>
+
+#include <Teuchos_RCP.hpp>
+
+#include <Epetra_Vector.h>
+#include <Epetra_MultiVector.h>
+
+#include <Tpetra_Vector.hpp>
+#include <Tpetra_MultiVector.hpp>
+
+namespace MCLS
+{
+
+//---------------------------------------------------------------------------//
+/*!
+ * \class UndefinedMultiVectorTraits
+ * \brief Class for undefined vector traits. 
+ *
+ * Will throw a compile-time error if these traits are not specialized.
+ */
+template<class MultiVector>
+struct UndefinedMultiVectorTraits
+{
+    static inline void notDefined()
+    {
+	return MultiVector::this_type_is_missing_a_specialization();
+    }
+};
+
+//---------------------------------------------------------------------------//
+/*!
+ * \class MultiVectorTraits
+ * \brief Traits for vectors.
+ *
+ * MultiVectorTraits defines an interface for parallel distributed vectors
+ * (e.g. Tpetra::MultiVector or Epetra_MultiVector).
+ */
+template<class MultiVector>
+class MultiVectorTraits
+{
+  public:
+
+    //@{
+    //! Typedefs.
+    typedef MultiVector                                      multivector_type;
+    typedef MultiVector::vector_type                         vector_type;
+    typedef typename MultiVector::scalar_type                scalar_type;
+    typedef typename MultiVector::local_ordinal_type         local_ordinal_type;
+    typedef typename MultiVector::global_ordinal_type        global_ordinal_type;
+    //@}
+
+    //! Get the number of vectors in this multivector.
+    static int getNumVectors( const MultiVector& multivector )
+    { 
+	UndefinedMultiVectorTraits<MultiVector>::notDefined(); 
+	return 0;
+    }
+
+    //! Return a vector given its id in the multivector.
+    static Teuchos::RCP<const vector_type> getVector( const int id )
+    {
+	UndefinedMultiVectorTraits<MultiVector>::notDefined(); 
+	return Teuchos::null;
+    }
+
+    //! Return a vector given its id in the multivector.
+    static Teuchos::RCP<vector_type> getVectorNonConst( const int id )
+    {
+	UndefinedMultiVectorTraits<MultiVector>::notDefined(); 
+	return Teuchos::null;
+    }
+};
+
+//---------------------------------------------------------------------------//
+// Specialization for Epetra_MultiVector.
+//---------------------------------------------------------------------------//
+template<>
+class MultiVectorTraits<Epetra_MultiVector>
+{
+  public:
+
+    //@{
+    //! Typedefs.
+    typedef Epetra_MultiVector                          multivector_type;
+    typedef Epetra_Vector                               vector_type;
+    typedef VectorTraits<vector_type>                   VT;
+    typedef typename VT::scalar_type                    scalar_type;
+    typedef typename VT::local_ordinal_type             local_ordinal_type;
+    typedef typename VT::global_ordinal_type            global_ordinal_type;
+    //@}
+
+    //! Get the number of vectors in this multivector.
+    static int getNumVectors( const MultiVector& multivector )
+    { 
+	return multivector.NumVectors();
+    }
+
+    //! Return a vector given its id in the multivector.
+    static Teuchos::RCP<const vector_type> 
+    getVector( const MultiVector& multivector, const int id )
+    {
+	return Teuchos::rcp( multivector(id), false );
+    }
+
+    //! Return a vector given its id in the multivector.
+    static Teuchos::RCP<vector_type> 
+    getVectorNonConst( const MultiVector& multivector, const int id )
+    {
+	return Teuchos::rcp( multivector(id), false );
+    }
+};
+
+//---------------------------------------------------------------------------//
+// Specialization for Tpetra::MultiVector.
+//---------------------------------------------------------------------------//
+template<class Scalar, class LO, class GO>
+class MultiVectorTraits<Tpetra::MultiVector<Scalar,LO,GO> >
+{
+  public:
+
+    //@{
+    //! Typedefs.
+    typedef Tpetra::MultiVector<Scalar,LO,GO>           multivector_type;
+    typedef Tpetra::Vector<Scalar,LO,GO>                vector_type;
+    typedef VectorTraits<vector_type>                   VT;
+    typedef typename VT::scalar_type                    scalar_type;
+    typedef typename VT::local_ordinal_type             local_ordinal_type;
+    typedef typename VT::global_ordinal_type            global_ordinal_type;
+    //@}
+
+    //! Get the number of vectors in this multivector.
+    static int getNumVectors( const MultiVector& multivector )
+    { 
+	return multivector.getNumVectors();
+    }
+
+    //! Return a vector given its id in the multivector.
+    static Teuchos::RCP<const vector_type> 
+    getVector( const MultiVector& multivector, const int id )
+    {
+	return Teuchos::rcp( multivector->getVector(id), false );
+    }
+
+    //! Return a vector given its id in the multivector.
+    static Teuchos::RCP<vector_type> 
+    getVectorNonConst( const MultiVector& multivector, const int id )
+    {
+	return Teuchos::rcp( multivector->getVector(id), false );
+    }
+};
+
+//---------------------------------------------------------------------------//
+
+} // end namespace MCLS
+
+#endif // end MCLS_VECTORTRAITS_HPP
+
+//---------------------------------------------------------------------------//
+// end MCLS_MultiVectorTraits.hpp
+//---------------------------------------------------------------------------//
+

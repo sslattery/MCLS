@@ -84,14 +84,13 @@ template<class Vector, class MultiVector, class Matrix>
 Thyra::SolveStatus<typename VectorTraits<Vector>::scalar_type> 
 SolverManagerAdapter<Vector,MultiVector,Matrix>::solve()
 {
-    typedef typename Teuchos::ScalarTraits<
-	typename VectorTraits<Vector>::scalar_type> ScalarTraits;
     Require( Teuchos::nonnull(d_problem) );
 
     Teuchos::Time timer("");
     bool converged = true;
     int num_iters = 0;
-    ScalarTraits::magnitudeType achieved_tol = ScalarTraits::zero();
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType achieved_tol = 
+	Teuchos::ScalarTraits<Scalar>::zero();
     int num_problems = d_problem->getNumSubProblems();
     Teuchos::RCP<LinearProblem<Vector,Matrix> > linear_problem;
 
@@ -126,24 +125,24 @@ SolverManagerAdapter<Vector,MultiVector,Matrix>::solve()
     std::ostringstream ossmessage;
     ossmessage << "MCLS solver \""<< d_solver->description()
 	       << "\" returned a solve status of \""
-	       << toString(status.solveStatus) << "\""
+	       << toString(solve_status.solveStatus) << "\""
 	       << " for " << num_problems << "RHSs using "
 	       << num_iters << " cumulative iterations"
-	       << " for an average of " << num_iters/m << " iterations/RHS and"
-	       << " with total CPU time of " 
+	       << " for an average of " << num_iters/num_problems 
+	       << " iterations/RHS and with total CPU time of " 
 	       << timer.totalElapsedTime() << " sec.";
 
-    solveStatus.message = ossmessage.str();
+    solve_status.message = ossmessage.str();
     
     // Add extra parameters from solve to status.
-    if ( solveStatus.extraParameters.is_null() ) 
+    if ( solve_status.extraParameters.is_null() ) 
     {
-	solveStatus.extraParameters = Teuchos::parameterList();
+	solve_status.extraParameters = Teuchos::parameterList();
     }
-    solveStatus.extraParameters->set("MCLS/Iteration Count", num_iters);
-    solveStatus.extraParameters->set("Iteration Count", num_iters);
-    solveStatus.extraParameters->set("MCLS/Achieved Tolerance", 
-				     solveStatus.achievedTol);
+    solve_status.extraParameters->set("MCLS/Iteration Count", num_iters);
+    solve_status.extraParameters->set("Iteration Count", num_iters);
+    solve_status.extraParameters->set("MCLS/Achieved Tolerance", 
+				      solve_status.achievedTol);
 
     return solve_status;
 }

@@ -62,7 +62,8 @@ MCLSLinearOpWithSolve<Scalar>::MCLSLinearOpWithSolve()
 /*!
  * \brief Initializes given precreated solver objects. 
  */
-template<class Scalar, class Vector, class MultiVector, class Matrix>
+template<class Scalar>
+template<class Vector, class MultiVector, class Matrix>
 void MCLSLinearOpWithSolve<Scalar>::initialize(
     const RCP<MCLS::LinearProblemAdapter<Vector,MultiVector,Matrix> >& linear_problem,
     const RCP<Teuchos::ParameterList>& plist,
@@ -72,7 +73,6 @@ void MCLSLinearOpWithSolve<Scalar>::initialize(
     const bool is_external_prec,
     const RCP<const LinearOpSourceBase<Scalar> >& approx_fwd_op_src,
     const ESupportSolveUse& support_solve_use )
-    : 
 {
     Require( nonnull(solver) );
 
@@ -93,7 +93,7 @@ void MCLSLinearOpWithSolve<Scalar>::initialize(
 	else
 	{
 	    d_default_tol = 
-		d_solver->getValidParameters()->d_plist->get<double>(
+		d_solver->getValidParameters()->template get<double>(
 		    "Convergence Tolerance");
 	}
     }
@@ -107,7 +107,7 @@ void MCLSLinearOpWithSolve<Scalar>::initialize(
 template<class Scalar>
 RCP<const LinearOpSourceBase<Scalar> > MCLSLinearOpWithSolve<Scalar>::extract_fwdOpSrc()
 {
-    RCP<const LinearOpSourceBaseScalar> fwd_op_src = d_fwd_op_src;
+    RCP<const LinearOpSourceBase<Scalar> > fwd_op_src = d_fwd_op_src;
     d_fwd_op_src = Teuchos::null;
     return fwd_op_src;
 }
@@ -118,9 +118,9 @@ RCP<const LinearOpSourceBase<Scalar> > MCLSLinearOpWithSolve<Scalar>::extract_fw
  * modified.
  */
 template<class Scalar>
-RCP<const LinearOpSourceBase<Scalar> > MCLSLinearOpWithSolve<Scalar>::extract_prec()
+RCP<const PreconditionerBase<Scalar> > MCLSLinearOpWithSolve<Scalar>::extract_prec()
 {
-    RCP<const LinearOpSourceBaseScalar> prec = d_prec;
+    RCP<const PreconditionerBase<Scalar> > prec = d_prec;
     d_prec = Teuchos::null;
     return prec;
 }
@@ -130,7 +130,7 @@ RCP<const LinearOpSourceBase<Scalar> > MCLSLinearOpWithSolve<Scalar>::extract_pr
  * \brief Determine if the preconditioner is external or not.
  */
 template<class Scalar>
-boll MCLSLinearOpWithSolve<Scalar>::isExternalPrec() const
+bool MCLSLinearOpWithSolve<Scalar>::isExternalPrec() const
 {
     return d_is_external_prec;
 }
@@ -144,7 +144,7 @@ template<class Scalar>
 RCP<const LinearOpSourceBase<Scalar> > 
 MCLSLinearOpWithSolve<Scalar>::extract_approxFwdOpSrc()
 {
-    RCP<const LinearOpSourceBaseScalar> approx_fwd_op_src = 
+    RCP<const LinearOpSourceBase<Scalar> > approx_fwd_op_src = 
 	d_approx_fwd_op_src;
     d_approx_fwd_op_src = Teuchos::null;
     return approx_fwd_op_src;
@@ -155,7 +155,7 @@ MCLSLinearOpWithSolve<Scalar>::extract_approxFwdOpSrc()
  * \brief Check for support.
  */
 template<class Scalar>
-ESupportSolveUse MCLSLinearOpWithSolve<Scalar>::supportSolveUse()
+ESupportSolveUse MCLSLinearOpWithSolve<Scalar>::supportSolveUse() const
 {
     return d_support_solve_use;
 }
@@ -164,7 +164,8 @@ ESupportSolveUse MCLSLinearOpWithSolve<Scalar>::supportSolveUse()
 /*!
  * \brief Uninitializes and returns stored quantities.
  */
-template<class Scalar, class Vector, class MultiVector, class Matrix>
+template<class Scalar>
+template<class Vector, class MultiVector, class Matrix>
 void MCLSLinearOpWithSolve<Scalar>::uninitialize(
     RCP<MCLS::LinearProblemAdapter<Vector,MultiVector,Matrix> > *lp,
     RCP<Teuchos::ParameterList> *solverPL,
@@ -176,23 +177,23 @@ void MCLSLinearOpWithSolve<Scalar>::uninitialize(
     ESupportSolveUse *supportSolveUse
     )
 {
-    if (lp) *lp = lp_;
-    if (solverPL) *solverPL = solverPL_;
-    if (iterativeSolver) *iterativeSolver = iterativeSolver_;
-    if (fwdOpSrc) *fwdOpSrc = fwdOpSrc_;
-    if (prec) *prec = prec_;
-    if (isExternalPrec) *isExternalPrec = isExternalPrec_;
-    if (approxFwdOpSrc) *approxFwdOpSrc = approxFwdOpSrc_;
-    if (supportSolveUse) *supportSolveUse = supportSolveUse_;
+    if (lp) *lp = d_linear_problem;
+    if (solverPL) *solverPL = d_plist;
+    if (iterativeSolver) *iterativeSolver = d_solver;
+    if (fwdOpSrc) *fwdOpSrc = d_fwd_op_src;
+    if (prec) *prec = d_prec;
+    if (isExternalPrec) *isExternalPrec = d_is_external_prec;
+    if (approxFwdOpSrc) *approxFwdOpSrc = d_approx_fwd_op_src;
+    if (supportSolveUse) *supportSolveUse = d_support_solve_use;
 
-    lp_ = Teuchos::null;
-    solverPL_ = Teuchos::null;
-    iterativeSolver_ = Teuchos::null;
-    fwdOpSrc_ = Teuchos::null;
-    prec_ = Teuchos::null;
-    isExternalPrec_ = false;
-    approxFwdOpSrc_ = Teuchos::null;
-    supportSolveUse_ = SUPPORT_SOLVE_UNSPECIFIED;
+    d_linear_problem = Teuchos::null;
+    d_plist = Teuchos::null;
+    d_solver = Teuchos::null;
+    d_fwd_op_src = Teuchos::null;
+    d_prec = Teuchos::null;
+    d_is_external_prec = false;
+    d_approx_fwd_op_src = Teuchos::null;
+    d_support_solve_use = SUPPORT_SOLVE_UNSPECIFIED;
 }
 
 //---------------------------------------------------------------------------//
@@ -233,7 +234,7 @@ RCP<const VectorSpaceBase<Scalar> > MCLSLinearOpWithSolve<Scalar>::domain() cons
  * solver.
  */
 template<class Scalar>
-RCP<const VectorSpaceBase<Scalar> > MCLSLinearOpWithSolve<Scalar>::clone() const
+RCP<const LinearOpBase<Scalar> > MCLSLinearOpWithSolve<Scalar>::clone() const
 {
     // Not supported.
     return Teuchos::null;
@@ -308,7 +309,7 @@ void MCLSLinearOpWithSolve<Scalar>::describe(
  * \brief Return whether a given operator transpose type is supported.
  */
 template<class Scalar>
-bool MCLSLinearOpWithSolve<Scalar>::opSupportedImpl( const EOpTransp M_trans )
+bool MCLSLinearOpWithSolve<Scalar>::opSupportedImpl( EOpTransp M_trans ) const
 {
     return ::Thyra::opSupported( d_linear_problem->getOperator(), M_trans );
 }
@@ -319,11 +320,12 @@ bool MCLSLinearOpWithSolve<Scalar>::opSupportedImpl( const EOpTransp M_trans )
  * this solver to a multivector.
  */
 template<class Scalar>
-void MCLSLinearOpWithSolve<Scalar>::applyImpl( const EOpTransp M_trans,
-				       const MultiVectorBase<Scalar> &X,
-				       const Ptr<MultiVectorBase<Scalar> > &Y,
-				       const Scalar alpha,
-				       const Scalar beta ) const
+void MCLSLinearOpWithSolve<Scalar>::applyImpl( 
+    const EOpTransp M_trans,
+    const MultiVectorBase<Scalar> &X,
+    const Ptr<MultiVectorBase<Scalar> > &Y,
+    const Scalar alpha,
+    const Scalar beta ) const
 {
     ::Thyra::apply<Scalar>(
 	d_linear_problem->getOperator(), M_trans, X, Y, alpha, beta );
@@ -334,7 +336,7 @@ void MCLSLinearOpWithSolve<Scalar>::applyImpl( const EOpTransp M_trans,
  * \brief Return whether this solver supports the given transpose type.
  */
 template<class Scalar>
-bool MCLSLinearOpWithSolve<Scalar>::solveSupportsImpl( const EOpTransp M_trans )
+bool MCLSLinearOpWithSolve<Scalar>::solveSupportsImpl( EOpTransp M_trans ) const
 {
     return solveSupportsNewImpl( M_trans, Teuchos::null );
 }
@@ -350,7 +352,7 @@ bool MCLSLinearOpWithSolve<Scalar>::solveSupportsNewImpl(
     const Ptr<const SolveCriteria<Scalar> > solveCriteria ) const
 {
     // Only forward solves are currently supported.
-    if ( transp == NOTRANS )
+    if ( M_trans == NOTRANS )
     {
 	// Only residual scaled by rhs supported.
 	return ( solveCriteria->solveMeasureType.useDefault() ||
@@ -432,13 +434,12 @@ SolveStatus<Scalar> MCLSLinearOpWithSolve<Scalar>::solveImpl(
 		tmp_pl->set("Convergence Tolerance", requested_tol);
 	    }
 	    else {
-		tmp_pl->set("Convergence Tolerance", default_tol);
+		tmp_pl->set("Convergence Tolerance", d_default_tol);
 	    }
-	    setResidualScalingType (tmpPL, validPL, "Norm of RHS");
 	}
 	else
 	{
-	    temp_pl->set("Convergence Tolerance", 1.0);
+	    tmp_pl->set("Convergence Tolerance", 1.0);
 	}
 
 	// Set the maximum number of iterations.

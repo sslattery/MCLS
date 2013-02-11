@@ -42,6 +42,8 @@
 #define MCLS_SOLVERMANAGERADAPTER_HPP
 
 #include <MCLS_VectorTraits.hpp>
+#include <MCLS_SolverManager.hpp>
+
 #include "MCLS_LinearProblemAdapter.hpp"
 
 #include <Teuchos_RCP.hpp>
@@ -66,9 +68,10 @@ class SolverManagerAdapter : public virtual Teuchos::Describable
 
     //@{
     //! Typedefs.
-    typedef Vector                                  vector_type;
-    typedef MultiVector                             multivector_type;
-    typedef Matrix                                  matrix_type;
+    typedef Vector                                      vector_type;
+    typedef typename VectorTraits<Vector>::scalar_type  Scalar;
+    typedef MultiVector                                 multivector_type;
+    typedef Matrix                                      matrix_type;
     //@}
 
     // Constructor.

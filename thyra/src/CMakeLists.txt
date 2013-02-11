@@ -17,6 +17,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
   MCLS_LinearProblemAdapter.hpp
+  MCLS_MultiVectorTraits.hpp
   MCLS_SolverManagerAdapter.hpp
   Thyra_MCLSLinearOpWithSolve.hpp
   Thyra_MCLSLinearOpWithSolve_impl.hpp
