@@ -38,10 +38,12 @@
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_VECTORTRAITS_HPP
-#define MCLS_VECTORTRAITS_HPP
+#ifndef MCLS_MULTIVECTORTRAITS_HPP
+#define MCLS_MULTIVECTORTRAITS_HPP
 
 #include <MCLS_VectorTraits.hpp>
+#include <MCLS_TpetraAdapter.hpp>
+#include <MCLS_EpetraAdapter.hpp>
 
 #include <Teuchos_RCP.hpp>
 
@@ -86,7 +88,7 @@ class MultiVectorTraits
     //@{
     //! Typedefs.
     typedef MultiVector                                      multivector_type;
-    typedef MultiVector::vector_type                         vector_type;
+    typedef typename MultiVector::vector_type                vector_type;
     typedef typename MultiVector::scalar_type                scalar_type;
     typedef typename MultiVector::local_ordinal_type         local_ordinal_type;
     typedef typename MultiVector::global_ordinal_type        global_ordinal_type;
@@ -127,27 +129,27 @@ class MultiVectorTraits<Epetra_MultiVector>
     typedef Epetra_MultiVector                          multivector_type;
     typedef Epetra_Vector                               vector_type;
     typedef VectorTraits<vector_type>                   VT;
-    typedef typename VT::scalar_type                    scalar_type;
-    typedef typename VT::local_ordinal_type             local_ordinal_type;
-    typedef typename VT::global_ordinal_type            global_ordinal_type;
+    typedef VT::scalar_type                             scalar_type;
+    typedef VT::local_ordinal_type                      local_ordinal_type;
+    typedef VT::global_ordinal_type                     global_ordinal_type;
     //@}
 
     //! Get the number of vectors in this multivector.
-    static int getNumVectors( const MultiVector& multivector )
+    static int getNumVectors( const multivector_type& multivector )
     { 
 	return multivector.NumVectors();
     }
 
     //! Return a vector given its id in the multivector.
     static Teuchos::RCP<const vector_type> 
-    getVector( const MultiVector& multivector, const int id )
+    getVector( const multivector_type& multivector, const int id )
     {
 	return Teuchos::rcp( multivector(id), false );
     }
 
     //! Return a vector given its id in the multivector.
     static Teuchos::RCP<vector_type> 
-    getVectorNonConst( MultiVector& multivector, const int id )
+    getVectorNonConst( multivector_type& multivector, const int id )
     {
 	return Teuchos::rcp( multivector(id), false );
     }
@@ -172,21 +174,21 @@ class MultiVectorTraits<Tpetra::MultiVector<Scalar,LO,GO> >
     //@}
 
     //! Get the number of vectors in this multivector.
-    static int getNumVectors( const MultiVector& multivector )
+    static int getNumVectors( const multivector_type& multivector )
     { 
 	return multivector.getNumVectors();
     }
 
     //! Return a vector given its id in the multivector.
     static Teuchos::RCP<const vector_type> 
-    getVector( const MultiVector& multivector, const int id )
+    getVector( const multivector_type& multivector, const int id )
     {
 	return Teuchos::rcp( multivector->getVector(id), false );
     }
 
     //! Return a vector given its id in the multivector.
     static Teuchos::RCP<vector_type> 
-    getVectorNonConst( MultiVector& multivector, const int id )
+    getVectorNonConst( multivector_type& multivector, const int id )
     {
 	return Teuchos::rcp( multivector->getVector(id), false );
     }
@@ -196,7 +198,7 @@ class MultiVectorTraits<Tpetra::MultiVector<Scalar,LO,GO> >
 
 } // end namespace MCLS
 
-#endif // end MCLS_VECTORTRAITS_HPP
+#endif // end MCLS_MULTIVECTORTRAITS_HPP
 
 //---------------------------------------------------------------------------//
 // end MCLS_MultiVectorTraits.hpp

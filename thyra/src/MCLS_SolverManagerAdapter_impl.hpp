@@ -56,8 +56,8 @@ namespace MCLS
 /*!
  * \brief Constructor.
  */
-template<class Vector, class MultiVector, class Matrix>
-SolverManagerAdapter<Vector,MultiVector,Matrix>::SolverManagerAdapter( 
+template<class MultiVector, class Matrix>
+SolverManagerAdapter<MultiVector,Matrix>::SolverManagerAdapter( 
     const Teuchos::RCP<SolverManager<Vector,Matrix> >& solver )
     : d_solver( solver )
 {
@@ -68,9 +68,9 @@ SolverManagerAdapter<Vector,MultiVector,Matrix>::SolverManagerAdapter(
 /*!
  * \brief Set the linear problem with the manager.
  */
-template<class Vector, class MultiVector, class Matrix>
-void SolverManagerAdapter<Vector,MultiVector,Matrix>::setProblem( 
-    const Teuchos::RCP<LinearProblemAdapter<Vector,MultiVector,Matrix> >& problem )
+template<class MultiVector, class Matrix>
+void SolverManagerAdapter<MultiVector,Matrix>::setProblem( 
+    const Teuchos::RCP<LinearProblemAdapter<MultiVector,Matrix> >& problem )
 {
     Require( Teuchos::nonnull(problem) );
     d_problem = problem;
@@ -80,9 +80,9 @@ void SolverManagerAdapter<Vector,MultiVector,Matrix>::setProblem(
 /*!
  * \brief Solve the blocked linear problem. 
  */
-template<class Vector, class MultiVector, class Matrix>
-Thyra::SolveStatus<typename VectorTraits<Vector>::scalar_type> 
-SolverManagerAdapter<Vector,MultiVector,Matrix>::solve()
+template<class MultiVector, class Matrix>
+Thyra::SolveStatus<typename SolverManagerAdapter<MultiVector,Matrix>::Scalar> 
+SolverManagerAdapter<MultiVector,Matrix>::solve()
 {
     Require( Teuchos::nonnull(d_problem) );
 

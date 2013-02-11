@@ -110,7 +110,7 @@ class SolverManagerAdapter : public virtual Teuchos::Describable
 
     // Solve the blocked linear problem. Return true if the solution converged
     // for all blocks. False if it did not.
-    Thyra::SolveStatus<typename VectorTraits<Vector>::scalar_type> solve();
+    Thyra::SolveStatus<Scalar> solve();
 
   private:
 
