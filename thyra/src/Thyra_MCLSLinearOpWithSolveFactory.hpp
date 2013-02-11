@@ -218,7 +218,17 @@ class MCLSLinearOpWithSolveFactory : public LinearOpWithSolveFactoryBase<Scalar>
     // Update the valid parameter list for this factory.
     void updateThisValidParamList();
 
+    // Select the appropriate subclasses to initialize the linear solver with.
+    void selectOpImpl(
+	const Teuchos::RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc,
+	const Teuchos::RCP<const LinearOpSourceBase<Scalar> >& approxFwdOpSrc,
+	const Teuchos::RCP<const PreconditionerBase<Scalar> >& prec,
+	const bool reusePrec,
+	LinearOpWithSolveBase<Scalar>* Op,
+	const ESupportSolveUse supportSolveUse ) const;
+
     // Initialize the linear operator.
+    template<class Vector, class MultiVector, class Matrix>
     void initializeOpImpl(
 	const Teuchos::RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc,
 	const Teuchos::RCP<const LinearOpSourceBase<Scalar> >& approxFwdOpSrc,

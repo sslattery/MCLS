@@ -47,6 +47,7 @@
 #include <MCLS_MCSASolverManager.hpp>
 #include <MCLS_SequentialMCSolverManager.hpp>
 #include <MCLS_AdjointMCSolverManager.hpp>
+#include <MCLS_VectorTraits.hpp>
 
 #include "MCLSLinearProblemAdapter.hpp"
 #include "MCLSSolverManagerAdapter.hpp"
@@ -57,6 +58,7 @@
 #include <Teuchos_ValidatorXMLConverterDB.hpp>
 #include <Teuchos_StandardValidatorXMLConverters.hpp>
 #include <Teuchos_as.hpp>
+#include <Teuchos_DefaultComm.hpp>
 
 #include <Thyra_EpetraOperatorViewExtractorStd.hpp>
 #include <Thyra_EpetraLinearOp.hpp>
@@ -236,7 +238,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOp(
     const ESupportSolveUse supportSolveUse ) const
 {
     using Teuchos::null;
-    initializeOpImpl(fwdOpSrc,null,null,false,Op,supportSolveUse);
+    selectOpImpl(fwdOpSrc,null,null,false,Op,supportSolveUse);
 }
 
 //---------------------------------------------------------------------------//
@@ -249,7 +251,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeAndReuseOp(
     LinearOpWithSolveBase<Scalar>* Op ) const
 {
     using Teuchos::null;
-    initializeOpImpl(fwdOpSrc,null,null,true,Op,SUPPORT_SOLVE_UNSPECIFIED);
+    selectOpImpl(fwdOpSrc,null,null,true,Op,SUPPORT_SOLVE_UNSPECIFIED);
 }
 
 //---------------------------------------------------------------------------//
@@ -277,7 +279,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializePreconditionedOp(
     const ESupportSolveUse supportSolveUse ) const
 {
     using Teuchos::null;
-    initializeOpImpl(fwdOpSrc,null,prec,false,Op,supportSolveUse);
+    selectOpImpl(fwdOpSrc,null,prec,false,Op,supportSolveUse);
 }
 
 //---------------------------------------------------------------------------//
@@ -292,7 +294,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeApproxPreconditionedOp(
     const ESupportSolveUse supportSolveUse ) const
 {
     using Teuchos::null;
-    initializeOpImpl(fwdOpSrc,approxFwdOpSrc,null,false,Op,supportSolveUse);
+    selectOpImpl(fwdOpSrc,approxFwdOpSrc,null,false,Op,supportSolveUse);
 }
 
 //---------------------------------------------------------------------------//
@@ -346,7 +348,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::setParameterList(
     d_plist = paramList;
     d_solver_type =
 	Teuchos::getIntegralValue<EMCLSSolverType>(*d_plist, SolverType_name);
-    convergenceTestFrequency_ =
+    d_convergence_test_frequency =
 	Teuchos::getParameter<int>(*d_plist, ConvergenceTestFrequency_name);
     Teuchos::readVerboseObjectSublist(&*d_plist,this);
 }
@@ -466,8 +468,9 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 	    "Number of linear solver iterations to skip between applying"
 	    " user-defined convergence test.");
 
-	// We'll use Epetra to get the valid parameters for the solvers as
-	// they are independent of the vector/operator implementation used.
+	// We'll use Epetra to get the valid parameters for the solver
+	// subclasses as they are independent of the vector/operator
+	// implementation used.
 	Teuchos::ParameterList
 	    &solverTypesSL = validParamList->sublist(SolverTypes_name);
 	{
@@ -505,9 +508,68 @@ void MCLSLinearOpWithSolveFactory<Scalar>::updateThisValidParamList()
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Initialize the linear solver.
+ * \brief Select the appropriate subclasses to initialize the linear solver
+ * with. 
  */
 template<class Scalar>
+void MCLSLinearOpWithSolveFactory<Scalar>::selectOpImpl(
+    const RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc,
+    const RCP<const LinearOpSourceBase<Scalar> >& approxFwdOpSrc,
+    const RCP<const PreconditionerBase<Scalar> >& prec_in,
+    const bool reusePrec,
+    LinearOpWithSolveBase<Scalar>* Op,
+    const ESupportSolveUse supportSolveUse ) const
+{
+    RCP<Tpetra::CrsMatrix<Scalar,int,int> > crs_i_i = 
+	getTpetraCrsMatrix<Scalar,int,int>( fwdOpSrc );
+    RCP<Tpetra::CrsMatrix<Scalar,int,long> > crs_i_l = 
+	getTpetraCrsMatrix<Scalar,int,long>( fwdOpSrc );
+
+    if ( isEpetraCompatible(fwdOpSrc) )
+    {
+	initializeOpImpl<Scalar,
+			 Epetra_Vector,
+			 Epetra_MultiVector,
+			 Epetra_RowMatrix>(
+			     fwdOpSrc, approxFwdOpSrc, prec_in,
+			     reusePrec, Op, supportSolveUse );
+    }
+
+    else if ( Teuchos::nonnull(crs_i_i) )
+    {
+	typedef int LO;
+	typedef int GO;
+
+	initializeOpImpl<Scalar,
+			 Tpetra::Vector<Scalar,LO,GO>,
+			 Tpetra::MultiVector<Scalar,LO,GO>,
+			 Tpetra::CrsMatrix<Scalar,LO,GO> >(
+			     fwdOpSrc, approxFwdOpSrc, prec_in, 
+			     reusePrec, Op, supportSolveUse );
+}
+    else if ( Teuchos::nonnull(crs_i_l) )
+    {
+	typedef int LO;
+	typedef int GO;
+
+	initializeOpImpl<Scalar,
+			 Tpetra::Vector<Scalar,LO,GO>,
+			 Tpetra::MultiVector<Scalar,LO,GO>,
+			 Tpetra::CrsMatrix<Scalar,LO,GO> >(
+			     fwdOpSrc, approxFwdOpSrc, prec_in, 
+			     reusePrec, Op, supportSolveUse );
+    }
+    else
+    {
+	TEUCHOS_TEST_FOR_EXCEPT(true);
+    }
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Initialize the linear solver.
+ */
+template<class Scalar, class Vector, class MultiVector, class Matrix>
 void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     const RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc,
     const RCP<const LinearOpSourceBase<Scalar> >& approxFwdOpSrc,
@@ -520,8 +582,6 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     using Teuchos::set_extra_data;
     typedef Teuchos::ScalarTraits<Scalar> ST;
     typedef typename ST::magnitudeType ScalarMag;
-    typedef MultiVectorBase<Scalar> MV_t;
-    typedef LinearOpBase<Scalar> LO_t;
 
     const RCP<Teuchos::FancyOStream> out = this->getOStream();
     const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
@@ -565,8 +625,8 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 	    if( myPrec.get() ) 
 	    {
 		hasExistingPrec = true;
-		// ToDo: Get the forward operator and validate that it is the same
-		// operator that is used here!
+		// ToDo: Get the forward operator and validate that it is the
+		// same operator that is used here!
 	    }
 	    else 
 	    {
@@ -595,8 +655,10 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 
     // Uninitialize the current solver object
     bool oldIsExternalPrec = false;
-    RCP<MCLS::LinearProblemAdapter<Scalar,MV_t,LO_t> > oldLP = Teuchos::null;
-    RCP<MCLS::SolverManagerAdapter<Scalar,MV_t,LO_t> > oldIterSolver = Teuchos::null;
+    RCP<MCLS::LinearProblemAdapter<Vector,MultiVector,Matrix> > oldLP = 
+	Teuchos::null;
+    RCP<MCLS::SolverManagerAdapter<Vector,MultiVector,Matrix> > oldIterSolver =
+	Teuchos::null;
     RCP<const LinearOpSourceBase<Scalar> > oldFwdOpSrc = Teuchos::null;
     RCP<const LinearOpSourceBase<Scalar> > oldApproxFwdOpSrc = Teuchos::null;   
     ESupportSolveUse oldSupportSolveUse = SUPPORT_SOLVE_UNSPECIFIED;
@@ -609,72 +671,77 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     // NOTE:  If one exists already, reuse it.
     //
 
-    typedef MCLS::LinearProblemAdapter<Scalar,MV_t,LO_t> LP_t;
+    typedef MCLS::LinearProblemAdapter<Vector,MultiVector,Matrix> LP_t;
     RCP<LP_t> lp;
-    if (oldLP != Teuchos::null) {
+    if ( oldLP != Teuchos::null ) 
+    {
 	lp = oldLP;
     }
-    else {
+    else 
+    {
 	lp = rcp(new LP_t());
     }
 
-    //
     // Set the operator
-    //
+    lp->setOperator( rcp_dynamic_cast<const Matrix>(fwdOp) );
 
-    lp->setOperator(fwdOp);
+    // Set the preconditioner. 
+    if ( prec.get() ) 
+    {
+    	RCP<const LinearOpBase<Scalar> > unspecified = prec->getUnspecifiedPrecOp();
+    	RCP<const LinearOpBase<Scalar> > left = prec->getLeftPrecOp();
+    	RCP<const LinearOpBase<Scalar> > right = prec->getRightPrecOp();
 
-    //
-    // Set the preconditioner
-    //
-
-    if(prec.get()) {
-	RCP<const LinearOpBase<Scalar> > unspecified = prec->getUnspecifiedPrecOp();
-	RCP<const LinearOpBase<Scalar> > left = prec->getLeftPrecOp();
-	RCP<const LinearOpBase<Scalar> > right = prec->getRightPrecOp();
+	// Set a left, right or split preconditioner
 	TEUCHOS_TEST_FOR_EXCEPTION(
-	    !( left.get() || right.get() || unspecified.get() ), std::logic_error
-	    ,"Error, at least one preconditoner linear operator objects must be set!"
+	    left.get(),std::logic_error
+	    ,"Error, we can not currently handle a left preconditioner!"
 	    );
-	if(unspecified.get()) {
-	    lp->setRightPrec(unspecified);
-	    // ToDo: Allow user to determine whether this should be placed on the
-	    // left or on the right through a parameter in the parameter list!
-	}
-	else {
-	    // Set a left, right or split preconditioner
-	    TEUCHOS_TEST_FOR_EXCEPTION(
-		left.get(),std::logic_error
-		,"Error, we can not currently handle a left preconditioner!"
-		);
-	    lp->setRightPrec(right);
-	}
+	TEUCHOS_TEST_FOR_EXCEPTION(
+	    right.get(),std::logic_error
+	    ,"Error, we can not currently handle a right preconditioner!"
+	    );
     }
-    if(myPrec.get()) {
-	set_extra_data<RCP<PreconditionerBase<Scalar> > >(myPrec,"MCLS::InternalPrec",
-							  Teuchos::inOutArg(lp), Teuchos::POST_DESTROY, false);
+    if( myPrec.get() ) 
+    {
+    	set_extra_data<RCP<PreconditionerBase<Scalar> > >(
+    	    myPrec,"MCLS::InternalPrec",
+    	    Teuchos::inOutArg(lp), Teuchos::POST_DESTROY, false);
     }
-    else if(prec.get()) {
-	set_extra_data<RCP<const PreconditionerBase<Scalar> > >(prec,"MCLS::ExternalPrec",
-								Teuchos::inOutArg(lp), Teuchos::POST_DESTROY, false);
+    else if( prec.get() ) 
+    {
+    	set_extra_data<RCP<const PreconditionerBase<Scalar> > >(
+    	    prec,"MCLS::ExternalPrec",
+    	    Teuchos::inOutArg(lp), Teuchos::POST_DESTROY, false);
     }
 
-    //
     // Generate the parameter list.
-    //
-
-    typedef MCLS::SolverManagerAdapter<Scalar,MV_t,LO_t> IterativeSolver_t;
+    typedef MCLS::SolverManagerAdapter<Vector,MultiVector,Matrix> IterativeSolver_t;
+    typedef MCLS::SolverManager<Vector,Matrix> Solver_t;
     RCP<IterativeSolver_t> iterativeSolver = Teuchos::null;
-    RCP<Teuchos::ParameterList> solverPL = Teuchos::rcp( new Teuchos::ParameterList() );
+    RCP<Solver_t> solver = Teuchos::null;
+    RCP<Teuchos::ParameterList> solverPL = 
+	Teuchos::rcp( new Teuchos::ParameterList() );
   
-    switch(d_solver_type) {
-	case SOLVER_TYPE_BLOCK_GMRES: 
+    // Create the linear solver. We are using the default teuchos communicator
+    // here!!!! This will be MPI_COMM_WORLD in an MPI build an therefore has
+    // implications for using multiple sets with MCLS where the linear problem
+    // is expected to be defined on a subset of the global communicator. The
+    // issue here is that these Thyra operations are potentially not occuring
+    // in the global communicator scope.
+    switch(d_solver_type) 
+    {
+
+	case SOLVER_TYPE_MCSA: 
 	{
 	    // Set the PL
-	    if(d_plist.get()) {
-		Teuchos::ParameterList &solverTypesPL = d_plist->sublist(SolverTypes_name);
-		Teuchos::ParameterList &gmresPL = solverTypesPL.sublist(BlockGMRES_name);
-		solverPL = Teuchos::rcp( &gmresPL, false );
+	    if( d_plist.get() ) 
+	    {
+		Teuchos::ParameterList &solverTypesPL = 
+		    d_plist->sublist(SolverTypes_name);
+		Teuchos::ParameterList &mcsaPL = 
+		    solverTypesPL.sublist(MCSA_name);
+		solverPL = Teuchos::rcp( &mcsaPL, false );
 	    }
 	    // Create the solver
 	    if (oldIterSolver != Teuchos::null) {
@@ -682,79 +749,27 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 		iterativeSolver->setProblem( lp );
 		iterativeSolver->setParameters( solverPL );
 	    } 
-	    else {
-		iterativeSolver = rcp(new MCLS::BlockGmresSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
+	    else 
+	    {
+		solver = 
+		    rcp(new MCLS::MCSASolverManager<Vector,Matrix>(
+			    Teuchos::DefaultComm<int>::getComm(), solverPL) );
+		iterativeSolver = 
+		    Teuchos::rcp( new MCLS::SolverManagerAdapter(solver) );
 	    }
 	    break;
 	}
-	case SOLVER_TYPE_PSEUDO_BLOCK_GMRES:
+
+	case SOLVER_TYPE_SEQUENTIAL_MC: 
 	{
 	    // Set the PL
-	    if(d_plist.get()) {
-		Teuchos::ParameterList &solverTypesPL = d_plist->sublist(SolverTypes_name);
-		Teuchos::ParameterList &pbgmresPL = solverTypesPL.sublist(PseudoBlockGMRES_name);
-		solverPL = Teuchos::rcp( &pbgmresPL, false );
-	    }
-	    // 
-	    // Create the solver
-	    // 
-	    if (oldIterSolver != Teuchos::null) {
-		iterativeSolver = oldIterSolver;
-		iterativeSolver->setProblem( lp );
-		iterativeSolver->setParameters( solverPL );
-	    }
-	    else {
-		iterativeSolver = rcp(new MCLS::PseudoBlockGmresSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
-	    }
-	    break;
-	}
-	case SOLVER_TYPE_BLOCK_CG:
-	{
-	    // Set the PL
-	    if(d_plist.get()) {
-		Teuchos::ParameterList &solverTypesPL = d_plist->sublist(SolverTypes_name);
-		Teuchos::ParameterList &cgPL = solverTypesPL.sublist(BlockCG_name);
-		solverPL = Teuchos::rcp( &cgPL, false );
-	    }
-	    // Create the solver
-	    if (oldIterSolver != Teuchos::null) {
-		iterativeSolver = oldIterSolver;
-		iterativeSolver->setProblem( lp );
-		iterativeSolver->setParameters( solverPL );
-	    }
-	    else {
-		iterativeSolver = rcp(new MCLS::BlockCGSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
-	    }
-	    break;
-	}
-	case SOLVER_TYPE_PSEUDO_BLOCK_CG:
-	{
-	    // Set the PL
-	    if(d_plist.get()) {
-		Teuchos::ParameterList &solverTypesPL = d_plist->sublist(SolverTypes_name);
-		Teuchos::ParameterList &pbcgPL = solverTypesPL.sublist(PseudoBlockCG_name);
-		solverPL = Teuchos::rcp( &pbcgPL, false );
-	    }
-	    // 
-	    // Create the solver
-	    // 
-	    if (oldIterSolver != Teuchos::null) {
-		iterativeSolver = oldIterSolver;
-		iterativeSolver->setProblem( lp );
-		iterativeSolver->setParameters( solverPL );
-	    }
-	    else {
-		iterativeSolver = rcp(new MCLS::PseudoBlockCGSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
-	    }
-	    break;
-	}
-	case SOLVER_TYPE_GCRODR:
-	{
-	    // Set the PL
-	    if(d_plist.get()) {
-		Teuchos::ParameterList &solverTypesPL = d_plist->sublist(SolverTypes_name);
-		Teuchos::ParameterList &gcrodrPL = solverTypesPL.sublist(GCRODR_name);
-		solverPL = Teuchos::rcp( &gcrodrPL, false );
+	    if( d_plist.get() ) 
+	    {
+		Teuchos::ParameterList &solverTypesPL = 
+		    d_plist->sublist(SolverTypes_name);
+		Teuchos::ParameterList &sequentialmcPL = 
+		    solverTypesPL.sublist(SequentialMC_name);
+		solverPL = Teuchos::rcp( &sequentialmcPL, false );
 	    }
 	    // Create the solver
 	    if (oldIterSolver != Teuchos::null) {
@@ -762,18 +777,27 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 		iterativeSolver->setProblem( lp );
 		iterativeSolver->setParameters( solverPL );
 	    } 
-	    else {
-		iterativeSolver = rcp(new MCLS::GCRODRSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
+	    else 
+	    {
+		solver = 
+		    rcp(new MCLS::SequentialMCSolverManager<Vector,Matrix>(
+			    Teuchos::DefaultComm<int>::getComm(), solverPL) );
+		iterativeSolver = 
+		    Teuchos::rcp( new MCLS::SolverManagerAdapter(solver) );
 	    }
 	    break;
 	}
-	case SOLVER_TYPE_RCG:
+
+	case SOLVER_TYPE_ADJOINT_MC: 
 	{
 	    // Set the PL
-	    if(d_plist.get()) {
-		Teuchos::ParameterList &solverTypesPL = d_plist->sublist(SolverTypes_name);
-		Teuchos::ParameterList &rcgPL = solverTypesPL.sublist(RCG_name);
-		solverPL = Teuchos::rcp( &rcgPL, false );
+	    if( d_plist.get() ) 
+	    {
+		Teuchos::ParameterList &solverTypesPL = 
+		    d_plist->sublist(SolverTypes_name);
+		Teuchos::ParameterList &adjointmcPL = 
+		    solverTypesPL.sublist(AdjointMC_name);
+		solverPL = Teuchos::rcp( &adjointmcPL, false );
 	    }
 	    // Create the solver
 	    if (oldIterSolver != Teuchos::null) {
@@ -781,27 +805,13 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 		iterativeSolver->setProblem( lp );
 		iterativeSolver->setParameters( solverPL );
 	    } 
-	    else {
-		iterativeSolver = rcp(new MCLS::RCGSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
-	    }
-	    break;
-	}
-	case SOLVER_TYPE_MINRES:
-	{
-	    // Set the PL
-	    if(d_plist.get()) {
-		Teuchos::ParameterList &solverTypesPL = d_plist->sublist(SolverTypes_name);
-		Teuchos::ParameterList &minresPL = solverTypesPL.sublist(MINRES_name);
-		solverPL = Teuchos::rcp( &minresPL, false );
-	    }
-	    // Create the solver
-	    if (oldIterSolver != Teuchos::null) {
-		iterativeSolver = oldIterSolver;
-		iterativeSolver->setProblem( lp );
-		iterativeSolver->setParameters( solverPL );
-	    }
-	    else {
-		iterativeSolver = rcp(new MCLS::MinresSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
+	    else 
+	    {
+		solver = 
+		    rcp(new MCLS::AdjointMCSolverManager<Vector,Matrix>(
+			    Teuchos::DefaultComm<int>::getComm(), solverPL) );
+		iterativeSolver = 
+		    Teuchos::rcp( new MCLS::SolverManagerAdapter(solver) );
 	    }
 	    break;
 	}
@@ -812,26 +822,29 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 	}
     }
 
-    //
-    // Initialize the LOWS object
-    //
-
+    // Initialize the LOWS object.
     mclsOp->initialize(
 	lp, solverPL, iterativeSolver,
 	fwdOpSrc, prec, myPrec.get()==NULL, approxFwdOpSrc,
-	supportSolveUse, convergenceTestFrequency_
+	supportSolveUse, d_convergence_test_frequency
 	);
     mclsOp->setOStream(out);
     mclsOp->setVerbLevel(verbLevel);
 #ifdef TEUCHOS_DEBUG
-    if(d_plist.get()) {
-	// Make sure we read the list correctly
-	d_plist->validateParameters(*this->getValidParameters(),1); // Validate 0th and 1st level deep
+    if( d_plist.get( )) 
+    {
+	// Make sure we read the list correctly. Validate 0th and 1st level deep.
+	d_plist->validateParameters(*this->getValidParameters(),1);
     }
 #endif
-    if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_LOW))
-	*out << "\nLeaving Thyra::MCLSLinearOpWithSolveFactory<"<<ST::name()<<">::initializeOpImpl(...) ...\n";
-  
+
+    // Output.
+    if( out.get() && 
+	static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_LOW) )
+    {
+	*out << "\nLeaving Thyra::MCLSLinearOpWithSolveFactory<"
+	     << ST::name() << ">::initializeOpImpl(...) ...\n";
+    }
 }
 
 //---------------------------------------------------------------------------//
