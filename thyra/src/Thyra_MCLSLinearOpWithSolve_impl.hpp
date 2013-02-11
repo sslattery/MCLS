@@ -311,7 +311,7 @@ void MCLSLinearOpWithSolve<Scalar>::describe(
 template<class Scalar>
 bool MCLSLinearOpWithSolve<Scalar>::opSupportedImpl( EOpTransp M_trans ) const
 {
-    return ::Thyra::opSupported( d_linear_problem->getOperator(), M_trans );
+    return ::Thyra::opSupported( *d_linear_problem->getOperator(), M_trans );
 }
 
 //---------------------------------------------------------------------------//
@@ -328,7 +328,7 @@ void MCLSLinearOpWithSolve<Scalar>::applyImpl(
     const Scalar beta ) const
 {
     ::Thyra::apply<Scalar>(
-	d_linear_problem->getOperator(), M_trans, X, Y, alpha, beta );
+	*d_linear_problem->getOperator(), M_trans, X, Y, alpha, beta );
 }
 
 //---------------------------------------------------------------------------//

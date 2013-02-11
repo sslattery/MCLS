@@ -145,7 +145,7 @@ class SolverManagerAdapter
     //! with default parameters that are not defined.
     void setParameters( 
 	const Teuchos::RCP<Teuchos::ParameterList>& params )
-    { d_solver->setParameters(); }
+    { d_solver->setParameters(params); }
 
     // Solve the blocked linear problem. Return true if the solution converged
     // for all blocks. False if it did not.

@@ -238,7 +238,7 @@ class MCLSLinearOpWithSolveFactory : public LinearOpWithSolveFactoryBase<Scalar>
 	const ESupportSolveUse supportSolveUse ) const;
 
     // Get an Epetra_RowMatrix from the linear operator source.
-    Teuchos::RCP<const Epetra_Operator> getEpetraRowMatix(
+    Teuchos::RCP<const Epetra_RowMatrix> getEpetraRowMatrix(
 	const LinearOpSourceBase<Scalar> &fwdOpSrc ) const;
 
     // Check for Epetra compatiblity.
@@ -246,7 +246,7 @@ class MCLSLinearOpWithSolveFactory : public LinearOpWithSolveFactoryBase<Scalar>
 
     // Get a Tpetra::CrsMatrix from the linear operator source.
     template<class LO, class GO>
-    Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO> >
+    Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LO,GO> >
     getTpetraCrsMatrix( const LinearOpSourceBase<Scalar> &fwdOpSrc ) const;
 
     // Check for Tpetra compatiblity.

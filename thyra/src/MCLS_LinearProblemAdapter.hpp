@@ -78,13 +78,23 @@ class LinearProblemBase : public virtual Teuchos::Describable
     virtual ~LinearProblemBase() { /* ... */ }
 
     //! Set the left-hand side.
-    void setLHS( const Teuchos::RCP<multivector_type>& x ) = 0;
+    virtual void setLHS( const Teuchos::RCP<multivector_type>& x ) = 0;
 
     //! Set the right-hand side.
-    void setRHS( const Teuchos::RCP<const multivector_type>& b ) = 0;
+    virtual void setRHS( const Teuchos::RCP<const multivector_type>& b ) = 0;
+
+    //! Set the linear operator.
+    void setOperator( const Teuchos::RCP<const linear_op_type>& A ) 
+    { b_A = A; }
 
     //! Get the linear operator.
-    Teuchos::RCP<const linear_op_type> getOperator() const = 0;
+    Teuchos::RCP<const linear_op_type> getOperator() const 
+    { return b_A; }
+
+  private:
+
+    // Linear operator base class.
+    Teuchos::RCP<const linear_op_type> b_A;
 };
 
 //---------------------------------------------------------------------------//
@@ -96,8 +106,8 @@ class LinearProblemBase : public virtual Teuchos::Describable
  * individual linear systems contained within for MCLS solves.
  */
 template<class MultiVector, class Matrix>
-class LinearProblemAdapter 
-    : public LinearProblemBase<typename MultiVectorTraits<MultiVector>::scalar_type>
+class LinearProblemAdapter : public LinearProblemBase<
+    typename MultiVectorTraits<MultiVector>::scalar_type>
 {
   public:
 

@@ -146,18 +146,17 @@ void MCLSLinearOpWithSolveFactory<Scalar>::setPreconditionerFactory(
     const RCP<PreconditionerFactoryBase<Scalar> >& precFactory,
     const std::string& precFactoryName )
 {
-    Require( Teuchos::nonnull( precFactory );
+    Require( Teuchos::nonnull(precFactory) );
 
     RCP<const Teuchos::ParameterList> precFactory_valid_plist = 
-	     precFactory->getValidParameters();
+	precFactory->getValidParameters();
     const std::string d_precFactoryName =
 	( precFactoryName != ""
 	  ? precFactoryName
 	  : ( precFactory_valid_plist.get() ? 
 	      precFactory_valid_plist->name() : 
-	      "GENERIC PRECONDITIONER FACTORY" ) 
-	    )
-	);
+	      "GENERIC PRECONDITIONER FACTORY" ) );
+
     d_prec_factory = precFactory;
     d_prec_factory_name = precFactoryName;
     updateThisValidParamList();
@@ -183,7 +182,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::unsetPreconditionerFactory(
     RCP<PreconditionerFactoryBase<Scalar> >* precFactory,
     std::string* precFactoryName )
 {
-    if(precFactory) *precFactory = d_prec_Factory;
+    if(precFactory) *precFactory = d_prec_factory;
     if(precFactoryName) *precFactoryName = d_prec_factory_name;
     d_prec_factory = Teuchos::null;
     d_prec_factory_name = "";
@@ -202,7 +201,7 @@ bool MCLSLinearOpWithSolveFactory<Scalar>::isCompatible(
     // Check the preconditioner factory for compatibility. We don't use them
     // with MCLS yet but we should check for consistency.
     bool prec_compatible = true;
-    if( Teuchos::nonnull(prec_factory) )
+    if( Teuchos::nonnull(d_prec_factory) )
     {
 	prec_compatible = d_prec_factory->isCompatible(fwdOpSrc);
     }
@@ -474,17 +473,20 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 	Teuchos::ParameterList
 	    &solverTypesSL = validParamList->sublist(SolverTypes_name);
 	{
-	    MCLS::MCSASolverManager<Epetra_Vector,Epetra_RowMatrix> mgr;
+	    MCLS::MCSASolverManager<Epetra_Vector,Epetra_RowMatrix> 
+		mgr(Teuchos::DefaultComm<int>::getComm(), Teuchos::parameterList());
 	    solverTypesSL.sublist(MCSA_name).setParameters(
 		*mgr.getValidParameters() );
 	}
 	{
-	    MCLS::SequentialMCSolverManager<Epetra_Vector,Epetra_RowMatrix> mgr;
+	    MCLS::SequentialMCSolverManager<Epetra_Vector,Epetra_RowMatrix> 
+		mgr(Teuchos::DefaultComm<int>::getComm(), Teuchos::parameterList());
 	    solverTypesSL.sublist(SequentialMC_name).setParameters(
 		*mgr.getValidParameters() );
 	}
 	{
-	    MCLS::AdjointSolverManager<Epetra_Vector,Epetra_RowMatrix> mgr;
+	    MCLS::AdjointSolverManager<Epetra_Vector,Epetra_RowMatrix> 
+		mgr(Teuchos::DefaultComm<int>::getComm(), Teuchos::parameterList());
 	    solverTypesSL.sublist(AdjointMC_name).setParameters(
 		*mgr.getValidParameters() );
 	}
@@ -520,15 +522,14 @@ void MCLSLinearOpWithSolveFactory<Scalar>::selectOpImpl(
     LinearOpWithSolveBase<Scalar>* Op,
     const ESupportSolveUse supportSolveUse ) const
 {
-    RCP<Tpetra::CrsMatrix<Scalar,int,int> > crs_i_i = 
-	getTpetraCrsMatrix<Scalar,int,int>( fwdOpSrc );
-    RCP<Tpetra::CrsMatrix<Scalar,int,long> > crs_i_l = 
-	getTpetraCrsMatrix<Scalar,int,long>( fwdOpSrc );
+    RCP<const Tpetra::CrsMatrix<Scalar,int,int> > crs_i_i = 
+	getTpetraCrsMatrix<int,int>( *fwdOpSrc );
+    RCP<const Tpetra::CrsMatrix<Scalar,int,long> > crs_i_l = 
+	getTpetraCrsMatrix<int,long>( *fwdOpSrc );
 
-    if ( isEpetraCompatible(fwdOpSrc) )
+    if ( isEpetraCompatible(*fwdOpSrc) )
     {
-	initializeOpImpl<Scalar,
-			 Epetra_MultiVector,
+	initializeOpImpl<Epetra_MultiVector,
 			 Epetra_RowMatrix>(
 			     fwdOpSrc, approxFwdOpSrc, prec_in,
 			     reusePrec, Op, supportSolveUse );
@@ -538,8 +539,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::selectOpImpl(
 	typedef int LO;
 	typedef int GO;
 
-	initializeOpImpl<Scalar,
-			 Tpetra::MultiVector<Scalar,LO,GO>,
+	initializeOpImpl<Tpetra::MultiVector<Scalar,LO,GO>,
 			 Tpetra::CrsMatrix<Scalar,LO,GO> >(
 			     fwdOpSrc, approxFwdOpSrc, prec_in, 
 			     reusePrec, Op, supportSolveUse );
@@ -549,8 +549,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::selectOpImpl(
 	typedef int LO;
 	typedef long GO;
 
-	initializeOpImpl<Scalar,
-			 Tpetra::MultiVector<Scalar,LO,GO>,
+	initializeOpImpl<Tpetra::MultiVector<Scalar,LO,GO>,
 			 Tpetra::CrsMatrix<Scalar,LO,GO> >(
 			     fwdOpSrc, approxFwdOpSrc, prec_in, 
 			     reusePrec, Op, supportSolveUse );
@@ -652,10 +651,8 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 
     // Uninitialize the current solver object
     bool oldIsExternalPrec = false;
-    RCP<MCLS::LinearProblemAdapter<MultiVector,Matrix> > oldLP = 
-	Teuchos::null;
-    RCP<MCLS::SolverManagerAdapter<MultiVector,Matrix> > oldIterSolver =
-	Teuchos::null;
+    RCP<MCLS::LinearProblemBase<Scalar> > oldLP = Teuchos::null;
+    RCP<MCLS::SolverManagerBase<Scalar> > oldIterSolver = Teuchos::null;
     RCP<const LinearOpSourceBase<Scalar> > oldFwdOpSrc = Teuchos::null;
     RCP<const LinearOpSourceBase<Scalar> > oldApproxFwdOpSrc = Teuchos::null;   
     ESupportSolveUse oldSupportSolveUse = SUPPORT_SOLVE_UNSPECIFIED;
@@ -663,24 +660,12 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 			  NULL, &oldIsExternalPrec, &oldApproxFwdOpSrc, 
 			  &oldSupportSolveUse );
 
-    //
-    // Create the MCLS linear problem
-    // NOTE:  If one exists already, reuse it.
-    //
-
+    // Create the MCLS linear problem.
     typedef MCLS::LinearProblemAdapter<MultiVector,Matrix> LP_t;
-    RCP<LP_t> lp;
-    if ( oldLP != Teuchos::null ) 
-    {
-	lp = oldLP;
-    }
-    else 
-    {
-	lp = rcp(new LP_t());
-    }
+    RCP<LP_t> lp = rcp(new LP_t());
 
     // Set the operator
-    lp->setOperator( rcp_dynamic_cast<const Matrix>(fwdOp) );
+    lp->setOperator( Teuchos::rcp_dynamic_cast<const Matrix>(fwdOp) );
 
     // Set the preconditioner. 
     if ( prec.get() ) 
@@ -742,20 +727,13 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 		solverPL = Teuchos::rcp( &mcsaPL, false );
 	    }
 	    // Create the solver
-	    if (oldIterSolver != Teuchos::null) {
-		iterativeSolver = oldIterSolver;
-		iterativeSolver->setProblem( lp );
-		iterativeSolver->setParameters( solverPL );
-	    } 
-	    else 
-	    {
-		solver = 
-		    rcp(new MCLS::MCSASolverManager<Vector,Matrix>(
-			    Teuchos::DefaultComm<int>::getComm(), solverPL) );
-		iterativeSolver = 
-		    Teuchos::rcp( new MCLS::SolverManagerAdapter(solver) );
-		iterativeSolver->setProblem( lp );
-	    }
+	    solver = 
+		rcp(new MCLS::MCSASolverManager<Vector,Matrix>(
+			Teuchos::DefaultComm<int>::getComm(), solverPL) );
+	    iterativeSolver = Teuchos::rcp( 
+		new MCLS::SolverManagerAdapter<MultiVector,Matrix>(solver) );
+	    iterativeSolver->setProblem( lp );
+
 	    break;
 	}
 
@@ -771,20 +749,13 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 		solverPL = Teuchos::rcp( &sequentialmcPL, false );
 	    }
 	    // Create the solver
-	    if (oldIterSolver != Teuchos::null) {
-		iterativeSolver = oldIterSolver;
-		iterativeSolver->setProblem( lp );
-		iterativeSolver->setParameters( solverPL );
-	    } 
-	    else 
-	    {
-		solver = 
-		    rcp(new MCLS::SequentialMCSolverManager<Vector,Matrix>(
-			    Teuchos::DefaultComm<int>::getComm(), solverPL) );
-		iterativeSolver = 
-		    Teuchos::rcp( new MCLS::SolverManagerAdapter(solver) );
-		iterativeSolver->setProblem( lp );
-	    }
+	    solver = 
+		rcp(new MCLS::SequentialMCSolverManager<Vector,Matrix>(
+			Teuchos::DefaultComm<int>::getComm(), solverPL) );
+	    iterativeSolver = Teuchos::rcp( 
+		new MCLS::SolverManagerAdapter<MultiVector,Matrix>(solver) );
+	    iterativeSolver->setProblem( lp );
+
 	    break;
 	}
 
@@ -800,20 +771,13 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 		solverPL = Teuchos::rcp( &adjointmcPL, false );
 	    }
 	    // Create the solver
-	    if (oldIterSolver != Teuchos::null) {
-		iterativeSolver = oldIterSolver;
-		iterativeSolver->setProblem( lp );
-		iterativeSolver->setParameters( solverPL );
-	    } 
-	    else 
-	    {
-		solver = 
-		    rcp(new MCLS::AdjointSolverManager<Vector,Matrix>(
-			    Teuchos::DefaultComm<int>::getComm(), solverPL) );
-		iterativeSolver = 
-		    Teuchos::rcp( new MCLS::SolverManagerAdapter(solver) );
-		iterativeSolver->setProblem( lp );
-	    }
+	    solver = 
+		rcp(new MCLS::AdjointSolverManager<Vector,Matrix>(
+			Teuchos::DefaultComm<int>::getComm(), solverPL) );
+	    iterativeSolver = Teuchos::rcp( 
+		new MCLS::SolverManagerAdapter<MultiVector,Matrix>(solver) );
+	    iterativeSolver->setProblem( lp );
+
 	    break;
 	}
 
@@ -824,11 +788,12 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     }
 
     // Initialize the LOWS object.
-    mclsOp->initialize(
-	lp, solverPL, iterativeSolver,
-	fwdOpSrc, prec, myPrec.get()==NULL, approxFwdOpSrc,
-	supportSolveUse, d_convergence_test_frequency
-	);
+    Teuchos::RCP<MCLS::LinearProblemBase<Scalar> > lp_base = lp;
+    lp_base->setOperator( fwdOp );
+    Teuchos::RCP<MCLS::SolverManagerBase<Scalar> > solver_base = iterativeSolver;
+    mclsOp->initialize(	lp_base, solverPL, solver_base,
+			fwdOpSrc, prec, myPrec.get()==NULL, approxFwdOpSrc,
+			supportSolveUse	);
     mclsOp->setOStream(out);
     mclsOp->setVerbLevel(verbLevel);
 #ifdef TEUCHOS_DEBUG
@@ -896,14 +861,15 @@ bool MCLSLinearOpWithSolveFactory<Scalar>::isEpetraCompatible(
 /*!
  * \brief Get a Tpetra::CrsMatrix from the linear operator source.
  */
-template<class Scalar, class LO, class GO>
-RCP<Tpetra::CrsMatrix<Scalar,LO,GO> >
+template<class Scalar>
+template<class LO, class GO>
+RCP<const Tpetra::CrsMatrix<Scalar,LO,GO> >
 MCLSLinearOpWithSolveFactory<Scalar>::getTpetraCrsMatrix( 
     const LinearOpSourceBase<Scalar> &fwdOpSrc ) const
 {
     RCP<const Tpetra::Operator<Scalar,LO,GO> > tpetraFwdOp =
 	TpetraOperatorVectorExtraction<Scalar,LO,GO>::getConstTpetraOperator(
-	    fwdOpSrc->getOp() );
+	    fwdOpSrc.getOp() );
 
     return Teuchos::rcp_dynamic_cast<const Tpetra::CrsMatrix<Scalar,LO,GO> >(
 	tpetraFwdOp );
@@ -920,10 +886,10 @@ bool MCLSLinearOpWithSolveFactory<Scalar>::isTpetraCompatible(
     // MCLS interfaces are currently only implemented for
     // Tpetra::CrsMatrix. For now, we'll only check compatibly with those
     // integral types enabled by Tpetra ETI and the current scalar type.
-    RCP<Tpetra::CrsMatrix<Scalar,int,int> > crs_i_i = 
-	getTpetraCrsMatrix<Scalar,int,int>( fwdOpSrc );
-    RCP<Tpetra::CrsMatrix<Scalar,int,long> > crs_i_l = 
-	getTpetraCrsMatrix<Scalar,int,long>( fwdOpSrc );
+    RCP<const Tpetra::CrsMatrix<Scalar,int,int> > crs_i_i = 
+	getTpetraCrsMatrix<int,int>( fwdOpSrc );
+    RCP<const Tpetra::CrsMatrix<Scalar,int,long> > crs_i_l = 
+	getTpetraCrsMatrix<int,long>( fwdOpSrc );
 
     bool tpetra_compatible = ( Teuchos::nonnull(crs_i_i) ||
 			       Teuchos::nonnull(crs_i_l) );
