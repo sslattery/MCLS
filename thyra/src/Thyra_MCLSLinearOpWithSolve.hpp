@@ -69,11 +69,10 @@ class MCLSLinearOpWithSolve : virtual public LinearOpWithSolveBase<Scalar>
     MCLSLinearOpWithSolve();
 
     // Initializes given precreated solver objects.
-    template<class MultiVector, class Matrix>
     void initialize(
-	const RCP<MCLS::LinearProblemAdapter<MultiVector,Matrix> >& linear_problem,
+	const RCP<MCLS::LinearProblemBase<Scalar> >& linear_problem,
 	const RCP<Teuchos::ParameterList>& plist,
-	const RCP<MCLS::SolverManagerAdapter<MultiVector,Matrix> >&solver,
+	const RCP<MCLS::SolverManagerBase<Scalar> >&solver,
 	const RCP<const LinearOpSourceBase<Scalar> >& fwd_op_src,
 	const RCP<const PreconditionerBase<Scalar> >& prec,
 	const bool is_external_prec,
@@ -100,11 +99,10 @@ class MCLSLinearOpWithSolve : virtual public LinearOpWithSolveBase<Scalar>
     ESupportSolveUse supportSolveUse() const;
 
     // Uninitializes and returns stored quantities.
-    template<class MultiVector, class Matrix>
     void uninitialize(
-	RCP<MCLS::LinearProblemAdapter<MultiVector,Matrix> > *lp = NULL,
+	RCP<MCLS::LinearProblemBase<Scalar> > *lp = NULL,
 	RCP<Teuchos::ParameterList> *solverPL = NULL,
-	RCP<MCLS::SolverManagerAdapter<MultiVector,Matrix> > *iterativeSolver = NULL,
+	RCP<MCLS::SolverManagerBase<Scalar> > *iterativeSolver = NULL,
 	RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc = NULL,
 	RCP<const PreconditionerBase<Scalar> > *prec = NULL,
 	bool *isExternalPrec = NULL,
@@ -183,13 +181,13 @@ class MCLSLinearOpWithSolve : virtual public LinearOpWithSolveBase<Scalar>
   private:
 
     // Blocked linear problem.
-    RCP<MCLS::LinearProblemAdapter<Scalar,MV_t,LO_t> > d_linear_problem;
+    RCP<MCLS::LinearProblemBase<Scalar> > d_linear_problem;
 
     // Solver parameters.
     RCP<Teuchos::ParameterList> d_plist;
 
     // Blocked solver manager.
-    RCP<MCLS::SolverManagerAdapter<Scalar,MV_t,LO_t> > d_solver;
+    RCP<MCLS::SolverManagerBase<Scalar> > d_solver;
 
     // Linear operator source.
     RCP<const LinearOpSourceBase<Scalar> > d_fwd_op_src;

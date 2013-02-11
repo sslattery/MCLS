@@ -754,6 +754,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 			    Teuchos::DefaultComm<int>::getComm(), solverPL) );
 		iterativeSolver = 
 		    Teuchos::rcp( new MCLS::SolverManagerAdapter(solver) );
+		iterativeSolver->setProblem( lp );
 	    }
 	    break;
 	}
@@ -782,6 +783,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 			    Teuchos::DefaultComm<int>::getComm(), solverPL) );
 		iterativeSolver = 
 		    Teuchos::rcp( new MCLS::SolverManagerAdapter(solver) );
+		iterativeSolver->setProblem( lp );
 	    }
 	    break;
 	}
@@ -810,6 +812,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 			    Teuchos::DefaultComm<int>::getComm(), solverPL) );
 		iterativeSolver = 
 		    Teuchos::rcp( new MCLS::SolverManagerAdapter(solver) );
+		iterativeSolver->setProblem( lp );
 	    }
 	    break;
 	}

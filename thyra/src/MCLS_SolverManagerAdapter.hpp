@@ -56,6 +56,44 @@
 
 namespace MCLS
 {
+//---------------------------------------------------------------------------//
+/*!
+ * \class SolverManagerBase
+ * \brief Base class for solver managers.
+ */
+template<class Scalar>
+class SolverManagerBase : public virtual Teuchos::Describable
+{
+  public:
+
+    //@{
+    //! Typedefs.
+    typedef Scalar scalar_type;
+    //@}
+
+    // Constructor.
+    SolverManagerBase() { /* ... */ }
+
+    //! Destructor.
+    virtual ~SolverManagerBase() { /* ... */ }
+
+    //! Get the valid parameters for this manager.
+    virtual Teuchos::RCP<const Teuchos::ParameterList> 
+    getValidParameters() const = 0;
+
+    //! Get the current parameters being used for this manager.
+    virtual Teuchos::RCP<const Teuchos::ParameterList> 
+    getCurrentParameters() const = 0;
+
+    //! Set the parameters for the manager. The manager will modify this list
+    //! with default parameters that are not defined.
+    virtual void setParameters( 
+	const Teuchos::RCP<Teuchos::ParameterList>& params ) = 0;
+
+    // Solve the blocked linear problem. Return true if the solution converged
+    // for all blocks. False if it did not.
+    virtual Thyra::SolveStatus<Scalar> solve() = 0;
+};
 
 //---------------------------------------------------------------------------//
 /*!
@@ -63,7 +101,8 @@ namespace MCLS
  * \brief SolverManager adapter for Thyra blocked systems.
  */
 template<class MultiVector, class Matrix>
-class SolverManagerAdapter : public virtual Teuchos::Describable
+class SolverManagerAdapter 
+    : public SolverManagerBase<typename MultiVectorTraits<MultiVector>::scalar_type>
 {
   public:
 

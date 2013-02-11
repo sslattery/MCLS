@@ -63,11 +63,10 @@ MCLSLinearOpWithSolve<Scalar>::MCLSLinearOpWithSolve()
  * \brief Initializes given precreated solver objects. 
  */
 template<class Scalar>
-template<class MultiVector, class Matrix>
 void MCLSLinearOpWithSolve<Scalar>::initialize(
-    const RCP<MCLS::LinearProblemAdapter<MultiVector,Matrix> >& linear_problem,
+    const RCP<MCLS::LinearProblemBase<Scalar> >& linear_problem,
     const RCP<Teuchos::ParameterList>& plist,
-    const RCP<MCLS::SolverManagerAdapter<MultiVector,Matrix> >& solver,
+    const RCP<MCLS::SolverManagerBase<Scalar> >& solver,
     const RCP<const LinearOpSourceBase<Scalar> >& fwd_op_src,
     const RCP<const PreconditionerBase<Scalar> >& prec,
     const bool is_external_prec,
@@ -105,7 +104,8 @@ void MCLSLinearOpWithSolve<Scalar>::initialize(
  * can be modified. 
  */
 template<class Scalar>
-RCP<const LinearOpSourceBase<Scalar> > MCLSLinearOpWithSolve<Scalar>::extract_fwdOpSrc()
+RCP<const LinearOpSourceBase<Scalar> > 
+MCLSLinearOpWithSolve<Scalar>::extract_fwdOpSrc()
 {
     RCP<const LinearOpSourceBase<Scalar> > fwd_op_src = d_fwd_op_src;
     d_fwd_op_src = Teuchos::null;
@@ -118,7 +118,8 @@ RCP<const LinearOpSourceBase<Scalar> > MCLSLinearOpWithSolve<Scalar>::extract_fw
  * modified.
  */
 template<class Scalar>
-RCP<const PreconditionerBase<Scalar> > MCLSLinearOpWithSolve<Scalar>::extract_prec()
+RCP<const PreconditionerBase<Scalar> > 
+MCLSLinearOpWithSolve<Scalar>::extract_prec()
 {
     RCP<const PreconditionerBase<Scalar> > prec = d_prec;
     d_prec = Teuchos::null;
@@ -165,11 +166,10 @@ ESupportSolveUse MCLSLinearOpWithSolve<Scalar>::supportSolveUse() const
  * \brief Uninitializes and returns stored quantities.
  */
 template<class Scalar>
-template<class MultiVector, class Matrix>
 void MCLSLinearOpWithSolve<Scalar>::uninitialize(
-    RCP<MCLS::LinearProblemAdapter<MultiVector,Matrix> > *lp,
+    RCP<MCLS::LinearProblemBase<Scalar> > *lp,
     RCP<Teuchos::ParameterList> *solverPL,
-    RCP<MCLS::SolverManagerAdapter<MultiVector,Matrix> > *iterativeSolver,
+    RCP<MCLS::SolverManagerBase<Scalar> > *iterativeSolver,
     RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc,
     RCP<const PreconditionerBase<Scalar> > *prec,
     bool *isExternalPrec,
