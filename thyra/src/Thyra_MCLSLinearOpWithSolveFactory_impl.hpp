@@ -44,10 +44,10 @@
 #include <Thyra_MCLSLinearOpWithSolve.hpp>
 
 #include <MCLS_DBC.hpp>
+#include <MCLS_SolverManager.hpp>
 #include <MCLS_MCSASolverManager.hpp>
 #include <MCLS_SequentialMCSolverManager.hpp>
 #include <MCLS_AdjointMCSolverManager.hpp>
-#include <MCLS_VectorTraits.hpp>
 
 #include "MCLSLinearProblemAdapter.hpp"
 #include "MCLSSolverManagerAdapter.hpp"
@@ -534,7 +534,6 @@ void MCLSLinearOpWithSolveFactory<Scalar>::selectOpImpl(
 			     fwdOpSrc, approxFwdOpSrc, prec_in,
 			     reusePrec, Op, supportSolveUse );
     }
-
     else if ( Teuchos::nonnull(crs_i_i) )
     {
 	typedef int LO;
@@ -546,11 +545,11 @@ void MCLSLinearOpWithSolveFactory<Scalar>::selectOpImpl(
 			 Tpetra::CrsMatrix<Scalar,LO,GO> >(
 			     fwdOpSrc, approxFwdOpSrc, prec_in, 
 			     reusePrec, Op, supportSolveUse );
-}
+    }
     else if ( Teuchos::nonnull(crs_i_l) )
     {
 	typedef int LO;
-	typedef int GO;
+	typedef long GO;
 
 	initializeOpImpl<Scalar,
 			 Tpetra::Vector<Scalar,LO,GO>,
