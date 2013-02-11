@@ -905,16 +905,14 @@ bool MCLSLinearOpWithSolveFactory<Scalar>::isTpetraCompatible(
 {
     // MCLS interfaces are currently only implemented for
     // Tpetra::CrsMatrix. For now, we'll only check compatibly with those
-    // types enabled by Tpetra ETI. This is a pretty bad hack; we'll have to
-    // rethink how we want to get the concrete types out of Tpetra to drive
-    // MCLS. 
-    RCP<Tpetra::CrsMatrix<int,int,double> > crs_i_i_d = 
-	getTpetraCrsMatrix<int,int,d>( fwdOpSrc );
-    RCP<Tpetra::CrsMatrix<int,long,double> > crs_i_l_d = 
-	getTpetraCrsMatrix<int,long,d>( fwdOpSrc );
+    // integral types enabled by Tpetra ETI and the current scalar type.
+    RCP<Tpetra::CrsMatrix<Scalar,int,int> > crs_i_i = 
+	getTpetraCrsMatrix<Scalar,int,int>( fwdOpSrc );
+    RCP<Tpetra::CrsMatrix<Scalar,int,long> > crs_i_l = 
+	getTpetraCrsMatrix<Scalar,int,long>( fwdOpSrc );
 
-    bool tpetra_compatible = ( Teuchos::nonnull(crs_i_i_d) ||
-			       Teuchos::nonnull(crs_i_l_d) );
+    bool tpetra_compatible = ( Teuchos::nonnull(crs_i_i) ||
+			       Teuchos::nonnull(crs_i_l) );
 
     return tpetra_compatible;
 }
