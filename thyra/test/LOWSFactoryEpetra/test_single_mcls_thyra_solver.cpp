@@ -1,8 +1,6 @@
 #include "test_single_belos_thyra_solver.hpp"
 
-#ifndef SUN_CXX
-
-#include "Thyra_BelosLinearOpWithSolveFactory.hpp"
+#include "Thyra_MCLSLinearOpWithSolveFactory.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
@@ -13,13 +11,8 @@
 #include "EpetraExt_readEpetraLinearSystem.h"
 #include "Epetra_SerialComm.h"
 #include "Teuchos_ParameterList.hpp"
-#ifdef HAVE_BELOS_IFPACK
-#  include "Thyra_IfpackPreconditionerFactory.hpp"
-#endif
 
-#endif // SUN_CXX
-
-bool Thyra::test_single_belos_thyra_solver(
+bool Thyra::test_single_mcls_thyra_solver(
   const std::string                       matrixFile
   ,const bool                             testTranspose
   ,const bool                             usePreconditioner
@@ -30,7 +23,7 @@ bool Thyra::test_single_belos_thyra_solver(
   ,const double                           maxSolutionError
   ,const bool                             showAllTests
   ,const bool                             dumpAll
-  ,Teuchos::ParameterList                 *belosLOWSFPL
+  ,Teuchos::ParameterList                 *mclsLOWSFPL
   ,Teuchos::ParameterList                 *precPL
   ,Teuchos::FancyOStream                  *out_arg
   )
@@ -43,11 +36,9 @@ bool Thyra::test_single_belos_thyra_solver(
 
   try {
 
-#ifndef SUN_CXX
-
     if(out.get()) {
       *out << "\n***"
-           << "\n*** Testing Thyra::BelosLinearOpWithSolveFactory (and Thyra::BelosLinearOpWithSolve)"
+           << "\n*** Testing Thyra::MCLSLinearOpWithSolveFactory (and Thyra::MCLSLinearOpWithSolve)"
            << "\n***\n"
            << "\nEchoing input options:"
            << "\n  matrixFile             = " << matrixFile
@@ -72,14 +63,14 @@ bool Thyra::test_single_belos_thyra_solver(
 
     if(out.get() && dumpAll) *out << "\ndescribe(A) =\n" << describe(*A,Teuchos::VERB_EXTREME);
 
-    if(out.get()) *out << "\nB) Creating a BelosLinearOpWithSolveFactory object opFactory ...\n";
+    if(out.get()) *out << "\nB) Creating a MCLSLinearOpWithSolveFactory object opFactory ...\n";
 
     Teuchos::RCP<LinearOpWithSolveFactoryBase<double> >
       lowsFactory;
     {
-      Teuchos::RCP<BelosLinearOpWithSolveFactory<double> >
-        belosLowsFactory = Teuchos::rcp(new BelosLinearOpWithSolveFactory<double>());
-      lowsFactory = belosLowsFactory;
+      Teuchos::RCP<MCLSLinearOpWithSolveFactory<double> >
+        mclsLowsFactory = Teuchos::rcp(new MCLSLinearOpWithSolveFactory<double>());
+      lowsFactory = mclsLowsFactory;
     }
 
     if(out.get()) {
@@ -87,36 +78,26 @@ bool Thyra::test_single_belos_thyra_solver(
       lowsFactory->getValidParameters()->print(OSTab(out).o(),0,true,false);
     }
 
-    if(usePreconditioner) {
-#ifdef HAVE_BELOS_IFPACK
-      if(out.get()) {
-        *out << "\nSetting an Ifpack preconditioner factory ...\n";
-      }
-      RCP<PreconditionerFactoryBase<double> >
-        precFactory = Teuchos::rcp(new IfpackPreconditionerFactory());
-      if (precPL)
-        precFactory->setParameterList(rcp(precPL,false));
-      lowsFactory->setPreconditionerFactory(precFactory,"Ifpack");
-#else
-      TEUCHOS_TEST_FOR_EXCEPT(usePreconditioner);
-#endif
+    if(usePreconditioner) 
+    {
+	// no preconditioner support in MCLS yet.
     }
     
     if(out.get()) {
       *out << "\nlowsFactory.getValidParameters() after setting preconditioner factory:\n";
       lowsFactory->getValidParameters()->print(OSTab(out).o(),0,true,false);
-      *out << "\nbelosLOWSFPL before setting parameters:\n";
-      belosLOWSFPL->print(OSTab(out).o(),0,true);
+      *out << "\nmclsLOWSFPL before setting parameters:\n";
+      mclsLOWSFPL->print(OSTab(out).o(),0,true);
     }
 
-    lowsFactory->setParameterList(Teuchos::rcp(belosLOWSFPL,false));
+    lowsFactory->setParameterList(Teuchos::rcp(mclsLOWSFPL,false));
 
     if(out.get()) {
-      *out << "\nbelosLOWSFPL after setting parameters:\n";
-      belosLOWSFPL->print(OSTab(out).o(),0,true);
+      *out << "\nmclsLOWSFPL after setting parameters:\n";
+      mclsLOWSFPL->print(OSTab(out).o(),0,true);
     }
 
-    if(out.get()) *out << "\nC) Creating a BelosLinearOpWithSolve object nsA from A ...\n";
+    if(out.get()) *out << "\nC) Creating a MCLSLinearOpWithSolve object nsA from A ...\n";
 
     Teuchos::RCP<LinearOpWithSolveBase<double> > nsA = lowsFactory->createOp();
     Thyra::initializeOp<double>(*lowsFactory,  A, nsA.ptr());
@@ -164,17 +145,10 @@ bool Thyra::test_single_belos_thyra_solver(
     if(!result) success = false;
 
     if(out.get()) {
-      *out << "\nbelosLOWSFPL after solving:\n";
-      belosLOWSFPL->print(OSTab(out).o(),0,true);
+      *out << "\nmclsLOWSFPL after solving:\n";
+      mclsLOWSFPL->print(OSTab(out).o(),0,true);
     }
     
-#else // SUN_CXX
-    
-    if(out.get()) *out << "\nTest failed since is was not even compiled since SUN_CXX was defined!\n";
-    success = false;
-
-#endif // SUN_CXX
-
   }
   catch( const std::exception &excpt ) {
     if(out.get()) *out << std::flush;
