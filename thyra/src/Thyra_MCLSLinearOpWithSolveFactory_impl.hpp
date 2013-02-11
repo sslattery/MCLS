@@ -38,8 +38,8 @@
  */
 //---------------------------------------------------------------------------//
 
-#ifndef THYRA_MCLS_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
-#define THYRA_MCLS_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
+#ifndef THYRA_MCLS_LINEAR_OP_WITH_SOLVE_FACTORY_IMPL_HPP
+#define THYRA_MCLS_LINEAR_OP_WITH_SOLVE_FACTORY_IMPL_HPP
 
 #include <Thyra_MCLSLinearOpWithSolve.hpp>
 
@@ -47,10 +47,10 @@
 #include <MCLS_SolverManager.hpp>
 #include <MCLS_MCSASolverManager.hpp>
 #include <MCLS_SequentialMCSolverManager.hpp>
-#include <MCLS_AdjointMCSolverManager.hpp>
+#include <MCLS_AdjointSolverManager.hpp>
 
-#include "MCLSLinearProblemAdapter.hpp"
-#include "MCLSSolverManagerAdapter.hpp"
+#include "MCLS_LinearProblemAdapter.hpp"
+#include "MCLS_SolverManagerAdapter.hpp"
 
 #include <Teuchos_VerboseObjectParameterListHelpers.hpp>
 #include <Teuchos_StandardParameterEntryValidators.hpp>
@@ -484,7 +484,7 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 		*mgr.getValidParameters() );
 	}
 	{
-	    MCLS::AdjointMCSolverManager<Epetra_Vector,Epetra_RowMatrix> mgr;
+	    MCLS::AdjointSolverManager<Epetra_Vector,Epetra_RowMatrix> mgr;
 	    solverTypesSL.sublist(AdjointMC_name).setParameters(
 		*mgr.getValidParameters() );
 	}
@@ -807,7 +807,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 	    else 
 	    {
 		solver = 
-		    rcp(new MCLS::AdjointMCSolverManager<Vector,Matrix>(
+		    rcp(new MCLS::AdjointSolverManager<Vector,Matrix>(
 			    Teuchos::DefaultComm<int>::getComm(), solverPL) );
 		iterativeSolver = 
 		    Teuchos::rcp( new MCLS::SolverManagerAdapter(solver) );
@@ -935,7 +935,7 @@ bool MCLSLinearOpWithSolveFactory<Scalar>::isTpetraCompatible(
 
 //---------------------------------------------------------------------------//
 
-#endif // THYRA_MCLS_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
+#endif // THYRA_MCLS_LINEAR_OP_WITH_SOLVE_FACTORY_IMPL_HPP
 
 //---------------------------------------------------------------------------//
 // end ThyraMCLSLinearOpWithSolveFactory.hpp

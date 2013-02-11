@@ -170,8 +170,8 @@ class MCLSLinearOpWithSolveFactory : public LinearOpWithSolveFactoryBase<Scalar>
     /** \brief . */
     void initializePreconditionedOp(
 	const Teuchos::RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc,
-	const Teuchos::RCP<const PreconditionerBase<Scalar> >& prec
-	LinearOpWithSolveBase<Scalar>* Op
+	const Teuchos::RCP<const PreconditionerBase<Scalar> >& prec,
+	LinearOpWithSolveBase<Scalar>* Op,
 	const ESupportSolveUse supportSolveUse ) const;
 
     /** \brief . */

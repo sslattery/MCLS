@@ -1,4 +1,4 @@
-#include "test_single_belos_thyra_solver.hpp"
+#include "test_single_mcls_thyra_solver.hpp"
 
 #include "Thyra_MCLSLinearOpWithSolveFactory.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"

@@ -106,6 +106,7 @@ SequentialMCSolverManager<Vector,Matrix>::getValidParameters() const
     plist->set<std::string>("MC Type", "Adjoint");
     plist->set<double>("Convergence Tolerance", 0.0);
     plist->set<int>("Max Number of Iterations", 0);
+    plist->set<int>("Iteration Print Frequency", 0);
 
     return plist;
 }

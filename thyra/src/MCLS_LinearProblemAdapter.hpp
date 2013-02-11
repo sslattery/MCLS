@@ -155,7 +155,7 @@ LinearProblemAdapter<Epetra_Vector,
     Teuchos::RCP<const Epetra_Vector> vector_b = 
 	Teuchos::rcp( (*d_b)(id), false );
 
-    return Teuchos::rcp( new LinearProblem<Epetra_Vector,EpetraRowMatrix>(
+    return Teuchos::rcp( new LinearProblem<Epetra_Vector,Epetra_RowMatrix>(
 			     d_A, vector_x, vector_b) );
 }
 
@@ -165,7 +165,7 @@ LinearProblemAdapter<Epetra_Vector,
  */
 template<class Scalar, class LO, class GO>
 Teuchos::RCP<LinearProblem<Tpetra::Vector<Scalar,LO,GO>,
-			   Tpetra::CrsMatrix<Scalar,LO,GO> >
+			   Tpetra::CrsMatrix<Scalar,LO,GO> > >
 LinearProblemAdapter<Tpetra::Vector<Scalar,LO,GO>,
 		     Tpetra::MultiVector<Scalar,LO,GO>,
 		     Tpetra::CrsMatrix<Scalar,LO,GO> >::getSubProblem(

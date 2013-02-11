@@ -28,19 +28,24 @@ int main(int argc, char* argv[])
     
     std::string     matrixFile             = "";
     bool            testTranspose          = false;
-    bool            usePreconditioner      = true;
+    bool            usePreconditioner      = false;
     int             numRhs                 = 1;
     int             numRandomVectors       = 1;
     double          maxFwdError            = 1e-14;
     int             maxIterations          = 400;
-    int             maxRestarts            = 25;
     int             outputFrequency        = 10;
     bool            outputMaxResOnly       = true;
-    int             blockSize              = 1;
     double          maxResid               = 1e-6;
     double          maxSolutionError       = 1e-6;
     bool            showAllTests           = false;
     bool            dumpAll                = false;
+    double          weightCutoff           = 1e-4;
+    int             mcCheckFrequency       = 1024;
+    int             mcBufferSize           = 1024;
+    bool            reproducibleMC         = true;
+    int             overlapSize            = 0;
+    int             numSets                = 1;
+    std::string     mcType                 = "Adjoint";
 
     CommandLineProcessor  clp;
     clp.throwExceptions(false);
@@ -52,15 +57,22 @@ int main(int argc, char* argv[])
     clp.setOption( "num-random-vectors", &numRandomVectors, "Number of times a test is performed with different random vectors." );
     clp.setOption( "max-fwd-error", &maxFwdError, "The maximum relative error in the forward operator." );
     clp.setOption( "max-iters", &maxIterations, "The maximum number of linear solver iterations to take." );
-    clp.setOption( "max-restarts", &maxRestarts, "???." );
     clp.setOption( "output-frequency", &outputFrequency, "Number of linear solver iterations between output" );
-    clp.setOption( "output-max-res-only", "output-all-res", &outputMaxResOnly, "Determines if only the max residual is printed or if all residuals are printed per iteration." );
-    clp.setOption( "block-size", &blockSize, "???." );
+    clp.setOption( "output-max-res-only", "output-all-res", &outputMaxResOnly, 
+		   "Determines if only the max residual is printed or if all residuals are printed per iteration." );
     clp.setOption( "max-resid", &maxResid, "The maximum relative error in the residual." );
     clp.setOption( "max-solution-error", &maxSolutionError, "The maximum relative error in the solution of the linear system." );
     clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
     clp.setOption( "show-all-tests", "no-show-all-tests", &showAllTests, "Set if all the tests are shown or not." );
     clp.setOption( "dump-all", "no-dump-all", &dumpAll, "Determines if vectors are printed or not." );
+    clp.setOption( "mc-type", &mcType, "Determines underlying MC type in solver." );
+    clp.setOption( "mc-cutoff", &weightCutoff, "Determines underlying MC history weight cutoff." );
+    clp.setOption( "mc-frequency", &mcCheckFrequency, "Determines the frequency of MC communications." );
+    clp.setOption( "mc-buffer-size", &mcBufferSize, "Determines the size of MC history buffers." );
+    clp.setOption( "mc-reproduce", "reproducible", &reproducibleMC, 
+		   "Determines whether or not to communicate RNG with MC histories." );
+    clp.setOption( "mc-overlap", &overlapSize, "Determines the size of overlap in MC problem." );
+    clp.setOption( "mc-sets", &numSets, "Determines the number of sets in the MC problem." );
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
@@ -76,13 +88,17 @@ int main(int argc, char* argv[])
     Teuchos::ParameterList& mclsLOWSFPL_mcsa =
       mclsLOWSFPL_solver.sublist("MCSA");
 
-    mclsLOWSFPL_mcsa.set("Maximum Iterations",int(maxIterations));
+    mclsLOWSFPL_mcsa.set("Max Number of Iterations",int(maxIterations));
     mclsLOWSFPL_mcsa.set("Convergence Tolerance",double(maxResid));
-    mclsLOWSFPL_mcsa.set("Maximum Restarts",int(maxRestarts));
-    mclsLOWSFPL_mcsa.set("Block Size",int(blockSize));
-    mclsLOWSFPL_mcsa.set("Num Blocks",int(mcsaKrylovLength));
-    mclsLOWSFPL_mcsa.set("Output Frequency",int(outputFrequency));
-    mclsLOWSFPL_mcsa.set("Show Maximum Residual Norm Only",bool(outputMaxResOnly));
+    mclsLOWSFPL_mcsa.set("MC TYPE",std::string(mcType));
+    mclsLOWSFPL_mcsa.set("Iteration Print Frequency",int(outputFrequency));
+    mclsLOWSFPL_mcsa.set("Weight Cutoff",double(weightCutoff));
+    mclsLOWSFPL_mcsa.set("MC Check Frequency",int(mcCheckFrequency));
+    mclsLOWSFPL_mcsa.set("MC Buffer Size",int(mcBufferSize));
+    mclsLOWSFPL_mcsa.set("Reproducible MC Mode",bool(reproducibleMC));
+    mclsLOWSFPL_mcsa.set("Overlap Size",int(overlapSize));
+    mclsLOWSFPL_mcsa.set("Number of Sets",int(numSets));
+
 
     Teuchos::ParameterList precPL("Ifpack");
     if(usePreconditioner) {

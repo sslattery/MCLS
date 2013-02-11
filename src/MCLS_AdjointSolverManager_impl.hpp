@@ -95,6 +95,7 @@ AdjointSolverManager<Vector,Matrix>::getValidParameters() const
     // Set the list values to the default code values. Put zero if no default.
     plist->set<double>("Weight Cutoff", 0.0);
     plist->set<int>("MC Check Frequency", 1);
+    plist->set<int>("MC Buffer Size", 1000);
     plist->set<bool>("Reproducible MC Mode", false);
     plist->set<int>("Overlap Size",0);
     plist->set<int>("Random Number Seed", 433494437);
