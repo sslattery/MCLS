@@ -473,22 +473,25 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 	Teuchos::ParameterList
 	    &solverTypesSL = validParamList->sublist(SolverTypes_name);
 	{
-	    MCLS::MCSASolverManager<Epetra_Vector,Epetra_RowMatrix> 
-		mgr(Teuchos::DefaultComm<int>::getComm(), Teuchos::parameterList());
+	    MCLS::MCSASolverManager<Epetra_Vector,Epetra_RowMatrix> mgr(
+		Teuchos::null, Teuchos::DefaultComm<int>::getComm(), 
+		Teuchos::parameterList() );
 	    solverTypesSL.sublist(MCSA_name).setParameters(
-		*mgr.getValidParameters() );
+		*(mgr.getValidParameters()) );
 	}
 	{
-	    MCLS::SequentialMCSolverManager<Epetra_Vector,Epetra_RowMatrix> 
-		mgr(Teuchos::DefaultComm<int>::getComm(), Teuchos::parameterList());
+	    MCLS::SequentialMCSolverManager<Epetra_Vector,Epetra_RowMatrix> mgr(
+		Teuchos::null, Teuchos::DefaultComm<int>::getComm(), 
+		Teuchos::parameterList() );
 	    solverTypesSL.sublist(SequentialMC_name).setParameters(
-		*mgr.getValidParameters() );
+		*(mgr.getValidParameters()) );
 	}
 	{
-	    MCLS::AdjointSolverManager<Epetra_Vector,Epetra_RowMatrix> 
-		mgr(Teuchos::DefaultComm<int>::getComm(), Teuchos::parameterList());
+	    MCLS::AdjointSolverManager<Epetra_Vector,Epetra_RowMatrix> mgr(
+		Teuchos::null, Teuchos::DefaultComm<int>::getComm(), 
+		Teuchos::parameterList() );
 	    solverTypesSL.sublist(AdjointMC_name).setParameters(
-		*mgr.getValidParameters() );
+		*(mgr.getValidParameters()) );
 	}
     }
 

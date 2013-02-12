@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
 
     mclsLOWSFPL_mcsa.set("Max Number of Iterations",int(maxIterations));
     mclsLOWSFPL_mcsa.set("Convergence Tolerance",double(maxResid));
-    mclsLOWSFPL_mcsa.set("MC TYPE",std::string(mcType));
+    mclsLOWSFPL_mcsa.set("MC Type",std::string(mcType));
     mclsLOWSFPL_mcsa.set("Iteration Print Frequency",int(outputFrequency));
     mclsLOWSFPL_mcsa.set("Weight Cutoff",double(weightCutoff));
     mclsLOWSFPL_mcsa.set("MC Check Frequency",int(mcCheckFrequency));
