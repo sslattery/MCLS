@@ -65,8 +65,7 @@ bool Thyra::test_single_mcls_thyra_solver(
 
     if(out.get()) *out << "\nB) Creating a MCLSLinearOpWithSolveFactory object opFactory ...\n";
 
-    Teuchos::RCP<LinearOpWithSolveFactoryBase<double> >
-      lowsFactory;
+    Teuchos::RCP<LinearOpWithSolveFactoryBase<double> > lowsFactory;
     {
       Teuchos::RCP<MCLSLinearOpWithSolveFactory<double> >
         mclsLowsFactory = Teuchos::rcp(new MCLSLinearOpWithSolveFactory<double>());
@@ -82,7 +81,7 @@ bool Thyra::test_single_mcls_thyra_solver(
     {
 	// no preconditioner support in MCLS yet.
     }
-    
+
     if(out.get()) {
       *out << "\nlowsFactory.getValidParameters() after setting preconditioner factory:\n";
       lowsFactory->getValidParameters()->print(OSTab(out).o(),0,true,false);

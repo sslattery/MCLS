@@ -434,6 +434,7 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
     {
 	validParamList = Teuchos::rcp(new Teuchos::ParameterList(
 					  "MCLSLinearOpWithSolveFactory") );
+
 	setStringToIntegralParameter<EMCLSSolverType>(
 	    SolverType_name, SolverType_default,
 	    "Type of linear solver algorithm to use.",
@@ -474,22 +475,35 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 	    &solverTypesSL = validParamList->sublist(SolverTypes_name);
 	{
 	    MCLS::MCSASolverManager<Epetra_Vector,Epetra_RowMatrix> mgr(
-		Teuchos::null, Teuchos::DefaultComm<int>::getComm(), 
-		Teuchos::parameterList() );
+		Teuchos::DefaultComm<int>::getComm(), Teuchos::parameterList() );
 	    solverTypesSL.sublist(MCSA_name).setParameters(
 		*(mgr.getValidParameters()) );
+
+	    // We need an MC solver manager here as well to get those
+	    // parameters as we can't gather them from the solver manager
+	    // until the linear problem is set.
+	    MCLS::AdjointSolverManager<Epetra_Vector,Epetra_RowMatrix> mc_mgr(
+		Teuchos::DefaultComm<int>::getComm(), Teuchos::parameterList() );
+	    solverTypesSL.sublist(MCSA_name).setParameters(
+		*(mc_mgr.getValidParameters()) );
 	}
 	{
 	    MCLS::SequentialMCSolverManager<Epetra_Vector,Epetra_RowMatrix> mgr(
-		Teuchos::null, Teuchos::DefaultComm<int>::getComm(), 
-		Teuchos::parameterList() );
+		Teuchos::DefaultComm<int>::getComm(), Teuchos::parameterList() );
 	    solverTypesSL.sublist(SequentialMC_name).setParameters(
 		*(mgr.getValidParameters()) );
+
+	    // We need an MC solver manager here as well to get those
+	    // parameters as we can't gather them from the solver manager
+	    // until the linear problem is set.
+	    MCLS::AdjointSolverManager<Epetra_Vector,Epetra_RowMatrix> mc_mgr(
+		Teuchos::DefaultComm<int>::getComm(), Teuchos::parameterList() );
+	    solverTypesSL.sublist(MCSA_name).setParameters(
+		*(mc_mgr.getValidParameters()) );
 	}
 	{
 	    MCLS::AdjointSolverManager<Epetra_Vector,Epetra_RowMatrix> mgr(
-		Teuchos::null, Teuchos::DefaultComm<int>::getComm(), 
-		Teuchos::parameterList() );
+		Teuchos::DefaultComm<int>::getComm(), Teuchos::parameterList() );
 	    solverTypesSL.sublist(AdjointMC_name).setParameters(
 		*(mgr.getValidParameters()) );
 	}

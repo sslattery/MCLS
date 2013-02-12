@@ -97,12 +97,13 @@ template<class Vector, class Matrix>
 Teuchos::RCP<const Teuchos::ParameterList> 
 MCSASolverManager<Vector,Matrix>::getValidParameters() const
 {
-    Require( Teuchos::nonnull(d_mc_solver->getValidParameters()) );
-
     // Create a parameter list with the Monte Carlo solver parameters as a
     // starting point.
-    Teuchos::RCP<Teuchos::ParameterList> plist = 
-	Teuchos::parameterList( *d_mc_solver->getValidParameters() );
+    Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::parameterList();
+    if ( Teuchos::nonnull(d_mc_solver) )
+    {
+	plist->setParameters( *d_mc_solver->getValidParameters() );
+    }
 
     // Add the default code values. Put zero if no default.
     plist->set<std::string>("MC Type", "Adjoint");
