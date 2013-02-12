@@ -82,7 +82,8 @@ void SolverManagerAdapter<MultiVector,Matrix>::setProblem(
  */
 template<class MultiVector, class Matrix>
 Thyra::SolveStatus<typename SolverManagerAdapter<MultiVector,Matrix>::Scalar> 
-SolverManagerAdapter<MultiVector,Matrix>::solve()
+SolverManagerAdapter<MultiVector,Matrix>::solve(
+    const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
     Require( Teuchos::nonnull(d_problem) );
 
@@ -98,11 +99,17 @@ SolverManagerAdapter<MultiVector,Matrix>::solve()
     timer.start(true);
     for ( int n = 0; n < num_problems; ++n )
     {
+	// Set the linear subproblem.
 	linear_problem = d_problem->getSubProblem( n );
 	d_solver->setProblem( linear_problem );
 
+	// Set the solver parameters.
+	d_solver->setParameters( params );
+
+	// Solve.
 	d_solver->solve();
 
+	// Update solve status.
 	num_iters += d_solver->getNumIters();
 
 	if ( !d_solver->getConvergedStatus() )

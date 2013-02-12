@@ -230,6 +230,7 @@ class MCLSLinearOpWithSolveFactory : public LinearOpWithSolveFactoryBase<Scalar>
     // Initialize the linear operator.
     template<class MultiVector, class Matrix>
     void initializeOpImpl(
+	const RCP<const Matrix>& matrix,
 	const Teuchos::RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc,
 	const Teuchos::RCP<const LinearOpSourceBase<Scalar> >& approxFwdOpSrc,
 	const Teuchos::RCP<const PreconditionerBase<Scalar> >& prec,

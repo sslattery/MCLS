@@ -470,13 +470,8 @@ SolveStatus<Scalar> MCLSLinearOpWithSolve<Scalar>::solveImpl(
     d_linear_problem->setLHS( Teuchos::rcpFromPtr(X) );
     d_linear_problem->setRHS( Teuchos::rcpFromRef(B) );
 
-    // Set the parameters with the solver. We need to do this after the
-    // problem is set so we can correctly generate the subclass data from the
-    // input vectors.
-    d_solver->setParameters( tmp_pl );
-
     // Solve the linear system.
-    SolveStatus<Scalar> status = d_solver->solve();
+    SolveStatus<Scalar> status = d_solver->solve( tmp_pl );
     total_timer.stop();
 
     // Report the overall timing.

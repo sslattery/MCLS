@@ -184,21 +184,13 @@ void SequentialMCSolverManager<Vector,Matrix>::setParameters(
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
     Require( Teuchos::nonnull(params) );
+    Require( Teuchos::nonnull(d_mc_solver) );
 
     // Set the parameters.
     d_plist = params;
 
     // Propagate the parameters to the existing Monte Carlo solver.
-    if ( Teuchos::nonnull(d_mc_solver) )
-    {
-	d_mc_solver->setParameters( d_plist );
-    }
-    // We're getting the parameters that set the state for the Monte Carlo
-    // solver. If it hasn't been created yet, create it now.
-    else
-    {
-	buildResidualMonteCarloProblem();
-    }
+    d_mc_solver->setParameters( d_plist );
 }
 
 //---------------------------------------------------------------------------//
@@ -315,6 +307,7 @@ void SequentialMCSolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
 {
     Require( !d_global_comm.is_null() );
     Require( !d_plist.is_null() );
+    Require( Teuchos::nonnull(d_problem) );
 
     // Generate the residual Monte Carlo problem on the primary set.
     if ( d_primary_set )

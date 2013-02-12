@@ -544,6 +544,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::selectOpImpl(
     {
 	initializeOpImpl<Epetra_MultiVector,
 			 Epetra_RowMatrix>(
+			     getEpetraRowMatrix(*fwdOpSrc),
 			     fwdOpSrc, approxFwdOpSrc, prec_in,
 			     reusePrec, Op, supportSolveUse );
     }
@@ -554,6 +555,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::selectOpImpl(
 
 	initializeOpImpl<Tpetra::MultiVector<Scalar,LO,GO>,
 			 Tpetra::CrsMatrix<Scalar,LO,GO> >(
+			     getTpetraCrsMatrix<LO,GO>(*fwdOpSrc),
 			     fwdOpSrc, approxFwdOpSrc, prec_in, 
 			     reusePrec, Op, supportSolveUse );
     }
@@ -564,6 +566,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::selectOpImpl(
 
 	initializeOpImpl<Tpetra::MultiVector<Scalar,LO,GO>,
 			 Tpetra::CrsMatrix<Scalar,LO,GO> >(
+			     getTpetraCrsMatrix<LO,GO>(*fwdOpSrc),
 			     fwdOpSrc, approxFwdOpSrc, prec_in, 
 			     reusePrec, Op, supportSolveUse );
     }
@@ -580,6 +583,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::selectOpImpl(
 template<class Scalar>
 template<class MultiVector, class Matrix>
 void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
+    const RCP<const Matrix>& matrix,
     const RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc,
     const RCP<const LinearOpSourceBase<Scalar> >& approxFwdOpSrc,
     const RCP<const PreconditionerBase<Scalar> >& prec_in,
@@ -677,8 +681,8 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     typedef MCLS::LinearProblemAdapter<MultiVector,Matrix> LP_t;
     RCP<LP_t> lp = rcp(new LP_t());
 
-    // Set the operator
-    lp->setOperator( Teuchos::rcp_dynamic_cast<const Matrix>(fwdOp) );
+    // Set the operator (this is the concrete subclass).
+    lp->setOperator( matrix );
 
     // Set the preconditioner. 
     if ( prec.get() ) 

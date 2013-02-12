@@ -87,12 +87,13 @@ class SolverManagerBase : public virtual Teuchos::Describable
 
     //! Set the parameters for the manager. The manager will modify this list
     //! with default parameters that are not defined.
-    virtual void setParameters( 
-	const Teuchos::RCP<Teuchos::ParameterList>& params ) = 0;
+    virtual void 
+    setParameters( const Teuchos::RCP<Teuchos::ParameterList>& params ) = 0;
 
     // Solve the blocked linear problem. Return true if the solution converged
     // for all blocks. False if it did not.
-    virtual Thyra::SolveStatus<Scalar> solve() = 0;
+    virtual Thyra::SolveStatus<Scalar> 
+    solve( const Teuchos::RCP<Teuchos::ParameterList>& params ) = 0;
 };
 
 //---------------------------------------------------------------------------//
@@ -141,15 +142,16 @@ class SolverManagerAdapter
     void setProblem( 
 	const Teuchos::RCP<LinearProblemAdapter<MultiVector,Matrix> >& problem );
 
-    //! Set the parameters for the manager. The manager will modify this list
-    //! with default parameters that are not defined.
-    void setParameters( 
-	const Teuchos::RCP<Teuchos::ParameterList>& params )
+    // Set the parameters for the manager. The manager will modify this list
+    // with default parameters that are not defined.
+    void 
+    setParameters( const Teuchos::RCP<Teuchos::ParameterList>& params )
     { d_solver->setParameters(params); }
 
     // Solve the blocked linear problem. Return true if the solution converged
     // for all blocks. False if it did not.
-    Thyra::SolveStatus<Scalar> solve();
+    Thyra::SolveStatus<Scalar> 
+    solve( const Teuchos::RCP<Teuchos::ParameterList>& params );
 
   private:
 
