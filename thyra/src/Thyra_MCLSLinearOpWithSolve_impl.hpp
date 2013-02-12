@@ -352,12 +352,19 @@ bool MCLSLinearOpWithSolve<Scalar>::solveSupportsNewImpl(
     const Ptr<const SolveCriteria<Scalar> > solveCriteria ) const
 {
     // Only forward solves are currently supported.
-    if ( M_trans == NOTRANS )
+    if ( M_trans == NOTRANS)
     {
-	// Only residual scaled by rhs supported.
-	return ( solveCriteria->solveMeasureType.useDefault() ||
-		 solveCriteria->solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,
-						 SOLVE_MEASURE_NORM_RHS) );
+	if ( Teuchos::nonnull(solveCriteria) )
+	{
+	    // Only residual scaled by rhs supported.
+	    return ( solveCriteria->solveMeasureType.useDefault() ||
+		     solveCriteria->solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,
+						     SOLVE_MEASURE_NORM_RHS) );
+	}
+
+	// If we don't yet know the solve criteria then this tranpose
+	// operation is valid.
+	return true;
     }
 
     return false;
@@ -459,12 +466,14 @@ SolveStatus<Scalar> MCLSLinearOpWithSolve<Scalar>::solveImpl(
 	tmp_pl->set("Convergence Tolerance", d_default_tol);
     }
 
-    // Set the parameters with the solver.
-    d_solver->setParameters( tmp_pl );
-
     // Set the problem.
     d_linear_problem->setLHS( Teuchos::rcpFromPtr(X) );
     d_linear_problem->setRHS( Teuchos::rcpFromRef(B) );
+
+    // Set the parameters with the solver. We need to do this after the
+    // problem is set so we can correctly generate the subclass data from the
+    // input vectors.
+    d_solver->setParameters( tmp_pl );
 
     // Solve the linear system.
     SolveStatus<Scalar> status = d_solver->solve();

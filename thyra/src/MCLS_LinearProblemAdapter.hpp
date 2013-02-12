@@ -121,7 +121,9 @@ class LinearProblemAdapter : public LinearProblemBase<
     //@}
 
     //! Default constructor.
-    LinearProblemAdapter() { /* ... */ }
+    LinearProblemAdapter()
+	: d_num_problems(0)
+    { /* ... */ }
 
     //! Constructor.
     LinearProblemAdapter( const Teuchos::RCP<const Matrix>& A,
@@ -151,7 +153,16 @@ class LinearProblemAdapter : public LinearProblemBase<
     }
 
     //! Get the number of LHS/RHS in the problem.
-    int getNumSubProblems() const { return d_num_problems; }  
+    int getNumSubProblems()
+    { 
+	if ( d_num_problems == 0 );
+	{
+	    Check( Teuchos::nonnull(d_x) );
+	    d_num_problems = MVT::getNumVectors(*d_x);
+	}
+
+	return d_num_problems;
+    }  
 
     //! Set the number of LHS/RHS in the problem.
     void setNumSubProblems( const int num_problems ) const 
@@ -166,7 +177,7 @@ class LinearProblemAdapter : public LinearProblemBase<
     //! Overload for Thyra operator.
     void setLHS( const Teuchos::RCP<typename Base::multivector_type>& x )
     { 
-	d_x = Teuchos::rcp_dynamic_cast<MultiVector>(x); 
+	d_x = MVT::getMultiVectorFromThyra( x );
 	Ensure( Teuchos::nonnull(d_x) );
     }
 
@@ -176,7 +187,7 @@ class LinearProblemAdapter : public LinearProblemBase<
     //! Overload for Thyra operator.
     void setRHS( const Teuchos::RCP<const typename Base::multivector_type>& b )
     { 
-	d_b = Teuchos::rcp_dynamic_cast<const MultiVector>(b); 
+	d_b = MVT::getConstMultiVectorFromThyra( b );
 	Ensure( Teuchos::nonnull(d_b) );
     }
 

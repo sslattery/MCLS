@@ -209,7 +209,8 @@ bool MCLSLinearOpWithSolveFactory<Scalar>::isCompatible(
     // MCLS interfaces are currently only implemented for Epetra_RowMatrix and
     // Tpetra::CrsMatrix. 
     bool epetra_compatible = isEpetraCompatible( fwdOpSrc );
-    bool tpetra_compatible = isTpetraCompatible( fwdOpSrc );  
+    bool tpetra_compatible = ( isTpetraCompatible<int,int>(fwdOpSrc) ||
+			       isTpetraCompatible<int,long>(fwdOpSrc) );
     bool solve_compatible = ( epetra_compatible || tpetra_compatible );
 
     return ( prec_compatible && solve_compatible );
@@ -539,11 +540,6 @@ void MCLSLinearOpWithSolveFactory<Scalar>::selectOpImpl(
     LinearOpWithSolveBase<Scalar>* Op,
     const ESupportSolveUse supportSolveUse ) const
 {
-    RCP<const Tpetra::CrsMatrix<Scalar,int,int> > crs_i_i = 
-	getTpetraCrsMatrix<int,int>( *fwdOpSrc );
-    RCP<const Tpetra::CrsMatrix<Scalar,int,long> > crs_i_l = 
-	getTpetraCrsMatrix<int,long>( *fwdOpSrc );
-
     if ( isEpetraCompatible(*fwdOpSrc) )
     {
 	initializeOpImpl<Epetra_MultiVector,
@@ -551,7 +547,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::selectOpImpl(
 			     fwdOpSrc, approxFwdOpSrc, prec_in,
 			     reusePrec, Op, supportSolveUse );
     }
-    else if ( Teuchos::nonnull(crs_i_i) )
+    else if ( isTpetraCompatible<int,int>(*fwdOpSrc) )
     {
 	typedef int LO;
 	typedef int GO;
@@ -561,7 +557,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::selectOpImpl(
 			     fwdOpSrc, approxFwdOpSrc, prec_in, 
 			     reusePrec, Op, supportSolveUse );
     }
-    else if ( Teuchos::nonnull(crs_i_l) )
+    else if ( isTpetraCompatible<int,long>(*fwdOpSrc) )
     {
 	typedef int LO;
 	typedef long GO;
@@ -897,21 +893,25 @@ MCLSLinearOpWithSolveFactory<Scalar>::getTpetraCrsMatrix(
  * \brief Check for compatibility with Tpetra.
  */
 template<class Scalar>
+template<class LO, class GO>
 bool MCLSLinearOpWithSolveFactory<Scalar>::isTpetraCompatible( 
     const LinearOpSourceBase<Scalar> &fwdOpSrc ) const
 {
-    // MCLS interfaces are currently only implemented for
-    // Tpetra::CrsMatrix. For now, we'll only check compatibly with those
-    // integral types enabled by Tpetra ETI and the current scalar type.
-    RCP<const Tpetra::CrsMatrix<Scalar,int,int> > crs_i_i = 
-	getTpetraCrsMatrix<int,int>( fwdOpSrc );
-    RCP<const Tpetra::CrsMatrix<Scalar,int,long> > crs_i_l = 
-	getTpetraCrsMatrix<int,long>( fwdOpSrc );
+    typedef Thyra::TpetraLinearOp<Scalar,LO,GO> TpetraOpType; 
+    typedef Tpetra::CrsMatrix<Scalar,LO,GO> CrsType;
 
-    bool tpetra_compatible = ( Teuchos::nonnull(crs_i_i) ||
-			       Teuchos::nonnull(crs_i_l) );
+    RCP<const TpetraOpType> tpetra_op =	
+	Teuchos::rcp_dynamic_cast<const TpetraOpType>( fwdOpSrc.getOp() );
 
-    return tpetra_compatible;
+    bool operator_compatible = Teuchos::nonnull(tpetra_op);
+
+    if( operator_compatible )
+    {
+	RCP<const CrsType> crs = getTpetraCrsMatrix<LO,GO>( fwdOpSrc );
+	return Teuchos::nonnull(crs);
+    }
+
+    return false;
 }
 
 //---------------------------------------------------------------------------//

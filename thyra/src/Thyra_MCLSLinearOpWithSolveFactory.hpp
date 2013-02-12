@@ -250,6 +250,7 @@ class MCLSLinearOpWithSolveFactory : public LinearOpWithSolveFactoryBase<Scalar>
     getTpetraCrsMatrix( const LinearOpSourceBase<Scalar> &fwdOpSrc ) const;
 
     // Check for Tpetra compatiblity.
+    template<class LO, class GO>
     bool isTpetraCompatible( const LinearOpSourceBase<Scalar> &fwdOpSrc ) const;
 
   private:

@@ -47,11 +47,18 @@
 
 #include <Teuchos_RCP.hpp>
 
+#include <Epetra_Comm.h>
+#include <Epetra_Map.h>
 #include <Epetra_Vector.h>
 #include <Epetra_MultiVector.h>
 
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_MultiVector.hpp>
+
+#include <Thyra_MultiVectorBase.hpp>
+#include <Thyra_SpmdVectorSpaceBase.hpp>
+#include <Thyra_EpetraThyraWrappers.hpp>
+#include <Thyra_TpetraThyraWrappers.hpp>
 
 namespace MCLS
 {
@@ -114,6 +121,24 @@ class MultiVectorTraits
 	UndefinedMultiVectorTraits<MultiVector>::notDefined(); 
 	return Teuchos::null;
     }
+
+    //! Return a multivector given a Thyra base multivector.
+    static Teuchos::RCP<multivector_type>
+    getMultiVectorFromThyra( 
+	const Teuchos::RCP<Thyra::MultiVectorBase<scalar_type> >& thyra_mv )
+    {
+	UndefinedMultiVectorTraits<MultiVector>::notDefined(); 
+	return Teuchos::null;
+    }
+
+    //! Return a multivector given a Thyra base multivector.
+    static Teuchos::RCP<const multivector_type>
+    getConstMultiVectorFromThyra( 
+	const Teuchos::RCP<const Thyra::MultiVectorBase<scalar_type> >& thyra_mv )
+    {
+	UndefinedMultiVectorTraits<MultiVector>::notDefined(); 
+	return Teuchos::null;
+    }
 };
 
 //---------------------------------------------------------------------------//
@@ -153,6 +178,36 @@ class MultiVectorTraits<Epetra_MultiVector>
     {
 	return Teuchos::rcp( multivector(id), false );
     }
+
+    //! Return a multivector given a Thyra base multivector.
+    static Teuchos::RCP<multivector_type>
+    getMultiVectorFromThyra( 
+	const Teuchos::RCP<Thyra::MultiVectorBase<scalar_type> >& thyra_mv )
+    {
+	Teuchos::RCP<const Thyra::SpmdVectorSpaceBase<scalar_type> > space =
+	    Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<scalar_type> >(
+		thyra_mv->col(0)->space() );
+	Teuchos::RCP<const Epetra_Comm> comm = 
+	    Thyra::get_Epetra_Comm( *space->getComm() );
+	Teuchos::RCP<const Epetra_Map> map =
+	    Thyra::get_Epetra_Map( *space, comm );
+	return Thyra::get_Epetra_MultiVector( *map, thyra_mv );
+    }
+
+    //! Return a multivector given a Thyra base multivector.
+    static Teuchos::RCP<const multivector_type>
+    getConstMultiVectorFromThyra( 
+	const Teuchos::RCP<const Thyra::MultiVectorBase<scalar_type> >& thyra_mv )
+    {
+	Teuchos::RCP<const Thyra::SpmdVectorSpaceBase<scalar_type> > space =
+	    Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<scalar_type> >(
+		thyra_mv->col(0)->space() );
+	Teuchos::RCP<const Epetra_Comm> comm = 
+	    Thyra::get_Epetra_Comm( *space->getComm() );
+	Teuchos::RCP<const Epetra_Map> map =
+	    Thyra::get_Epetra_Map( *space, comm );
+	return Thyra::get_Epetra_MultiVector( *map, thyra_mv );
+    }
 };
 
 //---------------------------------------------------------------------------//
@@ -191,6 +246,24 @@ class MultiVectorTraits<Tpetra::MultiVector<Scalar,LO,GO> >
     getVectorNonConst( multivector_type& multivector, const int id )
     {
 	return multivector.getVectorNonConst(id);
+    }
+
+    //! Return a multivector given a Thyra base multivector.
+    static Teuchos::RCP<multivector_type>
+    getMultiVectorFromThyra( 
+	const Teuchos::RCP<Thyra::MultiVectorBase<scalar_type> >& thyra_mv )
+    {
+	return Thyra::TpetraOperatorVectorExtraction<
+	    Scalar,LO,GO>::getTpetraMultiVector( thyra_mv );
+    }
+
+    //! Return a multivector given a Thyra base multivector.
+    static Teuchos::RCP<const multivector_type>
+    getConstMultiVectorFromThyra( 
+	const Teuchos::RCP<const Thyra::MultiVectorBase<scalar_type> >& thyra_mv )
+    {
+	return Thyra::TpetraOperatorVectorExtraction<
+	    Scalar,LO,GO>::getConstTpetraMultiVector( thyra_mv );
     }
 };
 
