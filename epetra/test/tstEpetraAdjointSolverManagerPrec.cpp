@@ -32,9 +32,9 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file tstEpetraAdjointSolverManager.cpp
+ * \file tstEpetraAdjointSolverManagerPrec.cpp
  * \author Stuart R. Slattery
- * \brief Epetra Adjoint Monte Carlo solver manager tests.
+ * \brief Preconditioned Epetra Adjoint Monte Carlo solver manager tests.
  */
 //---------------------------------------------------------------------------//
 
@@ -96,7 +96,7 @@ Teuchos::RCP<Epetra_Comm> getEpetraComm(
 //---------------------------------------------------------------------------//
 // Test templates
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST( AdjointSolverManager, one_by_one )
+TEUCHOS_UNIT_TEST( AdjointSolverManager, one_by_one_prec )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
@@ -115,6 +115,21 @@ TEUCHOS_UNIT_TEST( AdjointSolverManager, one_by_one )
     int global_num_rows = local_num_rows*comm_size;
     Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
+
+    // Build the identity matrix as a preconditioner.
+    Teuchos::RCP<Epetra_CrsMatrix> I = 
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
+
+    Teuchos::Array<int> i_global_columns( 1 );
+    Teuchos::Array<double> i_values( 1, 1 );
+    for ( int i = 0; i < global_num_rows; ++i )
+    {
+	i_global_columns[0] = i;
+	I->InsertGlobalValues( i, i_global_columns().size(), 
+			       &i_values[0], &i_global_columns[0] );
+
+    }
+    I->FillComplete();
 
     // Build the linear system. This operator is symmetric with a spectral
     // radius less than 1.
@@ -179,6 +194,10 @@ TEUCHOS_UNIT_TEST( AdjointSolverManager, one_by_one )
 	Teuchos::rcp( new MCLS::LinearProblem<VectorType,MatrixType>(
 			  B, x, b ) );
 
+    // Set the preconditioners.
+    linear_problem->setLeftPrec( I );
+    linear_problem->setRightPrec( I );
+
     // Create the solver.
     MCLS::AdjointSolverManager<VectorType,MatrixType> 
 	solver_manager( linear_problem, comm, plist );
@@ -236,7 +255,7 @@ TEUCHOS_UNIT_TEST( AdjointSolverManager, one_by_one )
 }
 
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST( AdjointSolverManager, two_by_two )
+TEUCHOS_UNIT_TEST( AdjointSolverManager, two_by_two_prec )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
@@ -281,6 +300,21 @@ TEUCHOS_UNIT_TEST( AdjointSolverManager, two_by_two )
 	    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm_set );
 	    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
 		new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
+
+	    // Build the identity matrix as a preconditioner.
+	    Teuchos::RCP<Epetra_CrsMatrix> I = 
+		Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
+
+	    Teuchos::Array<int> i_global_columns( 1 );
+	    Teuchos::Array<double> i_values( 1, 1 );
+	    for ( int i = 0; i < global_num_rows; ++i )
+	    {
+		i_global_columns[0] = i;
+		I->InsertGlobalValues( i, i_global_columns().size(), 
+				       &i_values[0], &i_global_columns[0] );
+
+	    }
+	    I->FillComplete();
 
 	    // Build the linear system. This operator is symmetric with a spectral
 	    // radius less than 1.
@@ -332,6 +366,10 @@ TEUCHOS_UNIT_TEST( AdjointSolverManager, two_by_two )
 	    // Create the linear problem.
 	    linear_problem = Teuchos::rcp( 
 		new MCLS::LinearProblem<VectorType,MatrixType>(B, x, b) );
+
+	    // Set the preconditioners.
+	    linear_problem->setLeftPrec( I );
+	    linear_problem->setRightPrec( I );
 	}
 	comm->barrier();
 
@@ -479,6 +517,6 @@ TEUCHOS_UNIT_TEST( AdjointSolverManager, two_by_two )
 }
 
 //---------------------------------------------------------------------------//
-// end tstEpetraAdjointSolverManager.cpp
+// end tstEpetraAdjointSolverManagerPrec.cpp
 //---------------------------------------------------------------------------//
 
