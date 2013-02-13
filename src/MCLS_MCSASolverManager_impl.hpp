@@ -108,7 +108,7 @@ MCSASolverManager<Vector,Matrix>::getValidParameters() const
     // Add the default code values. Put zero if no default.
     plist->set<std::string>("MC Type", "Adjoint");
     plist->set<double>("Convergence Tolerance", 0.0);
-    plist->set<int>("Max Number of Iterations", 0);
+    plist->set<int>("Maximum Iterations", 0);
     plist->set<int>("Iteration Print Frequency", 0);
 
     return plist;
@@ -220,7 +220,7 @@ bool MCSASolverManager<Vector,Matrix>::solve()
     d_converged_status = 0;
 
     // Iteration setup.
-    int max_num_iters = d_plist->get<int>("Max Number of Iterations");
+    int max_num_iters = d_plist->get<int>("Maximum Iterations");
     d_num_iters = 0;
     int print_freq = 10;
     if ( d_plist->isParameter("Iteration Print Frequency") )

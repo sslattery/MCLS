@@ -417,8 +417,9 @@ SolveStatus<Scalar> MCLSLinearOpWithSolve<Scalar>::solveImpl(
     // Parameter list for the current solve.
     const RCP<ParameterList> tmp_pl = Teuchos::parameterList();
 
-    // The solver's valid parameter list.
-    RCP<const ParameterList> valid_pl = d_solver->getValidParameters();
+    // The solver's current parameter list.
+    RCP<const ParameterList> current_pl = d_solver->getCurrentParameters();
+    tmp_pl->setParameters( *current_pl );
 
     // Set solve criteria.
     SolveMeasureType solve_measure;
@@ -455,7 +456,7 @@ SolveStatus<Scalar> MCLSLinearOpWithSolve<Scalar>::solveImpl(
 	    if (Teuchos::isParameterType<int>(*solveCriteria->extraParameters,
 					      "Maximum Iterations") ) 
 	    {
-		tmp_pl->set("Max Number of Iterations", 
+		tmp_pl->set("Maximum Iterations", 
 			    Teuchos::get<int>(*solveCriteria->extraParameters,
 					      "Maximum Iterations") );
 	    }

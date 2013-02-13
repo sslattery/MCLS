@@ -9,11 +9,16 @@
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "EpetraExt_readEpetraLinearSystem.h"
+#include "Epetra_Comm.h"
 #include "Epetra_SerialComm.h"
+#include "Epetra_MpiComm.h"
+#include "Epetra_Vector.h"
+#include "Epetra_CrsMatrix.h"
 #include "Teuchos_ParameterList.hpp"
 
 bool Thyra::test_single_mcls_thyra_solver(
   const std::string                       matrixFile
+  ,const bool                             useScaling
   ,const bool                             testTranspose
   ,const bool                             usePreconditioner
   ,const int                              numRhs
@@ -55,9 +60,23 @@ bool Thyra::test_single_mcls_thyra_solver(
 
     if(out.get()) *out << "\nA) Reading in an epetra matrix A from the file \'"<<matrixFile<<"\' ...\n";
   
-    Epetra_SerialComm comm;
+    Teuchos::RCP<Epetra_Comm> comm;
+#ifdef HAVE_MPI
+    comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+#else
+    comm = Teuchos::rcp(new Epetra_SerialComm());
+#endif
+
     Teuchos::RCP<Epetra_CrsMatrix> epetra_A;
-    EpetraExt::readEpetraLinearSystem( matrixFile, comm, &epetra_A );
+    EpetraExt::readEpetraLinearSystem( matrixFile, *comm, &epetra_A );
+
+    // Apply Scaling scaling if necessary.
+    if ( useScaling )
+    {
+	Epetra_Vector scale_vector( epetra_A->RowMap() );
+	epetra_A->ExtractDiagonalCopy( scale_vector );
+	epetra_A->LeftScale( scale_vector );
+    }
 
     Teuchos::RCP<const LinearOpBase<double> > A = epetraLinearOp(epetra_A);
 

@@ -27,6 +27,7 @@ int main(int argc, char* argv[])
     //
     
     std::string     matrixFile             = "";
+    bool            useScaling              = false;
     bool            testTranspose          = false;
     bool            usePreconditioner      = false;
     int             numRhs                 = 1;
@@ -51,6 +52,7 @@ int main(int argc, char* argv[])
     clp.throwExceptions(false);
     clp.addOutputSetupOptions(true);
     clp.setOption( "matrix-file", &matrixFile, "Matrix input file [Required]." );
+    clp.setOption( "use-scaling", "no-use-scaling", &useScaling, "Use Scaling preconditioning or not" );
     clp.setOption( "test-transpose", "no-test-transpose", &testTranspose, "Test the transpose solve or not." );
     clp.setOption( "use-preconditioner", "no-use-preconditioner", &usePreconditioner, "Use the preconditioner or not." );
     clp.setOption( "num-rhs", &numRhs, "Number of RHS in linear solve." );
@@ -88,7 +90,7 @@ int main(int argc, char* argv[])
     Teuchos::ParameterList& mclsLOWSFPL_mcsa =
       mclsLOWSFPL_solver.sublist("MCSA");
 
-    mclsLOWSFPL_mcsa.set("Max Number of Iterations",int(maxIterations));
+    mclsLOWSFPL_mcsa.set("Maximum Iterations",int(maxIterations));
     mclsLOWSFPL_mcsa.set("Convergence Tolerance",double(maxResid));
     mclsLOWSFPL_mcsa.set("MC Type",std::string(mcType));
     mclsLOWSFPL_mcsa.set("Iteration Print Frequency",int(outputFrequency));
@@ -108,7 +110,7 @@ int main(int argc, char* argv[])
     
     success
       = Thyra::test_single_mcls_thyra_solver(
-        matrixFile,testTranspose,usePreconditioner,numRhs,numRandomVectors
+	  matrixFile,useScaling,testTranspose,usePreconditioner,numRhs,numRandomVectors
         ,maxFwdError,maxResid,maxSolutionError,showAllTests,dumpAll
         ,&mclsLOWSFPL,&precPL
         ,verbose?&*out:0

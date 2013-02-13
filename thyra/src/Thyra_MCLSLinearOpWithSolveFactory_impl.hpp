@@ -720,8 +720,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     typedef MCLS::SolverManager<Vector,Matrix> Solver_t;
     RCP<IterativeSolver_t> iterativeSolver = Teuchos::null;
     RCP<Solver_t> solver = Teuchos::null;
-    RCP<Teuchos::ParameterList> solverPL = 
-	Teuchos::rcp( new Teuchos::ParameterList() );
+    RCP<Teuchos::ParameterList> solverPL = Teuchos::parameterList();
   
     // Create the linear solver. We are using the default teuchos communicator
     // here!!!! This will be MPI_COMM_WORLD in an MPI build an therefore has
