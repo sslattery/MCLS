@@ -243,24 +243,12 @@ bool MCSASolverManager<Vector,Matrix>::solve()
     }
 
     // Setup for iteration.
-    Teuchos::RCP<Vector> update;
-    Teuchos::RCP<Vector> prec_src;
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType residual_norm = 0;
     if ( d_primary_set )
     {
 	// Compute the initial residual.
 	d_problem->updateResidual();
 	residual_norm = VT::normInf( *d_problem->getResidual() );
-
-	// Update vector.
-	update = VT::clone( *d_problem->getLHS() );
-
-	// Left precondition the source if necessary.
-	if ( d_problem->isLeftPrec() )
-	{
-	    prec_src = VT::clone( *d_problem->getRHS() );
-	    d_problem->applyLeftPrec( *d_problem->getRHS(), *prec_src );
-	}
     }
     d_global_comm->barrier();
 
@@ -275,26 +263,14 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	// set. 
 	if ( d_primary_set )
 	{
-	    // Apply the composite operator.
-	    d_problem->apply( *d_problem->getLHS(), *update );
+	    // Update the solution vector with the residual from the previous
+	    // iteration. 
+	    VT::update( *d_problem->getLHS(), 
+			Teuchos::ScalarTraits<Scalar>::one(),
+			*d_problem->getResidual(), 
+			Teuchos::ScalarTraits<Scalar>::one() );
 
-	    // Update the update vector with the
-	    // preconditioned/unpreconditioned source.
-	    if ( d_problem->isLeftPrec() )
-	    {
-		VT::update( 
-		    *update, -Teuchos::ScalarTraits<Scalar>::one(),
-		    *d_problem->getLHS(), Teuchos::ScalarTraits<Scalar>::one(),
-		    *prec_src, Teuchos::ScalarTraits<Scalar>::one() );
-	    }
-	    else
-	    {
-		VT::update( 
-		    *update, -Teuchos::ScalarTraits<Scalar>::one(),
-		    *d_problem->getLHS(), Teuchos::ScalarTraits<Scalar>::one(),
-		    *d_problem->getRHS(), Teuchos::ScalarTraits<Scalar>::one() );
-	    }
-
+	    // Compute the new residual to use as the Monte Carlo source.
 	    d_problem->updateResidual();
 	}
 	d_global_comm->barrier();
@@ -305,12 +281,7 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	// Apply the correction and update the residual on the primary set.
 	if ( d_primary_set )
 	{
-	    VT::update( *update,
-			Teuchos::ScalarTraits<Scalar>::one(),
-			*d_residual_problem->getLHS(), 
-			Teuchos::ScalarTraits<Scalar>::one() );
-
-	    d_problem->updateSolution( update );
+	    d_problem->updateSolution( d_residual_problem->getLHS() );
 
 	    d_problem->updateResidual();
 	    residual_norm = VT::normInf( *d_problem->getResidual() );
