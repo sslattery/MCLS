@@ -168,7 +168,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one )
     double cutoff = 1.0e-6;
     plist->set<std::string>("MC Type", "Adjoint");
     plist->set<double>("Convergence Tolerance", 1.0e-8);
-    plist->set<int>("Max Number of Iterations", 10);
+    plist->set<int>("Max Iterations", 10);
     plist->set<double>("Weight Cutoff", cutoff);
     plist->set<int>("MC Check Frequency", 50);
     plist->set<bool>("Reproducible MC Mode",true);
@@ -347,7 +347,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two )
 	double cutoff = 1.0e-4;
 	plist->set<std::string>("MC Type", "Adjoint");
 	plist->set<double>("Convergence Tolerance", 1.0e-8);
-	plist->set<int>("Max Number of Iterations", 10);
+	plist->set<int>("Max Iterations", 10);
 	plist->set<double>("Weight Cutoff", cutoff);
 	plist->set<int>("MC Check Frequency", 50);
 	plist->set<bool>("Reproducible MC Mode",true);
