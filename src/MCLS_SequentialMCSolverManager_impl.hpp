@@ -109,7 +109,8 @@ SequentialMCSolverManager<Vector,Matrix>::getValidParameters() const
     plist->set<std::string>("MC Type", "Adjoint");
     plist->set<double>("Convergence Tolerance", 0.0);
     plist->set<int>("Maximum Iterations", 0);
-    plist->set<int>("Iteration Print Frequency", 0);
+    plist->set<int>("Iteration Print Frequency", 10);
+    plist->set<int>("Iteration Check Frequency", 1);
 
     return plist;
 }
@@ -231,6 +232,11 @@ bool SequentialMCSolverManager<Vector,Matrix>::solve()
     {
 	print_freq = d_plist->get<int>("Iteration Print Frequency");
     }
+    int check_freq = 1;
+    if ( d_plist->isParameter("Iteration Check Frequency") )
+    {
+	check_freq = d_plist->get<int>("Iteration Check Frequency");
+    }
 
     // Setup for iteration.
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType residual_norm = 0;
@@ -261,14 +267,20 @@ bool SequentialMCSolverManager<Vector,Matrix>::solve()
 	    residual_norm = VT::normInf( *d_problem->getResidual() );
 
 	    // Check if we're done iterating.
-	    do_iterations = (residual_norm > convergence_criteria) &&
-			    (d_num_iters < max_num_iters);
+	    if ( d_num_iters % check_freq == 0 )
+	    {
+		do_iterations = (residual_norm > convergence_criteria) &&
+				(d_num_iters < max_num_iters);
+	    }
 	}
 	d_global_comm->barrier();
 
 	// Broadcast iteration status to the blocks.
-	Teuchos::broadcast<int,int>( 
-	    *d_block_comm, 0, Teuchos::Ptr<int>(&do_iterations) );
+	if ( d_num_iters % check_freq == 0 )
+	{
+	    Teuchos::broadcast<int,int>( 
+		*d_block_comm, 0, Teuchos::Ptr<int>(&do_iterations) );
+	}
 
 	// Print iteration data.
 	if ( d_global_comm->getRank() == 0 && d_num_iters % print_freq == 0 )
