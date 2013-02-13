@@ -232,9 +232,14 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
 
     // If this is an external solver (not in an iterative scheme) and we're
     // right preconditioned then we have to recover the original solution.
-    if ( !d_plist->get<bool>("Internal MC Solver") && d_problem->isRightPrec() )
+    if ( d_plist->isParameter("Internal MC Solver") )
     {
-	d_problem->applyRightPrec( *d_problem->getLHS(), *d_problem->getLHS() );
+	if ( !d_plist->get<bool>("Internal MC Solver") && 
+	     d_problem->isRightPrec() )
+	{
+	    d_problem->applyRightPrec( *d_problem->getLHS(), 
+				       *d_problem->getLHS() );
+	}
     }
 
     // This is a direct solve and therefore always converged in the iterative
