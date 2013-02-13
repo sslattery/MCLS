@@ -85,8 +85,18 @@ class MatrixTraits
     typedef typename Vector::scalar_type                 scalar_type;
     typedef typename Vector::local_ordinal_type          local_ordinal_type;
     typedef typename Vector::global_ordinal_type         global_ordinal_type;
-
     //@}
+
+    /*!
+     * \brief Create a reference-counted pointer to a new empty matrix from a
+     * given matrix to give the new matrix the same parallel distribution as
+     * the matrix parallel row distribution.
+     */
+    static Teuchos::RCP<Matrix> clone( const Matrix& matrix )
+    { 
+	UndefinedMatrixTraits<Vector,Matrix>::notDefined(); 
+	return Teuchos::null; 
+    }
 
     /*!
      * \brief Create a reference-counted pointer to a new empty vector from a
@@ -276,6 +286,14 @@ class MatrixTraits
      * \brief Apply the row matrix to a vector. A*x = y.
      */
     static void apply( const Matrix& A, const Vector& x, Vector& y )
+    { UndefinedMatrixTraits<Vector,Matrix>::notDefined(); }
+
+    /*!
+     * \brief Matrix-Matrix multiply C = A*B
+     */
+    static void multiply( const Teuchos::RCP<const Matrix>& A, 
+			  const Teuchos::RCP<const Matrix>& B, 
+			  const Teuchos::RCP<Matrix>& C )
     { UndefinedMatrixTraits<Vector,Matrix>::notDefined(); }
 
     /*!

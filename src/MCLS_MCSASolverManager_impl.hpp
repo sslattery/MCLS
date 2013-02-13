@@ -160,6 +160,14 @@ void MCSASolverManager<Vector,Matrix>::setProblem(
 	{
 	    d_residual_problem->setOperator( d_problem->getOperator() );
 	    d_residual_problem->setRHS( d_problem->getResidual() );
+	    if ( d_problem->isLeftPrec() )
+	    {
+		d_residual_problem->setLeftPrec( d_problem->getLeftPrec() );
+	    }
+	    if ( d_problem->isRightPrec() )
+	    {
+		d_residual_problem->setRightPrec( d_problem->getRightPrec() );
+	    }
 	}
 	d_global_comm->barrier();
 
@@ -229,7 +237,8 @@ bool MCSASolverManager<Vector,Matrix>::solve()
     }
 
     // Setup for iteration.
-    Teuchos::RCP<Vector> tmp;
+    Teuchos::RCP<Vector> update;
+    Teuchos::RCP<Vector> prec_src;
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType residual_norm = 0;
     if ( d_primary_set )
     {
@@ -237,8 +246,15 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	d_problem->updateResidual();
 	residual_norm = VT::normInf( *d_problem->getResidual() );
 
-	// Temporary vector for Richardson iteration.
-	tmp = VT::clone( *d_problem->getLHS() );	
+	// Update vector.
+	update = VT::clone( *d_problem->getLHS() );
+
+	// Left precondition the source if necessary.
+	if ( d_problem->isLeftPrec() )
+	{
+	    prec_src = VT::clone( *d_problem->getRHS() );
+	    d_problem->applyLeftPrec( *d_problem->getRHS(), *prec_src );
+	}
     }
     d_global_comm->barrier();
 
@@ -253,12 +269,25 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	// set. 
 	if ( d_primary_set )
 	{
-	    d_problem->applyOperator( *d_problem->getLHS(), *tmp );
+	    // Apply the composite operator.
+	    d_problem->apply( *d_problem->getLHS(), *update );
 
-	    VT::update( 
-		*d_problem->getLHS(), Teuchos::ScalarTraits<Scalar>::one(),
-		*tmp, -Teuchos::ScalarTraits<Scalar>::one(),
-		*d_problem->getRHS(), Teuchos::ScalarTraits<Scalar>::one() );
+	    // Update the update vector with the
+	    // preconditioned/unpreconditioned source.
+	    if ( d_problem->isLeftPrec() )
+	    {
+		VT::update( 
+		    *update, -Teuchos::ScalarTraits<Scalar>::one(),
+		    *d_problem->getLHS(), Teuchos::ScalarTraits<Scalar>::one(),
+		    *prec_src, Teuchos::ScalarTraits<Scalar>::one() );
+	    }
+	    else
+	    {
+		VT::update( 
+		    *update, -Teuchos::ScalarTraits<Scalar>::one(),
+		    *d_problem->getLHS(), Teuchos::ScalarTraits<Scalar>::one(),
+		    *d_problem->getRHS(), Teuchos::ScalarTraits<Scalar>::one() );
+	    }
 
 	    d_problem->updateResidual();
 	}
@@ -270,10 +299,12 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	// Apply the correction and update the residual on the primary set.
 	if ( d_primary_set )
 	{
-	    VT::update( *d_problem->getLHS(), 
+	    VT::update( *update,
 			Teuchos::ScalarTraits<Scalar>::one(),
 			*d_residual_problem->getLHS(), 
 			Teuchos::ScalarTraits<Scalar>::one() );
+
+	    d_problem->updateSolution( update );
 
 	    d_problem->updateResidual();
 	    residual_norm = VT::normInf( *d_problem->getResidual() );
@@ -336,10 +367,19 @@ void MCSASolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
 	    new LinearProblemType( d_problem->getOperator(),
 				   delta_x,
 				   d_problem->getResidual() ) );
+	if ( d_problem->isLeftPrec() )
+	{
+	    d_residual_problem->setLeftPrec( d_problem->getLeftPrec() );
+	}
+	if ( d_problem->isRightPrec() )
+	{
+	    d_residual_problem->setRightPrec( d_problem->getRightPrec() );
+	}
     }
     d_global_comm->barrier();
 
     // Create the Monte Carlo direct solver for the residual problem.
+    d_plist->set<bool>("Internal MC Solver",true);
     if ( d_plist->get<std::string>("MC Type") == "Adjoint" )
     {
 	d_mc_solver = Teuchos::rcp( 

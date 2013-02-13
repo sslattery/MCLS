@@ -54,6 +54,8 @@
 #include <Epetra_Export.h>
 #include <Epetra_RowMatrixTransposer.h>
 
+#include <EpetraExt_MatrixMatrix.h>
+
 //---------------------------------------------------------------------------//
 /*!
  * \class UndefinedEpetraHelpers
@@ -116,6 +118,14 @@ class EpetraMatrixHelpers
 	UndefinedEpetraHelpers<Matrix>::notDefined(); 
 	return Teuchos::null;
     }
+
+    /*!
+     * \brief Matrix-Matrix multiply C = A*B
+     */
+    static void multiply( const Teuchos::RCP<const matrix_type>& A, 
+			  const Teuchos::RCP<const matrix_type>& B, 
+			  const Teuchos::RCP<matrix_type>& C )
+    { UndefinedEpetraHelpers<Matrix>::notDefined(); }
 };
 
 //---------------------------------------------------------------------------//
@@ -255,6 +265,73 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
 	Ensure( !neighbor_matrix.is_null() );
 	Ensure( neighbor_matrix->Filled() );
 	return neighbor_matrix;
+    }
+
+    /*!
+     * \brief Matrix-Matrix multiply C = A*B
+     */
+    static void multiply( const Teuchos::RCP<const matrix_type>& A, 
+			  const Teuchos::RCP<const matrix_type>& B, 
+			  const Teuchos::RCP<matrix_type>& C )
+    {
+	Teuchos::RCP<const Epetra_CrsMatrix> A_crs =
+	    Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>( A );
+
+	Teuchos::RCP<const Epetra_CrsMatrix> B_crs =
+	    Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>( B );
+
+	Teuchos::RCP<Epetra_CrsMatrix> C_crs =
+	    Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>( C );
+
+	if ( Teuchos::is_null(A_crs) )
+	{
+	    A_crs = createCrsMatrix( A );
+	}
+
+	if ( Teuchos::is_null(B_crs) )
+	{
+	    B_crs = createCrsMatrix( B );
+	}
+
+	if ( Teuchos::is_null(C_crs) )
+	{
+	    C_crs = Teuchos::rcp( 
+		new Epetra_CrsMatrix(Copy, A->RowMatrixRowMap(), 0) );
+	}
+
+	EpetraExt::MatrixMatrix::Multiply( 
+	    *A_crs, false, *B_crs, false, *C_crs );
+    }
+
+    /*!
+     * \brief Create a copy of a RowMatrix in a CrsMatrix.
+     */
+    static Teuchos::RCP<Epetra_CrsMatrix>
+    createCrsMatrix( const Teuchos::RCP<const matrix_type>& A )
+    {
+	Teuchos::RCP<Epetra_CrsMatrix> A_crs = Teuchos::rcp( 
+	    new Epetra_CrsMatrix(Copy, A->RowMatrixRowMap(), 
+				 A->RowMatrixColMap(),A->MaxNumEntries()) );
+
+	int max_row_entries = A->MaxNumEntries();
+	int num_local_rows = A->NumMyRows();
+	int num_entries = 0;
+
+	Teuchos::Array<double> values( max_row_entries );
+	Teuchos::Array<int> indices( max_row_entries );
+
+	for ( int n = 0; n < num_local_rows; ++n )
+	{
+	    A->ExtractMyRowCopy( n, max_row_entries, num_entries,
+				 values.getRawPtr(), indices.getRawPtr() );
+
+	    A_crs->ReplaceMyValues( n, num_entries, 
+				    values.getRawPtr(), indices.getRawPtr() );
+	}
+
+	A_crs->FillComplete();
+
+	return A_crs;
     }
 };
 

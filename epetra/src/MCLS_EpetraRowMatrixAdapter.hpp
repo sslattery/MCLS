@@ -60,6 +60,7 @@
 #include <Epetra_MpiDistributor.h>
 #include <Epetra_Vector.h>
 #include <Epetra_RowMatrix.h>
+#include <Epetra_CrsMatrix.h>
 
 #ifdef HAVE_MPI
 #include <Teuchos_DefaultMpiComm.hpp>
@@ -87,6 +88,19 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
     typedef int                                           local_ordinal_type;
     typedef int                                           global_ordinal_type;
     //@}
+
+    /*!
+     * \brief Create a reference-counted pointer to a new empty matrix from a
+     * given matrix to give the new matrix the same parallel distribution as
+     * the matrix parallel row distribution. We're making a CrsMatrix here
+     * but we need this for matrix-matrix multiply operations which require a
+     * CrsMatrix anyway.
+     */
+    static Teuchos::RCP<matrix_type> clone( const matrix_type& matrix )
+    { 
+	return Teuchos::rcp( 
+	    new Epetra_CrsMatrix(Copy,matrix.RowMatrixRowMap(),0) );
+    }
 
     /*!
      * \brief Create a reference-counted pointer to a new empty vector from a
@@ -305,6 +319,16 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
 				  vector_type& vector )
     { 
 	matrix.ExtractDiagonalCopy( vector );
+    }
+
+    /*!
+     * \brief Matrix-Matrix multiply C = A*B
+     */
+    static void multiply( const Teuchos::RCP<const matrix_type>& A, 
+			  const Teuchos::RCP<const matrix_type>& B, 
+			  const Teuchos::RCP<matrix_type>& C )
+    { 
+	EpetraMatrixHelpers<matrix_type>::multiply( A, B, C);
     }
 
     /*!

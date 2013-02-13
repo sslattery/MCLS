@@ -160,6 +160,14 @@ void SequentialMCSolverManager<Vector,Matrix>::setProblem(
 	{
 	    d_residual_problem->setOperator( d_problem->getOperator() );
 	    d_residual_problem->setRHS( d_problem->getResidual() );
+	    if ( d_problem->isLeftPrec() )
+	    {
+		d_residual_problem->setLeftPrec( d_problem->getLeftPrec() );
+	    }
+	    if ( d_problem->isRightPrec() )
+	    {
+		d_residual_problem->setRightPrec( d_problem->getRightPrec() );
+	    }
 	}
 	d_global_comm->barrier();
 
@@ -225,16 +233,12 @@ bool SequentialMCSolverManager<Vector,Matrix>::solve()
     }
 
     // Setup for iteration.
-    Teuchos::RCP<Vector> tmp;
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType residual_norm = 0;
     if ( d_primary_set )
     {
 	// Compute the initial residual.
 	d_problem->updateResidual();
 	residual_norm = VT::normInf( *d_problem->getResidual() );
-
-	// Temporary vector for Richardson iteration.
-	tmp = VT::clone( *d_problem->getLHS() );	
     }
     d_global_comm->barrier();
 
@@ -251,10 +255,7 @@ bool SequentialMCSolverManager<Vector,Matrix>::solve()
 	// Apply the correction and update the residual on the primary set.
 	if ( d_primary_set )
 	{
-	    VT::update( *d_problem->getLHS(), 
-			Teuchos::ScalarTraits<Scalar>::one(),
-			*d_residual_problem->getLHS(), 
-			Teuchos::ScalarTraits<Scalar>::one() );
+	    d_problem->updateSolution( d_residual_problem->getLHS() );
 
 	    d_problem->updateResidual();
 	    residual_norm = VT::normInf( *d_problem->getResidual() );
@@ -317,10 +318,20 @@ void SequentialMCSolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
 	    new LinearProblemType( d_problem->getOperator(),
 				   delta_x,
 				   d_problem->getResidual() ) );
+
+	if ( d_problem->isLeftPrec() )
+	{
+	    d_residual_problem->setLeftPrec( d_problem->getLeftPrec() );
+	}
+	if ( d_problem->isRightPrec() )
+	{
+	    d_residual_problem->setRightPrec( d_problem->getRightPrec() );
+	}
     }
     d_global_comm->barrier();
 
     // Create the Monte Carlo direct solver for the residual problem.
+    d_plist->set<bool>("Internal MC Solver",true);
     if ( d_plist->get<std::string>("MC Type") == "Adjoint" )
     {
 	d_mc_solver = Teuchos::rcp( 

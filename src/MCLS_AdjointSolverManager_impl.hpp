@@ -230,6 +230,13 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
     // Barrier before exiting.
     d_global_comm->barrier();
 
+    // If this is an external solver (not in an iterative scheme) and we're
+    // right preconditioned then we have to recover the original solution.
+    if ( !d_plist->get<bool>("Internal MC Solver") && d_problem->isRightPrec() )
+    {
+	d_problem->applyRightPrec( *d_problem->getLHS(), *d_problem->getLHS() );
+    }
+
     // This is a direct solve and therefore always converged in the iterative
     // sense. 
     return true;
@@ -259,11 +266,12 @@ void AdjointSolverManager<Vector,Matrix>::buildMonteCarloDomain()
     // Set a global scope variable for the primary domain.
     Teuchos::RCP<DomainType> primary_domain;
 
-    // Build the primary domain in the primary set.
+    // Build the primary domain in the primary set using the composite
+    // operator.
     if ( d_primary_set )
     {
 	primary_domain = Teuchos::rcp( 
-	    new DomainType( d_problem->getOperator(),
+	    new DomainType( d_problem->getCompositeOperator(),
 			    d_problem->getLHS(),
 			    *d_plist ) );
     }
@@ -296,15 +304,34 @@ void AdjointSolverManager<Vector,Matrix>::buildMonteCarloSource()
     // Build the primary source in the primary set.
     if ( d_primary_set )
     {
-	primary_source = Teuchos::rcp(
-	    new SourceType( 
-		Teuchos::rcp_const_cast<Vector>(d_problem->getRHS()),
-		d_msod_manager->localDomain(),
-		d_mc_solver->rngControl(),
-		d_msod_manager->setComm(),
-		d_global_comm->getSize(),
-		d_global_comm->getRank(),
-		*d_plist ) );
+	// Left precondition the source if necessary.
+	if ( d_problem->isLeftPrec() )
+	{
+	    Teuchos::RCP<Vector> prec_src = VT::clone( *d_problem->getRHS() );
+	    d_problem->applyLeftPrec( *d_problem->getRHS(), *prec_src );
+
+	    primary_source = Teuchos::rcp(
+		new SourceType( 
+		    prec_src,
+		    d_msod_manager->localDomain(),
+		    d_mc_solver->rngControl(),
+		    d_msod_manager->setComm(),
+		    d_global_comm->getSize(),
+		    d_global_comm->getRank(),
+		    *d_plist ) );
+	}
+	else
+	{
+	    primary_source = Teuchos::rcp(
+		new SourceType( 
+		    Teuchos::rcp_const_cast<Vector>(d_problem->getRHS()),
+		    d_msod_manager->localDomain(),
+		    d_mc_solver->rngControl(),
+		    d_msod_manager->setComm(),
+		    d_global_comm->getSize(),
+		    d_global_comm->getRank(),
+		    *d_plist ) );
+	}
     }
     d_global_comm->barrier();
 

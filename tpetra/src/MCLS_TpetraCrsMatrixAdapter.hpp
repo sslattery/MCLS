@@ -59,6 +59,8 @@
 #include <Tpetra_RowMatrixTransposer.hpp>
 #include <Tpetra_Distributor.hpp>
 
+#include <TpetraExt_MatrixMatrix.hpp>
+
 namespace MCLS
 {
 
@@ -81,6 +83,16 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
     typedef typename vector_type::global_ordinal_type     global_ordinal_type;
     typedef TpetraMatrixHelpers<Scalar,LO,GO,matrix_type> TMH;
     //@}
+
+    /*!
+     * \brief Create a reference-counted pointer to a new empty matrix from a
+     * given matrix to give the new matrix the same parallel distribution as
+     * the matrix parallel row distribution.
+     */
+    static Teuchos::RCP<matrix_type> clone( const matrix_type& matrix )
+    { 
+	return Tpetra::createCrsMatrix<Scalar,LO,GO>( matrix.getRowMap() );
+    }
 
     /*!
      * \brief Create a reference-counted pointer to a new empty vector from a
@@ -266,6 +278,16 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
 		       vector_type& y )
     {
 	A.apply( x, y );
+    }
+
+    /*!
+     * \brief Matrix-Matrix multiply C = A*B
+     */
+    static void multiply( const Teuchos::RCP<const matrix_type>& A, 
+			  const Teuchos::RCP<const matrix_type>& B, 
+			  const Teuchos::RCP<matrix_type>& C ) 
+    {
+	Tpetra::MatrixMatrix::Multiply( *A, false, *B, false, *C );
     }
 
     /*!

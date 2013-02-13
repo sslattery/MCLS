@@ -43,6 +43,8 @@
 
 #include "MCLS_DBC.hpp"
 
+#include <Teuchos_ScalarTraits.hpp>
+
 namespace MCLS
 {
 //---------------------------------------------------------------------------//
@@ -77,7 +79,7 @@ LinearProblem<Vector,Matrix>::~LinearProblem()
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Set the linear operator
+ * \brief Set the linear operator.
  */
 template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::setOperator( 
@@ -91,7 +93,7 @@ void LinearProblem<Vector,Matrix>::setOperator(
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Set the left-hand side
+ * \brief Set the left-hand side.
  */
 template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::setLHS( const Teuchos::RCP<Vector>& x )
@@ -104,7 +106,7 @@ void LinearProblem<Vector,Matrix>::setLHS( const Teuchos::RCP<Vector>& x )
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Set the right-hand side
+ * \brief Set the right-hand side.
  */
 template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::setRHS( const Teuchos::RCP<const Vector>& b )
@@ -117,23 +119,207 @@ void LinearProblem<Vector,Matrix>::setRHS( const Teuchos::RCP<const Vector>& b )
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Apply the linear operator to a vector.
+ * \brief Set the left preconditioner.
  */
 template<class Vector, class Matrix>
-void LinearProblem<Vector,Matrix>::applyOperator( const Vector& x, Vector& y )
+void LinearProblem<Vector,Matrix>::setLeftPrec( 
+    const Teuchos::RCP<const Matrix>& PL )
 {
-    MT::apply( *d_A, x, y );
+    Require( !PL.is_null() );
+
+    d_PL = PL;
+    d_status = false;
 }
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Update the residual.
+ * \brief Set the right preconditioner.
+ */
+template<class Vector, class Matrix>
+void LinearProblem<Vector,Matrix>::setRightPrec( 
+    const Teuchos::RCP<const Matrix>& PR )
+{
+    Require( !PR.is_null() );
+
+    d_PR = PR;
+    d_status = false;
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Get the composite linear operator.
+ */
+template<class Vector, class Matrix>
+Teuchos::RCP<const Matrix> 
+LinearProblem<Vector,Matrix>::getCompositeOperator() const
+{
+    const bool left_prec = Teuchos::nonnull( d_PL );
+    const bool right_prec = Teuchos::nonnull( d_PR );
+
+    Teuchos::RCP<Matrix> composite = 
+	( left_prec || right_prec ) ? MT::clone(*d_A) : Teuchos::null;
+    Teuchos::RCP<Matrix> temp = 
+	( left_prec && right_prec ) ? MT::clone(*d_A) : Teuchos::null;
+
+    if ( left_prec && right_prec )
+    {
+	MT::multiply( d_A, d_PR, temp );
+	MT::multiply( d_PL, temp, composite );
+    }
+    else if ( left_prec )
+    {
+	MT::multiply( d_PL, d_A, composite );
+    }
+    else if ( right_prec )
+    {
+	MT::multiply( d_A, d_PR, composite );
+    }
+    else
+    {
+	composite = Teuchos::rcp_const_cast<Matrix>( d_A );
+    }
+
+    return composite;
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Update the solution vector with the provided update vector.
+ */
+template<class Vector, class Matrix>
+void LinearProblem<Vector,Matrix>::updateSolution( 
+    const Teuchos::RCP<Vector>& update )
+{
+    const bool right_prec = Teuchos::nonnull( d_PR );
+
+    if ( right_prec )
+    {
+	Teuchos::RCP<Vector> prec_update = VT::clone(*update);
+	MT::apply( *d_PR, *update, *prec_update );
+	VT::update( *d_x, Teuchos::ScalarTraits<Scalar>::one(),
+		    *prec_update, Teuchos::ScalarTraits<Scalar>::one() );
+    }
+    else
+    {
+	VT::update( *d_x, Teuchos::ScalarTraits<Scalar>::one(),
+		    *update, Teuchos::ScalarTraits<Scalar>::one() );
+    }
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Apply the composite linear operator to a vector.
+ */
+template<class Vector, class Matrix>
+void LinearProblem<Vector,Matrix>::apply( const Vector& x, Vector& y )
+{
+    const bool left_prec = Teuchos::nonnull( d_PL );
+    const bool right_prec = Teuchos::nonnull( d_PR );
+
+    Teuchos::RCP<Vector> temp = 
+	( left_prec || right_prec ) ? VT::clone(y) : Teuchos::null;
+
+    if ( !left_prec && !right_prec )
+    {
+	MT::apply( *d_A, x, y );
+    }
+
+    else if ( left_prec && right_prec )
+    {
+	MT::apply( *d_PR, x, y );
+	MT::apply( *d_A, y, *temp );
+	MT::apply( *d_PL, *temp, y );
+    }
+    else if ( left_prec )
+    {
+	MT::apply( *d_A, x, *temp );
+	MT::apply( *d_PL, *temp, y );
+    }
+    else
+    {
+	MT::apply( *d_PR, x, *temp );
+	MT::apply( *d_A, *temp, y );
+    }
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Apply the base linear operator to a vector.
+ */
+template<class Vector, class Matrix>
+void LinearProblem<Vector,Matrix>::applyOp( const Vector& x, Vector& y )
+{
+    if ( Teuchos::nonnull(d_A) )
+    {
+	MT::apply( *d_A, x, y );
+    }
+    else
+    {
+	VT::update( y, Teuchos::ScalarTraits<Scalar>::zero(), 
+		    x, Teuchos::ScalarTraits<Scalar>::one() );
+    }
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Apply the left preconditioner to a vector.
+ */
+template<class Vector, class Matrix>
+void LinearProblem<Vector,Matrix>::applyLeftPrec( const Vector& x, Vector& y )
+{
+    if ( Teuchos::nonnull(d_PL) )
+    {
+	MT::apply( *d_PL, x, y );
+    }
+    else
+    {
+	VT::update( y, Teuchos::ScalarTraits<Scalar>::zero(), 
+		    x, Teuchos::ScalarTraits<Scalar>::one() );
+    }
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Apply the right preconditioner to a vector.
+ */
+template<class Vector, class Matrix>
+void LinearProblem<Vector,Matrix>::applyRightPrec( const Vector& x, Vector& y )
+{
+    if ( Teuchos::nonnull(d_PR) )
+    {
+	MT::apply( *d_PR, x, y );
+    }
+    else
+    {
+	VT::update( y, Teuchos::ScalarTraits<Scalar>::zero(), 
+		    x, Teuchos::ScalarTraits<Scalar>::one() );
+    }
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Update the residual. Preconditioning will be applied if
+ * preconditioners are present.
  */
 template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::updateResidual()
 {
-    applyOperator( *d_x, *d_r );
-    VT::update( *d_r, -1.0, *d_b, 1.0 );
+    const bool left_prec = Teuchos::nonnull( d_PL );
+
+    if ( left_prec )
+    {
+	Teuchos::RCP<Vector> r_temp = VT::clone( *d_b );
+	MT::apply( *d_A, *d_x, *r_temp );
+	VT::update( *r_temp, -Teuchos::ScalarTraits<Scalar>::one(), 
+		    *d_b, Teuchos::ScalarTraits<Scalar>::one() );
+	MT::apply( *d_PL, *r_temp, *d_r );
+    }
+    else
+    {
+	MT::apply( *d_A, *d_x, *d_r );
+	VT::update( *d_r, -Teuchos::ScalarTraits<Scalar>::one(), 
+		    *d_b, Teuchos::ScalarTraits<Scalar>::one() );
+    }
 }
 
 //---------------------------------------------------------------------------//

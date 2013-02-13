@@ -62,8 +62,9 @@ class LinearProblem
     //@{
     //! Typedefs.
     typedef Vector                                      vector_type;
-    typedef Matrix                                      matrix_type;
     typedef VectorTraits<Vector>                        VT;
+    typedef typename VT::scalar_type                    Scalar;
+    typedef Matrix                                      matrix_type;
     typedef MatrixTraits<Vector,Matrix>                 MT;
     //@}
 
@@ -75,14 +76,20 @@ class LinearProblem
     // Destructor.
     ~LinearProblem();
 
-    //! Set the linear operator.
+    // Set the linear operator.
     void setOperator( const Teuchos::RCP<const Matrix>& A );
 
-    //! Set the left-hand side.
+    // Set the left-hand side.
     void setLHS( const Teuchos::RCP<Vector>& x );
 
-    //! Set the right-hand side.
+    // Set the right-hand side.
     void setRHS( const Teuchos::RCP<const Vector>& b );
+
+    // Set the left preconditioner.
+    void setLeftPrec( const Teuchos::RCP<const Matrix>& PL );
+
+    // Set the right preconditioner.
+    void setRightPrec( const Teuchos::RCP<const Matrix>& PR );
 
     //! Get the linear operator.
     Teuchos::RCP<const Matrix> getOperator() const { return d_A; }
@@ -93,13 +100,42 @@ class LinearProblem
     //! Get the right-hand side.
     Teuchos::RCP<const Vector> getRHS() const { return d_b; }
 
-    //! Get the residual.
+    //! Get the left preconditioner.
+    Teuchos::RCP<const Matrix> getLeftPrec() const { return d_PL; }
+
+    //! Get the right preconditioner.
+    Teuchos::RCP<const Matrix> getRightPrec() const { return d_PR; }
+
+    // Get the composite linear operator.
+    Teuchos::RCP<const Matrix> getCompositeOperator() const;
+
+    //! Get the residual vector. This will be preconditioned if
+    //! preconditioners are present.
     Teuchos::RCP<const Vector> getResidual() const { return d_r; }
 
-    // Apply the linear operator to a vector.
-    void applyOperator( const Vector& x, Vector& y );
+    //! Determine if the linear system is left preconditioned.
+    bool isLeftPrec() const { return Teuchos::nonnull(d_PL); }
 
-    // Update the residual.
+    //! Determine if the linear system is right preconditioned.
+    bool isRightPrec() const { return Teuchos::nonnull(d_PR); }
+
+    // Update the solution vector with a provided update vector.
+    void updateSolution( const Teuchos::RCP<Vector>& update );
+
+    // Apply the composite linear operator to a vector.
+    void apply( const Vector& x, Vector& y );
+
+    // Apply the base linear operator to a vector.
+    void applyOp( const Vector& x, Vector& y );
+
+    // Apply the left preconditioner to a vector.
+    void applyLeftPrec( const Vector& x, Vector& y );
+
+    // Apply the right preconditioner to a vector.
+    void applyRightPrec( const Vector& x, Vector& y );
+
+    // Update the residual. Preconditioning will be applied if preconditioners
+    // are present.
     void updateResidual();
 
     //! Get the status of the linear problem.
@@ -118,6 +154,12 @@ class LinearProblem
 
     // Right-hand side.
     Teuchos::RCP<const Vector> d_b;
+
+    // Left preconditioner.
+    Teuchos::RCP<const Matrix> d_PL;
+
+    // Right preconditioner.
+    Teuchos::RCP<const Matrix> d_PR;
 
     // Residual r = b - A*x.
     Teuchos::RCP<Vector> d_r;
