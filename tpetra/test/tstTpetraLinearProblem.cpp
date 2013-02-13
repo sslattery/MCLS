@@ -157,6 +157,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LinearProblem, Constructor, LO, GO, Scalar )
     TEST_ASSERT( !linear_problem.status() );
     linear_problem.setProblem();
     TEST_ASSERT( linear_problem.status() );
+
+    TEST_ASSERT( !linear_problem.isLeftPrec() );
+    linear_problem.setLeftPrec( A );
+    TEST_ASSERT( linear_problem.isLeftPrec() );
+    TEST_EQUALITY( linear_problem.getLeftPrec(), A );
+
+    TEST_ASSERT( !linear_problem.isRightPrec() );
+    linear_problem.setRightPrec( A );
+    TEST_ASSERT( linear_problem.isRightPrec() );
+    TEST_EQUALITY( linear_problem.getRightPrec(), A );
 }
 
 UNIT_TEST_INSTANTIATION( LinearProblem, Constructor )
@@ -214,6 +224,62 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LinearProblem, Apply, LO, GO, Scalar )
     {
 	TEST_EQUALITY( *view_iterator, x_val );
     }
+
+    linear_problem.updateSolution( X );
+
+    linear_problem.apply( *X, *Y );
+    for ( view_iterator = Y_view.begin();
+	  view_iterator != Y_view.end();
+	  ++view_iterator )
+    {
+	TEST_EQUALITY( *view_iterator, 2*x_val );
+    }
+
+    linear_problem.setRightPrec( A );
+    linear_problem.applyRightPrec( *X, *Y );
+    for ( view_iterator = Y_view.begin();
+	  view_iterator != Y_view.end();
+	  ++view_iterator )
+    {
+	TEST_EQUALITY( *view_iterator, 2*x_val );
+    }
+
+    linear_problem.apply( *X, *Y );
+    for ( view_iterator = Y_view.begin();
+	  view_iterator != Y_view.end();
+	  ++view_iterator )
+    {
+	TEST_EQUALITY( *view_iterator, 2*x_val );
+    }
+
+    linear_problem.setLeftPrec( A );
+    linear_problem.applyLeftPrec( *X, *Y );
+    for ( view_iterator = Y_view.begin();
+	  view_iterator != Y_view.end();
+	  ++view_iterator )
+    {
+	TEST_EQUALITY( *view_iterator, 2*x_val );
+    }
+
+    linear_problem.apply( *X, *Y );
+    for ( view_iterator = Y_view.begin();
+	  view_iterator != Y_view.end();
+	  ++view_iterator )
+    {
+	TEST_EQUALITY( *view_iterator, 2*x_val );
+    }
+
+    linear_problem.updateSolution( X );
+
+    Teuchos::RCP<const MatrixType> composite = 
+	linear_problem.getCompositeOperator();
+    MT::apply( *composite, *X, *Y );
+    for ( view_iterator = Y_view.begin();
+	  view_iterator != Y_view.end();
+	  ++view_iterator )
+    {
+	TEST_EQUALITY( *view_iterator, 4*x_val );
+    }
 }
 
 UNIT_TEST_INSTANTIATION( LinearProblem, Apply )
@@ -265,6 +331,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LinearProblem, ResidualUpdate, LO, GO, Scalar
     Teuchos::RCP<const VectorType> R = linear_problem.getResidual();
     Teuchos::ArrayRCP<const Scalar> R_view = VT::view( *R );
     typename Teuchos::ArrayRCP<const Scalar>::const_iterator view_iterator;
+    for ( view_iterator = R_view.begin();
+	  view_iterator != R_view.end();
+	  ++view_iterator )
+    {
+	TEST_EQUALITY( *view_iterator, b_val - x_val );
+    }
+
+    linear_problem.setLeftPrec( A );
+    linear_problem.updateResidual();
     for ( view_iterator = R_view.begin();
 	  view_iterator != R_view.end();
 	  ++view_iterator )
