@@ -349,8 +349,8 @@ TEUCHOS_UNIT_TEST( LinearProblem, ResidualUpdate )
     }
 
     Teuchos::RCP<const VectorType> RP = linear_problem.getPrecResidual();
-    Teuchos::ArrayRCP<const Scalar> RP_view = VT::view( *RP );
-    typename Teuchos::ArrayRCP<const Scalar>::const_iterator pview_iterator;
+    Teuchos::ArrayRCP<const double> RP_view = VT::view( *RP );
+    typename Teuchos::ArrayRCP<const double>::const_iterator pview_iterator;
     for ( pview_iterator = RP_view.begin();
 	  pview_iterator != RP_view.end();
 	  ++pview_iterator )
