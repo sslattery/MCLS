@@ -246,9 +246,9 @@ bool MCSASolverManager<Vector,Matrix>::solve()
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType residual_norm = 0;
     if ( d_primary_set )
     {
-	// Compute the initial residual.
-	d_problem->updateResidual();
-	residual_norm = VT::normInf( *d_problem->getResidual() );
+	// Compute the initial preconditioned residual.
+	d_problem->updatePrecResidual();
+	residual_norm = VT::normInf( *d_problem->getPrecResidual() );
     }
     d_global_comm->barrier();
 
@@ -263,14 +263,15 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	// set. 
 	if ( d_primary_set )
 	{
-	    // Update the solution vector with the residual from the previous
-	    // iteration. 
+	    // Update the solution vector with the preconditioned residual
+	    // from the previous iteration.
 	    VT::update( *d_problem->getLHS(), 
 			Teuchos::ScalarTraits<Scalar>::one(),
-			*d_problem->getResidual(), 
+			*d_problem->getPrecResidual(), 
 			Teuchos::ScalarTraits<Scalar>::one() );
 
-	    // Compute the new residual to use as the Monte Carlo source.
+	    // Compute the new unpreconditioned residual to use as the Monte
+	    // Carlo source.
 	    d_problem->updateResidual();
 	}
 	d_global_comm->barrier();
@@ -278,13 +279,17 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	// Solve the residual Monte Carlo problem.
 	d_mc_solver->solve();
 
-	// Apply the correction and update the residual on the primary set.
+	// Apply the correction and update the preconditioned residual on the
+	// primary set.
 	if ( d_primary_set )
 	{
-	    d_problem->updateSolution( d_residual_problem->getLHS() );
+	    VT::update( *d_problem->getLHS(), 
+			Teuchos::ScalarTraits<Scalar>::one(),
+			*d_residual_problem->getLHS(), 
+			Teuchos::ScalarTraits<Scalar>::one() );
 
-	    d_problem->updateResidual();
-	    residual_norm = VT::normInf( *d_problem->getResidual() );
+	    d_problem->updatePrecResidual();
+	    residual_norm = VT::normInf( *d_problem->getPrecResidual() );
 
 	    // Check if we're done iterating.
 	    if ( d_num_iters % check_freq == 0 )
@@ -342,7 +347,8 @@ void MCSASolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
     Require( Teuchos::nonnull(d_plist) );
     Require( Teuchos::nonnull(d_problem) );
 
-    // Generate the residual Monte Carlo problem on the primary set.
+    // Generate the residual Monte Carlo problem on the primary set. The
+    // unpreconditioned residual is the source.
     if ( d_primary_set )
     {
 	Teuchos::RCP<Vector> delta_x = VT::clone( *d_problem->getLHS() );
@@ -362,7 +368,6 @@ void MCSASolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
     d_global_comm->barrier();
 
     // Create the Monte Carlo direct solver for the residual problem.
-    d_plist->set<bool>("Internal MC Solver",true);
     if ( d_plist->get<std::string>("MC Type") == "Adjoint" )
     {
 	d_mc_solver = Teuchos::rcp( 

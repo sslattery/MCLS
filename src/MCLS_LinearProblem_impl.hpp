@@ -60,6 +60,7 @@ LinearProblem<Vector,Matrix>::LinearProblem(
     , d_x( x )
     , d_b( b )
     , d_r( VT::clone( *d_x ) )
+    , d_rp( VT::clone( *d_x ) )
 {
     d_status = true;
 
@@ -67,6 +68,7 @@ LinearProblem<Vector,Matrix>::LinearProblem(
     Ensure( !d_x.is_null() );
     Ensure( !d_b.is_null() );
     Ensure( !d_r.is_null() );
+    Ensure( !d_rp.is_null() );
 }
 
 //---------------------------------------------------------------------------//
@@ -298,11 +300,23 @@ void LinearProblem<Vector,Matrix>::applyRightPrec( const Vector& x, Vector& y )
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Update the residual. Preconditioning will be applied if
- * preconditioners are present.
+ * \brief Update the residual.
  */
 template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::updateResidual()
+{
+    MT::apply( *d_A, *d_x, *d_r );
+    VT::update( *d_r, -Teuchos::ScalarTraits<Scalar>::one(), 
+		*d_b, Teuchos::ScalarTraits<Scalar>::one() );
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Update the preconditioned residual. Preconditioning will be applied
+ * if preconditioners are present.
+ */
+template<class Vector, class Matrix>
+void LinearProblem<Vector,Matrix>::updatePrecResidual()
 {
     const bool left_prec = Teuchos::nonnull( d_PL );
 
@@ -312,13 +326,11 @@ void LinearProblem<Vector,Matrix>::updateResidual()
 	MT::apply( *d_A, *d_x, *r_temp );
 	VT::update( *r_temp, -Teuchos::ScalarTraits<Scalar>::one(), 
 		    *d_b, Teuchos::ScalarTraits<Scalar>::one() );
-	MT::apply( *d_PL, *r_temp, *d_r );
+	MT::apply( *d_PL, *r_temp, *d_rp );
     }
     else
     {
-	MT::apply( *d_A, *d_x, *d_r );
-	VT::update( *d_r, -Teuchos::ScalarTraits<Scalar>::one(), 
-		    *d_b, Teuchos::ScalarTraits<Scalar>::one() );
+	d_rp = d_r;
     }
 }
 

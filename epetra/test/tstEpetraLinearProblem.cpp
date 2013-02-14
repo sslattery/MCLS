@@ -348,6 +348,16 @@ TEUCHOS_UNIT_TEST( LinearProblem, ResidualUpdate )
 	TEST_EQUALITY( *view_iterator, b_val - x_val );
     }
 
+    Teuchos::RCP<const VectorType> RP = linear_problem.getPrecResidual();
+    Teuchos::ArrayRCP<const Scalar> RP_view = VT::view( *RP );
+    typename Teuchos::ArrayRCP<const Scalar>::const_iterator pview_iterator;
+    for ( pview_iterator = RP_view.begin();
+	  pview_iterator != RP_view.end();
+	  ++pview_iterator )
+    {
+	TEST_EQUALITY( *pview_iterator, b_val - x_val );
+    }
+
     linear_problem.setLeftPrec( A );
     linear_problem.updateResidual();
     for ( view_iterator = R_view.begin();
@@ -355,6 +365,14 @@ TEUCHOS_UNIT_TEST( LinearProblem, ResidualUpdate )
 	  ++view_iterator )
     {
 	TEST_EQUALITY( *view_iterator, b_val - x_val );
+    }
+
+    linear_problem.updatePrecResidual();
+    for ( pview_iterator = RP_view.begin();
+	  pview_iterator != RP_view.end();
+	  ++pview_iterator )
+    {
+	TEST_EQUALITY( *pview_iterator, b_val - x_val );
     }
 }
 

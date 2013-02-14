@@ -201,7 +201,7 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
     // set export and block reduction parallel operations are still valid.
     if ( d_primary_set )
     {
-	tally->setBaseVector( d_problem->getLHS() );
+	TT::setBaseVector( *tally, d_problem->getLHS() );
     }
     d_global_comm->barrier();
 
@@ -222,24 +222,19 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
     d_global_comm->barrier();
 
     // Combine the tallies across the blocks.
-    tally->combineBlockTallies( d_msod_manager->blockComm() );
+    TT::combineBlockTallies( *tally, d_msod_manager->blockComm() );
 
     // Normalize the tallies by the number of sets.
-    tally->normalize( d_msod_manager->numSets() );
+    TT::normalize( *tally, d_msod_manager->numSets() );
 
     // Barrier before exiting.
     d_global_comm->barrier();
 
-    // If this is an external solver (not in an iterative scheme) and we're
-    // right preconditioned then we have to recover the original solution.
-    if ( d_plist->isParameter("Internal MC Solver") )
+    // If we're right preconditioned then we have to recover the original
+    // solution. 
+    if ( d_problem->isRightPrec() )
     {
-	if ( !d_plist->get<bool>("Internal MC Solver") && 
-	     d_problem->isRightPrec() )
-	{
-	    d_problem->applyRightPrec( *d_problem->getLHS(), 
-				       *d_problem->getLHS() );
-	}
+	d_problem->applyRightPrec( *d_problem->getLHS(), *d_problem->getLHS() );
     }
 
     // This is a direct solve and therefore always converged in the iterative

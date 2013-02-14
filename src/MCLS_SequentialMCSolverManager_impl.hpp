@@ -242,9 +242,9 @@ bool SequentialMCSolverManager<Vector,Matrix>::solve()
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType residual_norm = 0;
     if ( d_primary_set )
     {
-	// Compute the initial residual.
-	d_problem->updateResidual();
-	residual_norm = VT::normInf( *d_problem->getResidual() );
+	// Compute the initial preconditioned residual.
+	d_problem->updatePrecResidual();
+	residual_norm = VT::normInf( *d_problem->getPrecResidual() );
     }
     d_global_comm->barrier();
 
@@ -255,16 +255,26 @@ bool SequentialMCSolverManager<Vector,Matrix>::solve()
 	// Update the iteration count.
 	++d_num_iters;
 
+	// Compute the unpreconditioned residual to get the source for the
+	// Monte Carlo problem.
+	if ( d_primary_set )
+	{
+	    d_problem->updateResidual();
+	}
+
 	// Solve the residual Monte Carlo problem.
 	d_mc_solver->solve();
 
 	// Apply the correction and update the residual on the primary set.
 	if ( d_primary_set )
 	{
-	    d_problem->updateSolution( d_residual_problem->getLHS() );
+	    VT::update( *d_problem->getLHS(), 
+			Teuchos::ScalarTraits<Scalar>::one(),
+			*d_residual_problem->getLHS(), 
+			Teuchos::ScalarTraits<Scalar>::one() );
 
-	    d_problem->updateResidual();
-	    residual_norm = VT::normInf( *d_problem->getResidual() );
+	    d_problem->updatePrecResidual();
+	    residual_norm = VT::normInf( *d_problem->getPrecResidual() );
 
 	    // Check if we're done iterating.
 	    if ( d_num_iters % check_freq == 0 )
@@ -343,7 +353,6 @@ void SequentialMCSolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
     d_global_comm->barrier();
 
     // Create the Monte Carlo direct solver for the residual problem.
-    d_plist->set<bool>("Internal MC Solver",true);
     if ( d_plist->get<std::string>("MC Type") == "Adjoint" )
     {
 	d_mc_solver = Teuchos::rcp( 

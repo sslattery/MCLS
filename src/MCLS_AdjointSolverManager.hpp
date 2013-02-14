@@ -48,6 +48,7 @@
 #include "MCLS_MCSolver.hpp"
 #include "MCLS_UniformAdjointSource.hpp"
 #include "MCLS_AdjointDomain.hpp"
+#include "MCLS_TallyTraits.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -77,6 +78,7 @@ class AdjointSolverManager : public SolverManager<Vector,Matrix>
     typedef LinearProblem<Vector,Matrix>            LinearProblemType;
     typedef AdjointDomain<Vector,Matrix>            DomainType;
     typedef typename DomainType::TallyType          TallyType;
+    typedef TallyTraits<TallyType>                  TT;
     typedef UniformAdjointSource<DomainType>        SourceType;
     typedef Teuchos::Comm<int>                      Comm;
     //@}

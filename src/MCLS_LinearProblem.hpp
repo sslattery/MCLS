@@ -109,9 +109,12 @@ class LinearProblem
     // Get the composite linear operator.
     Teuchos::RCP<const Matrix> getCompositeOperator() const;
 
+    //! Get the residual vector. 
+    Teuchos::RCP<const Vector> getResidual() const { return d_r; }
+
     //! Get the residual vector. This will be preconditioned if
     //! preconditioners are present.
-    Teuchos::RCP<const Vector> getResidual() const { return d_r; }
+    Teuchos::RCP<const Vector> getPrecResidual() const { return d_rp; }
 
     //! Determine if the linear system is left preconditioned.
     bool isLeftPrec() const { return Teuchos::nonnull(d_PL); }
@@ -134,9 +137,12 @@ class LinearProblem
     // Apply the right preconditioner to a vector.
     void applyRightPrec( const Vector& x, Vector& y );
 
-    // Update the residual. Preconditioning will be applied if preconditioners
-    // are present.
+    // Update the residual. 
     void updateResidual();
+
+    // Update the preconditioned residual. Preconditioning will be applied if
+    // preconditioners are present.
+    void updatePrecResidual();
 
     //! Get the status of the linear problem.
     bool status() const { return d_status; }
@@ -163,6 +169,9 @@ class LinearProblem
 
     // Residual r = b - A*x.
     Teuchos::RCP<Vector> d_r;
+
+    // Preconditioned residual r = PL*(b - A*x).
+    Teuchos::RCP<Vector> d_rp;
 
     // Boolean for linear system status. True if we are ready to solve.
     bool d_status;
