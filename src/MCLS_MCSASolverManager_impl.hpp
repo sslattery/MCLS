@@ -131,8 +131,23 @@ MCSASolverManager<Vector,Matrix>::achievedTol() const
     // We only do this on the primary set where the linear problem exists.
     if ( d_primary_set )
     {
-	residual_norm = VT::normInf( *d_problem->getResidual() );
-	residual_norm /= VT::normInf( *d_problem->getRHS() );
+	typename Teuchos::ScalarTraits<Scalar>::magnitudeType source_norm = 0;
+
+	residual_norm = VT::normInf( *d_problem->getPrecResidual() );
+
+	// Compute the source norm preconditioned if necessary.
+	if ( d_problem->isLeftPrec() )
+	{
+	    Teuchos::RCP<Vector> tmp = VT::clone( *d_problem->getRHS() );
+	    d_problem->applyLeftPrec( *d_problem->getRHS(), *tmp );
+	    source_norm = VT::normInf( *tmp );
+	}
+	else
+	{
+	    source_norm = VT::normInf( *d_problem->getRHS() );
+	}
+
+	residual_norm /= source_norm;
     }
     d_global_comm->barrier();
 
@@ -150,7 +165,7 @@ void MCSASolverManager<Vector,Matrix>::setProblem(
     Require( Teuchos::nonnull(d_global_comm) );
     Require( Teuchos::nonnull(d_plist) );
 
-    // Set the MCSA problem.
+    // Set the problem.
     d_problem = problem;
     d_primary_set = Teuchos::nonnull(d_problem);
 
@@ -222,7 +237,19 @@ bool MCSASolverManager<Vector,Matrix>::solve()
     {
 	typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance = 
 	    d_plist->get<double>("Convergence Tolerance");
-	source_norm = VT::normInf( *d_problem->getRHS() );
+
+	// Compute the source norm preconditioned if necessary.
+	if ( d_problem->isLeftPrec() )
+	{
+	    Teuchos::RCP<Vector> tmp = VT::clone( *d_problem->getRHS() );
+	    d_problem->applyLeftPrec( *d_problem->getRHS(), *tmp );
+	    source_norm = VT::normInf( *tmp );
+	}
+	else
+	{
+	    source_norm = VT::normInf( *d_problem->getRHS() );
+	}
+	
 	convergence_criteria = tolerance * source_norm;
     }
     d_global_comm->barrier();
@@ -322,7 +349,7 @@ bool MCSASolverManager<Vector,Matrix>::solve()
     // Check for convergence.
     if ( d_primary_set )
     {
-	if ( VT::normInf(*d_problem->getResidual()) <= convergence_criteria )
+	if ( VT::normInf(*d_problem->getPrecResidual()) <= convergence_criteria )
 	{
 	    d_converged_status = 1;
 	}

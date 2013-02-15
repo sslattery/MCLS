@@ -131,8 +131,23 @@ SequentialMCSolverManager<Vector,Matrix>::achievedTol() const
     // We only do this on the primary set where the linear problem exists.
     if ( d_primary_set )
     {
-	residual_norm = VT::normInf( *d_problem->getResidual() );
-	residual_norm /= VT::normInf( *d_problem->getRHS() );
+	typename Teuchos::ScalarTraits<Scalar>::magnitudeType source_norm = 0;
+
+	residual_norm = VT::normInf( *d_problem->getPrecResidual() );
+
+	// Compute the source norm preconditioned if necessary.
+	if ( d_problem->isLeftPrec() )
+	{
+	    Teuchos::RCP<Vector> tmp = VT::clone( *d_problem->getRHS() );
+	    d_problem->applyLeftPrec( *d_problem->getRHS(), *tmp );
+	    source_norm = VT::normInf( *tmp );
+	}
+	else
+	{
+	    source_norm = VT::normInf( *d_problem->getRHS() );
+	}
+
+	residual_norm /= source_norm;
     }
     d_global_comm->barrier();
 
@@ -150,7 +165,7 @@ void SequentialMCSolverManager<Vector,Matrix>::setProblem(
     Require( !d_global_comm.is_null() );
     Require( !d_plist.is_null() );
 
-    // Set the MCSA problem.
+    // Set the problem.
     d_problem = problem;
     d_primary_set = !d_problem.is_null();
 
@@ -218,7 +233,19 @@ bool SequentialMCSolverManager<Vector,Matrix>::solve()
     {
 	typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance = 
 	    d_plist->get<double>("Convergence Tolerance");
-	source_norm = VT::normInf( *d_problem->getRHS() );
+
+	// Compute the source norm preconditioned if necessary.
+	if ( d_problem->isLeftPrec() )
+	{
+	    Teuchos::RCP<Vector> tmp = VT::clone( *d_problem->getRHS() );
+	    d_problem->applyLeftPrec( *d_problem->getRHS(), *tmp );
+	    source_norm = VT::normInf( *tmp );
+	}
+	else
+	{
+	    source_norm = VT::normInf( *d_problem->getRHS() );
+	}
+	
 	convergence_criteria = tolerance * source_norm;
     }
     d_global_comm->barrier();
@@ -254,13 +281,6 @@ bool SequentialMCSolverManager<Vector,Matrix>::solve()
     {
 	// Update the iteration count.
 	++d_num_iters;
-
-	// Compute the unpreconditioned residual to get the source for the
-	// Monte Carlo problem.
-	if ( d_primary_set )
-	{
-	    d_problem->updateResidual();
-	}
 
 	// Solve the residual Monte Carlo problem.
 	d_mc_solver->solve();
@@ -307,7 +327,7 @@ bool SequentialMCSolverManager<Vector,Matrix>::solve()
     // Check for convergence.
     if ( d_primary_set )
     {
-	if ( VT::normInf(*d_problem->getResidual()) <= convergence_criteria )
+	if ( VT::normInf(*d_problem->getPrecResidual()) <= convergence_criteria )
 	{
 	    d_converged_status = 1;
 	}
@@ -328,10 +348,11 @@ bool SequentialMCSolverManager<Vector,Matrix>::solve()
 template<class Vector, class Matrix>
 void SequentialMCSolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
 {
-    Require( !d_global_comm.is_null() );
-    Require( !d_plist.is_null() );
+    Require( Teuchos::nonnull(d_global_comm) );
+    Require( Teuchos::nonnull(d_plist) );
 
-    // Generate the residual Monte Carlo problem on the primary set.
+    // Generate the residual Monte Carlo problem on the primary set. The
+    // unpreconditioned residual is the source.
     if ( d_primary_set )
     {
 	Teuchos::RCP<Vector> delta_x = VT::clone( *d_problem->getLHS() );
@@ -339,7 +360,6 @@ void SequentialMCSolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
 	    new LinearProblemType( d_problem->getOperator(),
 				   delta_x,
 				   d_problem->getResidual() ) );
-
 	if ( d_problem->isLeftPrec() )
 	{
 	    d_residual_problem->setLeftPrec( d_problem->getLeftPrec() );
@@ -358,15 +378,15 @@ void SequentialMCSolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
 	    new AdjointSolverManager<Vector,Matrix>(
 		d_residual_problem, d_global_comm, d_plist) );
 
-	// Get the block level communicator.
-	Check( !d_mc_solver.is_null() );
+	// Get the block constant communicator.
+	Check( Teuchos::nonnull(d_mc_solver) );
 	d_block_comm = 
 	    Teuchos::rcp_dynamic_cast<AdjointSolverManager<Vector,Matrix> >(
 		d_mc_solver)->blockComm();
     }
 
-    Ensure( !d_mc_solver.is_null() );
-    Ensure( !d_block_comm.is_null() );
+    Ensure( Teuchos::nonnull(d_mc_solver) );
+    Ensure( Teuchos::nonnull(d_block_comm) );
 }
 
 //---------------------------------------------------------------------------//

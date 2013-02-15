@@ -313,7 +313,8 @@ void LinearProblem<Vector,Matrix>::updateResidual()
 //---------------------------------------------------------------------------//
 /*!
  * \brief Update the preconditioned residual. Preconditioning will be applied
- * if preconditioners are present.
+ * if preconditioners are present. The unpreconditioned residual will be
+ * updated as well.
  */
 template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::updatePrecResidual()

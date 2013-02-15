@@ -141,7 +141,8 @@ class LinearProblem
     void updateResidual();
 
     // Update the preconditioned residual. Preconditioning will be applied if
-    // preconditioners are present.
+    // preconditioners are present. The unpreconditioned residual will be
+    // updated as well.
     void updatePrecResidual();
 
     //! Get the status of the linear problem.
