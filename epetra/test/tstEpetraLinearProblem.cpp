@@ -355,7 +355,7 @@ TEUCHOS_UNIT_TEST( LinearProblem, ResidualUpdate )
 	  pview_iterator != RP_view.end();
 	  ++pview_iterator )
     {
-	TEST_EQUALITY( *pview_iterator, b_val - x_val );
+	TEST_EQUALITY( *pview_iterator, 0.0 );
     }
 
     linear_problem.setLeftPrec( A );

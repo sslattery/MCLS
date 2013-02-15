@@ -231,10 +231,14 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
     d_global_comm->barrier();
 
     // If we're right preconditioned then we have to recover the original
-    // solution. 
-    if ( d_problem->isRightPrec() )
+    // solution on the primary set.
+    if ( d_primary_set )
     {
-	d_problem->applyRightPrec( *d_problem->getLHS(), *d_problem->getLHS() );
+	if ( d_problem->isRightPrec() )
+	{
+	    d_problem->applyRightPrec( *d_problem->getLHS(), 
+				       *d_problem->getLHS() );
+	}
     }
 
     // This is a direct solve and therefore always converged in the iterative
