@@ -83,7 +83,7 @@ MCSASolverManager<Vector,Matrix>::MCSASolverManager(
     , d_num_iters( 0 )
     , d_converged_status( 0 )
 {
-    Require( Teuchos::nonnull(global_comm) );
+    Require( Teuchos::nonnull(d_global_comm) );
     Require( Teuchos::nonnull(d_plist) );
 
     buildResidualMonteCarloProblem();
@@ -345,7 +345,6 @@ void MCSASolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
 {
     Require( Teuchos::nonnull(d_global_comm) );
     Require( Teuchos::nonnull(d_plist) );
-    Require( Teuchos::nonnull(d_problem) );
 
     // Generate the residual Monte Carlo problem on the primary set. The
     // unpreconditioned residual is the source.
@@ -374,7 +373,7 @@ void MCSASolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
 	    new AdjointSolverManager<Vector,Matrix>(
 		d_residual_problem, d_global_comm, d_plist) );
 
-	// Get the block level communicator.
+	// Get the block constant communicator.
 	Check( Teuchos::nonnull(d_mc_solver) );
 	d_block_comm = 
 	    Teuchos::rcp_dynamic_cast<AdjointSolverManager<Vector,Matrix> >(

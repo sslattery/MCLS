@@ -330,7 +330,6 @@ void SequentialMCSolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
 {
     Require( !d_global_comm.is_null() );
     Require( !d_plist.is_null() );
-    Require( Teuchos::nonnull(d_problem) );
 
     // Generate the residual Monte Carlo problem on the primary set.
     if ( d_primary_set )
