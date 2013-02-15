@@ -318,15 +318,15 @@ void LinearProblem<Vector,Matrix>::updateResidual()
 template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::updatePrecResidual()
 {
+    // Update the unpreconditioned residual.
+    updateResidual();
+
+    // Apply left preconditioning if necessary.
     const bool left_prec = Teuchos::nonnull( d_PL );
 
     if ( left_prec )
     {
-	Teuchos::RCP<Vector> r_temp = VT::clone( *d_b );
-	MT::apply( *d_A, *d_x, *r_temp );
-	VT::update( *r_temp, -Teuchos::ScalarTraits<Scalar>::one(), 
-		    *d_b, Teuchos::ScalarTraits<Scalar>::one() );
-	MT::apply( *d_PL, *r_temp, *d_rp );
+	MT::apply( *d_PL, *d_r, *d_rp );
     }
     else
     {
