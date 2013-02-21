@@ -55,6 +55,11 @@ IF (MCLS_ENABLE_Thyra)
   ADD_SUBDIRECTORY(thyra)
 ENDIF()
 
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Stratimikos)
+IF (MCLS_ENABLE_Stratimikos)
+  ADD_SUBDIRECTORY(stratimikos)
+ENDIF()
+
 ##---------------------------------------------------------------------------##
 ## D) Do standard postprocessing
 ##---------------------------------------------------------------------------##
