@@ -44,7 +44,7 @@
 #include <Thyra_MCLSLinearOpWithSolveFactory.hpp>
 
 #include <Teuchos_Ptr.hpp>
-#include <Teuchos_AbstractFactory.hpp>
+#include <Teuchos_AbstractFactoryStd.hpp>
 
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
 
@@ -60,6 +60,7 @@ namespace MCLS
 template<class Scalar>
 class StratimikosAdapter
 {
+  public:
 
     //! Constructor.
     StratimikosAdapter() { /* ... */ }

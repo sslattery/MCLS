@@ -1,6 +1,6 @@
 
-#ifndef TEST_SINGLE_MCLS_THYRA_SOLVER_HPP
-#define TEST_SINGLE_MCLS_THYRA_SOLVER_HPP
+#ifndef TEST_SINGLE_MCLS_STRATIMIKOS_SOLVER_HPP
+#define TEST_SINGLE_MCLS_STRATIMIKOS_SOLVER_HPP
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -11,7 +11,7 @@ namespace Thyra {
 /** \brief Testing function for a single mcls solver with a single matrix.
  *
  */
-bool test_single_mcls_thyra_solver(
+bool test_single_mcls_stratimikos_solver(
   const std::string                       matrixFile
   ,const bool                             useJacobi
   ,const bool                             testTranspose
@@ -30,4 +30,4 @@ bool test_single_mcls_thyra_solver(
 
 } // namespace Thyra
 
-#endif // TEST_SINGLE_MCLS_THYRA_SOLVER_HPP
+#endif // TEST_SINGLE_MCLS_STRATIMIKOS_SOLVER_HPP
