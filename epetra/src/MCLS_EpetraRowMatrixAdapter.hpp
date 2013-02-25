@@ -121,7 +121,7 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
     static Teuchos::RCP<vector_type> 
     cloneVectorFromMatrixCols( const matrix_type& matrix )
     { 
-	Require( matrix.Filled() );
+	MCLS_REQUIRE( matrix.Filled() );
 	return Teuchos::rcp( new vector_type( matrix.RowMatrixColMap() ) );
     }
 
@@ -176,7 +176,7 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
     static global_ordinal_type getGlobalRow( const matrix_type& matrix, 
 					     const local_ordinal_type& local_row )
     { 
-	Require( matrix.RowMatrixRowMap().MyLID( local_row ) );
+	MCLS_REQUIRE( matrix.RowMatrixRowMap().MyLID( local_row ) );
 	return matrix.RowMatrixRowMap().GID( local_row );
     }
 
@@ -186,7 +186,7 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
     static local_ordinal_type getLocalRow( const matrix_type& matrix, 
 					   const global_ordinal_type& global_row )
     { 
-	Require( matrix.RowMatrixRowMap().MyGID( global_row ) );
+	MCLS_REQUIRE( matrix.RowMatrixRowMap().MyGID( global_row ) );
 	return matrix.RowMatrixRowMap().LID( global_row );
     }
 
@@ -196,8 +196,8 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
     static global_ordinal_type getGlobalCol( const matrix_type& matrix,
 					     const local_ordinal_type& local_col )
     {
-	Require( matrix.Filled() );
-	Require( matrix.RowMatrixColMap().MyLID( local_col ) );
+	MCLS_REQUIRE( matrix.Filled() );
+	MCLS_REQUIRE( matrix.RowMatrixColMap().MyLID( local_col ) );
 	return matrix.RowMatrixColMap().GID( local_col );
     }
 
@@ -207,8 +207,8 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
     static local_ordinal_type getLocalCol( const matrix_type& matrix, 
 					   const global_ordinal_type& global_col )
     {
-	Require( matrix.Filled() );
-	Require( matrix.RowMatrixColMap().MyGID( global_col ) );
+	MCLS_REQUIRE( matrix.Filled() );
+	MCLS_REQUIRE( matrix.RowMatrixColMap().MyGID( global_col ) );
 	return matrix.RowMatrixColMap().LID( global_col );
     }
 
@@ -251,7 +251,7 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
     static bool isGlobalCol( const matrix_type& matrix,
 			     const global_ordinal_type& global_col )
     { 
-	Require( matrix.Filled() );
+	MCLS_REQUIRE( matrix.Filled() );
 	return matrix.RowMatrixColMap().MyGID( global_col );
     }
 
@@ -261,7 +261,7 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
     static bool isLocalCol( const matrix_type& matrix, 
 			    const local_ordinal_type& local_col )
     { 
-	Require( matrix.Filled() );
+	MCLS_REQUIRE( matrix.Filled() );
 	return matrix.RowMatrixColMap().MyLID( local_col );
     }
 
@@ -275,8 +275,8 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
 	const Teuchos::ArrayView<scalar_type>& values,
 	std::size_t& num_entries )
     {
-	Require( matrix.Filled() );
-	Require( matrix.RowMatrixRowMap().MyGID( global_row ) );
+	MCLS_REQUIRE( matrix.Filled() );
+	MCLS_REQUIRE( matrix.RowMatrixRowMap().MyGID( global_row ) );
 	local_ordinal_type local_row = matrix.RowMatrixRowMap().LID( global_row );
 	int num_entries_int = 0;
 	matrix.ExtractMyRowCopy( local_row, 
@@ -302,8 +302,8 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
 	const Teuchos::ArrayView<scalar_type>& values,
 	std::size_t& num_entries )
     {
-	Require( matrix.Filled() );
-	Require( matrix.RowMatrixRowMap().MyLID( local_row ) );
+	MCLS_REQUIRE( matrix.Filled() );
+	MCLS_REQUIRE( matrix.RowMatrixRowMap().MyLID( local_row ) );
 	int num_entries_int = 0;
 	matrix.ExtractMyRowCopy( local_row, 
 				 Teuchos::as<local_ordinal_type>(values.size()), 

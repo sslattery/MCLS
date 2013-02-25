@@ -149,7 +149,7 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
      */
     static Teuchos::Array<int> getOffProcColsAsRows( const matrix_type& matrix )
     { 
-	Require( matrix.Filled() );
+	MCLS_REQUIRE( matrix.Filled() );
 
 	const Epetra_Map& row_map = matrix.RowMatrixRowMap();
 	const Epetra_Map& col_map = matrix.RowMatrixColMap();
@@ -182,7 +182,7 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
 	Epetra_CrsMatrix* transpose_matrix;
 	transposer.CreateTranspose( true, transpose_matrix );
 
-	Ensure( transpose_matrix->Filled() );
+	MCLS_ENSURE( transpose_matrix->Filled() );
 	return Teuchos::RCP<matrix_type>( transpose_matrix );
     }
 
@@ -193,7 +193,7 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
     static Teuchos::RCP<matrix_type> copyNearestNeighbors( 
     	const matrix_type& matrix, const int& num_neighbors )
     { 
-	Require( num_neighbors >= 0 ); 
+	MCLS_REQUIRE( num_neighbors >= 0 ); 
 
 	// Setup for neighbor construction.
 	Teuchos::RCP<const Epetra_Map> empty_map = Teuchos::rcp(
@@ -262,8 +262,8 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
 	    ghost_global_rows = getOffProcColsAsRows( *neighbor_matrix );
 	}
 
-	Ensure( !neighbor_matrix.is_null() );
-	Ensure( neighbor_matrix->Filled() );
+	MCLS_ENSURE( !neighbor_matrix.is_null() );
+	MCLS_ENSURE( neighbor_matrix->Filled() );
 	return neighbor_matrix;
     }
 

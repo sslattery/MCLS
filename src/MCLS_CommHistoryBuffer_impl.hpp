@@ -68,16 +68,16 @@ CommHistoryBuffer<HT>::~CommHistoryBuffer()
 template<class HT>
 void ReceiveHistoryBuffer<HT>::receive( int rank )
 {
-    Require( !Base::d_comm_blocking.is_null() );
-    Require( Root::isEmpty() );
-    Require( Root::allocatedSize() > sizeof(int) );
+    MCLS_REQUIRE( !Base::d_comm_blocking.is_null() );
+    MCLS_REQUIRE( Root::isEmpty() );
+    MCLS_REQUIRE( Root::allocatedSize() > sizeof(int) );
 
     Teuchos::receive<int,char>( 
 	*Base::d_comm_blocking, rank, 
 	Root::d_buffer.size(), Root::d_buffer.getRawPtr() );
     Root::readNumFromBuffer();
 
-    Ensure( Root::d_number < Root::maxNum() );
+    MCLS_ENSURE( Root::d_number < Root::maxNum() );
 }
 
 //---------------------------------------------------------------------------//
@@ -87,9 +87,9 @@ void ReceiveHistoryBuffer<HT>::receive( int rank )
 template<class HT>
 void ReceiveHistoryBuffer<HT>::post( int rank )
 {
-    Require( !Base::d_comm_nonblocking.is_null() );
-    Require( Root::isEmpty() );
-    Require( Root::allocatedSize() > sizeof(int) );
+    MCLS_REQUIRE( !Base::d_comm_nonblocking.is_null() );
+    MCLS_REQUIRE( Root::isEmpty() );
+    MCLS_REQUIRE( Root::allocatedSize() > sizeof(int) );
 
     Base::d_handle = Teuchos::ireceive<int,char>( 
 	*Base::d_comm_nonblocking, 
@@ -104,14 +104,14 @@ void ReceiveHistoryBuffer<HT>::post( int rank )
 template<class HT>
 void ReceiveHistoryBuffer<HT>::wait()
 {
-    Require( !Base::d_comm_nonblocking.is_null() );
+    MCLS_REQUIRE( !Base::d_comm_nonblocking.is_null() );
 
     Teuchos::Ptr<Teuchos::RCP<typename Base::Request> > 
 	request_ptr( &this->d_handle );
     Teuchos::wait( *Base::d_comm_nonblocking, request_ptr );
     Root::readNumFromBuffer();
 
-    Ensure( Base::d_handle.is_null() );
+    MCLS_ENSURE( Base::d_handle.is_null() );
 }
 
 //---------------------------------------------------------------------------//
@@ -121,15 +121,15 @@ void ReceiveHistoryBuffer<HT>::wait()
 template<class HT>
 bool ReceiveHistoryBuffer<HT>::check()
 {
-    Require( !Base::d_comm_nonblocking.is_null() );
+    MCLS_REQUIRE( !Base::d_comm_nonblocking.is_null() );
 
     if ( CommTools::isRequestComplete(Base::d_handle) )
     {
 	Root::readNumFromBuffer();
 	Base::d_handle = Teuchos::null;
 
-	Ensure( Base::d_handle.is_null() );
-	Ensure( Root::numHistories() >= 0 );
+	MCLS_ENSURE( Base::d_handle.is_null() );
+	MCLS_ENSURE( Root::numHistories() >= 0 );
 	return true;
     }
 
@@ -145,8 +145,8 @@ bool ReceiveHistoryBuffer<HT>::check()
 template<class HT>
 void SendHistoryBuffer<HT>::send( int rank )
 {
-    Require( !Base::d_comm_blocking.is_null() );
-    Require( Root::allocatedSize() > sizeof(int) );
+    MCLS_REQUIRE( !Base::d_comm_blocking.is_null() );
+    MCLS_REQUIRE( Root::allocatedSize() > sizeof(int) );
 
     Root::writeNumToBuffer();
     Teuchos::send<int,char>( *Base::d_comm_blocking, Root::d_buffer.size(), 
@@ -154,8 +154,8 @@ void SendHistoryBuffer<HT>::send( int rank )
 
     Root::empty();
 
-    Ensure( Root::isEmpty() );
-    Ensure( Root::allocatedSize() > sizeof(int) );
+    MCLS_ENSURE( Root::isEmpty() );
+    MCLS_ENSURE( Root::allocatedSize() > sizeof(int) );
 }
 
 //---------------------------------------------------------------------------//
@@ -165,8 +165,8 @@ void SendHistoryBuffer<HT>::send( int rank )
 template<class HT>
 void SendHistoryBuffer<HT>::post( int rank )
 {
-    Require( !Base::d_comm_nonblocking.is_null() );
-    Require( Root::allocatedSize() > sizeof(int) );
+    MCLS_REQUIRE( !Base::d_comm_nonblocking.is_null() );
+    MCLS_REQUIRE( Root::allocatedSize() > sizeof(int) );
 
     Root::writeNumToBuffer();
     Base::d_handle = Teuchos::isend<int,char>( 
@@ -182,7 +182,7 @@ void SendHistoryBuffer<HT>::post( int rank )
 template<class HT>
 void SendHistoryBuffer<HT>::wait()
 {
-    Require( !Base::d_comm_nonblocking.is_null() );
+    MCLS_REQUIRE( !Base::d_comm_nonblocking.is_null() );
 
     Teuchos::Ptr<Teuchos::RCP<typename Base::Request> > 
 	request_ptr( &this->d_handle );
@@ -191,9 +191,9 @@ void SendHistoryBuffer<HT>::wait()
 
     Root::empty();
 
-    Ensure( Base::d_handle.is_null() );
-    Ensure( Root::isEmpty() );
-    Ensure( Root::allocatedSize() > sizeof(int) );
+    MCLS_ENSURE( Base::d_handle.is_null() );
+    MCLS_ENSURE( Root::isEmpty() );
+    MCLS_ENSURE( Root::allocatedSize() > sizeof(int) );
 }
 
 //---------------------------------------------------------------------------//
@@ -203,15 +203,15 @@ void SendHistoryBuffer<HT>::wait()
 template<class HT>
 bool SendHistoryBuffer<HT>::check()
 {
-    Require( !Base::d_comm_nonblocking.is_null() );
+    MCLS_REQUIRE( !Base::d_comm_nonblocking.is_null() );
 
     if ( CommTools::isRequestComplete(Base::d_handle) )
     {
 	Root::empty();
 	Base::d_handle = Teuchos::null;
 
-	Ensure( Base::d_handle.is_null() );
-	Ensure( Root::isEmpty() );
+	MCLS_ENSURE( Base::d_handle.is_null() );
+	MCLS_ENSURE( Root::isEmpty() );
 	return true;
     }
 

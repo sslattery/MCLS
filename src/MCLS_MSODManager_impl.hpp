@@ -65,8 +65,8 @@ MSODManager<Source>::MSODManager( const bool primary_set,
     , d_set_id( -1 )
     , d_block_id( -1 )
 {
-    Require( !d_global_comm.is_null() );
-    Require( d_num_sets > 0 );
+    MCLS_REQUIRE( !d_global_comm.is_null() );
+    MCLS_REQUIRE( d_num_sets > 0 );
 
     // Get the set size. We could compute this value from user input, but we
     // must Insist that this is true every time and therefore we do this
@@ -75,26 +75,26 @@ MSODManager<Source>::MSODManager( const bool primary_set,
     int local_size = Teuchos::as<int>( primary_set );
     Teuchos::reduceAll<int,int>( *d_global_comm, Teuchos::REDUCE_SUM,
 				 local_size, Teuchos::Ptr<int>(&d_set_size) );
-    Insist( d_num_sets * d_set_size == d_global_comm->getSize(),
-	    "Size of set * Number of sets != Global communicator size!" );
-    Check( d_set_size > 0 );
+    MCLS_INSIST( d_num_sets * d_set_size == d_global_comm->getSize(),
+                 "Size of set * Number of sets != Global communicator size!" );
+    MCLS_CHECK( d_set_size > 0 );
 
     // The number of blocks will be equal to the set size.
     d_num_blocks = d_set_size;
-    Check( d_num_blocks * d_block_size == d_global_comm->getSize() );
+    MCLS_CHECK( d_num_blocks * d_block_size == d_global_comm->getSize() );
 
     // We require that the primary domain exist on global procs 0 through
     // (d_set_size-1). If the primary domain exists, it is also the local
     // domain. The same requirements are also applied to the primary source.
     if ( d_global_comm->getRank() < d_set_size )
     {
-	Insist( primary_set,
-		"Primary set must exist on procs [0,(set_size-1)] only!" );
+	MCLS_INSIST( primary_set,
+                     "Primary set must exist on procs [0,(set_size-1)] only!" );
     }
     else
     {
-	Insist( !primary_set,
-		"Primary set must exist on procs [0,(set_size-1)] only!" );
+	MCLS_INSIST( !primary_set,
+                     "Primary set must exist on procs [0,(set_size-1)] only!" );
     }
 
     // Barrier before proceeding.
@@ -120,15 +120,15 @@ void MSODManager<Source>::setDomain(
 {
     if ( d_set_id == 0 )
     {
-	Insist( !primary_domain.is_null(),
-		"Primary domain must exist on set 0!" );
+	MCLS_INSIST( !primary_domain.is_null(),
+                     "Primary domain must exist on set 0!" );
 
 	d_local_domain = primary_domain;
     }
     else
     {
-	Insist( primary_domain.is_null(),
-		"Primary domain must exist on set 0 only!" );
+	MCLS_INSIST( primary_domain.is_null(),
+                     "Primary domain must exist on set 0 only!" );
     }
 
     broadcastDomain();
@@ -143,19 +143,19 @@ void MSODManager<Source>::setSource(
     const Teuchos::RCP<Source>& primary_source,
     const Teuchos::RCP<RNGControl>& rng_control )
 {
-    Require( !rng_control.is_null() );
+    MCLS_REQUIRE( !rng_control.is_null() );
 
     if ( d_set_id == 0 )
     {
-	Insist( !primary_source.is_null(),
-		"Primary source must exist on set 0!" );
+	MCLS_INSIST( !primary_source.is_null(),
+                     "Primary source must exist on set 0!" );
 
 	d_local_source = primary_source;
     }
     else
     {
-	Insist( primary_source.is_null(),
-		"Primary source must exist on set 0 only!" );
+	MCLS_INSIST( primary_source.is_null(),
+                     "Primary source must exist on set 0 only!" );
     }
 
     broadcastSource( rng_control );
@@ -168,8 +168,8 @@ void MSODManager<Source>::setSource(
 template<class Source>
 void MSODManager<Source>::buildSetComms()
 {
-    Require( d_set_size > 0 );
-    Require( d_num_sets > 0 );
+    MCLS_REQUIRE( d_set_size > 0 );
+    MCLS_REQUIRE( d_num_sets > 0 );
 
     Teuchos::Array<int> subcomm_ranks( d_set_size );
     Teuchos::RCP<const Comm> set_comm;
@@ -189,8 +189,8 @@ void MSODManager<Source>::buildSetComms()
 	}
     }
 
-    Ensure( !d_set_comm.is_null() );
-    Ensure( d_set_id >= 0 );
+    MCLS_ENSURE( !d_set_comm.is_null() );
+    MCLS_ENSURE( d_set_id >= 0 );
 }
 
 //---------------------------------------------------------------------------//
@@ -200,8 +200,8 @@ void MSODManager<Source>::buildSetComms()
 template<class Source>
 void MSODManager<Source>::buildBlockComms()
 {
-    Require( d_block_size > 0 );
-    Require( d_num_blocks > 0 );
+    MCLS_REQUIRE( d_block_size > 0 );
+    MCLS_REQUIRE( d_num_blocks > 0 );
 
     Teuchos::Array<int> subcomm_ranks( d_block_size );
     Teuchos::RCP<const Comm> block_comm;
@@ -221,8 +221,8 @@ void MSODManager<Source>::buildBlockComms()
 	}
     }
 
-    Ensure( !d_block_comm.is_null() );
-    Ensure( d_block_id >= 0 );
+    MCLS_ENSURE( !d_block_comm.is_null() );
+    MCLS_ENSURE( d_block_id >= 0 );
 }
 
 //---------------------------------------------------------------------------//
@@ -232,15 +232,15 @@ void MSODManager<Source>::buildBlockComms()
 template<class Source>
 void MSODManager<Source>::broadcastDomain()
 {
-    Require( !d_set_comm.is_null() );
-    Require( !d_block_comm.is_null() );
-    Require( d_set_id >= 0 );
+    MCLS_REQUIRE( !d_set_comm.is_null() );
+    MCLS_REQUIRE( !d_block_comm.is_null() );
+    MCLS_REQUIRE( d_set_id >= 0 );
 
     // Get the byte size of the domain from the primary set.
     std::size_t buffer_size = 0;
     if ( d_set_id == 0 )
     {
-	Check( !d_local_domain.is_null() );
+	MCLS_CHECK( !d_local_domain.is_null() );
 	buffer_size = DT::getPackedBytes( *d_local_domain );
     }
     d_block_comm->barrier();
@@ -248,15 +248,15 @@ void MSODManager<Source>::broadcastDomain()
     // Broadcast the buffer size across the blocks.
     Teuchos::broadcast<int,std::size_t>( 
 	*d_block_comm, 0, Teuchos::Ptr<std::size_t>(&buffer_size) );
-    Check( buffer_size > 0 );
+    MCLS_CHECK( buffer_size > 0 );
 
     // Pack the primary domain.
     Teuchos::Array<char> domain_buffer( buffer_size );
     if ( d_set_id == 0 )
     {
-	Check( !d_local_domain.is_null() );
+	MCLS_CHECK( !d_local_domain.is_null() );
 	domain_buffer = DT::pack( *d_local_domain );
-	Check( Teuchos::as<std::size_t>(domain_buffer.size()) == buffer_size );
+	MCLS_CHECK( Teuchos::as<std::size_t>(domain_buffer.size()) == buffer_size );
     }
     d_block_comm->barrier();
 
@@ -269,7 +269,7 @@ void MSODManager<Source>::broadcastDomain()
     // Barrier before continuing.
     d_block_comm->barrier();
 
-    Ensure( !d_local_domain.is_null() );
+    MCLS_ENSURE( !d_local_domain.is_null() );
 }
 
 //---------------------------------------------------------------------------//
@@ -280,17 +280,17 @@ template<class Source>
 void MSODManager<Source>::broadcastSource( 
     const Teuchos::RCP<RNGControl>& rng_control )
 {
-    Require( !rng_control.is_null() );
-    Require( !d_set_comm.is_null() );
-    Require( !d_block_comm.is_null() );
-    Require( !d_local_domain.is_null() );
-    Require( d_set_id >= 0 ); 
+    MCLS_REQUIRE( !rng_control.is_null() );
+    MCLS_REQUIRE( !d_set_comm.is_null() );
+    MCLS_REQUIRE( !d_block_comm.is_null() );
+    MCLS_REQUIRE( !d_local_domain.is_null() );
+    MCLS_REQUIRE( d_set_id >= 0 ); 
 
     // Get the byte size of the source from the primary set.
     std::size_t buffer_size = 0;
     if ( d_set_id == 0 )
     {
-	Check( !d_local_source.is_null() );
+	MCLS_CHECK( !d_local_source.is_null() );
 	buffer_size = ST::getPackedBytes( *d_local_source );
     }
     d_block_comm->barrier();
@@ -298,15 +298,15 @@ void MSODManager<Source>::broadcastSource(
     // Broadcast the buffer size across the blocks.
     Teuchos::broadcast<int,std::size_t>( 
 	*d_block_comm, 0, Teuchos::Ptr<std::size_t>(&buffer_size) );
-    Check( buffer_size > 0 );
+    MCLS_CHECK( buffer_size > 0 );
 
     // Pack the primary source.
     Teuchos::Array<char> source_buffer( buffer_size );
     if ( d_set_id == 0 )
     {
-	Check( !d_local_source.is_null() );
+	MCLS_CHECK( !d_local_source.is_null() );
 	source_buffer = ST::pack( *d_local_source );
-	Check( Teuchos::as<std::size_t>(source_buffer.size()) == buffer_size );
+	MCLS_CHECK( Teuchos::as<std::size_t>(source_buffer.size()) == buffer_size );
     }
     d_block_comm->barrier();
 
@@ -324,7 +324,7 @@ void MSODManager<Source>::broadcastSource(
     // Barrier before continuing.
     d_block_comm->barrier();
 
-    Ensure( !d_local_source.is_null() );
+    MCLS_ENSURE( !d_local_source.is_null() );
 }
 
 //---------------------------------------------------------------------------//

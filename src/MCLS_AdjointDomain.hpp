@@ -189,13 +189,13 @@ template<class Vector, class Matrix>
 inline void AdjointDomain<Vector,Matrix>::processTransition( 
     HistoryType& history ) const
 {
-    Require( history.alive() );
-    Require( TRANSITION == history.event() );
-    Require( isLocalState(history.state()) );
+    MCLS_REQUIRE( history.alive() );
+    MCLS_REQUIRE( TRANSITION == history.event() );
+    MCLS_REQUIRE( isLocalState(history.state()) );
 
     typename MapType::const_iterator index = 
 	d_row_indexer.find( history.state() );
-    Check( index != d_row_indexer.end() );
+    MCLS_CHECK( index != d_row_indexer.end() );
 
     // Sample the row CDF to get a new state.
     history.setState( 

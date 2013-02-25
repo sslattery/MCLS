@@ -61,7 +61,7 @@ SPRNG::SPRNG( const Teuchos::ArrayView<char>& state_buffer )
     : d_stream_id( 0 )
     , d_stream( 0 )
 {
-    Require( Teuchos::as<std::size_t>(state_buffer.size()) >= 
+    MCLS_REQUIRE( Teuchos::as<std::size_t>(state_buffer.size()) >= 
 	     Teuchos::as<std::size_t>(2 * sizeof(int)) );
 
     Deserializer ds;
@@ -69,8 +69,8 @@ SPRNG::SPRNG( const Teuchos::ArrayView<char>& state_buffer )
 
     int rng_size = 0;
     ds >> d_stream >> rng_size;
-    Check( d_stream >= 0 );
-    Check( rng_size >= 0 );
+    MCLS_CHECK( d_stream >= 0 );
+    MCLS_CHECK( rng_size >= 0 );
 
     char* prng = new char[rng_size];
     for ( int i = 0; i < rng_size; ++i )
@@ -83,8 +83,8 @@ SPRNG::SPRNG( const Teuchos::ArrayView<char>& state_buffer )
     d_stream_id = new SPRNGValue( rng_id );
 
     delete [] prng;
-    Ensure( ds.getPtr() == state_buffer.getRawPtr() + state_buffer.size() );
-    Ensure( d_stream_id );
+    MCLS_ENSURE( ds.getPtr() == state_buffer.getRawPtr() + state_buffer.size() );
+    MCLS_ENSURE( d_stream_id );
 }
 
 //---------------------------------------------------------------------------//
@@ -112,13 +112,13 @@ SPRNG& SPRNG::operator=(const SPRNG &rhs)
  */
 Teuchos::Array<char> SPRNG::pack() const
 {
-    Require( d_stream_id );
+    MCLS_REQUIRE( d_stream_id );
 
     Serializer s;
     char* prng = 0;
     int rng_size = pack_sprng( d_stream_id->d_id, &prng );
     int size = rng_size + 2 * sizeof(int);
-    Check( prng );
+    MCLS_CHECK( prng );
 
     Teuchos::Array<char> state_buffer( size );
     s.setBuffer( state_buffer() );
@@ -132,7 +132,7 @@ Teuchos::Array<char> SPRNG::pack() const
 
     std::free( prng );
 
-    Ensure( s.getPtr() == state_buffer.getRawPtr() + size );
+    MCLS_ENSURE( s.getPtr() == state_buffer.getRawPtr() + size );
     return state_buffer;
 }
 
@@ -142,7 +142,7 @@ Teuchos::Array<char> SPRNG::pack() const
  */
 std::size_t SPRNG::getSize() const
 {
-    Require( d_stream_id );
+    MCLS_REQUIRE( d_stream_id );
 
     if ( d_packed_size > 0 )
     {

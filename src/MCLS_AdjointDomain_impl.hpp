@@ -63,15 +63,15 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     const Teuchos::RCP<Vector>& x,
     const Teuchos::ParameterList& plist )
 {
-    Require( !A.is_null() );
-    Require( !x.is_null() );
+    MCLS_REQUIRE( !A.is_null() );
+    MCLS_REQUIRE( !x.is_null() );
 
     // Generate the transpose of the operator.
     Teuchos::RCP<Matrix> A_T = MT::copyTranspose( *A );
 
     // Generate the overlap for the transpose operator.
     int num_overlap = plist.get<int>( "Overlap Size" );
-    Require( num_overlap >= 0 );
+    MCLS_REQUIRE( num_overlap >= 0 );
     Teuchos::RCP<Matrix> A_T_overlap = 
 	MT::copyNearestNeighbors( *A_T, num_overlap );
 
@@ -109,7 +109,7 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     distributor.createFromSends( d_send_ranks() );
     d_receive_ranks = distributor.getImagesFrom();
 
-    Ensure( !d_tally.is_null() );
+    MCLS_ENSURE( !d_tally.is_null() );
 }
 
 //---------------------------------------------------------------------------//
@@ -138,28 +138,28 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 
     // Unpack the local number of rows.
     ds >> num_rows;
-    Check( num_rows > 0 );
+    MCLS_CHECK( num_rows > 0 );
 
     // Unpack the number of receive neighbors.
     ds >> num_receives;
-    Check( num_receives >= 0 );
+    MCLS_CHECK( num_receives >= 0 );
 
     // Unpack the number of send neighbors.
     ds >> num_sends;
-    Check( num_sends >= 0 );
+    MCLS_CHECK( num_sends >= 0 );
 
     // Unpack the number of boundary states.
     ds >> num_bnd;
-    Check( num_bnd >= 0 );
+    MCLS_CHECK( num_bnd >= 0 );
 
     // Unpack the number of base rows in the tally.
     ds >> num_base;
-    Check( num_base > 0 );
+    MCLS_CHECK( num_base > 0 );
 
     // Unpack the number of overlap rows in the tally.
     ds >> num_overlap;
-    Check( num_overlap >= 0 );
-    Check( num_base + num_overlap == num_rows );
+    MCLS_CHECK( num_overlap >= 0 );
+    MCLS_CHECK( num_base + num_overlap == num_rows );
 
     // Unpack the local row indexer by key-value pairs.
     Ordinal global_row = 0;
@@ -271,7 +271,7 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 	ds >> *overlap_it;
     }
 
-    Check( ds.end() == ds.getPtr() );
+    MCLS_CHECK( ds.end() == ds.getPtr() );
 
     // Build the tally.
     Teuchos::RCP<Vector> base_x = 
@@ -280,7 +280,7 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 	VT::createFromRows( set_comm, overlap_rows() );
     d_tally = Teuchos::rcp( new TallyType(base_x, overlap_x) );
 
-    Ensure( !d_tally.is_null() );
+    MCLS_ENSURE( !d_tally.is_null() );
 }
 
 //---------------------------------------------------------------------------//
@@ -292,7 +292,7 @@ Teuchos::Array<char> AdjointDomain<Vector,Matrix>::pack() const
 {
     // Get the byte size of the buffer.
     std::size_t packed_bytes = getPackedBytes();
-    Check( packed_bytes );
+    MCLS_CHECK( packed_bytes );
 
     // Build the buffer and set it with the serializer.
     Teuchos::Array<char> buffer( packed_bytes );
@@ -418,7 +418,7 @@ Teuchos::Array<char> AdjointDomain<Vector,Matrix>::pack() const
 	s << *overlap_it;
     }
 
-    Ensure( s.end() == s.getPtr() );
+    MCLS_ENSURE( s.end() == s.getPtr() );
 
     return buffer;
 }
@@ -562,7 +562,7 @@ std::size_t AdjointDomain<Vector,Matrix>::getPackedBytes() const
 template<class Vector, class Matrix>
 int AdjointDomain<Vector,Matrix>::receiveNeighborRank( int n ) const
 {
-    Require( n >= 0 && n < d_receive_ranks.size() );
+    MCLS_REQUIRE( n >= 0 && n < d_receive_ranks.size() );
     return d_receive_ranks[n];
 }
 
@@ -573,7 +573,7 @@ int AdjointDomain<Vector,Matrix>::receiveNeighborRank( int n ) const
 template<class Vector, class Matrix>
 int AdjointDomain<Vector,Matrix>::sendNeighborRank( int n ) const
 {
-    Require( n >= 0 && n < d_send_ranks.size() );
+    MCLS_REQUIRE( n >= 0 && n < d_send_ranks.size() );
     return d_send_ranks[n];
 }
 
@@ -586,7 +586,7 @@ template<class Vector, class Matrix>
 int AdjointDomain<Vector,Matrix>::owningNeighbor( const Ordinal& state ) const
 {
     typename MapType::const_iterator neighbor = d_bnd_to_neighbor.find( state );
-    Require( neighbor != d_bnd_to_neighbor.end() );
+    MCLS_REQUIRE( neighbor != d_bnd_to_neighbor.end() );
     return neighbor->second;
 }
 
@@ -598,7 +598,7 @@ template<class Vector, class Matrix>
 void AdjointDomain<Vector,Matrix>::addMatrixToDomain( 
     const Teuchos::RCP<const Matrix>& A )
 {
-    Require( !A.is_null() );
+    MCLS_REQUIRE( !A.is_null() );
 
     Ordinal local_num_rows = MT::getLocalNumRows( *A );
     Ordinal global_row = 0;
@@ -626,7 +626,7 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
 			      num_entries );
 
 	// Check for degeneracy.
-	Check( num_entries > 0 );
+	MCLS_CHECK( num_entries > 0 );
 
 	// Resize local column and CDF arrays for this row.
 	d_columns[i+offset].resize( num_entries );
@@ -657,7 +657,7 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
 	// The final value in the non-normalized CDF is the weight for this
 	// row. This is the absolute value row sum of the iteration matrix.
 	d_weights[i+offset] = d_cdfs[i+offset].back();
-	Check( d_weights[i+offset] >= 0 );
+	MCLS_CHECK( d_weights[i+offset] >= 0 );
 
 	// Normalize the CDF for the row.
 	for ( cdf_iterator = d_cdfs[i+offset].begin();
@@ -665,10 +665,10 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
 	      ++cdf_iterator )
 	{
 	    *cdf_iterator /= d_weights[i+offset];
-	    Check( *cdf_iterator >= 0.0 );
+	    MCLS_CHECK( *cdf_iterator >= 0.0 );
 	}
 
-	Check( std::abs(1.0 - d_cdfs[i+offset].back()) < 1.0e-6 );
+	MCLS_CHECK( std::abs(1.0 - d_cdfs[i+offset].back()) < 1.0e-6 );
     }
 }
 
@@ -681,7 +681,7 @@ void AdjointDomain<Vector,Matrix>::buildBoundary(
     const Teuchos::RCP<const Matrix>& A,
     const Teuchos::RCP<const Matrix>& base_A )
 {
-    Require( !A.is_null() );
+    MCLS_REQUIRE( !A.is_null() );
 
     // Get the next set of off-process rows. This is the boundary. If we
     // transition to these then we have left the local domain.
@@ -712,7 +712,7 @@ void AdjointDomain<Vector,Matrix>::buildBoundary(
 	  bnd_row_it != boundary_rows.end();
 	  ++bnd_row_it, ++bnd_rank_it )
     {
-	Check( *bnd_rank_it != -1 );
+	MCLS_CHECK( *bnd_rank_it != -1 );
 
 	// Look for the owning process in the send rank array.
 	send_rank_it = std::find( d_send_ranks.begin(), 
@@ -736,7 +736,7 @@ void AdjointDomain<Vector,Matrix>::buildBoundary(
 	}
     }
 
-    Ensure( d_bnd_to_neighbor.size() == 
+    MCLS_ENSURE( d_bnd_to_neighbor.size() == 
 	    Teuchos::as<std::size_t>(boundary_rows.size()) );
 }
 

@@ -71,7 +71,7 @@ class CommTools
 	bool is_complete = false;
 
 #ifdef HAVE_MPI
-	Require( !handle.is_null() );
+	MCLS_REQUIRE( !handle.is_null() );
 	Teuchos::ArrayView<char>::size_type num_bytes = 
 	    Teuchos::rcp_dynamic_cast<Teuchos::MpiCommRequest<int> >( 
 		handle )->numBytes();

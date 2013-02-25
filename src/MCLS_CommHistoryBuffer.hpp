@@ -74,7 +74,7 @@ class CommHistoryBuffer : public HistoryBuffer<HT>
     //! Default constructor.
     CommHistoryBuffer()
 	: d_handle( Teuchos::null )
-    { Ensure( Base::isEmpty() ); }
+    { MCLS_ENSURE( Base::isEmpty() ); }
 
     //! Comm constructor.
     CommHistoryBuffer( const Teuchos::RCP<const Comm>& comm_blocking,
@@ -82,7 +82,7 @@ class CommHistoryBuffer : public HistoryBuffer<HT>
 	: d_handle( Teuchos::null )
 	, d_comm_blocking( comm_blocking )
 	, d_comm_nonblocking( comm_nonblocking )
-    { Ensure( Base::isEmpty() ); }
+    { MCLS_ENSURE( Base::isEmpty() ); }
 
     //! Size constructor.
     CommHistoryBuffer( const Teuchos::RCP<const Comm>& comm_blocking,
@@ -93,8 +93,8 @@ class CommHistoryBuffer : public HistoryBuffer<HT>
 	, d_comm_blocking( comm_blocking )
 	, d_comm_nonblocking( comm_nonblocking )
     {
-	Ensure( Base::isEmpty() );
-	Ensure( Base::allocatedSize() > 0 );
+	MCLS_ENSURE( Base::isEmpty() );
+	MCLS_ENSURE( Base::allocatedSize() > 0 );
     }
 
     // Pure virtual destructor.
@@ -114,8 +114,8 @@ class CommHistoryBuffer : public HistoryBuffer<HT>
     {
 	d_handle = Teuchos::null;
 	Base::empty();
-	Ensure( Base::isEmpty() );
-	Ensure( d_handle.is_null() );
+	MCLS_ENSURE( Base::isEmpty() );
+	MCLS_ENSURE( d_handle.is_null() );
     }
 
     //! Check the status of a non-blocking communication buffer.
@@ -128,8 +128,8 @@ class CommHistoryBuffer : public HistoryBuffer<HT>
     { 
 	d_comm_blocking = comm_blocking; 
 	d_comm_nonblocking = comm_nonblocking; 
-	Ensure( !d_comm_blocking.is_null() );
-	Ensure( !d_comm_nonblocking.is_null() );
+	MCLS_ENSURE( !d_comm_blocking.is_null() );
+	MCLS_ENSURE( !d_comm_nonblocking.is_null() );
     }
 
   protected:
@@ -170,13 +170,13 @@ class ReceiveHistoryBuffer : public CommHistoryBuffer<HT>
 
     //! Default constructor.
     ReceiveHistoryBuffer()
-    { Ensure( Base::isEmpty() ); }
+    { MCLS_ENSURE( Base::isEmpty() ); }
 
     //! Comm constructor.
     ReceiveHistoryBuffer( const Teuchos::RCP<const Comm>& comm_blocking,
 			  const Teuchos::RCP<const Comm>& comm_nonblocking )
 	: Base( comm_blocking, comm_nonblocking )
-    { Ensure( Base::isEmpty() ); }
+    { MCLS_ENSURE( Base::isEmpty() ); }
 
     //! Size constructor.
     ReceiveHistoryBuffer( const Teuchos::RCP<const Comm>& comm_blocking,
@@ -184,8 +184,8 @@ class ReceiveHistoryBuffer : public CommHistoryBuffer<HT>
 			  std::size_t size, int num_history )
 	: Base( comm_blocking, comm_nonblocking, size, num_history )
     {
-	Ensure( Base::isEmpty() );
-	Ensure( Base::allocatedSize() > 0 );
+	MCLS_ENSURE( Base::isEmpty() );
+	MCLS_ENSURE( Base::allocatedSize() > 0 );
     }
 
     //! Destructor.
@@ -228,13 +228,13 @@ class SendHistoryBuffer : public CommHistoryBuffer<HT>
 
     //! Default constructor.
     SendHistoryBuffer()
-    { Ensure( Base::isEmpty() ); }
+    { MCLS_ENSURE( Base::isEmpty() ); }
 
     //! Comm constructor.
     SendHistoryBuffer( const Teuchos::RCP<const Comm>& comm_blocking,
 		       const Teuchos::RCP<const Comm>& comm_nonblocking )
 	: Base( comm_blocking, comm_nonblocking )
-    { Ensure( Base::isEmpty() ); }
+    { MCLS_ENSURE( Base::isEmpty() ); }
 
     //! Size constructor.
     SendHistoryBuffer( const Teuchos::RCP<const Comm>& comm_blocking,
@@ -242,8 +242,8 @@ class SendHistoryBuffer : public CommHistoryBuffer<HT>
 		       std::size_t size, int num_history )
 	: Base( comm_blocking, comm_nonblocking, size, num_history )
     {
-	Ensure( Base::isEmpty() );
-	Ensure( Base::allocatedSize() > 0 );
+	MCLS_ENSURE( Base::isEmpty() );
+	MCLS_ENSURE( Base::allocatedSize() > 0 );
     }
 
     //! Destructor.

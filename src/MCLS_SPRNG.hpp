@@ -125,21 +125,21 @@ class SPRNG
     //! Get a random number.
     double random() const
     {
-	Require( d_stream_id );
+	MCLS_REQUIRE( d_stream_id );
 	return sprng( d_stream_id->d_id );
     }
 
     //! Get the SPRNG ID pointer.
     int* getID() const
     {
-	Require( d_stream_id );
+	MCLS_REQUIRE( d_stream_id );
 	return d_stream_id->d_id;
     }
 
     //! Get the stream number index.
     int getIndex() const
     {
-	Require( d_stream_id );
+	MCLS_REQUIRE( d_stream_id );
 	return d_stream;
     }
 
@@ -149,7 +149,7 @@ class SPRNG
     //! Print diagnostics.
     void print() const
     {
-	Require( d_stream_id );
+	MCLS_REQUIRE( d_stream_id );
 	print_sprng( d_stream_id->d_id );
     }
 

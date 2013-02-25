@@ -142,8 +142,8 @@ class LinearProblemAdapter : public LinearProblemBase<
     //! Get a subproblem given a LHS/RHS id.
     Teuchos::RCP<LinearProblem<Vector,Matrix> > getSubProblem( const int id )
     {
-	Require( id < MVT::getNumVectors(*d_x) );
-	Require( id < MVT::getNumVectors(*d_b) );
+	MCLS_REQUIRE( id < MVT::getNumVectors(*d_x) );
+	MCLS_REQUIRE( id < MVT::getNumVectors(*d_b) );
 
 	Teuchos::RCP<Vector> vector_x = MVT::getVectorNonConst( *d_x, id );
 	Teuchos::RCP<const Vector> vector_b = MVT::getVector( *d_b, id );
@@ -178,7 +178,7 @@ class LinearProblemAdapter : public LinearProblemBase<
     void setLHS( const Teuchos::RCP<typename Base::multivector_type>& x )
     { 
 	d_x = MVT::getMultiVectorFromThyra( x );
-	Ensure( Teuchos::nonnull(d_x) );
+	MCLS_ENSURE( Teuchos::nonnull(d_x) );
     }
 
     //! Set the right-hand side.
@@ -188,7 +188,7 @@ class LinearProblemAdapter : public LinearProblemBase<
     void setRHS( const Teuchos::RCP<const typename Base::multivector_type>& b )
     { 
 	d_b = MVT::getConstMultiVectorFromThyra( b );
-	Ensure( Teuchos::nonnull(d_b) );
+	MCLS_ENSURE( Teuchos::nonnull(d_b) );
     }
 
     //! Get the linear operator.

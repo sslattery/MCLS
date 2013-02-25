@@ -57,7 +57,7 @@ namespace MCLS
 template<class Ordinal>
 History<Ordinal>::History( const Teuchos::ArrayView<char>& buffer )
 {
-    Require( Teuchos::as<std::size_t>(buffer.size()) == d_packed_bytes );
+    MCLS_REQUIRE( Teuchos::as<std::size_t>(buffer.size()) == d_packed_bytes );
 
     if ( d_packed_rng > 0 )
     {
@@ -72,7 +72,7 @@ History<Ordinal>::History( const Teuchos::ArrayView<char>& buffer )
     ds >> d_state >> d_weight >> balive >> d_event;
     d_alive = static_cast<bool>(balive);
 
-    Ensure( ds.getPtr() == ds.end() );
+    MCLS_ENSURE( ds.getPtr() == ds.end() );
 }
 
 //---------------------------------------------------------------------------//
@@ -82,15 +82,15 @@ History<Ordinal>::History( const Teuchos::ArrayView<char>& buffer )
 template<class Ordinal>
 Teuchos::Array<char> History<Ordinal>::pack() const
 {
-    Require( d_packed_bytes );
-    Require( d_packed_bytes - d_packed_rng > 0 );
+    MCLS_REQUIRE( d_packed_bytes );
+    MCLS_REQUIRE( d_packed_bytes - d_packed_rng > 0 );
 
     Teuchos::Array<char> buffer( d_packed_bytes );
 
     if ( d_packed_rng > 0 )
     {
 	Teuchos::Array<char> brng = d_rng.pack();
-	Check( Teuchos::as<std::size_t>(brng.size()) == d_packed_rng );
+	MCLS_CHECK( Teuchos::as<std::size_t>(brng.size()) == d_packed_rng );
 
 	std::copy( brng.begin(), brng.end(), buffer.begin() );
     }
@@ -99,7 +99,7 @@ Teuchos::Array<char> History<Ordinal>::pack() const
     s.setBuffer( d_packed_bytes - d_packed_rng, &buffer[d_packed_rng] );
     s << d_state << d_weight << static_cast<int>(d_alive) << d_event;
 
-    Ensure( s.getPtr() == s.end() );
+    MCLS_ENSURE( s.getPtr() == s.end() );
     return buffer;
 }
 
@@ -131,7 +131,7 @@ void History<Ordinal>::setByteSize( std::size_t size_rng_state )
 template<class Ordinal>
 std::size_t History<Ordinal>::getPackedBytes()
 {
-    Require( d_packed_bytes );
+    MCLS_REQUIRE( d_packed_bytes );
     return d_packed_bytes;
 }
 

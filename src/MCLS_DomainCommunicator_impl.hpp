@@ -66,12 +66,12 @@ DomainCommunicator<Domain>::DomainCommunicator(
     , d_num_send_neighbors( DT::numSendNeighbors(*d_domain) )
     , d_num_receive_neighbors( DT::numReceiveNeighbors(*d_domain) )
 {
-    Require( !d_domain.is_null() );
-    Require( !comm.is_null() );
-    Require( d_num_send_neighbors >= 0 );
-    Require( d_num_receive_neighbors >= 0 );
+    MCLS_REQUIRE( !d_domain.is_null() );
+    MCLS_REQUIRE( !comm.is_null() );
+    MCLS_REQUIRE( d_num_send_neighbors >= 0 );
+    MCLS_REQUIRE( d_num_receive_neighbors >= 0 );
 
-    Insist( HistoryType::getPackedBytes(), "Packed history size not set." );
+    MCLS_INSIST( HistoryType::getPackedBytes(), "Packed history size not set." );
     HistoryBufferType::setSizePackedHistory( HistoryType::getPackedBytes() );
 
     // Get the max number of histories that will be stored in each buffer.
@@ -110,9 +110,9 @@ const typename DomainCommunicator<Domain>::Result&
 DomainCommunicator<Domain>::communicate( 
     const Teuchos::RCP<HistoryType>& history )
 {
-    Require( !history.is_null() );
-    Require( history->event() == BOUNDARY );
-    Require( !history->alive() );
+    MCLS_REQUIRE( !history.is_null() );
+    MCLS_REQUIRE( history->event() == BOUNDARY );
+    MCLS_REQUIRE( !history->alive() );
 
     // Initialize result status.
     d_result.sent = false;
@@ -124,20 +124,20 @@ DomainCommunicator<Domain>::communicate(
 
     // Update the result destination.
     d_result.destination = DT::sendNeighborRank( *d_domain, neighbor_id );
-    Check( d_result.destination < d_size );
+    MCLS_CHECK( d_result.destination < d_size );
 
     // If the buffer is full send it.
     if ( d_sends[neighbor_id].isFull() )
     {
-	Check( d_sends[neighbor_id].numHistories() == 
+	MCLS_CHECK( d_sends[neighbor_id].numHistories() == 
 	       Teuchos::as<int>(maxBufferSize()) );
 
 	d_sends[neighbor_id].post( d_result.destination );
 	d_sends[neighbor_id].wait();
 
-	Check( d_sends[neighbor_id].isEmpty() );
-	Check( d_sends[neighbor_id].allocatedSize() > 0 );
-	Check( !d_sends[neighbor_id].status() );
+	MCLS_CHECK( d_sends[neighbor_id].isEmpty() );
+	MCLS_CHECK( d_sends[neighbor_id].allocatedSize() > 0 );
+	MCLS_CHECK( !d_sends[neighbor_id].status() );
 
 	d_result.sent = true;
     }
@@ -157,23 +157,23 @@ int DomainCommunicator<Domain>::send()
 
     for ( int n = 0; n < d_num_send_neighbors; ++n )
     {
-	Check( d_sends[n].allocatedSize() > 0 );
-	Check( DT::sendNeighborRank(*d_domain,n) < d_size );
+	MCLS_CHECK( d_sends[n].allocatedSize() > 0 );
+	MCLS_CHECK( DT::sendNeighborRank(*d_domain,n) < d_size );
 
 	if( !d_sends[n].isEmpty() )
 	{
-	    Check( d_sends[n].numHistories() > 0 );
+	    MCLS_CHECK( d_sends[n].numHistories() > 0 );
 
 	    num_sent += d_sends[n].numHistories();
 	    d_sends[n].post( DT::sendNeighborRank(*d_domain,n) );
 	    d_sends[n].wait();
 
-	    Check( num_sent > 0 );
+	    MCLS_CHECK( num_sent > 0 );
 	}
 
-	Ensure( d_sends[n].isEmpty() );
-	Ensure( d_sends[n].allocatedSize() > 0 );
-	Ensure( !d_sends[n].status() );
+	MCLS_ENSURE( d_sends[n].isEmpty() );
+	MCLS_ENSURE( d_sends[n].allocatedSize() > 0 );
+	MCLS_ENSURE( !d_sends[n].status() );
     }
 
     return num_sent;
@@ -190,16 +190,16 @@ int DomainCommunicator<Domain>::flush()
 
     for ( int n = 0; n < d_num_send_neighbors; ++n )
     {
-	Check( d_sends[n].allocatedSize() > 0 );
-	Check( DT::sendNeighborRank(*d_domain,n) < d_size );
+	MCLS_CHECK( d_sends[n].allocatedSize() > 0 );
+	MCLS_CHECK( DT::sendNeighborRank(*d_domain,n) < d_size );
 
 	num_sent += d_sends[n].numHistories();
 	d_sends[n].post( DT::sendNeighborRank(*d_domain,n) );
 	d_sends[n].wait();
 
-	Ensure( d_sends[n].isEmpty() );
-	Ensure( d_sends[n].allocatedSize() > 0 );
-	Ensure( !d_sends[n].status() );
+	MCLS_ENSURE( d_sends[n].isEmpty() );
+	MCLS_ENSURE( d_sends[n].allocatedSize() > 0 );
+	MCLS_ENSURE( !d_sends[n].status() );
     }
 
     return num_sent;
@@ -214,14 +214,14 @@ void DomainCommunicator<Domain>::post()
 {
     for ( int n = 0; n < d_num_receive_neighbors; ++n )
     {
-	Check( !d_receives[n].status() );
-	Check( d_receives[n].allocatedSize() > 0 );
-	Check( d_receives[n].isEmpty() );
-	Check( DT::receiveNeighborRank(*d_domain,n) < d_size );
+	MCLS_CHECK( !d_receives[n].status() );
+	MCLS_CHECK( d_receives[n].allocatedSize() > 0 );
+	MCLS_CHECK( d_receives[n].isEmpty() );
+	MCLS_CHECK( DT::receiveNeighborRank(*d_domain,n) < d_size );
 
 	d_receives[n].post( DT::receiveNeighborRank(*d_domain,n) );
 
-	Ensure( d_receives[n].status() );
+	MCLS_ENSURE( d_receives[n].status() );
     }
 }
 
@@ -236,14 +236,14 @@ int DomainCommunicator<Domain>::wait( BankType& bank )
 
     for ( int n = 0; n < d_num_receive_neighbors; ++n )
     {
-	Check( d_receives[n].allocatedSize() > 0 );
+	MCLS_CHECK( d_receives[n].allocatedSize() > 0 );
 
 	d_receives[n].wait();
 	num_received += d_receives[n].numHistories();
 	d_receives[n].addToBank( bank );
 
-	Ensure( !d_receives[n].status() );
-	Ensure( d_receives[n].isEmpty() );
+	MCLS_ENSURE( !d_receives[n].status() );
+	MCLS_ENSURE( d_receives[n].isEmpty() );
     }
 
     return num_received;
@@ -260,20 +260,20 @@ int DomainCommunicator<Domain>::checkAndPost( BankType& bank )
 
     for ( int n = 0; n < d_num_receive_neighbors; ++n )
     {
-	Check( d_receives[n].allocatedSize() > 0 );
-	Check( DT::receiveNeighborRank(*d_domain,n) < d_size );
+	MCLS_CHECK( d_receives[n].allocatedSize() > 0 );
+	MCLS_CHECK( DT::receiveNeighborRank(*d_domain,n) < d_size );
 
 	if( d_receives[n].check() )
 	{
 	    num_received += d_receives[n].numHistories();
 	    d_receives[n].addToBank( bank );
 
-	    Check( d_receives[n].isEmpty() );
-	    Check( !d_receives[n].status() );
+	    MCLS_CHECK( d_receives[n].isEmpty() );
+	    MCLS_CHECK( !d_receives[n].status() );
 
 	    d_receives[n].post( DT::receiveNeighborRank(*d_domain,n) );
 
-	    Ensure( d_receives[n].status() );
+	    MCLS_ENSURE( d_receives[n].status() );
 	}
     }
 
@@ -293,7 +293,7 @@ bool DomainCommunicator<Domain>::sendStatus()
       
     for ( int n = 0; n < d_num_send_neighbors; ++n )
     {
-	Check( d_sends[n].allocatedSize() > 0 );
+	MCLS_CHECK( d_sends[n].allocatedSize() > 0 );
 
 	if ( !d_sends[n].status() ) 
 	{
@@ -317,7 +317,7 @@ bool DomainCommunicator<Domain>::receiveStatus()
 
     for ( int n = 0; n < d_num_receive_neighbors; ++n )
     {
-	Check( d_receives[n].allocatedSize() > 0 );
+	MCLS_CHECK( d_receives[n].allocatedSize() > 0 );
 
 	if ( !d_receives[n].status() ) 
 	{
@@ -344,16 +344,16 @@ void DomainCommunicator<Domain>::end()
 
     for ( int n = 0; n < d_num_receive_neighbors; ++n )
     {
-	Check( d_receives[n].allocatedSize() > 0 );
+	MCLS_CHECK( d_receives[n].allocatedSize() > 0 );
 
 	d_receives[n].wait();
 	d_receives[n].empty();
 
-	Ensure( d_receives[n].isEmpty() );
+	MCLS_ENSURE( d_receives[n].isEmpty() );
     }
 
-    Ensure( !sendStatus() );
-    Ensure( !receiveStatus() );
+    MCLS_ENSURE( !sendStatus() );
+    MCLS_ENSURE( !receiveStatus() );
 }
 
 //---------------------------------------------------------------------------//
@@ -367,7 +367,7 @@ std::size_t DomainCommunicator<Domain>::sendBufferSize() const
 
     for ( int n = 0; n < d_num_send_neighbors; ++n )
     {
-	Check( d_sends[n].allocatedSize() > 0 );
+	MCLS_CHECK( d_sends[n].allocatedSize() > 0 );
 
 	send_num += d_sends[n].numHistories();
     }

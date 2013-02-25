@@ -135,8 +135,8 @@ class AdjointTally
 template<class Vector>
 inline void AdjointTally<Vector>::tallyHistory( const HistoryType& history )
 {
-    Require( history.alive() );
-    Require( VT::isGlobalRow( *d_x, history.state() ) ||
+    MCLS_REQUIRE( history.alive() );
+    MCLS_REQUIRE( VT::isGlobalRow( *d_x, history.state() ) ||
 	     VT::isGlobalRow( *d_x_overlap, history.state() ) );
 
     if ( VT::isGlobalRow( *d_x, history.state() ) )
@@ -152,9 +152,9 @@ inline void AdjointTally<Vector>::tallyHistory( const HistoryType& history )
 
     else
     {
-	Insist( VT::isGlobalRow( *d_x, history.state() ) ||
-		VT::isGlobalRow( *d_x_overlap, history.state() ),
-		"History state is not local to tally!" );
+	MCLS_INSIST( VT::isGlobalRow( *d_x, history.state() ) ||
+                     VT::isGlobalRow( *d_x_overlap, history.state() ),
+                     "History state is not local to tally!" );
     }
 }
 

@@ -60,8 +60,8 @@ DomainTransporter<Domain>::DomainTransporter(
     , d_tally( DT::domainTally(*d_domain) )
     , d_weight_cutoff( 0.0 )
 {
-    Require( !d_domain.is_null() );
-    Require( !d_tally.is_null() );
+    MCLS_REQUIRE( !d_domain.is_null() );
+    MCLS_REQUIRE( !d_tally.is_null() );
 }
 
 //---------------------------------------------------------------------------//
@@ -71,11 +71,11 @@ DomainTransporter<Domain>::DomainTransporter(
 template<class Domain>
 void DomainTransporter<Domain>::transport( HistoryType& history )
 {
-    Require( history.alive() );
-    Require( history.rng().assigned() );
-    Require( history.weightAbs() >= d_weight_cutoff );
-    Require( DT::isLocalState(*d_domain, history.state()) );
-    Require( d_weight_cutoff > 0.0 );
+    MCLS_REQUIRE( history.alive() );
+    MCLS_REQUIRE( history.rng().assigned() );
+    MCLS_REQUIRE( history.weightAbs() >= d_weight_cutoff );
+    MCLS_REQUIRE( DT::isLocalState(*d_domain, history.state()) );
+    MCLS_REQUIRE( d_weight_cutoff > 0.0 );
 
     // Set the history to transition.
     history.setEvent( TRANSITION );
@@ -85,10 +85,10 @@ void DomainTransporter<Domain>::transport( HistoryType& history )
     // domain. 
     while ( history.alive() )
     {
-	Check( history.event() == TRANSITION );
-	Check( history.weightAbs() >= d_weight_cutoff );
-	Check( history.weightAbs() < std::numeric_limits<double>::max() );
-	Check( DT::isLocalState(*d_domain, history.state()) );
+	MCLS_CHECK( history.event() == TRANSITION );
+	MCLS_CHECK( history.weightAbs() >= d_weight_cutoff );
+	MCLS_CHECK( history.weightAbs() < std::numeric_limits<double>::max() );
+	MCLS_CHECK( DT::isLocalState(*d_domain, history.state()) );
 
 	// Tally the history.
 	TT::tallyHistory( *d_tally, history );
@@ -111,8 +111,8 @@ void DomainTransporter<Domain>::transport( HistoryType& history )
 	}
     }
 
-    Ensure( !history.alive() );
-    Ensure( history.event() != TRANSITION );
+    MCLS_ENSURE( !history.alive() );
+    MCLS_ENSURE( history.event() != TRANSITION );
 }
 
 //---------------------------------------------------------------------------//

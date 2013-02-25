@@ -63,8 +63,8 @@ SequentialMCSolverManager<Vector,Matrix>::SequentialMCSolverManager(
     : d_global_comm( global_comm )
     , d_plist( plist )
 {
-    Require( !d_global_comm.is_null() );
-    Require( !d_plist.is_null() );
+    MCLS_REQUIRE( !d_global_comm.is_null() );
+    MCLS_REQUIRE( !d_plist.is_null() );
 }
 
 //---------------------------------------------------------------------------//
@@ -83,8 +83,8 @@ SequentialMCSolverManager<Vector,Matrix>::SequentialMCSolverManager(
     , d_num_iters( 0 )
     , d_converged_status( 0 )
 {
-    Require( !global_comm.is_null() );
-    Require( !d_plist.is_null() );
+    MCLS_REQUIRE( !global_comm.is_null() );
+    MCLS_REQUIRE( !d_plist.is_null() );
 
     buildResidualMonteCarloProblem();
 }
@@ -162,8 +162,8 @@ template<class Vector, class Matrix>
 void SequentialMCSolverManager<Vector,Matrix>::setProblem( 
     const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem )
 {
-    Require( !d_global_comm.is_null() );
-    Require( !d_plist.is_null() );
+    MCLS_REQUIRE( !d_global_comm.is_null() );
+    MCLS_REQUIRE( !d_plist.is_null() );
 
     // Set the problem.
     d_problem = problem;
@@ -207,8 +207,8 @@ template<class Vector, class Matrix>
 void SequentialMCSolverManager<Vector,Matrix>::setParameters( 
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
-    Require( Teuchos::nonnull(params) );
-    Require( Teuchos::nonnull(d_mc_solver) );
+    MCLS_REQUIRE( Teuchos::nonnull(params) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_mc_solver) );
 
     // Set the parameters.
     d_plist = params;
@@ -348,8 +348,8 @@ bool SequentialMCSolverManager<Vector,Matrix>::solve()
 template<class Vector, class Matrix>
 void SequentialMCSolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
 {
-    Require( Teuchos::nonnull(d_global_comm) );
-    Require( Teuchos::nonnull(d_plist) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
     // Generate the residual Monte Carlo problem on the primary set. The
     // unpreconditioned residual is the source.
@@ -379,14 +379,14 @@ void SequentialMCSolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
 		d_residual_problem, d_global_comm, d_plist) );
 
 	// Get the block constant communicator.
-	Check( Teuchos::nonnull(d_mc_solver) );
+	MCLS_CHECK( Teuchos::nonnull(d_mc_solver) );
 	d_block_comm = 
 	    Teuchos::rcp_dynamic_cast<AdjointSolverManager<Vector,Matrix> >(
 		d_mc_solver)->blockComm();
     }
 
-    Ensure( Teuchos::nonnull(d_mc_solver) );
-    Ensure( Teuchos::nonnull(d_block_comm) );
+    MCLS_ENSURE( Teuchos::nonnull(d_mc_solver) );
+    MCLS_ENSURE( Teuchos::nonnull(d_block_comm) );
 }
 
 //---------------------------------------------------------------------------//

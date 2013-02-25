@@ -73,13 +73,13 @@ SolverFactory<Vector,Matrix>::create(
     const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& solver_parameters )
 {
-    Require( !global_comm.is_null() );
-    Require( !solver_parameters.is_null() );
+    MCLS_REQUIRE( !global_comm.is_null() );
+    MCLS_REQUIRE( !solver_parameters.is_null() );
 
     Teuchos::RCP<Solver> solver;
 
     MapType::const_iterator id = d_name_map.find( solver_name );
-    Insist( id != d_name_map.end(), "Solver type not supported!" );
+    MCLS_INSIST( id != d_name_map.end(), "Solver type not supported!" );
 
     switch( id->second )
     {
@@ -107,7 +107,7 @@ SolverFactory<Vector,Matrix>::create(
 	    break;
     }
 
-    Ensure( !solver.is_null() );
+    MCLS_ENSURE( !solver.is_null() );
 
     return solver;
 }

@@ -78,9 +78,9 @@ class VectorExport<Epetra_Vector>
 	, d_export( new export_type( d_source_vector->Map(), 
 				     d_target_vector->Map() ) )
     {
-	Ensure( !d_source_vector.is_null() );
-	Ensure( !d_target_vector.is_null() );
-	Ensure( !d_export.is_null() );
+	MCLS_ENSURE( !d_source_vector.is_null() );
+	MCLS_ENSURE( !d_target_vector.is_null() );
+	MCLS_ENSURE( !d_export.is_null() );
     }
 
     /*!

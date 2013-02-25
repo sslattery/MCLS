@@ -135,7 +135,7 @@ class TpetraMatrixHelpers<Scalar,LO,GO,Tpetra::CrsMatrix<Scalar,LO,GO> >
      */
     static Teuchos::Array<GO> getOffProcColsAsRows( const matrix_type& matrix )
     { 
-	Require( matrix.isFillComplete() );
+	MCLS_REQUIRE( matrix.isFillComplete() );
 
 	Teuchos::RCP<const Tpetra::Map<LO,GO> > row_map = 
 	    matrix.getRowMap();
@@ -168,7 +168,7 @@ class TpetraMatrixHelpers<Scalar,LO,GO,Tpetra::CrsMatrix<Scalar,LO,GO> >
     importAndFillCompleteMatrix( const matrix_type& matrix, 
 				 const Tpetra::Import<LO,GO>& importer )
     {
-	Require( matrix.isFillComplete() );
+	MCLS_REQUIRE( matrix.isFillComplete() );
 
 	Teuchos::RCP<matrix_type> new_matrix = Teuchos::rcp(
 	    new matrix_type( importer.getTargetMap(), 0 ) );
@@ -176,7 +176,7 @@ class TpetraMatrixHelpers<Scalar,LO,GO,Tpetra::CrsMatrix<Scalar,LO,GO> >
 	new_matrix->doImport( matrix, importer, Tpetra::INSERT );
 	new_matrix->fillComplete( matrix.getDomainMap(), matrix.getRangeMap() );
 
-	Ensure( !new_matrix.is_null() );
+	MCLS_ENSURE( !new_matrix.is_null() );
 	return new_matrix;
     }
 };
@@ -205,7 +205,7 @@ class TpetraMatrixHelpers<Scalar,LO,GO,Tpetra::VbrMatrix<Scalar,LO,GO> >
      */
     static Teuchos::Array<GO> getOffProcColsAsRows( const matrix_type& matrix )
     { 
-	Require( matrix.isFillComplete() );
+	MCLS_REQUIRE( matrix.isFillComplete() );
 
 	Teuchos::RCP<const Tpetra::Map<LO,GO> > row_map = 
 	    matrix.getPointRowMap();

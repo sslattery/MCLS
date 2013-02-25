@@ -61,7 +61,7 @@ HistoryBuffer<HT>::HistoryBuffer( std::size_t size, int num_history )
     setSizePackedHistory( size );
     setMaxNumHistories( num_history );
     allocate();
-    Ensure( !d_buffer.empty() );
+    MCLS_ENSURE( !d_buffer.empty() );
 }
 
 //---------------------------------------------------------------------------//
@@ -72,10 +72,10 @@ HistoryBuffer<HT>::HistoryBuffer( std::size_t size, int num_history )
 template<class HT>
 void HistoryBuffer<HT>::allocate()
 {
-    Require( d_number == 0 );
+    MCLS_REQUIRE( d_number == 0 );
     d_buffer.resize( 
 	d_max_num_histories*d_size_packed_history + sizeof(int), '\0' );
-    Ensure( d_number == 0 );
+    MCLS_ENSURE( d_number == 0 );
 }
 
 //---------------------------------------------------------------------------//
@@ -85,9 +85,9 @@ void HistoryBuffer<HT>::allocate()
 template<class HT>
 void HistoryBuffer<HT>::deallocate()
 {
-    Require( d_number == 0 );
+    MCLS_REQUIRE( d_number == 0 );
     d_buffer.clear();
-    Ensure( d_number == 0 );
+    MCLS_ENSURE( d_number == 0 );
 }
 
 //---------------------------------------------------------------------------//
@@ -97,18 +97,18 @@ void HistoryBuffer<HT>::deallocate()
 template<class HT>
 void HistoryBuffer<HT>::bufferHistory( const HT& history )
 {
-    Require( d_size_packed_history > 0 );
-    Require( d_number < d_max_num_histories );
-    Require( d_number >= 0 );
-    Require( !d_buffer.empty() );
+    MCLS_REQUIRE( d_size_packed_history > 0 );
+    MCLS_REQUIRE( d_number < d_max_num_histories );
+    MCLS_REQUIRE( d_number >= 0 );
+    MCLS_REQUIRE( !d_buffer.empty() );
 
     Buffer packed_history = history.pack();
-    Check( Teuchos::as<std::size_t>(packed_history.size()) == 
+    MCLS_CHECK( Teuchos::as<std::size_t>(packed_history.size()) == 
 	   d_size_packed_history );
 
     Buffer::iterator buffer_it = d_buffer.begin() + 
 				 d_size_packed_history*d_number;
-    Require( buffer_it != d_buffer.end() );
+    MCLS_REQUIRE( buffer_it != d_buffer.end() );
 
     std::copy( packed_history.begin(), packed_history.end(), buffer_it );
     ++d_number;
@@ -121,13 +121,13 @@ void HistoryBuffer<HT>::bufferHistory( const HT& history )
 template<class HT>
 void HistoryBuffer<HT>::addToBank( BankType& bank )
 {
-    Require( d_size_packed_history > 0 );
+    MCLS_REQUIRE( d_size_packed_history > 0 );
 
     Buffer::const_iterator buffer_it = d_buffer.begin();
     Buffer packed_history( d_size_packed_history );
     Teuchos::RCP<HT> history;
 
-    Remember( std::size_t bank_size = bank.size() );
+    MCLS_REMEMBER( std::size_t bank_size = bank.size() );
 
     for ( int n = 0; n < d_number; ++n )
     {
@@ -135,19 +135,19 @@ void HistoryBuffer<HT>::addToBank( BankType& bank )
 		   packed_history.begin() );
 
 	history = Teuchos::rcp( new HT(packed_history) );
-	Check( !history.is_null() );
+	MCLS_CHECK( !history.is_null() );
 	bank.push( history );
 
 	buffer_it += d_size_packed_history;
     }
 
-    Ensure( bank_size + d_number == bank.size() );
-    Ensure( d_number == d_max_num_histories ?
+    MCLS_ENSURE( bank_size + d_number == bank.size() );
+    MCLS_ENSURE( d_number == d_max_num_histories ?
             buffer_it + sizeof(int) == d_buffer.end() :
             buffer_it + sizeof(int) != d_buffer.end() );
 
     empty();
-    Ensure( isEmpty() );
+    MCLS_ENSURE( isEmpty() );
 }
 
 //---------------------------------------------------------------------------//
@@ -159,11 +159,11 @@ void HistoryBuffer<HT>::addToBank( BankType& bank )
 template<class HT>
 void HistoryBuffer<HT>::writeNumToBuffer()
 {
-    Require( Teuchos::as<std::size_t>(d_buffer.size()) > sizeof(int) );
+    MCLS_REQUIRE( Teuchos::as<std::size_t>(d_buffer.size()) > sizeof(int) );
     Serializer s;
     s.setBuffer( sizeof(int), &d_buffer[d_buffer.size() - sizeof(int)] );
     s << d_number;
-    Ensure( s.getPtr() == &d_buffer[0] + d_buffer.size() );
+    MCLS_ENSURE( s.getPtr() == &d_buffer[0] + d_buffer.size() );
 }
 
 //---------------------------------------------------------------------------//
@@ -176,8 +176,8 @@ void HistoryBuffer<HT>::readNumFromBuffer()
     Deserializer ds;
     ds.setBuffer( sizeof(int), &d_buffer[d_buffer.size() - sizeof(int)] );
     ds >> d_number;
-    Ensure( ds.getPtr() == &d_buffer[0] + d_buffer.size() );
-    Ensure( d_number >= 0 );
+    MCLS_ENSURE( ds.getPtr() == &d_buffer[0] + d_buffer.size() );
+    MCLS_ENSURE( d_number >= 0 );
 }
 
 //---------------------------------------------------------------------------//
@@ -199,8 +199,8 @@ std::size_t HistoryBuffer<HT>::d_size_packed_history = 0;
 template<class HT>
 void HistoryBuffer<HT>::setMaxNumHistories( int num_history )
 {
-    Require( num_history > 0 );
-    Require( d_size_packed_history > 0 );
+    MCLS_REQUIRE( num_history > 0 );
+    MCLS_REQUIRE( d_size_packed_history > 0 );
     d_max_num_histories = num_history;
 }
 
@@ -211,7 +211,7 @@ void HistoryBuffer<HT>::setMaxNumHistories( int num_history )
 template<class HT>
 void HistoryBuffer<HT>::setSizePackedHistory( std::size_t size )
 {
-    Require( size > 0 );
+    MCLS_REQUIRE( size > 0 );
     d_size_packed_history = size;
 }
 

@@ -60,8 +60,8 @@ AdjointTally<Vector>::AdjointTally( const Teuchos::RCP<Vector>& x,
     , d_x_overlap( x_overlap )
     , d_export( d_x_overlap, d_x )
 { 
-    Ensure( !d_x.is_null() );
-    Ensure( !d_x_overlap.is_null() );
+    MCLS_ENSURE( !d_x.is_null() );
+    MCLS_ENSURE( !d_x_overlap.is_null() );
 }
 
 //---------------------------------------------------------------------------//
@@ -83,7 +83,7 @@ template<class Vector>
 void AdjointTally<Vector>::combineBlockTallies(
     const Teuchos::RCP<const Comm>& block_comm )
 {
-    Require( !block_comm.is_null() );
+    MCLS_REQUIRE( !block_comm.is_null() );
 
     Teuchos::ArrayRCP<const Scalar> const_base_view = VT::view( *d_x );
 
@@ -118,7 +118,7 @@ void AdjointTally<Vector>::normalize( const int& nh )
 template<class Vector>
 void AdjointTally<Vector>::setBaseVector( const Teuchos::RCP<Vector>& x )
 {
-    Require( !x.is_null() );
+    MCLS_REQUIRE( !x.is_null() );
 
     d_x = x;
     d_export = VectorExport<Vector>( d_x_overlap, d_x );

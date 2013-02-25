@@ -61,7 +61,7 @@ SolverManagerAdapter<MultiVector,Matrix>::SolverManagerAdapter(
     const Teuchos::RCP<SolverManager<Vector,Matrix> >& solver )
     : d_solver( solver )
 {
-    Require( Teuchos::nonnull(d_solver) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_solver) );
 }
 
 //---------------------------------------------------------------------------//
@@ -72,7 +72,7 @@ template<class MultiVector, class Matrix>
 void SolverManagerAdapter<MultiVector,Matrix>::setProblem( 
     const Teuchos::RCP<LinearProblemAdapter<MultiVector,Matrix> >& problem )
 {
-    Require( Teuchos::nonnull(problem) );
+    MCLS_REQUIRE( Teuchos::nonnull(problem) );
     d_problem = problem;
 }
 
@@ -85,7 +85,7 @@ Thyra::SolveStatus<typename SolverManagerAdapter<MultiVector,Matrix>::Scalar>
 SolverManagerAdapter<MultiVector,Matrix>::solve(
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
-    Require( Teuchos::nonnull(d_problem) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_problem) );
 
     Teuchos::Time timer("");
     bool converged = true;

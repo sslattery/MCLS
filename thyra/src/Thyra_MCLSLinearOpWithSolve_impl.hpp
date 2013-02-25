@@ -73,7 +73,7 @@ void MCLSLinearOpWithSolve<Scalar>::initialize(
     const RCP<const LinearOpSourceBase<Scalar> >& approx_fwd_op_src,
     const ESupportSolveUse& support_solve_use )
 {
-    Require( nonnull(solver) );
+    MCLS_REQUIRE( nonnull(solver) );
 
     d_linear_problem = linear_problem;
     d_plist = plist;

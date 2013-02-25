@@ -78,9 +78,9 @@ class VectorExport<Tpetra::Vector<Scalar,LO,GO> >
 	, d_export( new export_type( d_source_vector->getMap(), 
 				     d_target_vector->getMap() ) )
     {
-	Ensure( !d_source_vector.is_null() );
-	Ensure( !d_target_vector.is_null() );
-	Ensure( !d_export.is_null() );
+	MCLS_ENSURE( !d_source_vector.is_null() );
+	MCLS_ENSURE( !d_target_vector.is_null() );
+	MCLS_ENSURE( !d_export.is_null() );
     }
 
     /*!

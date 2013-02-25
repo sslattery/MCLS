@@ -85,7 +85,7 @@ class Serializer
     //! Set the buffer and put into pack mode.
     inline void setBuffer( const std::size_t& size, ptr_type buffer )
     {
-	Require( buffer );
+	MCLS_REQUIRE( buffer );
 	d_size_mode = false;
 	d_size = size;
 	d_ptr = buffer;
@@ -96,7 +96,7 @@ class Serializer
     //! Set the buffer and put into pack mode.
     inline void setBuffer( const Teuchos::ArrayView<data_type>& buffer )
     {
-	Require( buffer.getRawPtr() );
+	MCLS_REQUIRE( buffer.getRawPtr() );
 	d_size_mode = false;
 	d_size = buffer.size();
 	d_ptr = buffer.getRawPtr();
@@ -119,9 +119,9 @@ class Serializer
 	    d_size += sizeof(T);
 	else
 	{
-	    Require( d_begin );
-	    Require( d_ptr >= d_begin);
-	    Require( d_ptr + sizeof(T) <= d_end );
+	    MCLS_REQUIRE( d_begin );
+	    MCLS_REQUIRE( d_ptr >= d_begin);
+	    MCLS_REQUIRE( d_ptr + sizeof(T) <= d_end );
 	
 	    std::memcpy( d_ptr, &data, sizeof(T) );
 	
@@ -132,21 +132,21 @@ class Serializer
     //! Get a pointer to the current position of the data stream.
     const_ptr_type getPtr() const 
     { 
-	Require( !d_size_mode ); 
+	MCLS_REQUIRE( !d_size_mode ); 
 	return d_ptr; 
     }
 
     //! Get a pointer to the beginning position of the data stream.
     const_ptr_type begin() const 
     { 
-	Require( !d_size_mode ); 
+	MCLS_REQUIRE( !d_size_mode ); 
 	return d_begin; 
     }
 
     //! Get a pointer to the ending position of the data stream.
     const_ptr_type end() const 
     { 
-	Require( !d_size_mode ); 
+	MCLS_REQUIRE( !d_size_mode ); 
 	return d_end; 
     }
 
@@ -208,7 +208,7 @@ class Deserializer
     //! Set the buffer.
     inline void setBuffer( const std::size_t& size, ptr_type buffer )
     {
-	Require( buffer );
+	MCLS_REQUIRE( buffer );
 	d_size = size;
 	d_ptr = buffer;
 	d_begin = buffer;
@@ -218,7 +218,7 @@ class Deserializer
     //! Set the buffer.
     inline void setBuffer( const Teuchos::ArrayView<data_type>& buffer )
     {
-	Require( buffer.getRawPtr() );
+	MCLS_REQUIRE( buffer.getRawPtr() );
 	d_size = buffer.size();
 	d_ptr = buffer.getRawPtr();
 	d_begin = buffer.getRawPtr();
@@ -229,9 +229,9 @@ class Deserializer
     template<class T>
     inline void unpack( T& data )
     {
-	Require( d_begin );
-	Require( d_ptr >= d_begin);
-	Require( d_ptr + sizeof(T) <= d_end );
+	MCLS_REQUIRE( d_begin );
+	MCLS_REQUIRE( d_ptr >= d_begin);
+	MCLS_REQUIRE( d_ptr + sizeof(T) <= d_end );
 	
 	std::memcpy( &data, d_ptr, sizeof(T) );
 	

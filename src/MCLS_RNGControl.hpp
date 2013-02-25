@@ -86,7 +86,7 @@ class RNGControl
     //! Set the current random number stream index.
     void setIndex( int stream )
     {
-	Require( stream < d_number );
+	MCLS_REQUIRE( stream < d_number );
 	d_stream = stream; 
     }
 
@@ -130,7 +130,7 @@ class RNGControl
 //---------------------------------------------------------------------------//
 inline RNGControl::RNG RNGControl::createRNG() const
 {
-    Require( d_stream <= d_number );
+    MCLS_REQUIRE( d_stream <= d_number );
 
     int *id = init_sprng( d_stream, d_number, d_seed, d_parameter );
     RNG random( id, d_stream );

@@ -52,12 +52,12 @@ RNGControl::RNGControl( int seed, int number, int stream, int parameter )
     , d_stream( stream )
     , d_parameter( parameter )
 {
-    Require( d_stream <= d_number );
+    MCLS_REQUIRE( d_stream <= d_number );
 
     RNG temp = createRNG();
     d_size = temp.getSize();
 
-    Ensure( d_size >= 0 );
+    MCLS_ENSURE( d_size >= 0 );
 }
 
 //---------------------------------------------------------------------------//
@@ -66,7 +66,7 @@ RNGControl::RNGControl( int seed, int number, int stream, int parameter )
  */
 RNGControl::RNG RNGControl::rng()
 {
-    Require( d_stream <= d_number );
+    MCLS_REQUIRE( d_stream <= d_number );
 
     RNG random = createRNG();
     ++d_stream;
@@ -80,7 +80,7 @@ RNGControl::RNG RNGControl::rng()
  */
 RNGControl::RNG RNGControl::rng( int stream )
 {
-    Require( stream <= d_number );
+    MCLS_REQUIRE( stream <= d_number );
 
     d_stream = stream;
     RNG random = createRNG();

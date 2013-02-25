@@ -58,8 +58,8 @@ AdjointSolverManager<Vector,Matrix>::AdjointSolverManager(
     : d_global_comm( global_comm )
     , d_plist( plist )
 {
-    Require( !d_global_comm.is_null() );
-    Require( !d_plist.is_null() );
+    MCLS_REQUIRE( !d_global_comm.is_null() );
+    MCLS_REQUIRE( !d_plist.is_null() );
 }
 
 //---------------------------------------------------------------------------//
@@ -76,8 +76,8 @@ AdjointSolverManager<Vector,Matrix>::AdjointSolverManager(
     , d_plist( plist )
     , d_primary_set( !d_problem.is_null() )
 {
-    Require( !d_global_comm.is_null() );
-    Require( !d_plist.is_null() );
+    MCLS_REQUIRE( !d_global_comm.is_null() );
+    MCLS_REQUIRE( !d_plist.is_null() );
 
     buildMonteCarloDomain();
 }
@@ -151,8 +151,8 @@ template<class Vector, class Matrix>
 void AdjointSolverManager<Vector,Matrix>::setProblem( 
     const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem )
 {
-    Require( !d_global_comm.is_null() );
-    Require( !d_plist.is_null() );
+    MCLS_REQUIRE( !d_global_comm.is_null() );
+    MCLS_REQUIRE( !d_plist.is_null() );
 
     d_problem = problem;
     d_primary_set = !d_problem.is_null();
@@ -171,7 +171,7 @@ template<class Vector, class Matrix>
 void AdjointSolverManager<Vector,Matrix>::setParameters( 
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
-    Require( !params.is_null() );
+    MCLS_REQUIRE( !params.is_null() );
     d_plist = params;
 }
 
@@ -183,15 +183,15 @@ void AdjointSolverManager<Vector,Matrix>::setParameters(
 template<class Vector, class Matrix>
 bool AdjointSolverManager<Vector,Matrix>::solve()
 {    
-    Require( !d_global_comm.is_null() );
-    Require( !d_plist.is_null() );
-    Require( !d_msod_manager.is_null() );
-    Require( !d_mc_solver.is_null() );
+    MCLS_REQUIRE( !d_global_comm.is_null() );
+    MCLS_REQUIRE( !d_plist.is_null() );
+    MCLS_REQUIRE( !d_msod_manager.is_null() );
+    MCLS_REQUIRE( !d_mc_solver.is_null() );
 
     // Get the domain tally.
     Teuchos::RCP<TallyType> tally = 
 	d_msod_manager->localDomain()->domainTally();
-    Check( !tally.is_null() );
+    MCLS_CHECK( !tally.is_null() );
 
     // Set the primary set's tally vector to the LHS of the linear problem. We
     // need to do this because the MSODManager just creates some arbitrary
@@ -253,8 +253,8 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
 template<class Vector, class Matrix>
 void AdjointSolverManager<Vector,Matrix>::buildMonteCarloDomain()
 {
-    Require( !d_global_comm.is_null() );
-    Require( !d_plist.is_null() );
+    MCLS_REQUIRE( !d_global_comm.is_null() );
+    MCLS_REQUIRE( !d_plist.is_null() );
 
     // Build the MSOD manager.
     d_msod_manager = Teuchos::rcp( 
@@ -284,9 +284,9 @@ void AdjointSolverManager<Vector,Matrix>::buildMonteCarloDomain()
     // Build the global MSOD Monte Carlo domain from the primary set.
     d_msod_manager->setDomain( primary_domain );
 
-    Ensure( !d_msod_manager.is_null() );
-    Ensure( !d_msod_manager->localDomain().is_null() );
-    Ensure( !d_mc_solver.is_null() );
+    MCLS_ENSURE( !d_msod_manager.is_null() );
+    MCLS_ENSURE( !d_msod_manager->localDomain().is_null() );
+    MCLS_ENSURE( !d_mc_solver.is_null() );
 }
 
 //---------------------------------------------------------------------------//
@@ -296,11 +296,11 @@ void AdjointSolverManager<Vector,Matrix>::buildMonteCarloDomain()
 template<class Vector, class Matrix>
 void AdjointSolverManager<Vector,Matrix>::buildMonteCarloSource()
 {
-    Require( !d_global_comm.is_null() );
-    Require( !d_plist.is_null() );
-    Require( !d_msod_manager.is_null() );
-    Require( !d_msod_manager->localDomain().is_null() );
-    Require( !d_mc_solver.is_null() );
+    MCLS_REQUIRE( !d_global_comm.is_null() );
+    MCLS_REQUIRE( !d_plist.is_null() );
+    MCLS_REQUIRE( !d_msod_manager.is_null() );
+    MCLS_REQUIRE( !d_msod_manager->localDomain().is_null() );
+    MCLS_REQUIRE( !d_mc_solver.is_null() );
 
     // Set a global scope variable for the primary source.
     Teuchos::RCP<SourceType> primary_source;
@@ -342,7 +342,7 @@ void AdjointSolverManager<Vector,Matrix>::buildMonteCarloSource()
     // Build the global MSOD Monte Carlo source from the primary set.
     d_msod_manager->setSource( primary_source, d_mc_solver->rngControl() );
 
-    Ensure( !d_msod_manager->localSource().is_null() );
+    MCLS_ENSURE( !d_msod_manager->localSource().is_null() );
 }
 
 //---------------------------------------------------------------------------//

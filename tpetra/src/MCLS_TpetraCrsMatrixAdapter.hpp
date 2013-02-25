@@ -113,7 +113,7 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
     static Teuchos::RCP<vector_type> 
     cloneVectorFromMatrixCols( const matrix_type& matrix )
     { 
-	Require( matrix.isFillComplete() );
+	MCLS_REQUIRE( matrix.isFillComplete() );
 	return Tpetra::createVector<Scalar,LO,GO>( matrix.getColMap() );
     }
 
@@ -155,7 +155,7 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
      */
     static GO getGlobalRow( const matrix_type& matrix, const LO& local_row )
     { 
-	Require( matrix.getRowMap()->isNodeLocalElement( local_row ) );
+	MCLS_REQUIRE( matrix.getRowMap()->isNodeLocalElement( local_row ) );
 	return matrix.getRowMap()->getGlobalElement( local_row );
     }
 
@@ -164,7 +164,7 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
      */
     static LO getLocalRow( const matrix_type& matrix, const GO& global_row )
     { 
-	Require( matrix.getRowMap()->isNodeGlobalElement( global_row ) );
+	MCLS_REQUIRE( matrix.getRowMap()->isNodeGlobalElement( global_row ) );
 	return matrix.getRowMap()->getLocalElement( global_row );
     }
 
@@ -173,8 +173,8 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
      */
     static GO getGlobalCol( const matrix_type& matrix, const LO& local_col )
     {
-	Require( matrix.isFillComplete() );
-	Require( matrix.getColMap()->isNodeLocalElement( local_col ) );
+	MCLS_REQUIRE( matrix.isFillComplete() );
+	MCLS_REQUIRE( matrix.getColMap()->isNodeLocalElement( local_col ) );
 	return matrix.getColMap()->getGlobalElement( local_col );
     }
 
@@ -183,8 +183,8 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
      */
     static LO getLocalCol( const matrix_type& matrix, const GO& global_col )
     {
-	Require( matrix.isFillComplete() );
-	Require( matrix.getColMap()->isNodeGlobalElement( global_col ) );
+	MCLS_REQUIRE( matrix.isFillComplete() );
+	MCLS_REQUIRE( matrix.getColMap()->isNodeGlobalElement( global_col ) );
 	return matrix.getColMap()->getLocalElement( global_col );
     }
 
@@ -220,7 +220,7 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
      */
     static bool isGlobalCol( const matrix_type& matrix, const GO& global_col )
     { 
-	Require( matrix.isFillComplete() );
+	MCLS_REQUIRE( matrix.isFillComplete() );
 	return matrix.getColMap()->isNodeGlobalElement( global_col );
     }
 
@@ -229,7 +229,7 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
      */
     static bool isLocalCol( const matrix_type& matrix, const LO& local_col )
     { 
-	Require( matrix.isFillComplete() );
+	MCLS_REQUIRE( matrix.isFillComplete() );
 	return matrix.getColMap()->isNodeLocalElement( local_col );
     }
 
@@ -242,8 +242,8 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
 				  const Teuchos::ArrayView<Scalar>& values,
 				  std::size_t& num_entries )
     {
-	Require( matrix.isFillComplete() );
-	Require( matrix.getRowMap()->isNodeGlobalElement( global_row ) );
+	MCLS_REQUIRE( matrix.isFillComplete() );
+	MCLS_REQUIRE( matrix.getRowMap()->isNodeGlobalElement( global_row ) );
 	matrix.getGlobalRowCopy( global_row, indices, values, num_entries );
     }
 
@@ -256,8 +256,8 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
 				 const Teuchos::ArrayView<Scalar>& values,
 				 std::size_t& num_entries )
     {
-	Require( matrix.isFillComplete() );
-	Require( matrix.getRowMap()->isNodeLocalElement( local_row ) );
+	MCLS_REQUIRE( matrix.isFillComplete() );
+	MCLS_REQUIRE( matrix.getRowMap()->isNodeLocalElement( local_row ) );
 	matrix.getLocalRowCopy( local_row, indices, values, num_entries );
     }
 
@@ -308,7 +308,7 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
     static Teuchos::RCP<matrix_type> copyNearestNeighbors( 
     	const matrix_type& matrix, const GO& num_neighbors )
     { 
-	Require( num_neighbors >= 0 ); 
+	MCLS_REQUIRE( num_neighbors >= 0 ); 
 
 	// Setup for neighbor construction.
 	Teuchos::RCP<const Tpetra::Map<LO,GO> > empty_map = 
@@ -370,8 +370,8 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
 	    ghost_global_rows = TMH::getOffProcColsAsRows( *neighbor_matrix );
 	}
 
-	Ensure( !neighbor_matrix.is_null() );
-	Ensure( neighbor_matrix->isFillComplete() );
+	MCLS_ENSURE( !neighbor_matrix.is_null() );
+	MCLS_ENSURE( neighbor_matrix->isFillComplete() );
 	return neighbor_matrix;
     }
 

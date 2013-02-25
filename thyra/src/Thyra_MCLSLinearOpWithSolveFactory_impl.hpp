@@ -146,7 +146,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::setPreconditionerFactory(
     const RCP<PreconditionerFactoryBase<Scalar> >& precFactory,
     const std::string& precFactoryName )
 {
-    Require( Teuchos::nonnull(precFactory) );
+    MCLS_REQUIRE( Teuchos::nonnull(precFactory) );
 
     RCP<const Teuchos::ParameterList> precFactory_valid_plist = 
 	precFactory->getValidParameters();
@@ -309,7 +309,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::uninitializeOp(
     RCP<const LinearOpSourceBase<Scalar> >* approxFwdOpSrc,
     ESupportSolveUse* supportSolveUse ) const
 {
-    Require( Op != NULL );
+    MCLS_REQUIRE( Op != NULL );
 
     MCLSLinearOpWithSolve<Scalar>& mclsOp = 
 	Teuchos::dyn_cast<MCLSLinearOpWithSolve<Scalar> >(*Op);
@@ -342,7 +342,7 @@ template<class Scalar>
 void MCLSLinearOpWithSolveFactory<Scalar>::setParameterList(
     const RCP<Teuchos::ParameterList>& paramList )
 {
-    Require( Teuchos::nonnull(paramList) );
+    MCLS_REQUIRE( Teuchos::nonnull(paramList) );
 
     paramList->validateParametersAndSetDefaults(*this->getValidParameters(), 1);
     d_plist = paramList;

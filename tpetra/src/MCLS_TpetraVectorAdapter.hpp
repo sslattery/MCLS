@@ -168,7 +168,7 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     				    global_ordinal_type global_row,
     				    const scalar_type& value )
     {
-	Require( vector.getMap()->isNodeGlobalElement( global_row ) );
+	MCLS_REQUIRE( vector.getMap()->isNodeGlobalElement( global_row ) );
 	vector.replaceGlobalValue( global_row, value );
     }
 
@@ -180,7 +180,7 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     				   local_ordinal_type local_row,
     				   const scalar_type& value )
     {
-	Require( vector.getMap()->isNodeLocalElement( local_row ) );
+	MCLS_REQUIRE( vector.getMap()->isNodeLocalElement( local_row ) );
 	vector.replaceLocalValue( local_row, value );
     }
 
@@ -192,7 +192,7 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     				    global_ordinal_type global_row,
     				    const scalar_type& value )
     {
-	Require( vector.getMap()->isNodeGlobalElement( global_row ) );
+	MCLS_REQUIRE( vector.getMap()->isNodeGlobalElement( global_row ) );
 	vector.sumIntoGlobalValue( global_row, value );
     }
 
@@ -204,7 +204,7 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     				   local_ordinal_type local_row,
     				   const scalar_type& value )
     {
-	Require( vector.getMap()->isNodeLocalElement( local_row ) );
+	MCLS_REQUIRE( vector.getMap()->isNodeLocalElement( local_row ) );
 	vector.sumIntoLocalValue( local_row, value );
     }
 

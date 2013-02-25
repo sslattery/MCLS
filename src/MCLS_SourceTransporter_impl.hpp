@@ -70,8 +70,8 @@ SourceTransporter<Source>::SourceTransporter(
     , d_num_done( Teuchos::rcp(new int(0)) )
     , d_complete( Teuchos::rcp(new int(0)) )
 {
-    Require( !d_comm.is_null() );
-    Require( !d_domain.is_null() );
+    MCLS_REQUIRE( !d_comm.is_null() );
+    MCLS_REQUIRE( !d_domain.is_null() );
 
     // Set the duplicate communicators. This is how we get around not having
     // access to message tags through the abstract Teuchos::Comm interface. We
@@ -97,9 +97,9 @@ SourceTransporter<Source>::SourceTransporter(
 	d_check_freq = plist.get<int>("MC Check Frequency");
     }
 
-    Ensure( d_check_freq > 0 );
-    Ensure( !d_comm_num_done.is_null() );
-    Ensure( !d_comm_complete.is_null() );
+    MCLS_ENSURE( d_check_freq > 0 );
+    MCLS_ENSURE( !d_comm_num_done.is_null() );
+    MCLS_ENSURE( !d_comm_complete.is_null() );
 }
 
 //---------------------------------------------------------------------------//
@@ -111,7 +111,7 @@ void SourceTransporter<Source>::assignSource(
     const Teuchos::RCP<Source>& source,
     const double relative_weight_cutoff )
 {
-    Require( !source.is_null() );
+    MCLS_REQUIRE( !source.is_null() );
     d_source = source;
 
     d_domain_transporter.setCutoff( relative_weight_cutoff );
@@ -125,7 +125,7 @@ void SourceTransporter<Source>::assignSource(
 template<class Source>
 void SourceTransporter<Source>::transport()
 {
-    Require( !d_source.is_null() );
+    MCLS_REQUIRE( !d_source.is_null() );
 
     // Barrier before transport.
     d_comm->barrier();
@@ -142,7 +142,7 @@ void SourceTransporter<Source>::transport()
 
     // Create a history bank.
     BankType bank;
-    Check( bank.empty() );
+    MCLS_CHECK( bank.empty() );
 
     // Everyone posts receives for history buffers to get started.
     d_domain_communicator.post();
@@ -192,16 +192,16 @@ void SourceTransporter<Source>::transport()
     d_comm->barrier();
 
     // End all communication.
-    Check( !d_domain_communicator.sendBufferSize() );
-    Check( bank.empty() );
+    MCLS_CHECK( !d_domain_communicator.sendBufferSize() );
+    MCLS_CHECK( bank.empty() );
     d_domain_communicator.end();
-    Check( !d_domain_communicator.sendStatus() );
-    Check( !d_domain_communicator.receiveStatus() );
+    MCLS_CHECK( !d_domain_communicator.sendStatus() );
+    MCLS_CHECK( !d_domain_communicator.receiveStatus() );
 
     // Barrier before completion.
     d_comm->barrier();
 
-    Ensure( ST::empty(*d_source) );
+    MCLS_ENSURE( ST::empty(*d_source) );
 }
 
 //---------------------------------------------------------------------------//
@@ -211,13 +211,13 @@ void SourceTransporter<Source>::transport()
 template<class Source>
 void SourceTransporter<Source>::transportSourceHistory( BankType& bank )
 {
-    Require( !d_source.is_null() );
-    Require( !ST::empty(*d_source) );
+    MCLS_REQUIRE( !d_source.is_null() );
+    MCLS_REQUIRE( !ST::empty(*d_source) );
 
     // Get a history from the source.
     Teuchos::RCP<HistoryType> history = ST::getHistory( *d_source );
-    Check( !history.is_null() );
-    Check( history->alive() );
+    MCLS_CHECK( !history.is_null() );
+    MCLS_CHECK( history->alive() );
 
     // Add to the source history count.
     ++d_num_src;
@@ -247,18 +247,18 @@ void SourceTransporter<Source>::transportSourceHistory( BankType& bank )
 template<class Source>
 void SourceTransporter<Source>::transportBankHistory( BankType& bank )
 {
-    Require( !bank.empty() );
+    MCLS_REQUIRE( !bank.empty() );
 
     // Get a history from the bank.
     Teuchos::RCP<HistoryType> history = bank.top();
     bank.pop();
-    Check( !history.is_null() );
+    MCLS_CHECK( !history.is_null() );
 
     // If the history doesn't have a random number state, supply it with the
     // global RNG.
     if ( !history->rng().assigned() )
     {
-	Check( GlobalRNG::d_rng.assigned() );
+	MCLS_CHECK( GlobalRNG::d_rng.assigned() );
 	history->setRNG( GlobalRNG::d_rng );
     }
 
@@ -285,13 +285,13 @@ void SourceTransporter<Source>::localHistoryTransport(
     const Teuchos::RCP<HistoryType>& history, 
     BankType& bank )
 {
-    Require( !history.is_null() );
-    Require( history->alive() );
-    Require( history->rng().assigned() );
+    MCLS_REQUIRE( !history.is_null() );
+    MCLS_REQUIRE( history->alive() );
+    MCLS_REQUIRE( history->rng().assigned() );
 
     // Do local transport.
     d_domain_transporter.transport( *history );
-    Check( !history->alive() );
+    MCLS_CHECK( !history->alive() );
 
     // Update the run count.
     ++d_num_run;
@@ -305,7 +305,7 @@ void SourceTransporter<Source>::localHistoryTransport(
     // Otherwise the history was killed by the weight cutoff.
     else
     {
-	Check( history->event() == CUTOFF );
+	MCLS_CHECK( history->event() == CUTOFF );
 	++(*d_num_done);
 	++d_num_done_local;
     }
@@ -321,8 +321,8 @@ void SourceTransporter<Source>::postMasterCount()
     // MASTER will receive history count data from each worker node.
     if ( d_comm->getRank() == MASTER )
     {
-	Check( d_num_done_handles.size() == d_comm->getSize() - 1 );
-	Check( d_num_done_report.size() == d_comm->getSize() - 1 );
+	MCLS_CHECK( d_num_done_handles.size() == d_comm->getSize() - 1 );
+	MCLS_CHECK( d_num_done_report.size() == d_comm->getSize() - 1 );
 
 	// Post an asynchronous receive for each worker.
 	for ( int n = 1; n < d_comm->getSize(); ++n )
@@ -359,7 +359,7 @@ void SourceTransporter<Source>::completeMasterCount()
 	    request_ptr = 
 		Teuchos::Ptr<Teuchos::RCP<Request> >(&d_num_done_handles[n-1]);
 	    Teuchos::wait( *d_comm_num_done, request_ptr );
-	    Check( d_num_done_handles[n-1].is_null() );
+	    MCLS_CHECK( d_num_done_handles[n-1].is_null() );
 	}
     }
 
@@ -373,7 +373,7 @@ void SourceTransporter<Source>::completeMasterCount()
 	request_ptr = 
 	    Teuchos::Ptr<Teuchos::RCP<Request> >(&finish);
 	Teuchos::wait( *d_comm_num_done, request_ptr );
-	Check( finish.is_null() );
+	MCLS_CHECK( finish.is_null() );
     }
 }
 
@@ -398,12 +398,12 @@ void SourceTransporter<Source>::updateMasterCount()
 	    // Receive completed reports and repost.
 	    if ( CommTools::isRequestComplete(d_num_done_handles[n-1]) )
 	    {
-		Check( *(d_num_done_report[n-1]) > 0 );
+		MCLS_CHECK( *(d_num_done_report[n-1]) > 0 );
 		d_num_done_handles[n-1] = Teuchos::null;
 
 		// Add to the running total.
 		*d_num_done += *(d_num_done_report[n-1]);
-		Check( *d_num_done <= d_nh );
+		MCLS_CHECK( *d_num_done <= d_nh );
 
 		// Repost.
 		d_num_done_handles[n-1] = Teuchos::ireceive<int,int>(
@@ -423,7 +423,7 @@ void SourceTransporter<Source>::updateMasterCount()
 		    *d_comm_complete, d_complete, n );
 		Teuchos::Ptr<Teuchos::RCP<Request> > request_ptr(&complete);
 		Teuchos::wait( *d_comm_complete, request_ptr );
-		Check( complete.is_null() );
+		MCLS_CHECK( complete.is_null() );
 	    }
 	}
     }
@@ -440,7 +440,7 @@ void SourceTransporter<Source>::updateMasterCount()
 		*d_comm_num_done, d_num_done, MASTER );
 	    Teuchos::Ptr<Teuchos::RCP<Request> > request_ptr(&report);
 	    Teuchos::wait( *d_comm_num_done, request_ptr );
-	    Check( report.is_null() );
+	    MCLS_CHECK( report.is_null() );
 
 	    *d_num_done = 0;
 	}
@@ -448,7 +448,7 @@ void SourceTransporter<Source>::updateMasterCount()
 	// Check for completion status from master.
 	if ( CommTools::isRequestComplete(d_complete_handle) )
 	{
-	    Check( *d_complete_report ==  1 );
+	    MCLS_CHECK( *d_complete_report ==  1 );
 	    d_complete_handle = Teuchos::null;
 	    *d_complete = 1;
 	}

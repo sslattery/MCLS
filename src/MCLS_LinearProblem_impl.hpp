@@ -64,11 +64,11 @@ LinearProblem<Vector,Matrix>::LinearProblem(
 {
     d_status = true;
 
-    Ensure( !d_A.is_null() );
-    Ensure( !d_x.is_null() );
-    Ensure( !d_b.is_null() );
-    Ensure( !d_r.is_null() );
-    Ensure( !d_rp.is_null() );
+    MCLS_ENSURE( !d_A.is_null() );
+    MCLS_ENSURE( !d_x.is_null() );
+    MCLS_ENSURE( !d_b.is_null() );
+    MCLS_ENSURE( !d_r.is_null() );
+    MCLS_ENSURE( !d_rp.is_null() );
 }
 
 //---------------------------------------------------------------------------//
@@ -87,7 +87,7 @@ template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::setOperator( 
     const Teuchos::RCP<const Matrix>& A )
 {
-    Require( !A.is_null() );
+    MCLS_REQUIRE( !A.is_null() );
 
     d_A = A;
     d_status = false;
@@ -100,7 +100,7 @@ void LinearProblem<Vector,Matrix>::setOperator(
 template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::setLHS( const Teuchos::RCP<Vector>& x )
 {
-    Require( !x.is_null() );
+    MCLS_REQUIRE( !x.is_null() );
 
     d_x = x;
     d_status = false;
@@ -113,7 +113,7 @@ void LinearProblem<Vector,Matrix>::setLHS( const Teuchos::RCP<Vector>& x )
 template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::setRHS( const Teuchos::RCP<const Vector>& b )
 {
-    Require( !b.is_null() );
+    MCLS_REQUIRE( !b.is_null() );
 
     d_b = b;
     d_status = false;
@@ -127,7 +127,7 @@ template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::setLeftPrec( 
     const Teuchos::RCP<const Matrix>& PL )
 {
-    Require( !PL.is_null() );
+    MCLS_REQUIRE( !PL.is_null() );
 
     d_PL = PL;
     d_status = false;
@@ -141,7 +141,7 @@ template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::setRightPrec( 
     const Teuchos::RCP<const Matrix>& PR )
 {
-    Require( !PR.is_null() );
+    MCLS_REQUIRE( !PR.is_null() );
 
     d_PR = PR;
     d_status = false;
