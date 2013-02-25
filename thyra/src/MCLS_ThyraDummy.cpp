@@ -32,21 +32,19 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_EpetraAdapter.hpp
+ * \file MCLS_ThyraDummy.cpp
  * \author Stuart R. Slattery
- * \brief Epetra Adapter.
+ * \brief Thyra dummy lib file.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_EPETRAADAPTER_HPP
-#define MCLS_EPETRAADAPTER_HPP
+namespace MCLS 
+{
 
-#include "MCLS_EpetraVectorAdapter.hpp"
-#include "MCLS_EpetraVectorExport.hpp"
-#include "MCLS_EpetraRowMatrixAdapter.hpp"
+const int thyra_dummy = 0;
 
-#endif // end MCLS_EPETRAADAPTER_HPP
+} // end namespace MCLS
 
 //---------------------------------------------------------------------------//
-// end MCLS_EpetraAdapter.hpp
+// end MCLS_ThyraDummy.hpp
 //---------------------------------------------------------------------------//

@@ -24,6 +24,7 @@ APPEND_SET(HEADERS
   ) 
 
 APPEND_SET(SOURCES
+  MCLS_EpetraDummy.cpp
   )
 
 #
