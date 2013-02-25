@@ -75,6 +75,7 @@ bool Thyra::test_single_mcls_thyra_solver(
     {
 	Epetra_Vector scale_vector( epetra_A->RowMap() );
 	epetra_A->ExtractDiagonalCopy( scale_vector );
+        scale_vector.Reciprocal(scale_vector);
 	epetra_A->LeftScale( scale_vector );
     }
 

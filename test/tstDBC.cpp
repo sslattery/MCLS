@@ -142,7 +142,7 @@ TEUCHOS_UNIT_TEST( Assertion, precondition_test )
 {
     try 
     {
-	Require( 0 );
+	MCLS_REQUIRE( 0 );
 	throw std::runtime_error( "this shouldn't be thrown" );
     }
     catch( const MCLS::Assertion& assertion )
@@ -173,7 +173,7 @@ TEUCHOS_UNIT_TEST( Assertion, postcondition_test )
 {
     try 
     {
-	Ensure( 0 );
+	MCLS_ENSURE( 0 );
 	throw std::runtime_error( "this shouldn't be thrown" );
     }
     catch( const MCLS::Assertion& assertion )
@@ -204,7 +204,7 @@ TEUCHOS_UNIT_TEST( Assertion, invariant_test )
 {
     try 
     {
-	Check( 0 );
+	MCLS_CHECK( 0 );
 	throw std::runtime_error( "this shouldn't be thrown" );
     }
     catch( const MCLS::Assertion& assertion )
@@ -233,12 +233,12 @@ TEUCHOS_UNIT_TEST( Assertion, invariant_test )
 // Test that we can remember a value and check it with DBC.
 TEUCHOS_UNIT_TEST( Assertion, remember_test )
 {
-    Remember( int test_value_1 = 0 );
-    Remember( int test_value_2 = 1 );
+    MCLS_REMEMBER( int test_value_1 = 0 );
+    MCLS_REMEMBER( int test_value_2 = 1 );
  
     try 
     {
-	Check( test_value_1 );
+	MCLS_CHECK( test_value_1 );
     }
     catch( const MCLS::Assertion& assertion )
     {
@@ -257,7 +257,7 @@ TEUCHOS_UNIT_TEST( Assertion, remember_test )
 
     try 
     {
-	Check( test_value_2 );
+	MCLS_CHECK( test_value_2 );
 	TEST_ASSERT( 1 );
     }
     catch( ... )
@@ -273,7 +273,7 @@ TEUCHOS_UNIT_TEST( Assertion, _test )
     try 
     {
 	std::string in_message( "test message content" );
-	Insist( 0, in_message );
+	MCLS_INSIST( 0, in_message );
 	throw std::runtime_error( "this shouldn't be thrown" );
     }
     catch( const MCLS::Assertion& assertion )

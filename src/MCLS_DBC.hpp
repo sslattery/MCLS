@@ -108,14 +108,14 @@ void insist( const std::string& cond, const std::string& msg,
 #if HAVE_MCLS_DBC
 
 #define MCLS_REQUIRE(c) if (!(c)) MCLS::throwAssertion( #c, __FILE__, __LINE__ )
-#define MCLS_ENSURE((c) if (!(c)) MCLS::throwAssertion( #c, __FILE__, __LINE__ )
+#define MCLS_ENSURE(c) if (!(c)) MCLS::throwAssertion( #c, __FILE__, __LINE__ )
 #define MCLS_CHECK(c) if (!(c)) MCLS::throwAssertion( #c, __FILE__, __LINE__ )
 #define MCLS_REMEMBER(c) c
 
 #else
 
 #define MCLS_REQUIRE(c)
-#define MCLS_ENSURE((c)
+#define MCLS_ENSURE(c)
 #define MCLS_CHECK(c)
 #define MCLS_REMEMBER(c)
 

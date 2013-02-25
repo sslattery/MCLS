@@ -46,6 +46,7 @@ int main(int argc, char* argv[])
     bool            reproducibleMC         = true;
     int             overlapSize            = 0;
     int             numSets                = 1;
+    int             numHistories           = 1000;
     std::string     mcType                 = "Adjoint";
 
     CommandLineProcessor  clp;
@@ -75,6 +76,7 @@ int main(int argc, char* argv[])
 		   "Determines whether or not to communicate RNG with MC histories." );
     clp.setOption( "mc-overlap", &overlapSize, "Determines the size of overlap in MC problem." );
     clp.setOption( "mc-sets", &numSets, "Determines the number of sets in the MC problem." );
+    clp.setOption( "mc-histories", &numHistories, "Determines the number of histories in the MC problem." );
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
@@ -100,7 +102,7 @@ int main(int argc, char* argv[])
     mclsLOWSFPL_mcsa.set("Reproducible MC Mode",bool(reproducibleMC));
     mclsLOWSFPL_mcsa.set("Overlap Size",int(overlapSize));
     mclsLOWSFPL_mcsa.set("Number of Sets",int(numSets));
-
+    mclsLOWSFPL_mcsa.set("Set Number of Histories",int(numHistories));
 
     Teuchos::ParameterList precPL("Ifpack");
     if(usePreconditioner) {

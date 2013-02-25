@@ -157,7 +157,7 @@ class LinearProblemAdapter : public LinearProblemBase<
     { 
 	if ( d_num_problems == 0 );
 	{
-	    Check( Teuchos::nonnull(d_x) );
+	    MCLS_CHECK( Teuchos::nonnull(d_x) );
 	    d_num_problems = MVT::getNumVectors(*d_x);
 	}
 

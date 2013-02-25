@@ -107,8 +107,8 @@ MCSASolverManager<Vector,Matrix>::getValidParameters() const
 
     // Add the default code values. Put zero if no default.
     plist->set<std::string>("MC Type", "Adjoint");
-    plist->set<double>("Convergence Tolerance", 0.0);
-    plist->set<int>("Maximum Iterations", 0);
+    plist->set<double>("Convergence Tolerance", 1.0);
+    plist->set<int>("Maximum Iterations", 1000);
     plist->set<int>("Iteration Print Frequency", 10);
     plist->set<int>("Iteration Check Frequency", 1);
 
@@ -235,8 +235,11 @@ bool MCSASolverManager<Vector,Matrix>::solve()
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType source_norm = 0;
     if ( d_primary_set )
     {
-	typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance = 
-	    d_plist->get<double>("Convergence Tolerance");
+        typename Teuchos::ScalarTraits<double>::magnitudeType tolerance = 1.0;
+        if ( d_plist->isParameter("Convergence Tolerance") )
+        {
+            tolerance = d_plist->get<double>("Convergence Tolerance");
+        }
 
 	// Compute the source norm preconditioned if necessary.
 	if ( d_problem->isLeftPrec() )
@@ -256,7 +259,11 @@ bool MCSASolverManager<Vector,Matrix>::solve()
     d_converged_status = 0;
 
     // Iteration setup.
-    int max_num_iters = d_plist->get<int>("Maximum Iterations");
+    int max_num_iters = 1000;
+    if ( d_plist->isParameter("Maximum Iterations") )
+    {
+        max_num_iters = d_plist->get<int>("Maximum Iterations");
+    }
     d_num_iters = 0;
     int print_freq = 10;
     if ( d_plist->isParameter("Iteration Print Frequency") )
@@ -394,7 +401,16 @@ void MCSASolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
     d_global_comm->barrier();
 
     // Create the Monte Carlo direct solver for the residual problem.
-    if ( d_plist->get<std::string>("MC Type") == "Adjoint" )
+    bool use_adjoint = true;
+    if ( d_plist->isParameter("MC Type") )
+    {
+        if ( d_plist->get<std::string>("MC Type") == "Adjoint" )
+        {
+            use_adjoint = true;
+        }
+    }
+
+    if ( use_adjoint )
     {
 	d_mc_solver = Teuchos::rcp( 
 	    new AdjointSolverManager<Vector,Matrix>(

@@ -300,7 +300,7 @@ void MCLSLinearOpWithSolve<Scalar>::describe(
 	    break;
 	}
 	default:
-	    Insist( false, "Incorrect verbosity level provided" );
+	    MCLS_INSIST( false, "Incorrect verbosity level provided" );
     }
 }
 
@@ -390,10 +390,10 @@ bool MCLSLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureTypeImpl(
 */
 template<class Scalar>
 SolveStatus<Scalar> MCLSLinearOpWithSolve<Scalar>::solveImpl(
-  const EOpTransp M_trans,
-  const MultiVectorBase<Scalar> &B,
-  const Ptr<MultiVectorBase<Scalar> > &X,
-  const Ptr<const SolveCriteria<Scalar> > solveCriteria ) const
+    const EOpTransp M_trans,
+    const MultiVectorBase<Scalar> &B,
+    const Ptr<MultiVectorBase<Scalar> > &X,
+    const Ptr<const SolveCriteria<Scalar> > solveCriteria ) const
 {
     // Setup timing.
     THYRA_FUNC_TIME_MONITOR("Stratimikos: MCLSLOWS");
@@ -401,8 +401,8 @@ SolveStatus<Scalar> MCLSLinearOpWithSolve<Scalar>::solveImpl(
     total_timer.start(true);
 
     // Validate input.
-    Insist( this->solveSupportsImpl(M_trans), 
-	    "Solve does not support transpose type." );
+    MCLS_INSIST( this->solveSupportsImpl(M_trans), 
+                 "Solve does not support transpose type." );
 
     // Output before solve.
     RCP<Teuchos::FancyOStream> out = this->getOStream();
