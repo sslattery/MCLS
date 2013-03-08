@@ -45,6 +45,7 @@
 
 #include <MCLS_MatrixTraits.hpp>
 #include <MCLS_Serializer.hpp>
+#include <MCLS_Preconditioner.hpp>
 
 #include <Teuchos_as.hpp>
 #include <Teuchos_Array.hpp>
@@ -68,18 +69,6 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 
     // Generate the transpose of the operator.
     Teuchos::RCP<Matrix> A_T = MT::copyTranspose( *A );
-
-    // Perform point-Jacobi preconditioning if enabled on the transpose
-    // matrix. 
-    if ( plist.isParameter("Point Jacobi Preconditioning") &&
-	 plist.get<bool>("Point Jacobi Preconditioning") )
-    {
-	Teuchos::RCP<Vector> diagonal = 
-	    MT::cloneVectorFromMatrixRows( *A_T );
-	MT::getLocalDiagCopy( *A_T, *diagonal );
-	VT::reciprocal( *diagonal, *diagonal );
-	MT::leftScale( *A, *diagonal );
-    }
 
     // Generate the overlap for the transpose operator.
     int num_overlap = plist.get<int>( "Overlap Size" );
