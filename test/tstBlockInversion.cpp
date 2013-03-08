@@ -34,7 +34,7 @@
 /*!
  * \file   tstBlockInversion.cpp
  * \author Stuart Slattery
- * \brief  BlockInversion class unit tests.
+ * \brief  LAPACK block inversion unit tests.
  */
 //---------------------------------------------------------------------------//
 

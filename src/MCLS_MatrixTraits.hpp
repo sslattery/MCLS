@@ -283,6 +283,18 @@ class MatrixTraits
     }
 
     /*!
+     * \brief Left-scale the matrix with a vector. A(i,j) = x(i)*A(i,j).
+     */
+    static void leftScale( Matrix& A, const Vector& x )
+    { UndefinedMatrixTraits<Vector,Matrix>::notDefined(); }
+
+    /*!
+     * \brief Right-scale the matrix with a vector. A(i,j) = A(i,j)*x(j).
+     */
+    static void rightScale( Matrix& A, const Vector& x )
+    { UndefinedMatrixTraits<Vector,Matrix>::notDefined(); }
+
+    /*!
      * \brief Apply the row matrix to a vector. A*x = y.
      */
     static void apply( const Matrix& A, const Vector& x, Vector& y )

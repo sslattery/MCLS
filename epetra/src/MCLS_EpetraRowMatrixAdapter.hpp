@@ -332,6 +332,22 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
     }
 
     /*!
+     * \brief Left-scale the matrix with a vector. A(i,j) = x(i)*A(i,j).
+     */
+    static void leftScale( matrix_type& A, const vector_type& x )
+    { 
+	A.LeftScale( x );
+    }
+
+    /*!
+     * \brief Right-scale the matrix with a vector. A(i,j) = A(i,j)*x(j).
+     */
+    static void rightScale( matrix_type& A, const vector_type& x )
+    { 
+	A.RightScale( x );
+    }
+
+    /*!
      * \brief Apply the row matrix to a vector. A*x = y.
      */
     static void apply( const matrix_type& A, 

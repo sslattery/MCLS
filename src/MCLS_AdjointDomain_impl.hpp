@@ -69,6 +69,18 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     // Generate the transpose of the operator.
     Teuchos::RCP<Matrix> A_T = MT::copyTranspose( *A );
 
+    // Perform point-Jacobi preconditioning if enabled on the transpose
+    // matrix. 
+    if ( plist.isParameter("Point Jacobi Preconditioning") &&
+	 plist.get<bool>("Point Jacobi Preconditioning") )
+    {
+	Teuchos::RCP<Vector> diagonal = 
+	    MT::cloneVectorFromMatrixRows( *A_T );
+	MT::getLocalDiagCopy( *A_T, *diagonal );
+	VT::reciprocal( *diagonal, *diagonal );
+	MT::leftScale( *A, *diagonal );
+    }
+
     // Generate the overlap for the transpose operator.
     int num_overlap = plist.get<int>( "Overlap Size" );
     MCLS_REQUIRE( num_overlap >= 0 );
@@ -737,7 +749,7 @@ void AdjointDomain<Vector,Matrix>::buildBoundary(
     }
 
     MCLS_ENSURE( d_bnd_to_neighbor.size() == 
-	    Teuchos::as<std::size_t>(boundary_rows.size()) );
+		 Teuchos::as<std::size_t>(boundary_rows.size()) );
 }
 
 //---------------------------------------------------------------------------//

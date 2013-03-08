@@ -271,6 +271,22 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
     }
 
     /*!
+     * \brief Left-scale the matrix with a vector. A(i,j) = x(i)*A(i,j).
+     */
+    static void leftScale( matrix_type& A, const vector_type& x )
+    { 
+	A.leftScale( x );
+    }
+
+    /*!
+     * \brief Right-scale the matrix with a vector. A(i,j) = A(i,j)*x(j).
+     */
+    static void rightScale( matrix_type& A, const vector_type& x )
+    { 
+	A.rightScale( x );
+    }
+
+    /*!
      * \brief Apply the row matrix to a vector. A*x = y.
      */
     static void apply( const matrix_type& A, 
