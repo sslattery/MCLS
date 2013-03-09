@@ -45,6 +45,7 @@
 #include <MCLS_Preconditioner.hpp>
 
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_SerialDenseMatrix.hpp>
 
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
@@ -89,12 +90,33 @@ class TpetraBlockJacobiPreconditioner
     // Set the operator with the preconditioner.
     void setOperator( const Teuchos::RCP<const matrix_type>& A );
 
+    // Get the operator set with the preconditoner.
+    const matrix_type& getOperator() const { return *d_A; }
+
     // Build the preconditioner.
     void buildPreconditioner();
 
     //! Get the preconditioner.
     Teuchos::RCP<const matrix_type> getPreconditioner() const
     { return d_preconditioner; }
+
+  private:
+
+    // Invert a Teuchos::SerialDenseMatrix block.
+    void invertSerialDenseMatrix( 
+	Teuchos::SerialDenseMatrix<int,Scalar>& block );
+
+    // Get a local component of an operator given a local row and column
+    // index.
+    Scalar getMatrixComponentFromLocal( 
+	const Teuchos::RCP<const matrix_type>& matrix,
+	const LO local_row, const LO local_col );
+
+    // Get a global component of an operator given a global row and column
+    // index.
+    Scalar getMatrixComponentFromGlobal( 
+	const Teuchos::RCP<const matrix_type>& matrix,
+	const GO global_row, const GO global_col );
 
   private:
 

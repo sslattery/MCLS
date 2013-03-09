@@ -125,7 +125,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TpetraBlockJacobiPreconditioner, 1_block_matr
     values_4[2] = 1.13;
     values_4[3] = -3.73;
 
-    Teuchos::Array<Teuchos::Array<GO> > values( 4 );
+    Teuchos::Array<Teuchos::Array<Scalar> > values( 4 );
     values[0] = values_1;
     values[1] = values_2;
     values[2] = values_3;
