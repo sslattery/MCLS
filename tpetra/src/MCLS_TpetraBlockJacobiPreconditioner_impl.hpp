@@ -32,96 +32,40 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_TpetraBlockJacobiPreconditioner.hpp
+ * \file MCLS_TpetraBlockJacobiPreconditioner_impl.hpp
  * \author Stuart R. Slattery
  * \brief Block Jacobi preconditioning for Tpetra.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_TPETRABLOCKJACOBI_HPP
-#define MCLS_TPETRABLOCKJACOBI_HPP
+#ifndef MCLS_TPETRABLOCKJACOBI_IMPL_HPP
+#define MCLS_TPETRABLOCKJACOBI_IMPL_HPP
 
-#include <MCLS_DBC.hpp>
-
-#include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ArrayRCP.hpp>
-
-#include <Tpetra_Vector.hpp>
-#include <Tpetra_CrsMatrix.hpp>
+#include <Teuchos_SerialDenseMatrix.hpp>
+#include <Teuchos_LAPACK.hpp>
 
 namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class TpetraBlockJacobiPreconditioner
- * \brief Block-Jacobi preconditioner for Tpetra::CrsMatrix
+ * \brief Build the preconditioner.
  */
 template<class Scalar, class LO, class GO>
-class TpetraBlockJacobiPreconditioner
+void TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::buildPreconditioner()
 {
-  public:
-
-    //@{
-    //! Typedefs.
-    typedef Tpetra::Vector<Scalar,LO,GO>            vector_type;
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO>         matrix_type;
-    //@}
-
-    /*!
-     * \brief Constructor.
-     */
-    TpetraBlockJacobiPreconditioner() { /* ... */ }
-
-    /*!
-     * \brief Destructor.
-     */
-    ~TpetraBlockJacobiPreconditioner() { /* ... */ }
-
-    /*!
-     * \brief Set the operator with the preconditioner.
-     */
-    void setOperator( const Teuchos::RCP<const matrix_type>& A )
-    {
-	MCLS_REQUIRE( Teuchos::nonnull(A) );
-	d_A = A;
-    }
-
-    // Build the preconditioner.
-    void buildPreconditioner();
-
-    /*!
-     * \brief Get the preconditioner.
-     */
-    Teuchos::RCP<const matrix_type> getPreconditioner() const
-    { return d_preconditioner; }
-
-  private:
-
-    // Original operator.
-    Teuchos::RCP<const matrix_type> d_A;
-
-    // Preconditioner (M^-1)
-    Teuchos::RCP<matrix_type> d_preconditioner;
-};
+    
+}
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
-//---------------------------------------------------------------------------//
-// Template includes.
-//---------------------------------------------------------------------------//
-
-#include "MCLS_TpetraBlockJacobiPreconditioner_impl.hpp"
+#endif // end MCLS_TPETRABLOCKJACOBI_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-
-
-#endif // end MCLS_TPETRABLOCKJACOBI_HPP
-
-//---------------------------------------------------------------------------//
-// end MCLS_TpetraBlockJacobiPreconditioner.hpp
+// end MCLS_TpetraBlockJacobiPreconditioner_impl.hpp
 //---------------------------------------------------------------------------//

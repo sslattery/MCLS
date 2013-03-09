@@ -57,7 +57,7 @@ namespace MCLS
 //---------------------------------------------------------------------------//
 /*!
  * \class EpetraPointJacobiPreconditioner
- * \brief Point-Jacobi preconditioner for Epetra::CrsMatrix
+ * \brief Point-Jacobi preconditioner for Epetra_CrsMatrix
  */
 class EpetraPointJacobiPreconditioner
 {

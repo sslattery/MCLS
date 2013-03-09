@@ -44,9 +44,6 @@
 #include <MCLS_DBC.hpp>
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_ArrayView.hpp>
-#include <Teuchos_ArrayRCP.hpp>
 
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
