@@ -145,7 +145,7 @@ void TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::buildPreconditioner()
 	// Starting row/column for the block.
 	col_start = block_size*n;
 
-	// Extract the block. Note that I form the tranposed block to
+	// Extract the block. Note that I form the tranposed local block to
 	// facilitate constructing the preconditioner in the second group of
 	// loops. I grab each individual element here because I want the
 	// zero's to build the block, but there's probably a cheaper way of
@@ -214,37 +214,6 @@ void TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::invertSerialDenseMatrix(
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Get a local component of an operator given a local row and column
- * index. 
- */
-template<class Scalar, class LO, class GO>
-Scalar TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::getMatrixComponentFromLocal( 
-    const Teuchos::RCP<const matrix_type>& matrix, 
-    const LO local_row, const LO local_col )
-{
-    MCLS_REQUIRE( matrix->getRowMap()->isNodeLocalElement( local_row ) );
-    MCLS_REQUIRE( matrix->getColMap()->isNodeLocalElement( local_col ) );
-
-    Teuchos::ArrayView<const LO> local_indices;
-    Teuchos::ArrayView<const Scalar> local_values;
-    matrix->getLocalRowView( local_row, local_indices, local_values );
-
-    typename Teuchos::ArrayView<const LO>::const_iterator local_idx_it =
-	std::find( local_indices.begin(), local_indices.end(), local_col );
-
-    if ( local_idx_it != local_indices.end() )
-    {
-	return local_values[ std::distance( local_indices.begin(),
-					    local_idx_it ) ];
-    }
-    else
-    {
-	return 0.0;
-    }
-}
-
-//---------------------------------------------------------------------------//
-/*!
  * \brief Get a local component of an operator given a global row and column
  * index. 
  */
@@ -260,7 +229,12 @@ Scalar TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::getMatrixComponentFromGlob
     LO local_col = col_map->getLocalElement( global_col );
 
     MCLS_REQUIRE( local_row != Teuchos::OrdinalTraits<LO>::invalid() );
-    MCLS_REQUIRE( local_col != Teuchos::OrdinalTraits<LO>::invalid() );
+
+    // If the block column is not local, then we get a zero for this entry.
+    if ( local_col == Teuchos::OrdinalTraits<LO>::invalid() )
+    {
+	return 0.0;
+    }
 
     Teuchos::ArrayView<const LO> local_indices;
     Teuchos::ArrayView<const Scalar> local_values;

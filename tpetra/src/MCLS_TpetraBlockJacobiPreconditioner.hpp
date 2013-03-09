@@ -106,12 +106,6 @@ class TpetraBlockJacobiPreconditioner
     void invertSerialDenseMatrix( 
 	Teuchos::SerialDenseMatrix<int,Scalar>& block );
 
-    // Get a local component of an operator given a local row and column
-    // index.
-    Scalar getMatrixComponentFromLocal( 
-	const Teuchos::RCP<const matrix_type>& matrix,
-	const LO local_row, const LO local_col );
-
     // Get a global component of an operator given a global row and column
     // index.
     Scalar getMatrixComponentFromGlobal( 
