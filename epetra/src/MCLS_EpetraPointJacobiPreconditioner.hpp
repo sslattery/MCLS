@@ -32,14 +32,14 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_TpetraPointJacobiPreconditioner.hpp
+ * \file MCLS_EpetraPointJacobiPreconditioner.hpp
  * \author Stuart R. Slattery
- * \brief Point Jacobi preconditioning for Tpetra.
+ * \brief Point Jacobi preconditioning for Epetra.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_TPETRAPOINTJACOBI_HPP
-#define MCLS_TPETRAPOINTJACOBI_HPP
+#ifndef MCLS_EPETRAPOINTJACOBI_HPP
+#define MCLS_EPETRAPOINTJACOBI_HPP
 
 #include <MCLS_DBC.hpp>
 
@@ -48,37 +48,36 @@
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 
-#include <Tpetra_Vector.hpp>
-#include <Tpetra_CrsMatrix.hpp>
+#include <Epetra_Vector.h>
+#include <Epetra_CrsMatrix.h>
 
 namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class TpetraPointJacobiPreconditioner
- * \brief Point-Jacobi preconditioner for Tpetra::CrsMatrix
+ * \class EpetraPointJacobiPreconditioner
+ * \brief Point-Jacobi preconditioner for Epetra::CrsMatrix
  */
-template<class Scalar, class LO, class GO>
-class TpetraPointJacobiPreconditioner
+class EpetraPointJacobiPreconditioner
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Tpetra::Vector<Scalar,LO,GO>            vector_type;
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO>         matrix_type;
+    typedef Epetra_Vector                           vector_type;
+    typedef Epetra_CrsMatrix                        matrix_type;
     //@}
 
     /*!
      * \brief Constructor.
      */
-    TpetraPointJacobiPreconditioner() { /* ... */ }
+    EpetraPointJacobiPreconditioner() { /* ... */ }
 
     /*!
      * \brief Destructor.
      */
-    ~TpetraPointJacobiPreconditioner() { /* ... */ }
+    ~EpetraPointJacobiPreconditioner() { /* ... */ }
 
     /*!
      * \brief Set the operator with the preconditioner.
@@ -95,18 +94,18 @@ class TpetraPointJacobiPreconditioner
     void buildPreconditioner()
     {
 	MCLS_REQUIRE( Teuchos::nonnull(d_A) );
-	MCLS_REQUIRE( d_A->isFillComplete() );
+	MCLS_REQUIRE( d_A->Filled() );
 
 	// Create the preconditioner.
-	d_preconditioner = 
-	    Tpetra::createCrsMatrix<Scalar,LO,GO>( d_A->getRowMap() );
-
+	d_preconditioner = Teuchos::rcp( 
+	    new Epetra_CrsMatrix(Copy,d_A->RowMatrixRowMap(),0) );
+	    
 	// Compute the inverse of the diagonal.
 	Teuchos::RCP<vector_type> diagonal = 
-	    Tpetra::createVector<Scalar,LO,GO>( d_A->getRowMap() );
-	d_A->getLocalDiagCopy( *diagonal );
-	diagonal->reciprocal( *diagonal );
-	Teuchos::ArrayRCP<const Scalar> diagonal_data = diagonal->getData();
+	    Teuchos::rcp( new vector_type( d_A->RowMatrixRowMap() ) );
+
+	d_A->ExtractDiagonalCopy( *diagonal );
+	diagonal->Reciprocal( *diagonal );
 
 	// Build a matrix from the diagonal vector.
 	Teuchos::ArrayView<const GO> rows = 
@@ -117,15 +116,15 @@ class TpetraPointJacobiPreconditioner
 	for ( row_it = rows.begin(); row_it != rows.end(); ++row_it )
 	{
 	    col[0] = *row_it;
-	    d_preconditioner->insertGlobalValues( 
-		*row_it, col(), diagonal_data( local_row, 1 ) );
+	    d_preconditioner->InsertGlobalValues( 
+		*row_it, 1, &diagonal_data[local_row], col->getRawPtr() );
 	    ++local_row;
 	}
 
-	d_preconditioner->fillComplete();
+	d_preconditioner->FillComplete();
 	
 	MCLS_ENSURE( Teuchos::nonull(d_preconditioner) );
-	MCLS_ENSURE( d_preconditioner->isFillComplete() );
+	MCLS_ENSURE( d_preconditioner->Filled() );
     }
 
     /*!
@@ -147,8 +146,8 @@ class TpetraPointJacobiPreconditioner
 
 } // end namespace MCLS
 
-#endif // end MCLS_TPETRAPOINTJACOBI_HPP
+#endif // end MCLS_EPETRAPOINTJACOBI_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_TpetraPointJacobiPreconditioner.hpp
+// end MCLS_EpetraPointJacobiPreconditioner.hpp
 //---------------------------------------------------------------------------//
