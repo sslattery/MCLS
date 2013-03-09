@@ -41,15 +41,11 @@
 #ifndef MCLS_TPETRAPOINTJACOBI_HPP
 #define MCLS_TPETRAPOINTJACOBI_HPP
 
-#include <MCLS_DBC.hpp>
 #include <MCLS_Preconditioner.hpp>
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_ArrayView.hpp>
-#include <Teuchos_ArrayRCP.hpp>
+#include <Teuchos_ParameterList.hpp>
 
-#include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
 namespace MCLS
@@ -72,67 +68,29 @@ class TpetraPointJacobiPreconditioner
     typedef Tpetra::CrsMatrix<Scalar,LO,GO>         matrix_type;
     //@}
 
-    /*!
-     * \brief Constructor.
-     */
+    // Constructor.
     TpetraPointJacobiPreconditioner() { /* ... */ }
 
-    /*!
-     * \brief Destructor.
-     */
+    //! Destructor.
     ~TpetraPointJacobiPreconditioner() { /* ... */ }
 
-    /*!
-     * \brief Set the operator with the preconditioner.
-     */
-    void setOperator( const Teuchos::RCP<const matrix_type>& A )
-    {
-	MCLS_REQUIRE( Teuchos::nonnull(A) );
-	d_A = A;
-    }
+    // Get the valid parameters for this preconditioner.
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
-    /*!
-     * \brief Build the preconditioner.
-     */
-    void buildPreconditioner()
-    {
-	MCLS_REQUIRE( Teuchos::nonnull(d_A) );
-	MCLS_REQUIRE( d_A->isFillComplete() );
+    // Get the current parameters being used for this preconditioner.
+    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const;
 
-	// Create the preconditioner.
-	d_preconditioner = 
-	    Tpetra::createCrsMatrix<Scalar,LO,GO>( d_A->getRowMap() );
+    // Set the parameters for the preconditioner. The preconditioner will
+    // modify this list with default parameters that are not defined.
+    void setParameters( const Teuchos::RCP<Teuchos::ParameterList>& params );
 
-	// Compute the inverse of the diagonal.
-	Teuchos::RCP<vector_type> diagonal = 
-	    Tpetra::createVector<Scalar,LO,GO>( d_A->getRowMap() );
-	d_A->getLocalDiagCopy( *diagonal );
-	diagonal->reciprocal( *diagonal );
-	Teuchos::ArrayRCP<const Scalar> diagonal_data = diagonal->getData();
+    // Set the operator with the preconditioner.
+    void setOperator( const Teuchos::RCP<const matrix_type>& A );
 
-	// Build a matrix from the diagonal vector.
-	Teuchos::ArrayView<const GO> rows = 
-	    d_preconditioner->getRowMap()->getNodeElementsList();
-	Teuchos::ArrayView<const GO>::const_iterator row_it;
-	Teuchos::Array<GO> col(1);
-	LO local_row = 0;
-	for ( row_it = rows.begin(); row_it != rows.end(); ++row_it )
-	{
-	    col[0] = *row_it;
-	    d_preconditioner->insertGlobalValues( 
-		*row_it, col(), diagonal_data( local_row, 1 ) );
-	    ++local_row;
-	}
+    // Build the preconditioner.
+    void buildPreconditioner();
 
-	d_preconditioner->fillComplete();
-	
-	MCLS_ENSURE( Teuchos::nonull(d_preconditioner) );
-	MCLS_ENSURE( d_preconditioner->isFillComplete() );
-    }
-
-    /*!
-     * \brief Get the preconditioner.
-     */
+    //! Get the preconditioner.
     Teuchos::RCP<const matrix_type> getPreconditioner() const
     { return d_preconditioner; }
 
@@ -148,6 +106,14 @@ class TpetraPointJacobiPreconditioner
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
+
+//---------------------------------------------------------------------------//
+// Template includes.
+//---------------------------------------------------------------------------//
+
+#include "MCLS_TpetraPointJacobiPreconditioner_impl.hpp"
+
+//---------------------------------------------------------------------------//
 
 #endif // end MCLS_TPETRAPOINTJACOBI_HPP
 

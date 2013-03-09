@@ -90,11 +90,11 @@ class Preconditioner : public virtual Teuchos::Describable
     //! Get the operator begin preconditioned.
     virtual const Matrix& getOperator() const = 0;
 
-    //! Get the preconditioner.
-    virtual Teuchos::RCP<const Matrix> getPreconditioner() const = 0;
-
     //! Build the preconditioner.
     virtual void buildPreconditioner() = 0;
+
+    //! Get the preconditioner.
+    virtual Teuchos::RCP<const Matrix> getPreconditioner() const = 0;
 };
 
 //---------------------------------------------------------------------------//

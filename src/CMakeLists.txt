@@ -52,6 +52,7 @@ APPEND_SET(HEADERS
   MCLS_MCSolver_impl.hpp
   MCLS_MSODManager.hpp
   MCLS_MSODManager_impl.hpp
+  MCLS_Preconditioner.hpp
   MCLS_RNGControl.hpp
   MCLS_SamplingTools.hpp
   MCLS_Serializer.hpp
