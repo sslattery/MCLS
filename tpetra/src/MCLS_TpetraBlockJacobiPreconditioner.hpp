@@ -42,6 +42,7 @@
 #define MCLS_TPETRABLOCKJACOBI_HPP
 
 #include <MCLS_DBC.hpp>
+#include <MCLS_Preconditioner.hpp>
 
 #include <Teuchos_RCP.hpp>
 
@@ -58,6 +59,7 @@ namespace MCLS
  */
 template<class Scalar, class LO, class GO>
 class TpetraBlockJacobiPreconditioner
+    : public Preconditioner<Tpetra::CrsMatrix<Scalar,LO,GO> >
 {
   public:
 

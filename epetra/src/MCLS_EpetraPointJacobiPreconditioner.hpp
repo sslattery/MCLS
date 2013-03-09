@@ -42,6 +42,7 @@
 #define MCLS_EPETRAPOINTJACOBI_HPP
 
 #include <MCLS_DBC.hpp>
+#include <MCLS_Preconditioner.hpp>
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
@@ -59,7 +60,7 @@ namespace MCLS
  * \class EpetraPointJacobiPreconditioner
  * \brief Point-Jacobi preconditioner for Epetra_CrsMatrix
  */
-class EpetraPointJacobiPreconditioner
+class EpetraPointJacobiPreconditioner : public Preconditioner<Epetra_CrsMatrix>
 {
   public:
 

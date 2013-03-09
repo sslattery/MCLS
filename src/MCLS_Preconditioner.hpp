@@ -32,84 +32,69 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_SolverManager.hpp
+ * \file MCLS_Preconditioner.hpp
  * \author Stuart R. Slattery
  * \brief Linear solver manager base class.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_SOLVERMANAGER_HPP
-#define MCLS_SOLVERMANAGER_HPP
+#ifndef MCLS_PRECONDITIONER_HPP
+#define MCLS_PRECONDITIONER_HPP
 
-#include "MCLS_LinearProblem.hpp"
-#include "MCLS_VectorTraits.hpp"
+#include <MCLS_DBC.hpp>
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_ParameterList.hpp>
-#include <Teuchos_ScalarTraits.hpp>
 
 namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class SolverManager
- * \brief Linear solver base class.
+ * \class Preconditioner
+ * \brief Preconditioner base class.
  */
-template<class Vector, class Matrix>
-class SolverManager : public virtual Teuchos::Describable
+template<class Matrix>
+class Preconditioner : public virtual Teuchos::Describable
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Vector                                  vector_type;
-    typedef VectorTraits<Vector>                    VT;
-    typedef typename VT::scalar_type                Scalar;
     typedef Matrix                                  matrix_type;
     //@}
 
     //! Constructor.
-    SolverManager() { /* ... */ }
+    Preconditioner() { /* ... */ }
 
     //! Destructor.
-    virtual ~SolverManager() { /* ... */ }
+    virtual ~Preconditioner() { /* ... */ }
 
-    //! Get the linear problem being solved by the manager.
-    virtual const LinearProblem<Vector,Matrix>& getProblem() const = 0;
-
-    //! Get the valid parameters for this manager.
+    //! Get the valid parameters for this preconditioner.
     virtual Teuchos::RCP<const Teuchos::ParameterList> 
     getValidParameters() const = 0;
 
-    //! Get the current parameters being used for this manager.
+    //! Get the current parameters being used for this preconditioner.
     virtual Teuchos::RCP<const Teuchos::ParameterList> 
     getCurrentParameters() const = 0;
 
-    //! Get the tolerance achieved on the last linear solve. This may be less
-    //! or more than the set convergence tolerance.
-    virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-    achievedTol() const = 0;
-
-    //! Get the number of iterations from the last linear solve.
-    virtual int getNumIters() const = 0;
-
-    //! Set the linear problem with the manager.
-    virtual void setProblem( 
-	const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem ) = 0;
-
-    //! Set the parameters for the manager. The manager will modify this list
-    //! with default parameters that are not defined.
+    //! Set the parameters for the preconditioner. The preconditioner will
+    //! modify this list with default parameters that are not defined.
     virtual void setParameters( 
 	const Teuchos::RCP<Teuchos::ParameterList>& params ) = 0;
 
-    //! Solve the linear problem. Return true if the solution converged. False
-    //! if it did not.
-    virtual bool solve() = 0;
+    //! Set the operator with the preconditioner.
+    virtual void setOperator( const Teuchos::RCP<const Matrix>& A ) = 0;
 
-    //! Return if the last linear solve converged.
-    virtual bool getConvergedStatus() const = 0;
+    //! Get the operator begin preconditioned.
+    virtual const Matrix& getOperator() const = 0;
+
+    //! Get the preconditioner.
+    virtual Teuchos::RCP<const Matrix> getPreconditioner() const = 0;
+
+    //! Build the preconditioner.
+    virtual void buildPreconditioner() = 0;
 };
 
 //---------------------------------------------------------------------------//
@@ -118,9 +103,9 @@ class SolverManager : public virtual Teuchos::Describable
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_SOLVERMANAGER_HPP
+#endif // end MCLS_PRECONDITIONER_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_SolverManager.hpp
+// end MCLS_Preconditioner.hpp
 //---------------------------------------------------------------------------//
 

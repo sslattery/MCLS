@@ -41,6 +41,8 @@
 #ifndef MCLS_TPETRABLOCKJACOBI_IMPL_HPP
 #define MCLS_TPETRABLOCKJACOBI_IMPL_HPP
 
+#include <algorithm>
+
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ArrayRCP.hpp>
@@ -57,7 +59,165 @@ namespace MCLS
 template<class Scalar, class LO, class GO>
 void TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::buildPreconditioner()
 {
-    
+    MCLS_REQUIRE( Teuchos::nonnull(d_A) );
+    MCLS_REQUIRE( d_A->isFillComplete() );
+
+    // Get the block size.
+    int block_size = d_plist->get<int>("Jacobi Block Size");
+
+    // We require that all blocks are local.
+    MCLS_REQUIRE( d_A->getRowMap()->getNodeNumElements() % block_size == 0 );
+
+    // Get the number of blocks.
+    int num_blocks = d_A->getRowMap()->getNodeNumElements() / block_size;
+
+    // Build the block preconditioner.
+    d_preconditioner = 
+	Tpetra::createCrsMatrix<Scalar,LO,GO>( d_A->getRowMap() );
+
+    // Populate the preconditioner with inverted blocks.
+    Teuchos::SerialDenseMatrix<int,Scalar> block( block_size, block_size );
+    GO col_start = 0;
+    GO global_row = 0;
+    Teuchos::Array<GO> block_cols( block_size );
+    for ( int n = 0; n < num_blocks; ++n )
+    {
+	// Starting row/column for the block.
+	col_start = block_size*n;
+
+	// Extract the block. Note that I form the tranposed block to
+	// facilitate constructing the preconditioner in the second group of
+	// loops. I grab each individual element here because I want the
+	// zero's to build the block, but there's probably a cheaper way of
+	// doing the extraction.
+	for ( int i = 0; i < block_size; ++i )
+	{
+	    global_row = d_A->getRowMap()->getGlobalElement(col_start+i);
+	    for ( int j = 0; j < block_size; ++j )
+	    {
+		block_col[j] = d_A->getColMap()->getGlobalElement(col_start+j);
+	    }
+	    for ( int j = 0; j < block_size; ++j )
+	    {
+		block(j,i) = 
+		    getMatrixComponentFromGlobal( d_A, global_row, block_col[j] );
+	    }
+	}
+
+	// Invert the block.
+	invertSerialDenseMatrix( block );
+
+	// Add the block to the preconditioner.
+	for ( int i = 0; i < block_size; ++i )
+	{
+	    global_row = 
+		d_preconditioner->getRowMap()->getGlobalElement(col_start+i);
+
+	    d_preconditioner->insertGlobalValues( 
+		global_row, block_cols(), 
+		Teuchos::ArrayView<Scalar>(block_values[i], block_size) );
+	}
+    }
+
+    d_preconditioner->fillComplete();
+
+    MCLS_ENSURE( Teuchos::nonnull(d_preconditioner) );
+    MCLS_ENSURE( d_preconditioner.isFillComplete() );
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Invert a Teuchos::SerialDenseMatrix block.
+ */
+template<class Scalar, class LO, class GO>
+void TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::invertSerialDenseMatrix(
+    Teuchos::SerialDenseMatrix<int,Scalar>& block )
+{
+    // Make a LAPACK object.
+    Teuchos::LAPACK<int,double> lapack;
+
+    // Compute the LU-factorization of the block.
+    int ipiv = 0;
+    int info = 0;
+    lapack.GETRF( block.numRows(), block.numCols(), block.values(), 
+		  block.stride(), &ipiv, &info );
+    MCLS_CHECK( info == 0 );
+
+    // Compute the inverse of the block from the LU-factorization.
+    Teuchos::Array<double> work( block.numRows() );
+    lapack.GETRI( 
+        block.numCols(), block.values(), block.stride(), 
+	&ipiv, work.getRawPtr(), work.size(), &info );
+    MCLS_CHECK( info == 0 );
+    MCLS_CHECK( work[0] == block.numRows );
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Get a local component of an operator given a local row and column
+ * index. 
+ */
+template<class Scalar, class LO, class GO>
+Scalar TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::getMatrixComponentFromLocal( 
+    const Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO> >& matrix,
+    const LO local_row, const LO local_col )
+{
+    testPrecondition( matrix->getRowMap()->isNodeLocalElement( local_row ) );
+    testPrecondition( matrix->getColMap()->isNodeLocalElement( local_col ) );
+
+    Teuchos::ArrayView<const LO> local_indices;
+    Teuchos::ArrayView<const Scalar> local_values;
+    matrix->getLocalRowView( local_row, local_indices, local_values );
+
+    typename Teuchos::ArrayView<const LO>::const_iterator local_idx_it =
+	std::find( local_indices.begin(), local_indices.end(), local_col );
+
+    if ( local_idx_it != local_indices.end() )
+    {
+	return local_values[ std::distance( local_indices.begin(),
+					    local_idx_it ) ];
+    }
+    else
+    {
+	return 0.0;
+    }
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Get a local component of an operator given a global row and column
+ * index. 
+ */
+template<class Scalar, class LO, class GO>
+Scalar TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::getMatrixComponentFromGlobal( 
+    const Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO> >& matrix,
+    const GO global_row, const GO global_col )
+{
+    Teuchos::RCP<const Tpetra::Map<LO,GO> > row_map = matrix->getRowMap();
+    Teuchos::RCP<const Tpetra::Map<LO,GO> > col_map = matrix->getColMap();
+
+    LO local_row = row_map->getLocalElement( global_row );
+    LO local_col = col_map->getLocalElement( global_col );
+
+    testPrecondition( local_row != Teuchos::OrdinalTraits<LO>::invalid() );
+    testPrecondition( local_col != Teuchos::OrdinalTraits<LO>::invalid() );
+
+    Teuchos::ArrayView<const LO> local_indices;
+    Teuchos::ArrayView<const Scalar> local_values;
+    matrix->getLocalRowView( local_row, local_indices, local_values );
+
+    typename Teuchos::ArrayView<const LO>::const_iterator local_idx_it =
+	std::find( local_indices.begin(), local_indices.end(), local_col );
+
+    if ( local_idx_it != local_indices.end() )
+    {
+	return local_values[ std::distance( local_indices.begin(),
+					    local_idx_it ) ];
+    }
+    else
+    {
+	return 0.0;
+    }
 }
 
 //---------------------------------------------------------------------------//
