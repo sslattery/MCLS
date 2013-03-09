@@ -41,15 +41,10 @@
 #ifndef MCLS_EPETRAPOINTJACOBI_HPP
 #define MCLS_EPETRAPOINTJACOBI_HPP
 
-#include <MCLS_DBC.hpp>
 #include <MCLS_Preconditioner.hpp>
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_ArrayView.hpp>
-#include <Teuchos_ArrayRCP.hpp>
 
-#include <Epetra_Vector.h>
 #include <Epetra_CrsMatrix.h>
 
 namespace MCLS
@@ -80,57 +75,32 @@ class EpetraPointJacobiPreconditioner : public Preconditioner<Epetra_CrsMatrix>
      */
     ~EpetraPointJacobiPreconditioner() { /* ... */ }
 
-    /*!
-     * \brief Set the operator with the preconditioner.
-     */
-    void setOperator( const Teuchos::RCP<const matrix_type>& A )
-    {
-	MCLS_REQUIRE( Teuchos::nonnull(A) );
-	d_A = A;
-    }
+    // Constructor.
+    TpetraPointJacobiPreconditioner() { /* ... */ }
 
-    /*!
-     * \brief Build the preconditioner.
-     */
-    void buildPreconditioner()
-    {
-	MCLS_REQUIRE( Teuchos::nonnull(d_A) );
-	MCLS_REQUIRE( d_A->Filled() );
+    //! Destructor.
+    ~TpetraPointJacobiPreconditioner() { /* ... */ }
 
-	// Create the preconditioner.
-	d_preconditioner = Teuchos::rcp( 
-	    new Epetra_CrsMatrix(Copy,d_A->RowMatrixRowMap(),0) );
-	    
-	// Compute the inverse of the diagonal.
-	Teuchos::RCP<vector_type> diagonal = 
-	    Teuchos::rcp( new vector_type( d_A->RowMatrixRowMap() ) );
+    // Get the valid parameters for this preconditioner.
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
-	d_A->ExtractDiagonalCopy( *diagonal );
-	diagonal->Reciprocal( *diagonal );
+    // Get the current parameters being used for this preconditioner.
+    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const;
 
-	// Build a matrix from the diagonal vector.
-	Teuchos::ArrayView<const GO> rows = 
-	    d_preconditioner->getRowMap()->getNodeElementsList();
-	Teuchos::ArrayView<const GO>::const_iterator row_it;
-	Teuchos::Array<GO> col(1);
-	LO local_row = 0;
-	for ( row_it = rows.begin(); row_it != rows.end(); ++row_it )
-	{
-	    col[0] = *row_it;
-	    d_preconditioner->InsertGlobalValues( 
-		*row_it, 1, &diagonal_data[local_row], col->getRawPtr() );
-	    ++local_row;
-	}
+    // Set the parameters for the preconditioner. The preconditioner will
+    // modify this list with default parameters that are not defined.
+    void setParameters( const Teuchos::RCP<Teuchos::ParameterList>& params );
 
-	d_preconditioner->FillComplete();
-	
-	MCLS_ENSURE( Teuchos::nonull(d_preconditioner) );
-	MCLS_ENSURE( d_preconditioner->Filled() );
-    }
+    // Set the operator with the preconditioner.
+    void setOperator( const Teuchos::RCP<const matrix_type>& A );
 
-    /*!
-     * \brief Get the preconditioner.
-     */
+    // Set the operator with the preconditioner.
+    const matrix_type& getOperator() const { return *d_A; }
+
+    // Build the preconditioner.
+    void buildPreconditioner();
+
+    //! Get the preconditioner.
     Teuchos::RCP<const matrix_type> getPreconditioner() const
     { return d_preconditioner; }
 

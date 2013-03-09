@@ -87,6 +87,9 @@ class TpetraPointJacobiPreconditioner
     // Set the operator with the preconditioner.
     void setOperator( const Teuchos::RCP<const matrix_type>& A );
 
+    // Set the operator with the preconditioner.
+    const matrix_type& getOperator() const { return *d_A; }
+
     // Build the preconditioner.
     void buildPreconditioner();
 
