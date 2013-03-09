@@ -69,35 +69,37 @@ class TpetraBlockJacobiPreconditioner
     typedef Tpetra::CrsMatrix<Scalar,LO,GO>         matrix_type;
     //@}
 
-    /*!
-     * \brief Constructor.
-     */
-    TpetraBlockJacobiPreconditioner() { /* ... */ }
+    // Constructor.
+    TpetraBlockJacobiPreconditioner(
+	const Teuchos::RCP<Teuchos::ParameterList>& params );
 
-    /*!
-     * \brief Destructor.
-     */
+    //! Destructor.
     ~TpetraBlockJacobiPreconditioner() { /* ... */ }
 
-    /*!
-     * \brief Set the operator with the preconditioner.
-     */
-    void setOperator( const Teuchos::RCP<const matrix_type>& A )
-    {
-	MCLS_REQUIRE( Teuchos::nonnull(A) );
-	d_A = A;
-    }
+    // Get the valid parameters for this preconditioner.
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+
+    // Get the current parameters being used for this preconditioner.
+    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const;
+
+    // Set the parameters for the preconditioner. The preconditioner will
+    // modify this list with default parameters that are not defined.
+    void setParameters( const Teuchos::RCP<Teuchos::ParameterList>& params );
+
+    // Set the operator with the preconditioner.
+    void setOperator( const Teuchos::RCP<const matrix_type>& A );
 
     // Build the preconditioner.
     void buildPreconditioner();
 
-    /*!
-     * \brief Get the preconditioner.
-     */
+    //! Get the preconditioner.
     Teuchos::RCP<const matrix_type> getPreconditioner() const
     { return d_preconditioner; }
 
   private:
+
+    // Parameter list.
+    Teuchos::RCP<Teuchos::ParameterList> d_plist;
 
     // Original operator.
     Teuchos::RCP<const matrix_type> d_A;

@@ -44,7 +44,9 @@
 #include <MCLS_Preconditioner.hpp>
 
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_ParameterList.hpp>
 
+#include <Epetra_RowMatrix.h>
 #include <Epetra_CrsMatrix.h>
 
 namespace MCLS
@@ -55,31 +57,21 @@ namespace MCLS
  * \class EpetraPointJacobiPreconditioner
  * \brief Point-Jacobi preconditioner for Epetra_CrsMatrix
  */
-class EpetraPointJacobiPreconditioner : public Preconditioner<Epetra_CrsMatrix>
+class EpetraPointJacobiPreconditioner : public Preconditioner<Epetra_RowMatrix>
 {
   public:
 
     //@{
     //! Typedefs.
     typedef Epetra_Vector                           vector_type;
-    typedef Epetra_CrsMatrix                        matrix_type;
+    typedef Epetra_RowMatrix                        matrix_type;
     //@}
 
-    /*!
-     * \brief Constructor.
-     */
+    //! Constructor.
     EpetraPointJacobiPreconditioner() { /* ... */ }
 
-    /*!
-     * \brief Destructor.
-     */
-    ~EpetraPointJacobiPreconditioner() { /* ... */ }
-
-    // Constructor.
-    TpetraPointJacobiPreconditioner() { /* ... */ }
-
     //! Destructor.
-    ~TpetraPointJacobiPreconditioner() { /* ... */ }
+    ~EpetraPointJacobiPreconditioner() { /* ... */ }
 
     // Get the valid parameters for this preconditioner.
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
@@ -110,7 +102,7 @@ class EpetraPointJacobiPreconditioner : public Preconditioner<Epetra_CrsMatrix>
     Teuchos::RCP<const matrix_type> d_A;
 
     // Preconditioner (M^-1)
-    Teuchos::RCP<matrix_type> d_preconditioner;
+    Teuchos::RCP<Epetra_CrsMatrix> d_preconditioner;
 };
 
 //---------------------------------------------------------------------------//

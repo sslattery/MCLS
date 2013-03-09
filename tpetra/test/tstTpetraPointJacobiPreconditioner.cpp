@@ -34,7 +34,7 @@
 /*!
  * \file tstTpetraPointJacobiPreconditioner.cpp
  * \author Stuart R. Slattery
- * \brief Tpetra::CrsMatrix adapter tests.
+ * \brief Tpetra point Jacobi preconditioning tests.
  */
 //---------------------------------------------------------------------------//
 
@@ -111,8 +111,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TpetraPointJacobiPreconditioner, diag_matrix,
     // Build the preconditioner.
     Teuchos::RCP<MCLS::Preconditioner<MatrixType> > preconditioner = 
 	Teuchos::rcp( new MCLS::TpetraPointJacobiPreconditioner<Scalar,LO,GO>() );
-    TEST_ASSERT( Teuchos::is_null(preconditioner->getValidParameters()) );
-    TEST_ASSERT( Teuchos::is_null(preconditioner->getCurrentParameters()) );
     preconditioner->setOperator( A );
     preconditioner->buildPreconditioner();
     Teuchos::RCP<const MatrixType> M = preconditioner->getPreconditioner();
@@ -126,7 +124,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TpetraPointJacobiPreconditioner, diag_matrix,
 	  view_iterator != X_view.end();
 	  ++view_iterator )
     {
-	TEST_EQUALITY( *view_iterator, 1.0/diag_val*comm_size );
+	TEST_EQUALITY( *view_iterator, 1.0/(diag_val*comm_size) );
     }
 }
 
@@ -153,14 +151,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TpetraPointJacobiPreconditioner, tridiag_matr
 	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
 
     Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
-    Teuchos::Array<GO> global_columns( 1 );
+    Teuchos::Array<GO> global_columns( 3 );
     Scalar diag_val = 2.0;
     Teuchos::Array<Scalar> values( 3, diag_val );
     for ( int i = 1; i < global_num_rows-1; ++i )
     {
 	global_columns[0] = i-1;
 	global_columns[1] = i;
-	global_columns[2] = i;
+	global_columns[2] = i+1;
 	A->insertGlobalValues( i, global_columns(), values() );
     }
     A->insertGlobalValues( 0, Teuchos::Array<GO>(1,0)(), 
@@ -173,8 +171,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TpetraPointJacobiPreconditioner, tridiag_matr
     // Build the preconditioner.
     Teuchos::RCP<MCLS::Preconditioner<MatrixType> > preconditioner = 
 	Teuchos::rcp( new MCLS::TpetraPointJacobiPreconditioner<Scalar,LO,GO>() );
-    TEST_ASSERT( Teuchos::is_null(preconditioner->getValidParameters()) );
-    TEST_ASSERT( Teuchos::is_null(preconditioner->getCurrentParameters()) );
     preconditioner->setOperator( A );
     preconditioner->buildPreconditioner();
     Teuchos::RCP<const MatrixType> M = preconditioner->getPreconditioner();
@@ -188,7 +184,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TpetraPointJacobiPreconditioner, tridiag_matr
 	  view_iterator != X_view.end();
 	  ++view_iterator )
     {
-	TEST_EQUALITY( *view_iterator, 1.0/diag_val*comm_size );
+	TEST_EQUALITY( *view_iterator, 1.0/(diag_val*comm_size) );
     }
 }
 

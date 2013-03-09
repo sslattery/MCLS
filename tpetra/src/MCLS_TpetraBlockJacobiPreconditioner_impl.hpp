@@ -54,6 +54,67 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 /*!
+ * \brief Constructor.
+ */
+template<class Scalar, class LO, class GO>
+TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::TpetraBlockJacobiPreconditioner(
+    const Teuchos::RCP<Teuchos::ParameterList>& params )
+    : d_plist( plist )
+{
+    MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
+}
+
+//---------------------------------------------------------------------------//
+/*! 
+ * \brief Get the valid parameters for this preconditioner.
+ */
+template<class Scalar, class LO, class GO>
+Teuchos::RCP<const Teuchos::ParameterList> 
+TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::getValidParameters() const
+{
+    Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::parameterList();
+    plist->set<int>("Jacobi Block Size",0);
+    return plist;
+}
+
+//---------------------------------------------------------------------------//
+/*! 
+ * \brief Get the current parameters being used for this preconditioner.
+ */
+template<class Scalar, class LO, class GO>
+Teuchos::RCP<const Teuchos::ParameterList> 
+TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::getCurrentParameters() const
+{
+    return d_plist;
+}
+
+//---------------------------------------------------------------------------//
+/*! 
+ * \brief Set the parameters for the preconditioner. The preconditioner will
+ * modify this list with default parameters that are not defined. 
+ */
+template<class Scalar, class LO, class GO>
+void TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::setParameters( 
+    const Teuchos::RCP<Teuchos::ParameterList>& params )
+{
+    MCLS_REQUIRE( Teuchos::nonnull(params) );
+    d_plist = params;
+}
+
+//---------------------------------------------------------------------------//
+/*! 
+ * \brief Set the operator with the preconditioner.
+ */
+template<class Scalar, class LO, class GO>
+void TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::setOperator( 
+    const Teuchos::RCP<const matrix_type>& A )
+{
+    MCLS_REQUIRE( Teuchos::nonnull(A) );
+    d_A = A;
+}
+
+//---------------------------------------------------------------------------//
+/*!
  * \brief Build the preconditioner.
  */
 template<class Scalar, class LO, class GO>

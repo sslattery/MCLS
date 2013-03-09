@@ -32,9 +32,9 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file tstTpetraPointJacobiPreconditioner.cpp
+ * \file tstEpetraPointJacobiPreconditioner.cpp
  * \author Stuart R. Slattery
- * \brief Tpetra::CrsMatrix adapter tests.
+ * \brief Epetra point Jacobi preconditioning tests.
  */
 //---------------------------------------------------------------------------//
 
@@ -49,9 +49,9 @@
 
 #include <MCLS_MatrixTraits.hpp>
 #include <MCLS_VectorTraits.hpp>
-#include <MCLS_TpetraAdapter.hpp>
+#include <MCLS_EpetraAdapter.hpp>
 #include <MCLS_Preconditioner.hpp>
-#include <MCLS_TpetraPointJacobiPreconditioner.hpp>
+#include <MCLS_EpetraPointJacobiPreconditioner.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -62,57 +62,75 @@
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_TypeTraits.hpp>
 
-#include <Tpetra_Map.hpp>
-#include <Tpetra_Vector.hpp>
-#include <Tpetra_CrsMatrix.hpp>
+#include <Epetra_Map.h>
+#include <Epetra_Vector.h>
+#include <Epetra_RowMatrix.h>
+#include <Epetra_CrsMatrix.h>
+#include <Epetra_Comm.h>
+#include <Epetra_SerialComm.h>
+
+#ifdef HAVE_MPI
+#include <Epetra_MpiComm.h>
+#endif
 
 //---------------------------------------------------------------------------//
-// Instantiation macro. 
-// 
-// These types are those enabled by Tpetra under explicit instantiation.
+// Helper functions.
 //---------------------------------------------------------------------------//
-#define UNIT_TEST_INSTANTIATION( type, name )			           \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, double )   \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
+
+Teuchos::RCP<Epetra_Comm> getEpetraComm( 
+    const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
+{
+#ifdef HAVE_MPI
+    Teuchos::RCP< const Teuchos::MpiComm<int> > mpi_comm = 
+	Teuchos::rcp_dynamic_cast< const Teuchos::MpiComm<int> >( comm );
+    Teuchos::RCP< const Teuchos::OpaqueWrapper<MPI_Comm> > opaque_comm = 
+	mpi_comm->getRawMpiComm();
+    return Teuchos::rcp( new Epetra_MpiComm( (*opaque_comm)() ) );
+#else
+    return Teuchos::rcp( new Epetra_SerialComm() );
+#endif
+}
 
 //---------------------------------------------------------------------------//
 // Test templates
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TpetraPointJacobiPreconditioner, diag_matrix, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST( EpetraPointJacobiPreconditioner, diag_matrix )
 {
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef Epetra_RowMatrix MatrixType;
+    typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
     int comm_size = comm->getSize();
 
     int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
-    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
-	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
+    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
+	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
-    Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
-    Teuchos::Array<GO> global_columns( 1 );
-    Scalar diag_val = 2.0;
-    Teuchos::Array<Scalar> values( 1, diag_val );
+    Teuchos::RCP<Epetra_CrsMatrix> A = 
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
+
+    Teuchos::Array<int> global_columns( 1 );
+    double diag_val = 2.0;
+    Teuchos::Array<double> values( 1, diag_val );
     for ( int i = 0; i < global_num_rows; ++i )
     {
 	global_columns[0] = i;
-	A->insertGlobalValues( i, global_columns(), values() );
+	A->InsertGlobalValues( i, global_columns().size(), 
+			       &values[0], &global_columns[0] );
     }
-    A->fillComplete();
+    A->FillComplete();
 
     // Build the preconditioner.
     Teuchos::RCP<MCLS::Preconditioner<MatrixType> > preconditioner = 
-	Teuchos::rcp( new MCLS::TpetraPointJacobiPreconditioner<Scalar,LO,GO>() );
-    TEST_ASSERT( Teuchos::is_null(preconditioner->getValidParameters()) );
-    TEST_ASSERT( Teuchos::is_null(preconditioner->getCurrentParameters()) );
+	Teuchos::rcp( new MCLS::EpetraPointJacobiPreconditioner() );
     preconditioner->setOperator( A );
     preconditioner->buildPreconditioner();
     Teuchos::RCP<const MatrixType> M = preconditioner->getPreconditioner();
@@ -120,61 +138,62 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TpetraPointJacobiPreconditioner, diag_matrix,
     // Check the preconditioner.
     Teuchos::RCP<VectorType> X = MT::cloneVectorFromMatrixRows(*A);
     MT::getLocalDiagCopy( *M, *X );
-    Teuchos::ArrayRCP<const Scalar> X_view = VT::view( *X );
-    typename Teuchos::ArrayRCP<const Scalar>::const_iterator view_iterator;
+    Teuchos::ArrayRCP<const double> X_view = VT::view( *X );
+    Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
     for ( view_iterator = X_view.begin();
 	  view_iterator != X_view.end();
 	  ++view_iterator )
     {
-	TEST_EQUALITY( *view_iterator, 1.0/diag_val*comm_size );
+	TEST_EQUALITY( *view_iterator, 1.0/diag_val );
     }
 }
 
-UNIT_TEST_INSTANTIATION( TpetraPointJacobiPreconditioner, diag_matrix )
-
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TpetraPointJacobiPreconditioner, tridiag_matrix, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST( EpetraPointJacobiPreconditioner, tridiag_matrix )
 {
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef Epetra_RowMatrix MatrixType;
+    typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
     int comm_size = comm->getSize();
 
     int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
-    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
-	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
+    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
+	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
-    Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
-    Teuchos::Array<GO> global_columns( 1 );
-    Scalar diag_val = 2.0;
-    Teuchos::Array<Scalar> values( 3, diag_val );
+    Teuchos::RCP<Epetra_CrsMatrix> A = 
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
+
+    Teuchos::Array<int> global_columns( 3 );
+    double diag_val = 2.0;
+    Teuchos::Array<double> values( 3, diag_val );
     for ( int i = 1; i < global_num_rows-1; ++i )
     {
 	global_columns[0] = i-1;
 	global_columns[1] = i;
-	global_columns[2] = i;
-	A->insertGlobalValues( i, global_columns(), values() );
+	global_columns[2] = i+1;
+	A->InsertGlobalValues( i, global_columns().size(), 
+			       &values[0], &global_columns[0] );
     }
-    A->insertGlobalValues( 0, Teuchos::Array<GO>(1,0)(), 
-			   Teuchos::Array<Scalar>(1,diag_val)() );
-    A->insertGlobalValues( global_num_rows-1, 
-			   Teuchos::Array<GO>(1,global_num_rows-1)(), 
-			   Teuchos::Array<Scalar>(1,diag_val)() );
-    A->fillComplete();
+    Teuchos::Array<int> single_col(1,0);
+    Teuchos::Array<double> diag_elem(1,diag_val);
+    A->InsertGlobalValues( 0, 1, diag_elem.getRawPtr(), single_col.getRawPtr() );
+    single_col[0] = global_num_rows-1;
+    A->InsertGlobalValues( global_num_rows-1, 1, diag_elem.getRawPtr(), 
+			   single_col.getRawPtr() );
+    A->FillComplete();
 
     // Build the preconditioner.
     Teuchos::RCP<MCLS::Preconditioner<MatrixType> > preconditioner = 
-	Teuchos::rcp( new MCLS::TpetraPointJacobiPreconditioner<Scalar,LO,GO>() );
-    TEST_ASSERT( Teuchos::is_null(preconditioner->getValidParameters()) );
-    TEST_ASSERT( Teuchos::is_null(preconditioner->getCurrentParameters()) );
+	Teuchos::rcp( new MCLS::EpetraPointJacobiPreconditioner() );
     preconditioner->setOperator( A );
     preconditioner->buildPreconditioner();
     Teuchos::RCP<const MatrixType> M = preconditioner->getPreconditioner();
@@ -182,19 +201,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TpetraPointJacobiPreconditioner, tridiag_matr
     // Check the preconditioner.
     Teuchos::RCP<VectorType> X = MT::cloneVectorFromMatrixRows(*A);
     MT::getLocalDiagCopy( *M, *X );
-    Teuchos::ArrayRCP<const Scalar> X_view = VT::view( *X );
-    typename Teuchos::ArrayRCP<const Scalar>::const_iterator view_iterator;
+    Teuchos::ArrayRCP<const double> X_view = VT::view( *X );
+    Teuchos::ArrayRCP<const double>::const_iterator view_iterator;
     for ( view_iterator = X_view.begin();
 	  view_iterator != X_view.end();
 	  ++view_iterator )
     {
-	TEST_EQUALITY( *view_iterator, 1.0/diag_val*comm_size );
+	TEST_EQUALITY( *view_iterator, 1.0/diag_val );
     }
 }
 
-UNIT_TEST_INSTANTIATION( TpetraPointJacobiPreconditioner, tridiag_matrix )
-
 //---------------------------------------------------------------------------//
-// end tstTpetraPointJacobiPreconditioner.cpp
+// end tstEpetraPointJacobiPreconditioner.cpp
 //---------------------------------------------------------------------------//
 

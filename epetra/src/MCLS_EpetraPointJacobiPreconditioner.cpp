@@ -38,7 +38,7 @@
  */
 //---------------------------------------------------------------------------//
 
-#include "MCLS_EpetraPointJacobiPreconditioner.cpp"
+#include "MCLS_EpetraPointJacobiPreconditioner.hpp"
 #include <MCLS_DBC.hpp>
 
 #include <Teuchos_Array.hpp>
@@ -114,22 +114,22 @@ void EpetraPointJacobiPreconditioner::buildPreconditioner()
     diagonal->Reciprocal( *diagonal );
 
     // Build a matrix from the diagonal vector.
-    Teuchos::ArrayView<const GO> rows = 
-	d_preconditioner->getRowMap()->getNodeElementsList();
-    Teuchos::ArrayView<const GO>::const_iterator row_it;
-    Teuchos::Array<GO> col(1);
-    LO local_row = 0;
+    Teuchos::Array<int> rows( d_preconditioner->RowMap().NumMyElements() );
+    d_preconditioner->RowMap().MyGlobalElements( rows.getRawPtr() );
+    Teuchos::Array<int>::const_iterator row_it;
+    Teuchos::Array<int> col(1);
+    int local_row = 0;
     for ( row_it = rows.begin(); row_it != rows.end(); ++row_it )
     {
 	col[0] = *row_it;
 	d_preconditioner->InsertGlobalValues( 
-	    *row_it, 1, &diagonal_data[local_row], col->getRawPtr() );
+	    *row_it, 1, &(*diagonal)[local_row], col.getRawPtr() );
 	++local_row;
     }
 
     d_preconditioner->FillComplete();
 	
-    MCLS_ENSURE( Teuchos::nonull(d_preconditioner) );
+    MCLS_ENSURE( Teuchos::nonnull(d_preconditioner) );
     MCLS_ENSURE( d_preconditioner->Filled() );
 }
 
