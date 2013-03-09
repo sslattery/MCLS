@@ -61,6 +61,7 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_TypeTraits.hpp>
+#include <Teuchos_ParameterList.hpp>
 
 #include <Tpetra_Map.hpp>
 #include <Tpetra_Vector.hpp>
@@ -91,6 +92,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TpetraBlockJacobiPreconditioner, 1_block_matr
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
     int comm_size = comm->getSize();
+    int comm_rank = comm->getRank();
 
     int local_num_rows = 4;
     int global_num_rows = local_num_rows*comm_size;
@@ -111,44 +113,100 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TpetraBlockJacobiPreconditioner, 1_block_matr
     values_2[2] = 1.44;
     values_2[3] = -3.72;
 
-    Teuchos::Array<Scalar> values_3( 4 ];
+    Teuchos::Array<Scalar> values_3( 4 );
     values_3[0] = 4.24;
     values_3[1] = -6.42;
     values_3[2] = 1.82;
     values_3[3] = 2.67;
 
-    Teuchos::Array<Scalar> values_4( 4 ];
+    Teuchos::Array<Scalar> values_4( 4 );
     values_4[0] = -0.23;
     values_4[1] = 5.8;
     values_4[2] = 1.13;
     values_4[3] = -3.73;
 
-    Teuchos::Array<GO> global_columns( 4 );
-    for ( int i = 0; i < global_num_rows; ++i )
+    Teuchos::Array<Teuchos::Array<GO> > values( 4 );
+    values[0] = values_1;
+    values[1] = values_2;
+    values[2] = values_3;
+    values[3] = values_4;
+
+    Teuchos::Array<GO> columns( 4 );
+    columns[0] = local_num_rows*comm_rank;
+    columns[1] = local_num_rows*comm_rank+1;
+    columns[2] = local_num_rows*comm_rank+2;
+    columns[3] = local_num_rows*comm_rank+3;
+
+    GO global_row = 0;
+    for ( int i = 0; i < local_num_rows; ++i )
     {
-	global_columns[0] = i;
-	A->insertGlobalValues( i, global_columns(), values() );
+	global_row = i + local_num_rows*comm_rank;
+	A->insertGlobalValues( global_row, columns(), values[i]() );
     }
     A->fillComplete();
 
     // Build the preconditioner.
+    Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::parameterList();
+    plist->set<int>("Jacobi Block Size", 4);
     Teuchos::RCP<MCLS::Preconditioner<MatrixType> > preconditioner = 
-	Teuchos::rcp( new MCLS::TpetraBlockJacobiPreconditioner<Scalar,LO,GO>() );
+	Teuchos::rcp( 
+	    new MCLS::TpetraBlockJacobiPreconditioner<Scalar,LO,GO>(plist) );
     preconditioner->setOperator( A );
     preconditioner->buildPreconditioner();
     Teuchos::RCP<const MatrixType> M = preconditioner->getPreconditioner();
 
-    // Check the preconditioner.
-    Teuchos::RCP<VectorType> X = MT::cloneVectorFromMatrixRows(*A);
-    MT::getLocalDiagCopy( *M, *X );
-    Teuchos::ArrayRCP<const Scalar> X_view = VT::view( *X );
-    typename Teuchos::ArrayRCP<const Scalar>::const_iterator view_iterator;
-    for ( view_iterator = X_view.begin();
-	  view_iterator != X_view.end();
-	  ++view_iterator )
-    {
-	TEST_EQUALITY( *view_iterator, 1.0/(diag_val*comm_size) );
-    }
+    // Check the preconditioner. Inverse block values from matlab.
+    Teuchos::Array<GO> prec_cols(4);
+    Teuchos::Array<Scalar> prec_vals(4);
+    std::size_t num_entries = 0;
+
+    global_row = local_num_rows*comm_rank;
+    MT::getGlobalRowCopy( *M, global_row, prec_cols(), prec_vals(), num_entries );
+    TEST_EQUALITY( num_entries, 4 );
+    TEST_EQUALITY( columns[0], prec_cols[0] );
+    TEST_EQUALITY( columns[1], prec_cols[1] );
+    TEST_EQUALITY( columns[2], prec_cols[2] );
+    TEST_EQUALITY( columns[3], prec_cols[3] );
+    TEST_FLOATING_EQUALITY( prec_vals[0], -0.461356423424245, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[1], -0.060920073472551, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[2],  0.547244760641934, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[3],  0.412904055961420, 1.0e-14 );
+
+    global_row = local_num_rows*comm_rank+1;
+    MT::getGlobalRowCopy( *M, global_row, prec_cols(), prec_vals(), num_entries );
+    TEST_EQUALITY( num_entries, 4 );
+    TEST_EQUALITY( columns[0], prec_cols[0] );
+    TEST_EQUALITY( columns[1], prec_cols[1] );
+    TEST_EQUALITY( columns[2], prec_cols[2] );
+    TEST_EQUALITY( columns[3], prec_cols[3] );
+    TEST_FLOATING_EQUALITY( prec_vals[0],  0.154767451798665, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[1], -0.056225122550555, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[2], -0.174451348828054, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[3], -0.055523340725809, 1.0e-14 );
+
+    global_row = local_num_rows*comm_rank+2;
+    MT::getGlobalRowCopy( *M, global_row, prec_cols(), prec_vals(), num_entries );
+    TEST_EQUALITY( num_entries, 4 );
+    TEST_EQUALITY( columns[0], prec_cols[0] );
+    TEST_EQUALITY( columns[1], prec_cols[1] );
+    TEST_EQUALITY( columns[2], prec_cols[2] );
+    TEST_EQUALITY( columns[3], prec_cols[3] );
+    TEST_FLOATING_EQUALITY( prec_vals[0],  0.848746201780808, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[1],  0.045927762119214, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[2], -0.618485718805259, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[3], -0.415712965073367, 1.0e-14 );
+
+    global_row = local_num_rows*comm_rank+3;
+    MT::getGlobalRowCopy( *M, global_row, prec_cols(), prec_vals(), num_entries );
+    TEST_EQUALITY( num_entries, 4 );
+    TEST_EQUALITY( columns[0], prec_cols[0] );
+    TEST_EQUALITY( columns[1], prec_cols[1] );
+    TEST_EQUALITY( columns[2], prec_cols[2] );
+    TEST_EQUALITY( columns[3], prec_cols[3] );
+    TEST_FLOATING_EQUALITY( prec_vals[0],  0.526232280383953, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[1], -0.069757566407458, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[2], -0.492378815120724, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[3], -0.505833501236923, 1.0e-14 );
 }
 
 UNIT_TEST_INSTANTIATION( TpetraBlockJacobiPreconditioner, 1_block_matrix )

@@ -144,3 +144,11 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 4	
   STANDARD_PASS_OUTPUT
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TpetraBlockJacobiPreconditioner_tests
+  SOURCES tstTpetraBlockJacobiPreconditioner.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 4	
+  STANDARD_PASS_OUTPUT
+  )

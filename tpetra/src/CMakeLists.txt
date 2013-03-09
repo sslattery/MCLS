@@ -17,6 +17,8 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
   MCLS_TpetraAdapter.hpp
+  MCLS_TpetraBlockJacobiPreconditioner.hpp
+  MCLS_TpetraBlockJacobiPreconditioner_impl.hpp
   MCLS_TpetraCrsMatrixAdapter.hpp
   MCLS_TpetraHelpers.hpp
   MCLS_TpetraPointJacobiPreconditioner.hpp
