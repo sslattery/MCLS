@@ -104,7 +104,7 @@ bool Thyra::test_single_mcls_thyra_solver(
         *out << "\nSetting an MCLS preconditioner factory ...\n";
       }
       RCP<PreconditionerFactoryBase<double> >
-        precFactory = Teuchos::rcp(new MCLSPreconditionerFactory());
+      precFactory = Teuchos::rcp(new MCLSPreconditionerFactory<double>());
       if (precPL)
         precFactory->setParameterList(rcp(precPL,false));
       lowsFactory->setPreconditionerFactory(precFactory,"MCLS");

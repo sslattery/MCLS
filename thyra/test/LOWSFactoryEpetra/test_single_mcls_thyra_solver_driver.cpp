@@ -107,7 +107,6 @@ int main(int argc, char* argv[])
     Teuchos::ParameterList precPL("MCLS");
     if(usePreconditioner) {
       precPL.set("Prec Type","Point Jacobi");
-      precPL.set("Block Size",1);
     }
     
     success

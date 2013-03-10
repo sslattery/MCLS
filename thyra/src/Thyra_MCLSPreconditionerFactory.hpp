@@ -158,7 +158,7 @@ class MCLSPreconditionerFactory : public PreconditionerFactoryBase<Scalar> {
     // Prec type.
     EMCLSPrecType d_prec_type;
 
-    Teuchos::RCP<Teuchos::ParameterList>       paramList_;
+    Teuchos::RCP<Teuchos::ParameterList>       d_plist;
 };
 
 } // namespace Thyra

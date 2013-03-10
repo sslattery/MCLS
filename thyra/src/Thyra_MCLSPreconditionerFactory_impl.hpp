@@ -55,23 +55,23 @@ namespace Thyra {
 //---------------------------------------------------------------------------//
 // Parameter names for Parameter List
 template<class Scalar>
-const std::string MCLSLinearOpWithSolveFactory<Scalar>::PrecType_name = 
+const std::string MCLSPreconditionerFactory<Scalar>::PrecType_name = 
     "Prec Type";
 
 template<class Scalar>
-const std::string MCLSLinearOpWithSolveFactory<Scalar>::PrecType_default = 
+const std::string MCLSPreconditionerFactory<Scalar>::PrecType_default = 
     "Point Jacobi";
 
 template<class Scalar>
-const std::string MCLSLinearOpWithSolveFactory<Scalar>::PrecTypes_name = 
+const std::string MCLSPreconditionerFactory<Scalar>::PrecTypes_name = 
     "Prec Types";
 
 template<class Scalar>
-const std::string MCLSLinearOpWithSolveFactory<Scalar>::PointJacobi_name = 
+const std::string MCLSPreconditionerFactory<Scalar>::PointJacobi_name = 
     "Point Jacobi";
 
 template<class Scalar>
-const std::string MCLSLinearOpWithSolveFactory<Scalar>::BlockJacobi_name = 
+const std::string MCLSPreconditionerFactory<Scalar>::BlockJacobi_name = 
     "Block Jacobi";
 
 // Constructors/initializers/accessors
@@ -79,7 +79,7 @@ const std::string MCLSLinearOpWithSolveFactory<Scalar>::BlockJacobi_name =
 //---------------------------------------------------------------------------//
 template<class Scalar>
 MCLSPreconditionerFactory<Scalar>::MCLSPreconditionerFactory()
-    :precType_(PrecType_default)
+    : d_prec_type(PREC_TYPE_POINT_JACOBI)
 {
     getValidParameters(); // Make sure validators get created!
 }
@@ -168,13 +168,13 @@ void MCLSPreconditionerFactory<Scalar>::initializePrec(
 	// Point Jacobi.
 	if ( d_prec_type == PREC_TYPE_POINT_JACOBI )
 	{
-	    mcls_prec = Teuchos::rcp( new EpetraPointJacobiPreconditioner() );
+	    mcls_prec = Teuchos::rcp( new MCLS::EpetraPointJacobiPreconditioner() );
 	}
 	
 	// Block Jacobi.
 	else if ( d_prec_type == PREC_TYPE_BLOCK_JACOBI )
 	{
-	    mcls_prec = Teuchos::rcp( new EpetraBlockJacobiPreconditioner(paramList_) );
+	    mcls_prec = Teuchos::rcp( new MCLS::EpetraBlockJacobiPreconditioner(d_plist) );
 	}
 
 	// For now, we just have left preconditioners implemented so we do
@@ -184,64 +184,72 @@ void MCLSPreconditionerFactory<Scalar>::initializePrec(
 	Teuchos::RCP<EpetraLinearOp> epetra_op = Teuchos::rcp( new EpetraLinearOp() );
 	epetra_op->initialize( 
 	    Teuchos::rcp_const_cast<Epetra_RowMatrix>(mcls_prec->getPreconditioner()) );
-	defaultPrec->initializeLeft( epetra_op );
+	Teuchos::RCP<const LinearOpBase<Scalar> > thyra_op = epetra_op;
+	defaultPrec->initializeLeft( thyra_op );
     }
     else if ( isTpetraCompatible<int,int>(*fwdOpSrc) )
     {
 	typedef int LO;
 	typedef int GO;
-	typedef Tpetra::CrsMatrix<Scalar,LO,GO Matrix;
+	typedef Tpetra::CrsMatrix<Scalar,LO,GO> Matrix;
+
+	Teuchos::RCP<MCLS::Preconditioner<Matrix> > mcls_prec;
 
 	// Point Jacobi.
 	if ( d_prec_type == PREC_TYPE_POINT_JACOBI )
 	{
 	    mcls_prec = Teuchos::rcp( 
-		new TpetraPointJacobiPreconditioner<Scalar,LO,GO>() );
+		new MCLS::TpetraPointJacobiPreconditioner<Scalar,LO,GO>() );
 	}
 	
 	// Block Jacobi.
 	else if ( d_prec_type == PREC_TYPE_BLOCK_JACOBI )
 	{
 	    mcls_prec = Teuchos::rcp( 
-		new TpetraBlockJacobiPreconditioner<Scalar,LO,GO>(paramList_) );
+		new MCLS::TpetraBlockJacobiPreconditioner<Scalar,LO,GO>(d_plist) );
 	}
 
 	// For now, we just have left preconditioners implemented so we do
 	// this here.
 	mcls_prec->setOperator( getTpetraCrsMatrix<LO,GO>(*fwdOpSrc) );
 	mcls_prec->buildPreconditioner();
-	defaultPrec->initializeLeft( 
-	    createLinearOp( 
-		Teuchos::rcp_const_cast<Matrix>(mcls_prec->getPreconditioner()) );
+	Teuchos::RCP<const Tpetra::Operator<Scalar,LO,GO> > tpetra_op = 
+	    mcls_prec->getPreconditioner();
+	Teuchos::RCP<const LinearOpBase<Scalar> > thyra_op = 
+	    Thyra::createConstLinearOp<Scalar,LO,GO>( tpetra_op );
+	defaultPrec->initializeLeft( thyra_op );
     }
     else if ( isTpetraCompatible<int,long>(*fwdOpSrc) )
     {
 	typedef int LO;
 	typedef long GO;
+	typedef Tpetra::CrsMatrix<Scalar,LO,GO> Matrix;
 
-	typedef Tpetra::CrsMatrix<Scalar,LO,GO Matrix;
+	Teuchos::RCP<MCLS::Preconditioner<Matrix> > mcls_prec;
 
 	// Point Jacobi.
 	if ( d_prec_type == PREC_TYPE_POINT_JACOBI )
 	{
 	    mcls_prec = Teuchos::rcp( 
-		new TpetraPointJacobiPreconditioner<Scalar,LO,GO>() );
+		new MCLS::TpetraPointJacobiPreconditioner<Scalar,LO,GO>() );
 	}
 	
 	// Block Jacobi.
 	else if ( d_prec_type == PREC_TYPE_BLOCK_JACOBI )
 	{
 	    mcls_prec = Teuchos::rcp( 
-		new TpetraBlockJacobiPreconditioner<Scalar,LO,GO>(paramList_) );
+		new MCLS::TpetraBlockJacobiPreconditioner<Scalar,LO,GO>(d_plist) );
 	}
 
 	// For now, we just have left preconditioners implemented so we do
 	// this here.
 	mcls_prec->setOperator( getTpetraCrsMatrix<LO,GO>(*fwdOpSrc) );
 	mcls_prec->buildPreconditioner();
-	defaultPrec->initializeLeft( 
-	    createLinearOp( 
-		Teuchos::rcp_const_cast<Matrix>(mcls_prec->getPreconditioner()) );
+	Teuchos::RCP<const Tpetra::Operator<Scalar,LO,GO> > tpetra_op = 
+	    mcls_prec->getPreconditioner();
+	Teuchos::RCP<const LinearOpBase<Scalar> > thyra_op = 
+	    Thyra::createConstLinearOp<Scalar,LO,GO>( tpetra_op );
+	defaultPrec->initializeLeft( thyra_op );
     }
     else
     {
@@ -267,23 +275,13 @@ template<class Scalar>
 void MCLSPreconditionerFactory<Scalar>::setParameterList(
     Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 {
-    TEUCHOS_TEST_FOR_EXCEPT(paramList.get()==NULL);
-    paramList->validateParameters(*this->getValidParameters(),2);
-    // Note: The above validation will validate right down into the the sublist
-    // named IfpackSettings_name!
-    paramList_ = paramList;
-    std::ostringstream oss;
-    oss << "(sub)list \""<<paramList->name()<<"\"parameter \"Prec Type\"";
-    precType_ =
-	( paramList_.get()
-	  ? precTypeValidator->getIntegralValue(*paramList_,PrecType_name,PrecTypeName_default)
-	  : PrecType_default
-	    );
-    Teuchos::readVerboseObjectSublist(&*paramList_,this);
-#ifdef TEUCHOS_DEBUG
-    // Validate my use of the parameters!
-    paramList->validateParameters(*this->getValidParameters(),1);
-#endif
+    TEUCHOS_TEST_FOR_EXCEPT( Teuchos::is_null(paramList) );
+
+    paramList->validateParametersAndSetDefaults(*this->getValidParameters(), 1);
+    d_plist = paramList;
+    d_prec_type =
+	Teuchos::getIntegralValue<EMCLSPrecType>(*d_plist, PrecType_name);
+    Teuchos::readVerboseObjectSublist(&*d_plist,this);
 }
 
 //---------------------------------------------------------------------------//
@@ -291,7 +289,7 @@ template<class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 MCLSPreconditionerFactory<Scalar>::getNonconstParameterList()
 {
-    return paramList_;
+    return d_plist;
 }
 
 //---------------------------------------------------------------------------//
@@ -299,9 +297,9 @@ template<class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 MCLSPreconditionerFactory<Scalar>::unsetParameterList()
 {
-    Teuchos::RCP<Teuchos::ParameterList> _paramList = paramList_;
-    paramList_ = Teuchos::null;
-    return _paramList;
+    Teuchos::RCP<Teuchos::ParameterList> d_plist = d_plist;
+    d_plist = Teuchos::null;
+    return d_plist;
 }
 
 //---------------------------------------------------------------------------//
@@ -309,7 +307,7 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 MCLSPreconditionerFactory<Scalar>::getParameterList() const
 {
-    return paramList_;
+    return d_plist;
 }
 
 //---------------------------------------------------------------------------//
@@ -346,7 +344,7 @@ MCLSPreconditionerFactory<Scalar>::getValidParameters() const
 
 		"Block Jacobi preconditioning - Left scales the linear operator"
 		"by the inverse of its diagonal blocks. Blocks must be local"
-		"and are of a user-specified size".
+		"and are of a user-specified size"
 		),
 	    tuple<EMCLSPrecType>(
 		PREC_TYPE_POINT_JACOBI,
@@ -354,10 +352,6 @@ MCLSPreconditionerFactory<Scalar>::getValidParameters() const
 		),
 	    &*validParamList
 	    );
-	validParamList->set(
-	    ConvergenceTestFrequency_name, as<int>(1),
-	    "Number of linear prec iterations to skip between applying"
-	    " user-defined convergence test.");
 
 	// We'll use Epetra to get the valid parameters for the preconditioner
 	// subclasses as they are independent of the vector/operator
@@ -365,12 +359,12 @@ MCLSPreconditionerFactory<Scalar>::getValidParameters() const
 	Teuchos::ParameterList
 	    &precTypesSL = validParamList->sublist(PrecTypes_name);
 	{
-	    MCLS::EpetraPointJacobiPreconditioner prec();
+	    MCLS::EpetraPointJacobiPreconditioner prec;
 	    precTypesSL.sublist(PointJacobi_name).setParameters(
 		*(prec.getValidParameters()) );
 	}
 	{
-	    MCLS::EpetraBlockJacobiPreconditioner prec();
+	    MCLS::EpetraBlockJacobiPreconditioner prec(d_plist);
 	    precTypesSL.sublist(BlockJacobi_name).setParameters(
 		*(prec.getValidParameters()) );
 	}
@@ -397,7 +391,7 @@ std::string MCLSPreconditionerFactory<Scalar>::description() const
  */
 template<class Scalar>
 RCP<const Epetra_RowMatrix> 
-MCLSLinearOpWithSolveFactory<Scalar>::getEpetraRowMatrix(
+MCLSPreconditionerFactory<Scalar>::getEpetraRowMatrix(
     const LinearOpSourceBase<Scalar> &fwdOpSrc ) const
 {
     EpetraOperatorViewExtractorStd epetraFwdOpViewExtractor;
@@ -423,7 +417,7 @@ MCLSLinearOpWithSolveFactory<Scalar>::getEpetraRowMatrix(
  * \brief Check for compatibility with Epetra.
  */
 template<class Scalar>
-bool MCLSLinearOpWithSolveFactory<Scalar>::isEpetraCompatible(
+bool MCLSPreconditionerFactory<Scalar>::isEpetraCompatible(
     const LinearOpSourceBase<Scalar> &fwdOpSrc ) const
 {
     // MCLS interfaces are currently only implemented for Epetra_RowMatrix.
@@ -442,7 +436,7 @@ bool MCLSLinearOpWithSolveFactory<Scalar>::isEpetraCompatible(
 template<class Scalar>
 template<class LO, class GO>
 RCP<const Tpetra::CrsMatrix<Scalar,LO,GO> >
-MCLSLinearOpWithSolveFactory<Scalar>::getTpetraCrsMatrix( 
+MCLSPreconditionerFactory<Scalar>::getTpetraCrsMatrix( 
     const LinearOpSourceBase<Scalar> &fwdOpSrc ) const
 {
     RCP<const Tpetra::Operator<Scalar,LO,GO> > tpetraFwdOp =
@@ -459,7 +453,7 @@ MCLSLinearOpWithSolveFactory<Scalar>::getTpetraCrsMatrix(
  */
 template<class Scalar>
 template<class LO, class GO>
-bool MCLSLinearOpWithSolveFactory<Scalar>::isTpetraCompatible( 
+bool MCLSPreconditionerFactory<Scalar>::isTpetraCompatible( 
     const LinearOpSourceBase<Scalar> &fwdOpSrc ) const
 {
     typedef Thyra::TpetraLinearOp<Scalar,LO,GO> TpetraOpType; 
