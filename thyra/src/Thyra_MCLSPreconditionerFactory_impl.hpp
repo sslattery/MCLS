@@ -364,7 +364,7 @@ MCLSPreconditionerFactory<Scalar>::getValidParameters() const
 		*(prec.getValidParameters()) );
 	}
 	{
-	    MCLS::EpetraBlockJacobiPreconditioner prec(d_plist);
+	    MCLS::EpetraBlockJacobiPreconditioner prec(Teuchos::parameterList());
 	    precTypesSL.sublist(BlockJacobi_name).setParameters(
 		*(prec.getValidParameters()) );
 	}
