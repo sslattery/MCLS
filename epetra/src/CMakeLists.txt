@@ -17,6 +17,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
   MCLS_EpetraAdapter.hpp
+  MCLS_EpetraBlockJacobiPreconditioner.hpp
   MCLS_EpetraHelpers.hpp
   MCLS_EpetraPointJacobiPreconditioner.hpp
   MCLS_EpetraRowMatrixAdapter.hpp
@@ -25,6 +26,7 @@ APPEND_SET(HEADERS
   ) 
 
 APPEND_SET(SOURCES
+  MCLS_EpetraBlockJacobiPreconditioner.cpp
   MCLS_EpetraPointJacobiPreconditioner.cpp
   )
 

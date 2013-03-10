@@ -32,9 +32,9 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file tstTpetraBlockJacobiPreconditioner.cpp
+ * \file tstEpetraBlockJacobiPreconditioner.cpp
  * \author Stuart R. Slattery
- * \brief Tpetra block Jacobi preconditioning tests.
+ * \brief Epetra block Jacobi preconditioning tests.
  */
 //---------------------------------------------------------------------------//
 
@@ -49,9 +49,9 @@
 
 #include <MCLS_MatrixTraits.hpp>
 #include <MCLS_VectorTraits.hpp>
-#include <MCLS_TpetraAdapter.hpp>
+#include <MCLS_EpetraAdapter.hpp>
 #include <MCLS_Preconditioner.hpp>
-#include <MCLS_TpetraBlockJacobiPreconditioner.hpp>
+#include <MCLS_EpetraBlockJacobiPreconditioner.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -63,101 +63,119 @@
 #include <Teuchos_TypeTraits.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-#include <Tpetra_Map.hpp>
-#include <Tpetra_Vector.hpp>
-#include <Tpetra_CrsMatrix.hpp>
+#include <Epetra_Map.h>
+#include <Epetra_Vector.h>
+#include <Epetra_RowMatrix.h>
+#include <Epetra_CrsMatrix.h>
+#include <Epetra_Comm.h>
+#include <Epetra_SerialComm.h>
+
+#ifdef HAVE_MPI
+#include <Epetra_MpiComm.h>
+#endif
 
 //---------------------------------------------------------------------------//
-// Instantiation macro. 
-// 
-// These types are those enabled by Tpetra under explicit instantiation.
+// Helper functions.
 //---------------------------------------------------------------------------//
-#define UNIT_TEST_INSTANTIATION( type, name )			           \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, double )   \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
+
+Teuchos::RCP<Epetra_Comm> getEpetraComm( 
+    const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
+{
+#ifdef HAVE_MPI
+    Teuchos::RCP< const Teuchos::MpiComm<int> > mpi_comm = 
+	Teuchos::rcp_dynamic_cast< const Teuchos::MpiComm<int> >( comm );
+    Teuchos::RCP< const Teuchos::OpaqueWrapper<MPI_Comm> > opaque_comm = 
+	mpi_comm->getRawMpiComm();
+    return Teuchos::rcp( new Epetra_MpiComm( (*opaque_comm)() ) );
+#else
+    return Teuchos::rcp( new Epetra_SerialComm() );
+#endif
+}
 
 //---------------------------------------------------------------------------//
 // Test templates
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TpetraBlockJacobiPreconditioner, 1_block_matrix, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST( EpetraBlockJacobiPreconditioner, 1_block_matrix )
 {
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef Epetra_RowMatrix MatrixType;
+    typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
     int comm_size = comm->getSize();
     int comm_rank = comm->getRank();
 
     int local_num_rows = 4;
     int global_num_rows = local_num_rows*comm_size;
-    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
-	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
+    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
+	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
     // Build a single block on each proc.
-    Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
-    Teuchos::Array<Scalar> values_1( 4 );
+    Teuchos::RCP<Epetra_CrsMatrix> A = 
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
+    Teuchos::Array<double> values_1( 4 );
     values_1[0] = 3.2;
     values_1[1] = -1.43;
     values_1[2] = 2.98;
     values_1[3] = 0.32;
 
-    Teuchos::Array<Scalar> values_2( 4 );
+    Teuchos::Array<double> values_2( 4 );
     values_2[0] = -4.12;
     values_2[1] = -7.53;
     values_2[2] = 1.44;
     values_2[3] = -3.72;
 
-    Teuchos::Array<Scalar> values_3( 4 );
+    Teuchos::Array<double> values_3( 4 );
     values_3[0] = 4.24;
     values_3[1] = -6.42;
     values_3[2] = 1.82;
     values_3[3] = 2.67;
 
-    Teuchos::Array<Scalar> values_4( 4 );
+    Teuchos::Array<double> values_4( 4 );
     values_4[0] = -0.23;
     values_4[1] = 5.8;
     values_4[2] = 1.13;
     values_4[3] = -3.73;
 
-    Teuchos::Array<Teuchos::Array<Scalar> > values( 4 );
+    Teuchos::Array<Teuchos::Array<double> > values( 4 );
     values[0] = values_1;
     values[1] = values_2;
     values[2] = values_3;
     values[3] = values_4;
 
-    Teuchos::Array<GO> columns( 4 );
+    Teuchos::Array<int> columns( 4 );
     columns[0] = local_num_rows*comm_rank;
     columns[1] = local_num_rows*comm_rank+1;
     columns[2] = local_num_rows*comm_rank+2;
     columns[3] = local_num_rows*comm_rank+3;
 
-    GO global_row = 0;
+    int global_row = 0;
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	global_row = i + local_num_rows*comm_rank;
-	A->insertGlobalValues( global_row, columns(), values[i]() );
+	A->InsertGlobalValues( global_row, columns.size(), 
+			       values[i].getRawPtr(), columns.getRawPtr() );
     }
-    A->fillComplete();
+    A->FillComplete();
 
     // Build the preconditioner.
     Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::parameterList();
     plist->set<int>("Jacobi Block Size", 4);
     Teuchos::RCP<MCLS::Preconditioner<MatrixType> > preconditioner = 
-	Teuchos::rcp( 
-	    new MCLS::TpetraBlockJacobiPreconditioner<Scalar,LO,GO>(plist) );
+	Teuchos::rcp( new MCLS::EpetraBlockJacobiPreconditioner(plist) );
     preconditioner->setOperator( A );
     preconditioner->buildPreconditioner();
     Teuchos::RCP<const MatrixType> M = preconditioner->getPreconditioner();
 
     // Check the preconditioner. Inverse block values from matlab.
-    Teuchos::Array<GO> prec_cols(4);
-    Teuchos::Array<Scalar> prec_vals(4);
+    Teuchos::Array<int> prec_cols(4);
+    Teuchos::Array<double> prec_vals(4);
     std::size_t num_entries = 0;
 
     global_row = local_num_rows*comm_rank;
@@ -209,102 +227,104 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TpetraBlockJacobiPreconditioner, 1_block_matr
     TEST_FLOATING_EQUALITY( prec_vals[3], -0.505833501236923, 1.0e-14 );
 }
 
-UNIT_TEST_INSTANTIATION( TpetraBlockJacobiPreconditioner, 1_block_matrix )
-
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TpetraBlockJacobiPreconditioner, 2_block_matrix, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST( EpetraBlockJacobiPreconditioner, 2_block_matrix )
 {
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef Epetra_RowMatrix MatrixType;
+    typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef typename MT::scalar_type scalar_type;
-    typedef typename MT::local_ordinal_type local_ordinal_type;
-    typedef typename MT::global_ordinal_type global_ordinal_type;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
     int comm_size = comm->getSize();
     int comm_rank = comm->getRank();
 
     int local_num_rows = 8;
     int global_num_rows = local_num_rows*comm_size;
-    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
-	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
+    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
+	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 
     // Build a single block on each proc.
-    Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
-    Teuchos::Array<Scalar> values_1( 4 );
+    Teuchos::RCP<Epetra_CrsMatrix> A = 
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
+
+    Teuchos::Array<double> values_1( 4 );
     values_1[0] = 3.2;
     values_1[1] = -1.43;
     values_1[2] = 2.98;
     values_1[3] = 0.32;
 
-    Teuchos::Array<Scalar> values_2( 4 );
+    Teuchos::Array<double> values_2( 4 );
     values_2[0] = -4.12;
     values_2[1] = -7.53;
     values_2[2] = 1.44;
     values_2[3] = -3.72;
 
-    Teuchos::Array<Scalar> values_3( 4 );
+    Teuchos::Array<double> values_3( 4 );
     values_3[0] = 4.24;
     values_3[1] = -6.42;
     values_3[2] = 1.82;
     values_3[3] = 2.67;
 
-    Teuchos::Array<Scalar> values_4( 4 );
+    Teuchos::Array<double> values_4( 4 );
     values_4[0] = -0.23;
     values_4[1] = 5.8;
     values_4[2] = 1.13;
     values_4[3] = -3.73;
 
-    Teuchos::Array<Teuchos::Array<Scalar> > values( 4 );
+    Teuchos::Array<Teuchos::Array<double> > values( 4 );
     values[0] = values_1;
     values[1] = values_2;
     values[2] = values_3;
     values[3] = values_4;
 
-    Teuchos::Array<GO> columns_1( 4 );
+    Teuchos::Array<int> columns_1( 4 );
     columns_1[0] = local_num_rows*comm_rank;
     columns_1[1] = local_num_rows*comm_rank+1;
     columns_1[2] = local_num_rows*comm_rank+2;
     columns_1[3] = local_num_rows*comm_rank+3;
 
-    Teuchos::Array<GO> columns_2( 4 );
+    Teuchos::Array<int> columns_2( 4 );
     columns_2[0] = local_num_rows*comm_rank+4;
     columns_2[1] = local_num_rows*comm_rank+5;
     columns_2[2] = local_num_rows*comm_rank+6;
     columns_2[3] = local_num_rows*comm_rank+7;
 
-    GO global_row = 0;
+    int global_row = 0;
 
     // block 1
     for ( int i = 0; i < 4; ++i )
     {
 	global_row = i + local_num_rows*comm_rank;
-	A->insertGlobalValues( global_row, columns_1(), values[i]() );
+	A->InsertGlobalValues( global_row, columns_1.size(), 
+			       values[i].getRawPtr(), columns_1.getRawPtr() );
     }
     // block 2
     for ( int i = 4; i < local_num_rows; ++i )
     {
 	global_row = i + local_num_rows*comm_rank;
-	A->insertGlobalValues( global_row, columns_2(), values[i-4]() );
+	A->InsertGlobalValues( global_row, columns_2.size(), 
+			       values[i-4].getRawPtr(), columns_2.getRawPtr() );
     }
-    A->fillComplete();
+    A->FillComplete();
 
     // Build the preconditioner.
     Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::parameterList();
     plist->set<int>("Jacobi Block Size", 4);
     Teuchos::RCP<MCLS::Preconditioner<MatrixType> > preconditioner = 
-	Teuchos::rcp( 
-	    new MCLS::TpetraBlockJacobiPreconditioner<Scalar,LO,GO>(plist) );
+	Teuchos::rcp( new MCLS::EpetraBlockJacobiPreconditioner(plist) );
     preconditioner->setOperator( A );
     preconditioner->buildPreconditioner();
     Teuchos::RCP<const MatrixType> M = preconditioner->getPreconditioner();
 
     // Check the preconditioner. Inverse block values from matlab.
-    Teuchos::Array<GO> prec_cols(4);
-    Teuchos::Array<Scalar> prec_vals(4);
+    Teuchos::Array<int> prec_cols(4);
+    Teuchos::Array<double> prec_vals(4);
     std::size_t num_entries = 0;
 
     // block 1
@@ -406,9 +426,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TpetraBlockJacobiPreconditioner, 2_block_matr
     TEST_FLOATING_EQUALITY( prec_vals[3], -0.505833501236923, 1.0e-14 );
 }
 
-UNIT_TEST_INSTANTIATION( TpetraBlockJacobiPreconditioner, 2_block_matrix )
-
 //---------------------------------------------------------------------------//
-// end tstTpetraBlockJacobiPreconditioner.cpp
+// end tstEpetraBlockJacobiPreconditioner.cpp
 //---------------------------------------------------------------------------//
 

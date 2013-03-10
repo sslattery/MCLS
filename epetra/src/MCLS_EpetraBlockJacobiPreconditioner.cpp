@@ -32,16 +32,15 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_TpetraBlockJacobiPreconditioner_impl.hpp
+ * \file MCLS_EpetraBlockJacobiPreconditioner.cpp
  * \author Stuart R. Slattery
- * \brief Block Jacobi preconditioning for Tpetra.
+ * \brief Block Jacobi preconditioning for Epetra.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_TPETRABLOCKJACOBI_IMPL_HPP
-#define MCLS_TPETRABLOCKJACOBI_IMPL_HPP
-
 #include <algorithm>
+
+#include "MCLS_EpetraBlockJacobiPreconditioner.hpp"
 
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
@@ -49,7 +48,7 @@
 #include <Teuchos_LAPACK.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 
-#include <Tpetra_Map.hpp>
+#include <Epetra_Map.h>
 
 namespace MCLS
 {
@@ -58,8 +57,7 @@ namespace MCLS
 /*!
  * \brief Constructor.
  */
-template<class Scalar, class LO, class GO>
-TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::TpetraBlockJacobiPreconditioner(
+EpetraBlockJacobiPreconditioner::EpetraBlockJacobiPreconditioner(
     const Teuchos::RCP<Teuchos::ParameterList>& params )
     : d_plist( params )
 {
@@ -70,9 +68,8 @@ TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::TpetraBlockJacobiPreconditioner(
 /*! 
  * \brief Get the valid parameters for this preconditioner.
  */
-template<class Scalar, class LO, class GO>
 Teuchos::RCP<const Teuchos::ParameterList> 
-TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::getValidParameters() const
+EpetraBlockJacobiPreconditioner::getValidParameters() const
 {
     Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::parameterList();
     plist->set<int>("Jacobi Block Size", 0);
@@ -83,9 +80,8 @@ TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::getValidParameters() const
 /*! 
  * \brief Get the current parameters being used for this preconditioner.
  */
-template<class Scalar, class LO, class GO>
 Teuchos::RCP<const Teuchos::ParameterList> 
-TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::getCurrentParameters() const
+EpetraBlockJacobiPreconditioner::getCurrentParameters() const
 {
     return d_plist;
 }
@@ -95,8 +91,7 @@ TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::getCurrentParameters() const
  * \brief Set the parameters for the preconditioner. The preconditioner will
  * modify this list with default parameters that are not defined. 
  */
-template<class Scalar, class LO, class GO>
-void TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::setParameters( 
+void EpetraBlockJacobiPreconditioner::setParameters( 
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
     MCLS_REQUIRE( Teuchos::nonnull(params) );
@@ -107,8 +102,7 @@ void TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::setParameters(
 /*! 
  * \brief Set the operator with the preconditioner.
  */
-template<class Scalar, class LO, class GO>
-void TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::setOperator( 
+void EpetraBlockJacobiPreconditioner::setOperator( 
     const Teuchos::RCP<const matrix_type>& A )
 {
     MCLS_REQUIRE( Teuchos::nonnull(A) );
@@ -119,30 +113,30 @@ void TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::setOperator(
 /*!
  * \brief Build the preconditioner.
  */
-template<class Scalar, class LO, class GO>
-void TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::buildPreconditioner()
+void EpetraBlockJacobiPreconditioner::buildPreconditioner()
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_A) );
-    MCLS_REQUIRE( d_A->isFillComplete() );
+    MCLS_REQUIRE( d_A->Filled() );
 
     // Get the block size.
     int block_size = d_plist->get<int>("Jacobi Block Size");
 
     // We require that all blocks are local.
-    MCLS_REQUIRE( d_A->getRowMap()->getNodeNumElements() % block_size == 0 );
+    
+    MCLS_REQUIRE( d_A->NumMyRows() % block_size == 0 );
 
     // Get the number of blocks.
-    int num_blocks = d_A->getRowMap()->getNodeNumElements() / block_size;
+    int num_blocks = d_A->NumMyRows() / block_size;
 
     // Build the block preconditioner.
-    d_preconditioner = 
-	Tpetra::createCrsMatrix<Scalar,LO,GO>( d_A->getRowMap(), block_size );
+    d_preconditioner = Teuchos::rcp( 
+	new Epetra_CrsMatrix( Copy, d_A->RowMatrixRowMap(), block_size ) );
 
     // Populate the preconditioner with inverted blocks.
-    Teuchos::SerialDenseMatrix<int,Scalar> block( block_size, block_size );
-    GO col_start = 0;
-    GO global_row = 0;
-    Teuchos::Array<GO> block_cols( block_size );
+    Teuchos::SerialDenseMatrix<int,double> block( block_size, block_size );
+    int col_start = 0;
+    int global_row = 0;
+    Teuchos::Array<int> block_cols( block_size );
     for ( int n = 0; n < num_blocks; ++n )
     {
 	// Starting row/column for the block.
@@ -155,10 +149,10 @@ void TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::buildPreconditioner()
 	// doing the extraction.
 	for ( int i = 0; i < block_size; ++i )
 	{
-	    global_row = d_A->getRowMap()->getGlobalElement(col_start+i);
+	    global_row = d_A->RowMatrixRowMap().GID(col_start+i);
 	    for ( int j = 0; j < block_size; ++j )
 	    {
-		block_cols[j] = d_A->getColMap()->getGlobalElement(col_start+j);
+		block_cols[j] = d_A->RowMatrixColMap().GID(col_start+j);
 	    }
 	    for ( int j = 0; j < block_size; ++j )
 	    {
@@ -174,27 +168,25 @@ void TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::buildPreconditioner()
 	for ( int i = 0; i < block_size; ++i )
 	{
 	    global_row = 
-		d_preconditioner->getRowMap()->getGlobalElement(col_start+i);
+		d_preconditioner->RowMatrixRowMap().GID(col_start+i);
 
-	    d_preconditioner->insertGlobalValues( 
-		global_row, block_cols(), 
-		Teuchos::ArrayView<Scalar>(block[i], block_size) );
+	    d_preconditioner->InsertGlobalValues( 
+		global_row, block_size, block[i], block_cols.getRawPtr() );
 	}
     }
 
-    d_preconditioner->fillComplete();
+    d_preconditioner->FillComplete();
 
     MCLS_ENSURE( Teuchos::nonnull(d_preconditioner) );
-    MCLS_ENSURE( d_preconditioner->isFillComplete() );
+    MCLS_ENSURE( d_preconditioner->Filled() );
 }
 
 //---------------------------------------------------------------------------//
 /*!
  * \brief Invert a Teuchos::SerialDenseMatrix block.
  */
-template<class Scalar, class LO, class GO>
-void TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::invertSerialDenseMatrix(
-    Teuchos::SerialDenseMatrix<int,Scalar>& block )
+void EpetraBlockJacobiPreconditioner::invertSerialDenseMatrix(
+    Teuchos::SerialDenseMatrix<int,double>& block )
 {
     // Make a LAPACK object.
     Teuchos::LAPACK<int,double> lapack;
@@ -220,30 +212,35 @@ void TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::invertSerialDenseMatrix(
  * \brief Get a local component of an operator given a global row and column
  * index. 
  */
-template<class Scalar, class LO, class GO>
-Scalar TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::getMatrixComponentFromGlobal( 
+double EpetraBlockJacobiPreconditioner::getMatrixComponentFromGlobal( 
     const Teuchos::RCP<const matrix_type>& matrix,
-    const GO global_row, const GO global_col )
+    const int global_row, const int global_col )
 {
-    Teuchos::RCP<const Tpetra::Map<LO,GO> > row_map = matrix->getRowMap();
-    Teuchos::RCP<const Tpetra::Map<LO,GO> > col_map = matrix->getColMap();
+    const Epetra_Map row_map = matrix->RowMatrixRowMap();
+    const Epetra_Map col_map = matrix->RowMatrixColMap();
 
-    LO local_row = row_map->getLocalElement( global_row );
-    LO local_col = col_map->getLocalElement( global_col );
+    MCLS_REQUIRE( row_map.MyGID(global_row) );
 
-    MCLS_REQUIRE( local_row != Teuchos::OrdinalTraits<LO>::invalid() );
+    int local_row = row_map.LID( global_row );
+    int local_col = col_map.LID( global_col );
 
     // If the block column is not local, then we get a zero for this entry.
-    if ( local_col == Teuchos::OrdinalTraits<LO>::invalid() )
+    if ( local_col == Teuchos::OrdinalTraits<int>::invalid() )
     {
 	return 0.0;
     }
 
-    Teuchos::ArrayView<const LO> local_indices;
-    Teuchos::ArrayView<const Scalar> local_values;
-    matrix->getLocalRowView( local_row, local_indices, local_values );
+    int max_size = matrix->MaxNumEntries();
+    int num_entries = 0;
+    Teuchos::Array<int> local_indices( max_size );
+    Teuchos::Array<double> local_values( max_size );
+    matrix->ExtractMyRowCopy( local_row, max_size, num_entries,
+			      local_values.getRawPtr(), 
+			      local_indices.getRawPtr() );
+    local_values.resize( num_entries );
+    local_indices.resize( num_entries );
 
-    typename Teuchos::ArrayView<const LO>::const_iterator local_idx_it =
+    Teuchos::Array<int>::iterator local_idx_it =
 	std::find( local_indices.begin(), local_indices.end(), local_col );
 
     if ( local_idx_it != local_indices.end() )
@@ -259,8 +256,6 @@ Scalar TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::getMatrixComponentFromGlob
 
 } // end namespace MCLS
 
-#endif // end MCLS_TPETRABLOCKJACOBI_IMPL_HPP
-
 //---------------------------------------------------------------------------//
-// end MCLS_TpetraBlockJacobiPreconditioner_impl.hpp
+// end MCLS_EpetraBlockJacobiPreconditioner.cpp
 //---------------------------------------------------------------------------//

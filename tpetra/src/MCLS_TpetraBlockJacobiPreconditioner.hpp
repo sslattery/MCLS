@@ -47,7 +47,6 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
 
-#include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
 namespace MCLS
@@ -66,7 +65,6 @@ class TpetraBlockJacobiPreconditioner
 
     //@{
     //! Typedefs.
-    typedef Tpetra::Vector<Scalar,LO,GO>            vector_type;
     typedef Tpetra::CrsMatrix<Scalar,LO,GO>         matrix_type;
     //@}
 

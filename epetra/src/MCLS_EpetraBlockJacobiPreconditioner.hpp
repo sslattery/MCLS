@@ -32,46 +32,47 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_TpetraPointJacobiPreconditioner.hpp
+ * \file MCLS_EpetraBlockJacobiPreconditioner.hpp
  * \author Stuart R. Slattery
- * \brief Point Jacobi preconditioning for Tpetra.
+ * \brief Block Jacobi preconditioning for Epetra.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_TPETRAPOINTJACOBI_HPP
-#define MCLS_TPETRAPOINTJACOBI_HPP
+#ifndef MCLS_EPETRABLOCKJACOBI_HPP
+#define MCLS_EPETRABLOCKJACOBI_HPP
 
+#include <MCLS_DBC.hpp>
 #include <MCLS_Preconditioner.hpp>
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_SerialDenseMatrix.hpp>
 
-#include <Tpetra_CrsMatrix.hpp>
+#include <Epetra_RowMatrix.h>
+#include <Epetra_CrsMatrix.h>
 
 namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class TpetraPointJacobiPreconditioner
- * \brief Point-Jacobi preconditioner for Tpetra::CrsMatrix
+ * \class EpetraBlockJacobiPreconditioner
+ * \brief Block-Jacobi preconditioner for Epetra::CrsMatrix
  */
-template<class Scalar, class LO, class GO>
-class TpetraPointJacobiPreconditioner
-    : public Preconditioner<Tpetra::CrsMatrix<Scalar,LO,GO> >
+class EpetraBlockJacobiPreconditioner : public Preconditioner<Epetra_RowMatrix>
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO>         matrix_type;
+    typedef Epetra_RowMatrix  matrix_type;
     //@}
 
     // Constructor.
-    TpetraPointJacobiPreconditioner() { /* ... */ }
+    EpetraBlockJacobiPreconditioner(
+	const Teuchos::RCP<Teuchos::ParameterList>& params );
 
     //! Destructor.
-    ~TpetraPointJacobiPreconditioner() { /* ... */ }
+    ~EpetraBlockJacobiPreconditioner() { /* ... */ }
 
     // Get the valid parameters for this preconditioner.
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
@@ -86,7 +87,7 @@ class TpetraPointJacobiPreconditioner
     // Set the operator with the preconditioner.
     void setOperator( const Teuchos::RCP<const matrix_type>& A );
 
-    // Set the operator with the preconditioner.
+    // Get the operator set with the preconditoner.
     const matrix_type& getOperator() const { return *d_A; }
 
     // Build the preconditioner.
@@ -98,27 +99,34 @@ class TpetraPointJacobiPreconditioner
 
   private:
 
+    // Invert a Teuchos::SerialDenseMatrix block.
+    void invertSerialDenseMatrix( 
+	Teuchos::SerialDenseMatrix<int,double>& block );
+
+    // Get a global component of an operator given a global row and column
+    // index.
+    double getMatrixComponentFromGlobal( 
+	const Teuchos::RCP<const matrix_type>& matrix,
+	const int global_row, const int global_col );
+
+  private:
+
+    // Parameter list.
+    Teuchos::RCP<Teuchos::ParameterList> d_plist;
+
     // Original operator.
     Teuchos::RCP<const matrix_type> d_A;
 
     // Preconditioner (M^-1)
-    Teuchos::RCP<matrix_type> d_preconditioner;
+    Teuchos::RCP<Epetra_CrsMatrix> d_preconditioner;
 };
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
-//---------------------------------------------------------------------------//
-// Template includes.
-//---------------------------------------------------------------------------//
-
-#include "MCLS_TpetraPointJacobiPreconditioner_impl.hpp"
+#endif // end MCLS_EPETRABLOCKJACOBI_HPP
 
 //---------------------------------------------------------------------------//
-
-#endif // end MCLS_TPETRAPOINTJACOBI_HPP
-
-//---------------------------------------------------------------------------//
-// end MCLS_TpetraPointJacobiPreconditioner.hpp
+// end MCLS_EpetraBlockJacobiPreconditioner.hpp
 //---------------------------------------------------------------------------//

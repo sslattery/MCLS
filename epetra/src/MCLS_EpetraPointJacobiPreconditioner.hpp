@@ -63,7 +63,6 @@ class EpetraPointJacobiPreconditioner : public Preconditioner<Epetra_RowMatrix>
 
     //@{
     //! Typedefs.
-    typedef Epetra_Vector                           vector_type;
     typedef Epetra_RowMatrix                        matrix_type;
     //@}
 

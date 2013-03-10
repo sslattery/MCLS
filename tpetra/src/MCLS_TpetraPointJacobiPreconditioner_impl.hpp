@@ -47,8 +47,6 @@
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 
-#include <Tpetra_Vector.hpp>
-
 namespace MCLS
 {
 
@@ -111,10 +109,10 @@ void TpetraPointJacobiPreconditioner<Scalar,LO,GO>::buildPreconditioner()
 
     // Create the preconditioner.
     d_preconditioner = 
-	Tpetra::createCrsMatrix<Scalar,LO,GO>( d_A->getRowMap() );
+	Tpetra::createCrsMatrix<Scalar,LO,GO>( d_A->getRowMap(), 1 );
 
     // Compute the inverse of the diagonal.
-    Teuchos::RCP<vector_type> diagonal = 
+    Teuchos::RCP<Tpetra::Vector<Scalar,LO,GO> > diagonal = 
 	Tpetra::createVector<Scalar,LO,GO>( d_A->getRowMap() );
     d_A->getLocalDiagCopy( *diagonal );
     diagonal->reciprocal( *diagonal );
