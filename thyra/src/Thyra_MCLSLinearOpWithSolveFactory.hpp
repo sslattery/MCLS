@@ -222,7 +222,7 @@ class MCLSLinearOpWithSolveFactory : public LinearOpWithSolveFactoryBase<Scalar>
     void selectOpImpl(
 	const Teuchos::RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc,
 	const Teuchos::RCP<const LinearOpSourceBase<Scalar> >& approxFwdOpSrc,
-	const Teuchos::RCP<const PreconditionerBase<Scalar> >& prec,
+	const Teuchos::RCP<const PreconditionerBase<Scalar> >& prec_in,
 	const bool reusePrec,
 	LinearOpWithSolveBase<Scalar>* Op,
 	const ESupportSolveUse supportSolveUse ) const;
@@ -231,9 +231,12 @@ class MCLSLinearOpWithSolveFactory : public LinearOpWithSolveFactoryBase<Scalar>
     template<class MultiVector, class Matrix>
     void initializeOpImpl(
 	const RCP<const Matrix>& matrix,
+	const RCP<const Matrix>& left_prec,
+	const RCP<const Matrix>& right_prec,
 	const Teuchos::RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc,
 	const Teuchos::RCP<const LinearOpSourceBase<Scalar> >& approxFwdOpSrc,
 	const Teuchos::RCP<const PreconditionerBase<Scalar> >& prec,
+	const Teuchos::RCP<const PreconditionerBase<Scalar> >& my_prec,
 	const bool reusePrec,
 	LinearOpWithSolveBase<Scalar>* Op,
 	const ESupportSolveUse supportSolveUse ) const;

@@ -423,10 +423,10 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
     using Teuchos::setStringToIntegralParameter;
     Teuchos::ValidatorXMLConverterDB::addConverter(
 	Teuchos::DummyObjectGetter<
-	    Teuchos::StringToIntegralParameterEntryValidator<EMCLSSolverType> 
-	    >::getDummyObject(),
-	    Teuchos::DummyObjectGetter<Teuchos::StringToIntegralValidatorXMLConverter<
-		EMCLSSolverType> >::getDummyObject());
+	Teuchos::StringToIntegralParameterEntryValidator<EMCLSSolverType> 
+	>::getDummyObject(),
+	Teuchos::DummyObjectGetter<Teuchos::StringToIntegralValidatorXMLConverter<
+	EMCLSSolverType> >::getDummyObject());
 
     static RCP<Teuchos::ParameterList> validParamList;
     if( validParamList.get()==NULL ) 
@@ -538,12 +538,115 @@ void MCLSLinearOpWithSolveFactory<Scalar>::selectOpImpl(
     LinearOpWithSolveBase<Scalar>* Op,
     const ESupportSolveUse supportSolveUse ) const
 {
+    // Get/Create the preconditioner
+    RCP<PreconditionerBase<Scalar> > my_prec = Teuchos::null;
+    RCP<const PreconditionerBase<Scalar> > prec = Teuchos::null;
+    if( prec_in.get() ) 
+    {
+	// Use an externally defined preconditioner
+	prec = prec_in;
+    }
+    else 
+    {
+	// Try and generate a preconditioner on our own
+	if( d_prec_factory.get() ) 
+	{
+	    my_prec = ( 
+		!mclsOp->isExternalPrec()
+		? Teuchos::rcp_const_cast<PreconditionerBase<Scalar> >(
+		    mclsOp->extract_prec()) : Teuchos::null );
+	    bool hasExistingPrec = false;
+	    if( my_prec.get() ) 
+	    {
+		hasExistingPrec = true;
+		// ToDo: Get the forward operator and validate that it is the
+		// same operator that is used here!
+	    }
+	    else 
+	    {
+		hasExistingPrec = false;
+		my_prec = d_prec_factory->createPrec();
+	    }
+	    if( hasExistingPrec && reusePrec ) 
+	    {
+		// Just reuse the existing preconditioner again!
+	    }
+	    else 
+	    {
+		// Update the preconditioner
+		if( approxFwdOp.get() )
+		{
+		    d_prec_factory->initializePrec(approxFwdOpSrc,&*my_prec);
+		}
+		else
+		{
+		    d_prec_factory->initializePrec(fwdOpSrc,&*my_prec);
+		}
+	    }
+	    prec = my_prec;
+	}
+    }
+
+    // Set the preconditioner. Currently we do not handle unspecified
+    // preconditioners.
+    Teuchos::RCP<const LinearOpBase<Scalar> > left;
+    Teuchos::RCP<const LinearOpBase<Scalar> > right;
+    if( prec.get() ) 
+    {
+	left = prec->getLeftPrecOp();
+	right = prec->getRightPrecOp();
+    }
+
+    // Initialize with the appropriate subclass.
     if ( isEpetraCompatible(*fwdOpSrc) )
     {
+  	Teuchos::RCP<const Epetra_RowMatrix> left_prec;
+	if ( Teuchos::nonnull(left) )
+	{
+	    EpetraOperatorViewExtractorStd epetraFwdOpViewExtractor;
+	    RCP<const Epetra_Operator> epetraFwdOp;
+	    EOpTransp epetraFwdOpTransp;
+	    EApplyEpetraOpAs epetraFwdOpApplyAs;
+	    EAdjointEpetraOp epetraFwdOpAdjointSupport;
+	    double epetraFwdOpScalar;
+	    epetraFwdOpViewExtractor.getEpetraOpView(
+		left, 
+		Teuchos::outArg(epetraFwdOp), 
+		Teuchos::outArg(epetraFwdOpTransp),
+		Teuchos::outArg(epetraFwdOpApplyAs), 
+		Teuchos::outArg(epetraFwdOpAdjointSupport),
+		Teuchos::outArg(epetraFwdOpScalar)
+		);
+
+	    left_prec = Teuchos::rcp_dynamic_cast<const Epetra_RowMatrix>(epetraFwdOp);
+   	}
+
+  	Teuchos::RCP<const Epetra_RowMatrix> right_prec;
+	if ( Teuchos::nonnull(right) )
+	{
+	    EpetraOperatorViewExtractorStd epetraFwdOpViewExtractor;
+	    RCP<const Epetra_Operator> epetraFwdOp;
+	    EOpTransp epetraFwdOpTransp;
+	    EApplyEpetraOpAs epetraFwdOpApplyAs;
+	    EAdjointEpetraOp epetraFwdOpAdjointSupport;
+	    double epetraFwdOpScalar;
+	    epetraFwdOpViewExtractor.getEpetraOpView(
+		right, 
+		Teuchos::outArg(epetraFwdOp), 
+		Teuchos::outArg(epetraFwdOpTransp),
+		Teuchos::outArg(epetraFwdOpApplyAs), 
+		Teuchos::outArg(epetraFwdOpAdjointSupport),
+		Teuchos::outArg(epetraFwdOpScalar)
+		);
+
+	    right_prec = Teuchos::rcp_dynamic_cast<const Epetra_RowMatrix>(epetraFwdOp);
+   	}
+
 	initializeOpImpl<Epetra_MultiVector,
 			 Epetra_RowMatrix>(
 			     getEpetraRowMatrix(*fwdOpSrc),
-			     fwdOpSrc, approxFwdOpSrc, prec_in,
+			     left_prec, right_prec,
+			     fwdOpSrc, approxFwdOpSrc, prec, my_prec,
 			     reusePrec, Op, supportSolveUse );
     }
     else if ( isTpetraCompatible<int,int>(*fwdOpSrc) )
@@ -551,10 +654,33 @@ void MCLSLinearOpWithSolveFactory<Scalar>::selectOpImpl(
 	typedef int LO;
 	typedef int GO;
 
+	Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO> > left_prec;
+	if ( Teuchos::nonnull(left) )
+	{
+	    RCP<const Tpetra::Operator<Scalar,LO,GO> > tpetraFwdOp =
+		TpetraOperatorVectorExtraction<Scalar,LO,GO>::getConstTpetraOperator(
+		    left() );
+
+	    left_prec =  Teuchos::rcp_dynamic_cast<const Tpetra::CrsMatrix<Scalar,LO,GO> >(
+		tpetraFwdOp );
+	}
+
+	Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO> > right_prec;
+	if ( Teuchos::nonnull(right) )
+	{
+	    RCP<const Tpetra::Operator<Scalar,LO,GO> > tpetraFwdOp =
+		TpetraOperatorVectorExtraction<Scalar,LO,GO>::getConstTpetraOperator(
+		    right() );
+
+	    right_prec =  Teuchos::rcp_dynamic_cast<const Tpetra::CrsMatrix<Scalar,LO,GO> >(
+		tpetraFwdOp );
+	}
+
 	initializeOpImpl<Tpetra::MultiVector<Scalar,LO,GO>,
 			 Tpetra::CrsMatrix<Scalar,LO,GO> >(
 			     getTpetraCrsMatrix<LO,GO>(*fwdOpSrc),
-			     fwdOpSrc, approxFwdOpSrc, prec_in, 
+			     left_prec, right_prec,
+			     fwdOpSrc, approxFwdOpSrc, prec, my_prec,
 			     reusePrec, Op, supportSolveUse );
     }
     else if ( isTpetraCompatible<int,long>(*fwdOpSrc) )
@@ -562,10 +688,33 @@ void MCLSLinearOpWithSolveFactory<Scalar>::selectOpImpl(
 	typedef int LO;
 	typedef long GO;
 
+	Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO> > left_prec;
+	if ( Teuchos::nonnull(left) )
+	{
+	    RCP<const Tpetra::Operator<Scalar,LO,GO> > tpetraFwdOp =
+		TpetraOperatorVectorExtraction<Scalar,LO,GO>::getConstTpetraOperator(
+		    left() );
+
+	    left_prec =  Teuchos::rcp_dynamic_cast<const Tpetra::CrsMatrix<Scalar,LO,GO> >(
+		tpetraFwdOp );
+	}
+
+	Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO> > right_prec;
+	if ( Teuchos::nonnull(right) )
+	{
+	    RCP<const Tpetra::Operator<Scalar,LO,GO> > tpetraFwdOp =
+		TpetraOperatorVectorExtraction<Scalar,LO,GO>::getConstTpetraOperator(
+		    right() );
+
+	    right_prec =  Teuchos::rcp_dynamic_cast<const Tpetra::CrsMatrix<Scalar,LO,GO> >(
+		tpetraFwdOp );
+	}
+
 	initializeOpImpl<Tpetra::MultiVector<Scalar,LO,GO>,
 			 Tpetra::CrsMatrix<Scalar,LO,GO> >(
 			     getTpetraCrsMatrix<LO,GO>(*fwdOpSrc),
-			     fwdOpSrc, approxFwdOpSrc, prec_in, 
+			     left_prec, right_prec,
+			     fwdOpSrc, approxFwdOpSrc, prec, my_prec,
 			     reusePrec, Op, supportSolveUse );
     }
     else
@@ -582,9 +731,12 @@ template<class Scalar>
 template<class MultiVector, class Matrix>
 void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     const RCP<const Matrix>& matrix,
+    const RCP<const Matrix>& left_prec,
+    const RCP<const Matrix>& right_prec,
     const RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc,
     const RCP<const LinearOpSourceBase<Scalar> >& approxFwdOpSrc,
-    const RCP<const PreconditionerBase<Scalar> >& prec_in,
+    const RCP<const PreconditionerBase<Scalar> >& prec,
+    const Teuchos::RCP<const PreconditionerBase<Scalar> >& my_prec,
     const bool reusePrec,
     LinearOpWithSolveBase<Scalar>* Op,
     const ESupportSolveUse supportSolveUse ) const
@@ -615,54 +767,6 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     MCLSLinearOpWithSolve<Scalar>
 	*mclsOp = &Teuchos::dyn_cast<MCLSLinearOpWithSolve<Scalar> >(*Op);
 
-    // Get/Create the preconditioner
-    RCP<PreconditionerBase<Scalar> > myPrec = Teuchos::null;
-    RCP<const PreconditionerBase<Scalar> > prec = Teuchos::null;
-    if( prec_in.get() ) 
-    {
-	// Use an externally defined preconditioner
-	prec = prec_in;
-    }
-    else 
-    {
-	// Try and generate a preconditioner on our own
-	if( d_prec_factory.get() ) 
-	{
-	    myPrec = ( 
-		!mclsOp->isExternalPrec()
-		? Teuchos::rcp_const_cast<PreconditionerBase<Scalar> >(
-		    mclsOp->extract_prec()) : Teuchos::null );
-	    bool hasExistingPrec = false;
-	    if( myPrec.get() ) 
-	    {
-		hasExistingPrec = true;
-		// ToDo: Get the forward operator and validate that it is the
-		// same operator that is used here!
-	    }
-	    else 
-	    {
-		hasExistingPrec = false;
-		myPrec = d_prec_factory->createPrec();
-	    }
-	    if( hasExistingPrec && reusePrec ) 
-	    {
-		// Just reuse the existing preconditioner again!
-	    }
-	    else 
-	    {
-		// Update the preconditioner
-		if( approxFwdOp.get() )
-		{
-		    d_prec_factory->initializePrec(approxFwdOpSrc,&*myPrec);
-		}
-		else
-		{
-		    d_prec_factory->initializePrec(fwdOpSrc,&*myPrec);
-		}
-	    }
-	    prec = myPrec;
-	}
-    }
 
     // Uninitialize the current solver object
     bool oldIsExternalPrec = false;
@@ -682,38 +786,14 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     // Set the operator (this is the concrete subclass).
     lp->setOperator( matrix );
 
-    // Set the preconditioner.
-    if ( prec.get() ) 
-    {
-    	RCP<const LinearOpBase<Scalar> > unspecified = prec->getUnspecifiedPrecOp();
-    	RCP<const LinearOpBase<Scalar> > left = prec->getLeftPrecOp();
-    	RCP<const LinearOpBase<Scalar> > right = prec->getRightPrecOp();
+    // Set the preconditioners.
+    lp->setLeftPrec( left_prec );
+    lp->setRightPrec( right_prec );
 
-	lp->setLeftPrec( left );
-	lp->setRightPrec( right );
-
-	TEUCHOS_TEST_FOR_EXCEPTION(
-	    !( left.get() || right.get() || unspecified.get() ), std::logic_error
-	    ,"Error, at least one preconditoner linear operator objects must be set!"
-	    );
-	if(unspecified.get()) {
-	    lp->setRightPrec(unspecified);
-	    // ToDo: Allow user to determine whether this should be placed on the
-	    // left or on the right through a parameter in the parameter list!
-	}
-	else {
-	    // Set a left, right or split preconditioner
-	    TEUCHOS_TEST_FOR_EXCEPTION(
-		left.get(),std::logic_error
-		,"Error, we can not currently handle a left preconditioner!"
-		);
-	    lp->setRightPrec(right);
-	}
-    }
-    if( myPrec.get() ) 
+    if( my_prec.get() ) 
     {
     	set_extra_data<RCP<PreconditionerBase<Scalar> > >(
-    	    myPrec,"MCLS::InternalPrec",
+    	    my_prec,"MCLS::InternalPrec",
     	    Teuchos::inOutArg(lp), Teuchos::POST_DESTROY, false);
     }
     else if( prec.get() ) 
@@ -817,7 +897,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     lp_base->setOperator( fwdOp );
     Teuchos::RCP<MCLS::SolverManagerBase<Scalar> > solver_base = iterativeSolver;
     mclsOp->initialize(	lp_base, solverPL, solver_base,
-			fwdOpSrc, prec, myPrec.get()==NULL, approxFwdOpSrc,
+			fwdOpSrc, prec, my_prec.get()==NULL, approxFwdOpSrc,
 			supportSolveUse	);
     mclsOp->setOStream(out);
     mclsOp->setVerbLevel(verbLevel);
