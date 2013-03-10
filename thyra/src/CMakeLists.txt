@@ -23,6 +23,8 @@ APPEND_SET(HEADERS
   Thyra_MCLSLinearOpWithSolve_impl.hpp
   Thyra_MCLSLinearOpWithSolveFactory.hpp
   Thyra_MCLSLinearOpWithSolveFactory_impl.hpp
+  Thyra_MCLSPreconditionerFactory.hpp
+  Thyra_MCLSPreconditionerFactory_impl.hpp
   ) 
 
 APPEND_SET(SOURCES

@@ -65,8 +65,10 @@
 #include <Thyra_TpetraThyraWrappers.hpp>
 
 #include <Epetra_Operator.h>
+#include <Epetra_RowMatrix.h>
 
 #include <Tpetra_Operator.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 
 namespace Thyra {
 
