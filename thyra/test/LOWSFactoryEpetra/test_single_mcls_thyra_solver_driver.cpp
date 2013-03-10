@@ -104,10 +104,10 @@ int main(int argc, char* argv[])
     mclsLOWSFPL_mcsa.set("Number of Sets",int(numSets));
     mclsLOWSFPL_mcsa.set("Set Number of Histories",int(numHistories));
 
-    Teuchos::ParameterList precPL("Ifpack");
+    Teuchos::ParameterList precPL("MCLS");
     if(usePreconditioner) {
-      precPL.set("Overlap",int(2));
-      precPL.set("Prec Type","ILUT");
+      precPL.set("Prec Type","Point Jacobi");
+      precPL.set("Block Size",1);
     }
     
     success

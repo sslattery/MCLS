@@ -17,21 +17,21 @@ TRIBITS_ADD_TEST(
     --max-iters=15 --no-use-preconditioner --show-all-tests --matrix-file=FourByFour.mtx
     --mc-histories=1000
   POSTFIX_AND_ARGS_1 nos5_kl190
-    --show-all-tests --no-use-preconditioner --max-solution-error=1e-2 --max-resid=1e-6
-    --matrix-file=nos5.mtx --use-scaling --mc-histories=1000
+    --show-all-tests --use-preconditioner --max-solution-error=1e-2 --max-resid=1e-6
+    --matrix-file=nos5.mtx --mc-histories=1000
   POSTFIX_AND_ARGS_2 nos1_np
-    --no-use-preconditioner --show-all-tests --num-rhs=1
+    --use-preconditioner --show-all-tests --num-rhs=1
     --max-fwd-error=1e-13 --max-resid=1e-13 --max-iters=1000 --mc-histories=100
-    --max-solution-error=1e-6 --matrix-file=nos1.mtx --use-scaling
+    --max-solution-error=1e-6 --matrix-file=nos1.mtx
   POSTFIX_AND_ARGS_3 nos1_nrhs8
-    --no-use-preconditioner --show-all-tests --num-rhs=8 --mc-histories=100
+    --use-preconditioner --show-all-tests --num-rhs=8 --mc-histories=100
     --max-fwd-error=1e-13 --max-resid=1e-13 --max-iters=1000 --max-solution-error=1e-6
-    --matrix-file=nos1.mtx --use-scaling
+    --matrix-file=nos1.mtx
   POSTFIX_AND_ARGS_4 nos1_bs8
-    --no-use-preconditioner --show-all-tests --num-rhs=8 --mc-histories=100
+    --use-preconditioner --show-all-tests --num-rhs=8 --mc-histories=100
     --max-fwd-error=1e-13 --max-resid=1e-13
     --max-iters=1000 --max-solution-error=1e-6
-    --matrix-file=nos1.mtx --use-scaling
+    --matrix-file=nos1.mtx
   COMM serial mpi
   NUM_MPI_PROCS 1
   )

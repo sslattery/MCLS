@@ -1,6 +1,7 @@
 #include "test_single_mcls_thyra_solver.hpp"
 
 #include "Thyra_MCLSLinearOpWithSolveFactory.hpp"
+#include "Thyra_MCLSPreconditionerFactory.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
@@ -99,7 +100,14 @@ bool Thyra::test_single_mcls_thyra_solver(
 
     if(usePreconditioner) 
     {
-	// no preconditioner support in MCLS yet.
+      if(out.get()) {
+        *out << "\nSetting an MCLS preconditioner factory ...\n";
+      }
+      RCP<PreconditionerFactoryBase<double> >
+        precFactory = Teuchos::rcp(new MCLSPreconditionerFactory());
+      if (precPL)
+        precFactory->setParameterList(rcp(precPL,false));
+      lowsFactory->setPreconditionerFactory(precFactory,"MCLS");
     }
 
     if(out.get()) {
