@@ -256,6 +256,10 @@ std::string MCLSLinearOpWithSolve<Scalar>::description() const
 	oss << "{";
 	oss << "iterativeSolver=\'" << d_solver->description()<<"\'";
 	oss << ",fwdOp=\'" << d_linear_problem->getOperator()->description()<<"\'";
+	if (d_linear_problem->getLeftPrec().get())
+	    oss << ",leftPrecOp=\'"<<d_linear_problem->getLeftPrec()->description()<<"\'";
+	if (d_linear_problem->getRightPrec().get())
+	    oss << ",rightPrecOp=\'"<<d_linear_problem->getRightPrec()->description()<<"\'";
 	oss << "}";
     }
 
@@ -296,6 +300,12 @@ void MCLSLinearOpWithSolve<Scalar>::describe(
 		*out << "iterativeSolver = "<< describe(*d_solver,verbLevel)
 		     << "fwdOp = " 
 		     << describe(*d_linear_problem->getOperator(),verbLevel);
+		if (d_linear_problem->getLeftPrec().get())
+		    *out << "leftPrecOp = "
+			 << describe(*d_linear_problem->getLeftPrec(),verbLevel);
+		if (d_linear_problem->getRightPrec().get())
+		    *out << "rightPrecOp = "
+			 << describe(*d_linear_problem->getRightPrec(),verbLevel);
 	    }
 	    break;
 	}

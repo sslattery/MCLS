@@ -148,8 +148,13 @@ class LinearProblemAdapter : public LinearProblemBase<
 	Teuchos::RCP<Vector> vector_x = MVT::getVectorNonConst( *d_x, id );
 	Teuchos::RCP<const Vector> vector_b = MVT::getVector( *d_b, id );
 
-	return Teuchos::rcp(
+	Teuchos::RCP<LinearProblem<Vector,Matrix> > lp = Teuchos::rcp(
 	    new LinearProblem<Vector,Matrix>(d_A, vector_x, vector_b) );
+
+	lp->setLeftPrec( d_PL );
+	lp->setRightPrec( d_PR );
+
+	return lp;
     }
 
     //! Get the number of LHS/RHS in the problem.
@@ -191,6 +196,12 @@ class LinearProblemAdapter : public LinearProblemBase<
 	MCLS_ENSURE( Teuchos::nonnull(d_b) );
     }
 
+    //! Set the left preconditioner.
+    void setLeftPrec( const Teuchos::RCP<const Matrix>& PL ) { d_PL = PL; }
+
+    //! Set the right preconditioner.
+    void setRightPrec( const Teuchos::RCP<const Matrix>& PR )  { d_PR = PR; }
+
     //! Get the linear operator.
     Teuchos::RCP<const Matrix> getOperator() const { return d_A; }
 
@@ -199,6 +210,12 @@ class LinearProblemAdapter : public LinearProblemBase<
 
     //! Get the right-hand side.
     Teuchos::RCP<const MultiVector> getRHS() const { return d_b; }
+
+    //! Get the left preconditioner.
+    Teuchos::RCP<const Matrix> getLeftPrec() const { return d_PL; }
+
+    //! Get the right preconditioner.
+    Teuchos::RCP<const Matrix> getRightPrec() const { return d_PR; }
 
   private:
 
@@ -210,6 +227,12 @@ class LinearProblemAdapter : public LinearProblemBase<
 
     // Right-hand side.
     Teuchos::RCP<const MultiVector> d_b;
+
+    // Left preconditioner.
+    Teuchos::RCP<const Matrix> d_PL;
+
+    // Right preconditioner.
+    Teuchos::RCP<const Matrix> d_PR;
 
     // Number of LHS/RHS in the problem.
     int d_num_problems;

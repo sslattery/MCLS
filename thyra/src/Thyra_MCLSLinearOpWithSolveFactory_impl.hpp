@@ -132,8 +132,7 @@ MCLSLinearOpWithSolveFactory<Scalar>::MCLSLinearOpWithSolveFactory(
 template<class Scalar>
 bool MCLSLinearOpWithSolveFactory<Scalar>::acceptsPreconditionerFactory() const
  {
-     // For now, MCLS doesn't handle preconditioners.
-     return false;
+     return true;
  }
 
 
@@ -198,8 +197,7 @@ template<class Scalar>
 bool MCLSLinearOpWithSolveFactory<Scalar>::isCompatible(
     const LinearOpSourceBase<Scalar> &fwdOpSrc ) const
 {
-    // Check the preconditioner factory for compatibility. We don't use them
-    // with MCLS yet but we should check for consistency.
+    // Check the preconditioner factory for compatibility. 
     bool prec_compatible = true;
     if( Teuchos::nonnull(d_prec_factory) )
     {
@@ -684,22 +682,33 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     // Set the operator (this is the concrete subclass).
     lp->setOperator( matrix );
 
-    // Set the preconditioner. 
+    // Set the preconditioner.
     if ( prec.get() ) 
     {
     	RCP<const LinearOpBase<Scalar> > unspecified = prec->getUnspecifiedPrecOp();
     	RCP<const LinearOpBase<Scalar> > left = prec->getLeftPrecOp();
     	RCP<const LinearOpBase<Scalar> > right = prec->getRightPrecOp();
 
-	// Set a left, right or split preconditioner
+	lp->setLeftPrec( left );
+	lp->setRightPrec( right );
+
 	TEUCHOS_TEST_FOR_EXCEPTION(
-	    left.get(),std::logic_error
-	    ,"Error, we can not currently handle a left preconditioner!"
+	    !( left.get() || right.get() || unspecified.get() ), std::logic_error
+	    ,"Error, at least one preconditoner linear operator objects must be set!"
 	    );
-	TEUCHOS_TEST_FOR_EXCEPTION(
-	    right.get(),std::logic_error
-	    ,"Error, we can not currently handle a right preconditioner!"
-	    );
+	if(unspecified.get()) {
+	    lp->setRightPrec(unspecified);
+	    // ToDo: Allow user to determine whether this should be placed on the
+	    // left or on the right through a parameter in the parameter list!
+	}
+	else {
+	    // Set a left, right or split preconditioner
+	    TEUCHOS_TEST_FOR_EXCEPTION(
+		left.get(),std::logic_error
+		,"Error, we can not currently handle a left preconditioner!"
+		);
+	    lp->setRightPrec(right);
+	}
     }
     if( myPrec.get() ) 
     {
