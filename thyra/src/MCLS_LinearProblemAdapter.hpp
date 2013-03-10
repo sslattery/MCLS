@@ -91,10 +91,28 @@ class LinearProblemBase : public virtual Teuchos::Describable
     Teuchos::RCP<const linear_op_type> getOperator() const 
     { return b_A; }
 
+    //! Set the left preconditioner.
+    void setLeftPrec( const Teuchos::RCP<const linear_op_type>& PL ) { b_PL = PL; }
+
+    //! Set the right preconditioner.
+    void setRightPrec( const Teuchos::RCP<const linear_op_type>& PR )  { b_PR = PR; }
+
+    //! Get the left preconditioner.
+    Teuchos::RCP<const linear_op_type> getLeftPrec() const { return b_PL; }
+
+    //! Get the right preconditioner.
+    Teuchos::RCP<const linear_op_type> getRightPrec() const { return b_PR; }
+
   private:
 
     // Linear operator base class.
     Teuchos::RCP<const linear_op_type> b_A;
+
+    // Left preconditioner.
+    Teuchos::RCP<const linear_op_type> b_PL;
+
+    // Right preconditioner.
+    Teuchos::RCP<const linear_op_type> b_PR;
 };
 
 //---------------------------------------------------------------------------//
@@ -151,8 +169,14 @@ class LinearProblemAdapter : public LinearProblemBase<
 	Teuchos::RCP<LinearProblem<Vector,Matrix> > lp = Teuchos::rcp(
 	    new LinearProblem<Vector,Matrix>(d_A, vector_x, vector_b) );
 
-	lp->setLeftPrec( d_PL );
-	lp->setRightPrec( d_PR );
+	if ( Teuchos::nonnull(d_PL) )
+	{
+	    lp->setLeftPrec( d_PL );
+	}
+	if ( Teuchos::nonnull(d_PR) )
+	{
+	    lp->setRightPrec( d_PR );
+	}
 
 	return lp;
     }

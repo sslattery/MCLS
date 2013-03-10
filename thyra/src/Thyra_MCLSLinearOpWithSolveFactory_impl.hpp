@@ -32,7 +32,7 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file Thyra_MCLSLinearOpWithSolve.hpp
+ * \file Thyra_MCLSLinearOpWithSolveFactory_impl.hpp
  * \author Stuart R. Slattery
  * \brief Thyra LinearOpWithSolve implementation for MCLS.
  */
@@ -538,6 +538,14 @@ void MCLSLinearOpWithSolveFactory<Scalar>::selectOpImpl(
     LinearOpWithSolveBase<Scalar>* Op,
     const ESupportSolveUse supportSolveUse ) const
 {
+    // Get the MCLSLinearOpWithSolve interface
+    MCLSLinearOpWithSolve<Scalar>
+	*mclsOp = &Teuchos::dyn_cast<MCLSLinearOpWithSolve<Scalar> >(*Op);
+
+    // Get the approximate forward operator.
+    RCP<const LinearOpBase<Scalar> > approxFwdOp = 
+	( approxFwdOpSrc.get() ? approxFwdOpSrc->getOp() : Teuchos::null );
+
     // Get/Create the preconditioner
     RCP<PreconditionerBase<Scalar> > my_prec = Teuchos::null;
     RCP<const PreconditionerBase<Scalar> > prec = Teuchos::null;
@@ -654,23 +662,23 @@ void MCLSLinearOpWithSolveFactory<Scalar>::selectOpImpl(
 	typedef int LO;
 	typedef int GO;
 
-	Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO> > left_prec;
+	Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LO,GO> > left_prec;
 	if ( Teuchos::nonnull(left) )
 	{
 	    RCP<const Tpetra::Operator<Scalar,LO,GO> > tpetraFwdOp =
 		TpetraOperatorVectorExtraction<Scalar,LO,GO>::getConstTpetraOperator(
-		    left() );
+		    left );
 
 	    left_prec =  Teuchos::rcp_dynamic_cast<const Tpetra::CrsMatrix<Scalar,LO,GO> >(
 		tpetraFwdOp );
 	}
 
-	Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO> > right_prec;
+	Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LO,GO> > right_prec;
 	if ( Teuchos::nonnull(right) )
 	{
 	    RCP<const Tpetra::Operator<Scalar,LO,GO> > tpetraFwdOp =
 		TpetraOperatorVectorExtraction<Scalar,LO,GO>::getConstTpetraOperator(
-		    right() );
+		    right );
 
 	    right_prec =  Teuchos::rcp_dynamic_cast<const Tpetra::CrsMatrix<Scalar,LO,GO> >(
 		tpetraFwdOp );
@@ -688,23 +696,23 @@ void MCLSLinearOpWithSolveFactory<Scalar>::selectOpImpl(
 	typedef int LO;
 	typedef long GO;
 
-	Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO> > left_prec;
+	Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LO,GO> > left_prec;
 	if ( Teuchos::nonnull(left) )
 	{
 	    RCP<const Tpetra::Operator<Scalar,LO,GO> > tpetraFwdOp =
 		TpetraOperatorVectorExtraction<Scalar,LO,GO>::getConstTpetraOperator(
-		    left() );
+		    left );
 
 	    left_prec =  Teuchos::rcp_dynamic_cast<const Tpetra::CrsMatrix<Scalar,LO,GO> >(
 		tpetraFwdOp );
 	}
 
-	Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO> > right_prec;
+	Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LO,GO> > right_prec;
 	if ( Teuchos::nonnull(right) )
 	{
 	    RCP<const Tpetra::Operator<Scalar,LO,GO> > tpetraFwdOp =
 		TpetraOperatorVectorExtraction<Scalar,LO,GO>::getConstTpetraOperator(
-		    right() );
+		    right );
 
 	    right_prec =  Teuchos::rcp_dynamic_cast<const Tpetra::CrsMatrix<Scalar,LO,GO> >(
 		tpetraFwdOp );
@@ -767,7 +775,6 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     MCLSLinearOpWithSolve<Scalar>
 	*mclsOp = &Teuchos::dyn_cast<MCLSLinearOpWithSolve<Scalar> >(*Op);
 
-
     // Uninitialize the current solver object
     bool oldIsExternalPrec = false;
     RCP<MCLS::LinearProblemBase<Scalar> > oldLP = Teuchos::null;
@@ -792,7 +799,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 
     if( my_prec.get() ) 
     {
-    	set_extra_data<RCP<PreconditionerBase<Scalar> > >(
+    	set_extra_data<RCP<const PreconditionerBase<Scalar> > >(
     	    my_prec,"MCLS::InternalPrec",
     	    Teuchos::inOutArg(lp), Teuchos::POST_DESTROY, false);
     }
@@ -895,6 +902,11 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     // Initialize the LOWS object.
     Teuchos::RCP<MCLS::LinearProblemBase<Scalar> > lp_base = lp;
     lp_base->setOperator( fwdOp );
+    if ( prec.get() )
+    {
+	lp_base->setLeftPrec( prec->getLeftPrecOp() );
+	lp_base->setRightPrec( prec->getRightPrecOp() );
+    }
     Teuchos::RCP<MCLS::SolverManagerBase<Scalar> > solver_base = iterativeSolver;
     mclsOp->initialize(	lp_base, solverPL, solver_base,
 			fwdOpSrc, prec, my_prec.get()==NULL, approxFwdOpSrc,
@@ -1015,5 +1027,5 @@ bool MCLSLinearOpWithSolveFactory<Scalar>::isTpetraCompatible(
 #endif // THYRA_MCLS_LINEAR_OP_WITH_SOLVE_FACTORY_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-// end ThyraMCLSLinearOpWithSolveFactory.hpp
+// end ThyraMCLSLinearOpWithSolveFactory_impl.hpp
 //---------------------------------------------------------------------------//
