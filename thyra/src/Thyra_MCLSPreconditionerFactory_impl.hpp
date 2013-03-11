@@ -174,7 +174,14 @@ void MCLSPreconditionerFactory<Scalar>::initializePrec(
 	// Block Jacobi.
 	else if ( d_prec_type == PREC_TYPE_BLOCK_JACOBI )
 	{
-	    mcls_prec = Teuchos::rcp( new MCLS::EpetraBlockJacobiPreconditioner(d_plist) );
+	    Teuchos::ParameterList &precTypesPL = 
+		d_plist->sublist(PrecTypes_name);
+	    Teuchos::ParameterList &blockJacobiPL = 
+		precTypesPL.sublist(BlockJacobi_name);
+	    Teuchos::RCP<Teuchos::ParameterList> prec_plist = 
+		Teuchos::rcp( &blockJacobiPL, false );
+	    mcls_prec = Teuchos::rcp( 
+		new MCLS::EpetraBlockJacobiPreconditioner(prec_plist) );
 	}
 
 	// For now, we just have left preconditioners implemented so we do
@@ -205,8 +212,14 @@ void MCLSPreconditionerFactory<Scalar>::initializePrec(
 	// Block Jacobi.
 	else if ( d_prec_type == PREC_TYPE_BLOCK_JACOBI )
 	{
+	    Teuchos::ParameterList &precTypesPL = 
+		d_plist->sublist(PrecTypes_name);
+	    Teuchos::ParameterList &blockJacobiPL = 
+		precTypesPL.sublist(BlockJacobi_name);
+	    Teuchos::RCP<Teuchos::ParameterList> prec_plist = 
+		Teuchos::rcp( &blockJacobiPL, false );
 	    mcls_prec = Teuchos::rcp( 
-		new MCLS::TpetraBlockJacobiPreconditioner<Scalar,LO,GO>(d_plist) );
+		new MCLS::TpetraBlockJacobiPreconditioner<Scalar,LO,GO>(prec_plist) );
 	}
 
 	// For now, we just have left preconditioners implemented so we do
@@ -237,8 +250,14 @@ void MCLSPreconditionerFactory<Scalar>::initializePrec(
 	// Block Jacobi.
 	else if ( d_prec_type == PREC_TYPE_BLOCK_JACOBI )
 	{
+	    Teuchos::ParameterList &precTypesPL = 
+		d_plist->sublist(PrecTypes_name);
+	    Teuchos::ParameterList &blockJacobiPL = 
+		precTypesPL.sublist(BlockJacobi_name);
+	    Teuchos::RCP<Teuchos::ParameterList> prec_plist = 
+		Teuchos::rcp( &blockJacobiPL, false );
 	    mcls_prec = Teuchos::rcp( 
-		new MCLS::TpetraBlockJacobiPreconditioner<Scalar,LO,GO>(d_plist) );
+		new MCLS::TpetraBlockJacobiPreconditioner<Scalar,LO,GO>(prec_plist) );
 	}
 
 	// For now, we just have left preconditioners implemented so we do
