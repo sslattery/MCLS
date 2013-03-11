@@ -42,6 +42,7 @@
 #define MCLS_STRATIMIKOSADAPTER_HPP
 
 #include <Thyra_MCLSLinearOpWithSolveFactory.hpp>
+#include <Thyra_MCLSPreconditionerFactory.hpp>
 
 #include <Teuchos_Ptr.hpp>
 #include <Teuchos_AbstractFactoryStd.hpp>
@@ -76,6 +77,17 @@ class StratimikosAdapter
 	    Teuchos::abstractFactoryStd<
 		Thyra::LinearOpWithSolveFactoryBase<Scalar>,
 		Thyra::MCLSLinearOpWithSolveFactory<Scalar> >(),
+		"MCLS", true );
+    }
+
+    //! Add MCLS to the preconditioning strategy factory.
+    static void setMCLSPreconditioningStrategyFactory(
+	const Teuchos::Ptr<Stratimikos::DefaultLinearSolverBuilder>& lsb)
+    {
+	lsb->setLinearSolveStrategyFactory(
+	    Teuchos::abstractFactoryStd<
+		Thyra::PreconditionerFactoryBase<Scalar>,
+		Thyra::MCLSPreconditionerFactory<Scalar> >(),
 		"MCLS", true );
     }
 };
