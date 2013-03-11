@@ -106,11 +106,10 @@ int main(int argc, char* argv[])
     mclsLOWSFPL_mcsa.set("Number of Sets",int(numSets));
     mclsLOWSFPL_mcsa.set("Set Number of Histories",int(numHistories));
 
-    Teuchos::ParameterList precPL("MCLS");
     if(usePreconditioner) 
     {
-	precPL.set("Prec Type","Block Jacobi");
-	Teuchos::ParameterList& precPL_prec = precPL.sublist("Prec Types");
+	mclsLOWSFPL.set("Prec Type","Block Jacobi");
+	Teuchos::ParameterList& precPL_prec = mclsLOWSFPL.sublist("Prec Types");
 	Teuchos::ParameterList& precPL_bj = precPL_prec.sublist("Block Jacobi");
 	precPL_bj.set("Jacobi Block Size", blockSize);
     }

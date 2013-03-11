@@ -100,11 +100,13 @@ int main(int argc, char* argv[])
     mclsLOWSFPL_mcsa.set("Overlap Size",int(overlapSize));
     mclsLOWSFPL_mcsa.set("Number of Sets",int(numSets));
 
-
-    Teuchos::ParameterList precPL("Ifpack");
-    if(usePreconditioner) {
-      precPL.set("Overlap",int(2));
-      precPL.set("Prec Type","ILUT");
+    Teuchos::ParameterList precPL("MCLS");
+    if(usePreconditioner) 
+    {
+	precPL.set("Prec Type","Block Jacobi");
+	Teuchos::ParameterList& precPL_prec = precPL.sublist("Prec Types");
+	Teuchos::ParameterList& precPL_bj = precPL_prec.sublist("Block Jacobi");
+	precPL_bj.set("Jacobi Block Size", blockSize);
     }
     
     success

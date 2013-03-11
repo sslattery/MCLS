@@ -55,8 +55,8 @@ namespace MCLS
 //---------------------------------------------------------------------------//
 /*!
  * \class ThyraAdapter 
- \brief Stateless to add MCLS Thyra objects to Stratimikos default linear
- solver builder. 
+ * \brief Stateless class to add MCLS Thyra objects to Stratimikos default
+ * linear solver builder. 
  */
 template<class Scalar>
 class StratimikosAdapter
@@ -84,7 +84,7 @@ class StratimikosAdapter
     static void setMCLSPreconditioningStrategyFactory(
 	const Teuchos::Ptr<Stratimikos::DefaultLinearSolverBuilder>& lsb)
     {
-	lsb->setLinearSolveStrategyFactory(
+	lsb->setPreconditioningStrategyFactory(
 	    Teuchos::abstractFactoryStd<
 		Thyra::PreconditionerFactoryBase<Scalar>,
 		Thyra::MCLSPreconditionerFactory<Scalar> >(),
