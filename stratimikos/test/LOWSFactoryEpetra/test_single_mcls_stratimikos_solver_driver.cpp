@@ -131,18 +131,9 @@ int main(int argc, char* argv[])
     mclsLOWSFPL_adjmc.set("Number of Sets",int(numSets));
     mclsLOWSFPL_adjmc.set("Set Number of Histories",int(numHistories));
 
-    if(usePreconditioner) 
-    {
-	mclsLOWSFPL.set("Preconditioner Type",precType);
-	Teuchos::ParameterList& precPL = mclsLOWSFPL.sublist("Preconditioner Types");
-	Teuchos::ParameterList& precPL_prec = precPL.sublist("MCLS");
-	Teuchos::ParameterList& precPL_bj = precPL_prec.sublist("Block Jacobi");
-	precPL_bj.set("Jacobi Block Size", blockSize);
-    }
-
     success
       = Thyra::test_single_mcls_stratimikos_solver(
-	  matrixFile,testTranspose,usePreconditioner,numRhs,numRandomVectors
+	  matrixFile,testTranspose,usePreconditioner,precType,blockSize,numRhs,numRandomVectors
         ,maxFwdError,maxResid,maxSolutionError,showAllTests,dumpAll
         ,&mclsLOWSFPL,&mclsLOWSFPL
         ,verbose?&*out:0

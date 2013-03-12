@@ -15,6 +15,8 @@ bool test_single_mcls_stratimikos_solver(
   const std::string                       matrixFile
   ,const bool                             testTranspose
   ,const bool                             usePreconditioner
+  ,const std::string                      precType                       
+  ,const int                              blockSize
   ,const int                              numRhs
   ,const int                              numRandomVectors
   ,const double                           maxFwdError

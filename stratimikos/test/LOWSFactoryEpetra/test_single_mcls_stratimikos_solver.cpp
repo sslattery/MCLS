@@ -19,9 +19,10 @@
 
 bool Thyra::test_single_mcls_stratimikos_solver(
   const std::string                       matrixFile
-  ,const bool                             useScaling
   ,const bool                             testTranspose
   ,const bool                             usePreconditioner
+  ,const std::string                      precType 
+  ,const int                              blockSize
   ,const int                              numRhs
   ,const int                              numRandomVectors
   ,const double                           maxFwdError
@@ -92,6 +93,12 @@ bool Thyra::test_single_mcls_stratimikos_solver(
     if ( usePreconditioner )
     {
 	builder_list->set<std::string>("Preconditioner Type", "MCLS");
+	Teuchos::ParameterList& precPL = builder_list->sublist("Preconditioner Types");
+	Teuchos::ParameterList& precPL_prec = precPL.sublist("MCLS");
+	precPL_prec.set<std::string>("Preconditioner Type", precType);
+	Teuchos::ParameterList& precPL_types = precPL_prec.sublist("Preconditioner Types");
+	Teuchos::ParameterList& precPL_bj = precPL_types.sublist("Block Jacobi");
+	precPL_bj.set("Jacobi Block Size", blockSize);
     }
     else
     {
