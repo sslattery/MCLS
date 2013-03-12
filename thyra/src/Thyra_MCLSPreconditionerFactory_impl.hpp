@@ -56,7 +56,7 @@ namespace Thyra {
 // Parameter names for Parameter List
 template<class Scalar>
 const std::string MCLSPreconditionerFactory<Scalar>::PrecType_name = 
-    "Prec Type";
+    "Preconditioner Type";
 
 template<class Scalar>
 const std::string MCLSPreconditionerFactory<Scalar>::PrecType_default = 
@@ -64,7 +64,7 @@ const std::string MCLSPreconditionerFactory<Scalar>::PrecType_default =
 
 template<class Scalar>
 const std::string MCLSPreconditionerFactory<Scalar>::PrecTypes_name = 
-    "Prec Types";
+    "Preconditioner Types";
 
 template<class Scalar>
 const std::string MCLSPreconditionerFactory<Scalar>::PointJacobi_name = 

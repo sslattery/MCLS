@@ -88,19 +88,25 @@ bool Thyra::test_single_mcls_stratimikos_solver(
 
     // Build the Stratimikos builder.
     Stratimikos::DefaultLinearSolverBuilder builder;
+    Teuchos::RCP<Teuchos::ParameterList> builder_list = Teuchos::parameterList();
 
     // Add MCLS to the solve strategy.
     MCLS::StratimikosAdapter<double>::setMCLSLinearSolveStrategyFactory(
 	Teuchos::inOutArg(builder) );
+    builder_list->set<std::string>("Linear Solver Type", "MCLS");
 
     // Add MCLS to the preconditioning strategy.
-    MCLS::StratimikosAdapter<double>::setMCLSPreconditioningStrategyFactory(
-	Teuchos::inOutArg(builder) );
+    if ( usePreconditioner )
+    {
+	MCLS::StratimikosAdapter<double>::setMCLSPreconditioningStrategyFactory(
+	    Teuchos::inOutArg(builder) );
+	builder_list->set<std::string>("Preconditioner Type", "MCLS");
+    }
+    else
+    {
+	builder_list->set<std::string>("Preconditioner Type", "None");
+    }
 
-    // Build the solver factory.
-    Teuchos::RCP<Teuchos::ParameterList> builder_list = Teuchos::parameterList();
-    builder_list->set<std::string>("Linear Solver Type", "MCLS");
-    builder_list->set<std::string>("Precondtioner Type", "MCLS");
     builder.setParameterList( builder_list );
     Teuchos::RCP<LinearOpWithSolveFactoryBase<double> > lowsFactory = 
 	Thyra::createLinearSolveStrategy(builder);

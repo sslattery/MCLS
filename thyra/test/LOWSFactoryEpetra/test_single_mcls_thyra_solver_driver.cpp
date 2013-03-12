@@ -49,6 +49,8 @@ int main(int argc, char* argv[])
     int             numHistories           = 1000;
     std::string     mcType                 = "Adjoint";
     int             blockSize              = 1;
+    std::string     solverType             = "MCSA";
+    std::string     precType               = "Point Jacobi";
 
     CommandLineProcessor  clp;
     clp.throwExceptions(false);
@@ -79,6 +81,8 @@ int main(int argc, char* argv[])
     clp.setOption( "mc-sets", &numSets, "Determines the number of sets in the MC problem." );
     clp.setOption( "mc-histories", &numHistories, "Determines the number of histories in the MC problem." );
     clp.setOption( "block-size", &blockSize, "Block Jacobi preconditioning block size." );
+    clp.setOption( "solver-type", &solverType, "Determines MCLS solver." );
+    clp.setOption( "prec-type", &precType, "Determines MCLS preconditioner." );
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
@@ -86,14 +90,13 @@ int main(int argc, char* argv[])
 
     Teuchos::ParameterList mclsLOWSFPL;
 
-    mclsLOWSFPL.set("Solver Type","MCSA");
+    mclsLOWSFPL.set("Solver Type", solverType);
 
     Teuchos::ParameterList& mclsLOWSFPL_solver =
       mclsLOWSFPL.sublist("Solver Types");
 
     Teuchos::ParameterList& mclsLOWSFPL_mcsa =
       mclsLOWSFPL_solver.sublist("MCSA");
-
     mclsLOWSFPL_mcsa.set("Maximum Iterations",int(maxIterations));
     mclsLOWSFPL_mcsa.set("Convergence Tolerance",double(maxResid));
     mclsLOWSFPL_mcsa.set("MC Type",std::string(mcType));
@@ -106,10 +109,36 @@ int main(int argc, char* argv[])
     mclsLOWSFPL_mcsa.set("Number of Sets",int(numSets));
     mclsLOWSFPL_mcsa.set("Set Number of Histories",int(numHistories));
 
+    Teuchos::ParameterList& mclsLOWSFPL_seqmc =
+      mclsLOWSFPL_solver.sublist("Sequential MC");
+    mclsLOWSFPL_seqmc.set("Maximum Iterations",int(maxIterations));
+    mclsLOWSFPL_seqmc.set("Convergence Tolerance",double(maxResid));
+    mclsLOWSFPL_seqmc.set("MC Type",std::string(mcType));
+    mclsLOWSFPL_seqmc.set("Iteration Print Frequency",int(outputFrequency));
+    mclsLOWSFPL_seqmc.set("Weight Cutoff",double(weightCutoff));
+    mclsLOWSFPL_seqmc.set("MC Check Frequency",int(mcCheckFrequency));
+    mclsLOWSFPL_seqmc.set("MC Buffer Size",int(mcBufferSize));
+    mclsLOWSFPL_seqmc.set("Reproducible MC Mode",bool(reproducibleMC));
+    mclsLOWSFPL_seqmc.set("Overlap Size",int(overlapSize));
+    mclsLOWSFPL_seqmc.set("Number of Sets",int(numSets));
+    mclsLOWSFPL_seqmc.set("Set Number of Histories",int(numHistories));
+
+    Teuchos::ParameterList& mclsLOWSFPL_adjmc =
+	mclsLOWSFPL_solver.sublist("Adjoint MC");
+    mclsLOWSFPL_adjmc.set("Convergence Tolerance",double(maxResid));
+    mclsLOWSFPL_adjmc.set("Weight Cutoff",double(weightCutoff));
+    mclsLOWSFPL_adjmc.set("MC Check Frequency",int(mcCheckFrequency));
+    mclsLOWSFPL_adjmc.set("MC Buffer Size",int(mcBufferSize));
+    mclsLOWSFPL_adjmc.set("Reproducible MC Mode",bool(reproducibleMC));
+    mclsLOWSFPL_adjmc.set("Overlap Size",int(overlapSize));
+    mclsLOWSFPL_adjmc.set("Number of Sets",int(numSets));
+    mclsLOWSFPL_adjmc.set("Set Number of Histories",int(numHistories));
+
+    Teuchos::ParameterList precPL("MCLS");
     if(usePreconditioner) 
     {
-	mclsLOWSFPL.set("Prec Type","Block Jacobi");
-	Teuchos::ParameterList& precPL_prec = mclsLOWSFPL.sublist("Prec Types");
+	precPL.set("Preconditioner Type",precType);
+	Teuchos::ParameterList& precPL_prec = precPL.sublist("Preconditioner Types");
 	Teuchos::ParameterList& precPL_bj = precPL_prec.sublist("Block Jacobi");
 	precPL_bj.set("Jacobi Block Size", blockSize);
     }
