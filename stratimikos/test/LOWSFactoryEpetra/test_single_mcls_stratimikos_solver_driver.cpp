@@ -135,11 +135,9 @@ int main(int argc, char* argv[])
 
     if(usePreconditioner) 
     {
-	Teuchos::ParameterList& precPL = mclsLOWSFPL.sublist("Preconditioner Type");
-	precPL.set("Preconditioner Type",precType);
-
-	Teuchos::ParameterList& precPL_prec = precPL.sublist("Preconditioner Types");
-
+	mclsLOWSFPL.set("Preconditioner Type",precType);
+	Teuchos::ParameterList& precPL = mclsLOWSFPL.sublist("Preconditioner Types");
+	Teuchos::ParameterList& precPL_prec = precPL.sublist("MCLS");
 	Teuchos::ParameterList& precPL_bj = precPL_prec.sublist("Block Jacobi");
 	precPL_bj.set("Jacobi Block Size", blockSize);
     }

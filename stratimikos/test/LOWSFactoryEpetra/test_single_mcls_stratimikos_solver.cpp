@@ -96,10 +96,10 @@ bool Thyra::test_single_mcls_stratimikos_solver(
     builder_list->set<std::string>("Linear Solver Type", "MCLS");
 
     // Add MCLS to the preconditioning strategy.
+    MCLS::StratimikosAdapter<double>::setMCLSPreconditioningStrategyFactory(
+	Teuchos::inOutArg(builder) );
     if ( usePreconditioner )
     {
-	MCLS::StratimikosAdapter<double>::setMCLSPreconditioningStrategyFactory(
-	    Teuchos::inOutArg(builder) );
 	builder_list->set<std::string>("Preconditioner Type", "MCLS");
     }
     else
