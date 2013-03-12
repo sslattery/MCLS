@@ -19,7 +19,6 @@
 
 bool Thyra::test_single_mcls_thyra_solver(
   const std::string                       matrixFile
-  ,const bool                             useScaling
   ,const bool                             testTranspose
   ,const bool                             usePreconditioner
   ,const int                              numRhs
@@ -70,15 +69,6 @@ bool Thyra::test_single_mcls_thyra_solver(
 
     Teuchos::RCP<Epetra_CrsMatrix> epetra_A;
     EpetraExt::readEpetraLinearSystem( matrixFile, *comm, &epetra_A );
-
-    // Apply Scaling scaling if necessary.
-    if ( useScaling )
-    {
-	Epetra_Vector scale_vector( epetra_A->RowMap() );
-	epetra_A->ExtractDiagonalCopy( scale_vector );
-        scale_vector.Reciprocal(scale_vector);
-	epetra_A->LeftScale( scale_vector );
-    }
 
     Teuchos::RCP<const LinearOpBase<double> > A = epetraLinearOp(epetra_A);
 

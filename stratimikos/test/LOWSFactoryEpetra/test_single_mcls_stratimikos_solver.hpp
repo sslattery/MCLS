@@ -13,7 +13,6 @@ namespace Thyra {
  */
 bool test_single_mcls_stratimikos_solver(
   const std::string                       matrixFile
-  ,const bool                             useJacobi
   ,const bool                             testTranspose
   ,const bool                             usePreconditioner
   ,const int                              numRhs
