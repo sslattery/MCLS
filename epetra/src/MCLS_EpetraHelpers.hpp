@@ -325,8 +325,8 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
 	    A->ExtractMyRowCopy( n, max_row_entries, num_entries,
 				 values.getRawPtr(), indices.getRawPtr() );
 
-	    A_crs->ReplaceMyValues( n, num_entries, 
-				    values.getRawPtr(), indices.getRawPtr() );
+	    A_crs->InsertMyValues( n, num_entries, 
+				   values.getRawPtr(), indices.getRawPtr() );
 	}
 
 	A_crs->FillComplete();
