@@ -88,16 +88,16 @@ TEUCHOS_UNIT_TEST( LAPACK, block_inversion )
     Teuchos::LAPACK<int,double> lapack;
 
     // Compute the LU-factorization of the block.
-    int ipiv = 0;
+    Teuchos::Array<int> ipiv( block.numRows() );
     int info = 0;
     int lda = m;
-    lapack.GETRF( m, n, block.values(), lda, &ipiv, &info );
+    lapack.GETRF( m, n, block.values(), lda, ipiv.getRawPtr(), &info );
     TEST_EQUALITY( info, 0 );
 
     // Compute the inverse of the block from the LU-factorization.
     Teuchos::Array<double> work( m );
-    lapack.GETRI( 
-        n, block.values(), lda, &ipiv, work.getRawPtr(), work.size(), &info );
+    lapack.GETRI( n, block.values(), lda, ipiv.getRawPtr(),
+		  work.getRawPtr(), work.size(), &info );
     TEST_EQUALITY( info, 0 );
     TEST_EQUALITY( work[0], m );
 
