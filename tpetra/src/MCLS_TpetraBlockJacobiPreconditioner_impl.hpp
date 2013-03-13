@@ -200,14 +200,14 @@ void TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::invertSerialDenseMatrix(
     Teuchos::LAPACK<int,double> lapack;
 
     // Compute the LU-factorization of the block.
-    Teuchos::Array<int> ipiv( block.numRows() );
+    Teuchos::ArrayRCP<int> ipiv( block.numRows() );
     int info = 0;
     lapack.GETRF( block.numRows(), block.numCols(), block.values(), 
 		  block.stride(), ipiv.getRawPtr(), &info );
     MCLS_CHECK( info == 0 );
 
     // Compute the inverse of the block from the LU-factorization.
-    Teuchos::Array<double> work( block.numRows() );
+    Teuchos::ArrayRCP<double> work( block.numRows() );
     lapack.GETRI( 
         block.numCols(), block.values(), block.stride(), 
 	ipiv.getRawPtr(), work.getRawPtr(), work.size(), &info );

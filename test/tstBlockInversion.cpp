@@ -46,7 +46,7 @@
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Array.hpp>
+#include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_as.hpp>
@@ -88,14 +88,14 @@ TEUCHOS_UNIT_TEST( LAPACK, block_inversion )
     Teuchos::LAPACK<int,double> lapack;
 
     // Compute the LU-factorization of the block.
-    Teuchos::Array<int> ipiv( block.numRows() );
+    Teuchos::ArrayRCP<int> ipiv( block.numRows() );
     int info = 0;
     int lda = m;
     lapack.GETRF( m, n, block.values(), lda, ipiv.getRawPtr(), &info );
     TEST_EQUALITY( info, 0 );
 
     // Compute the inverse of the block from the LU-factorization.
-    Teuchos::Array<double> work( m );
+    Teuchos::ArrayRCP<double> work( m );
     lapack.GETRI( n, block.values(), lda, ipiv.getRawPtr(),
 		  work.getRawPtr(), work.size(), &info );
     TEST_EQUALITY( info, 0 );

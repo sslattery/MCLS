@@ -127,6 +127,12 @@ void EpetraBlockJacobiPreconditioner::buildPreconditioner()
     // Get the number of blocks.
     int num_blocks = d_A->NumMyRows() / block_size;
 
+    // Get the global rows on this proc. We'll sort them for building the
+    // blocks as the blocks should be contiguous in global row indexing.
+    Teuchos::Array<int> global_rows( d_A->NumMyRows() );
+    d_A->RowMatrixRowMap().MyGlobalElements( global_rows.getRawPtr() );
+    std::sort( global_rows.begin(), global_rows.end() );
+
     // Build the block preconditioner.
     d_preconditioner = Teuchos::rcp( 
 	new Epetra_CrsMatrix( Copy, d_A->RowMatrixRowMap(), block_size ) );
@@ -134,7 +140,6 @@ void EpetraBlockJacobiPreconditioner::buildPreconditioner()
     // Populate the preconditioner with inverted blocks.
     Teuchos::SerialDenseMatrix<int,double> block( block_size, block_size );
     int col_start = 0;
-    int global_row = 0;
     Teuchos::Array<int> block_cols( block_size );
     for ( int n = 0; n < num_blocks; ++n )
     {
@@ -148,15 +153,15 @@ void EpetraBlockJacobiPreconditioner::buildPreconditioner()
 	// doing the extraction.
 	for ( int i = 0; i < block_size; ++i )
 	{
-	    global_row = d_A->RowMatrixRowMap().GID(col_start+i);
 	    for ( int j = 0; j < block_size; ++j )
 	    {
-		block_cols[j] = d_A->RowMatrixColMap().GID(col_start+j);
+		block_cols[j] = global_rows[col_start]+j;
 	    }
+
 	    for ( int j = 0; j < block_size; ++j )
 	    {
 		block(j,i) = getMatrixComponentFromGlobal( 
-		    d_A, global_row, block_cols[j] );
+		    d_A, global_rows[col_start+i], block_cols[j] );
 	    }
 	}
 
@@ -166,11 +171,9 @@ void EpetraBlockJacobiPreconditioner::buildPreconditioner()
 	// Add the block to the preconditioner.
 	for ( int i = 0; i < block_size; ++i )
 	{
-	    global_row = 
-		d_preconditioner->RowMatrixRowMap().GID(col_start+i);
-
 	    d_preconditioner->InsertGlobalValues( 
-		global_row, block_size, block[i], block_cols.getRawPtr() );
+		global_rows[col_start+i], block_size, 
+		block[i], block_cols.getRawPtr() );
 	}
     }
 
@@ -191,14 +194,14 @@ void EpetraBlockJacobiPreconditioner::invertSerialDenseMatrix(
     Teuchos::LAPACK<int,double> lapack;
 
     // Compute the LU-factorization of the block.
-    Teuchos::Array<int> ipiv( block.numRows() );
+    Teuchos::ArrayRCP<int> ipiv( block.numRows() );
     int info = 0;
     lapack.GETRF( block.numRows(), block.numCols(), block.values(), 
 		  block.stride(), ipiv.getRawPtr(), &info );
     MCLS_CHECK( info == 0 );
 
     // Compute the inverse of the block from the LU-factorization.
-    Teuchos::Array<double> work( block.numRows() );
+    Teuchos::ArrayRCP<double> work( block.numRows() );
     lapack.GETRI( 
         block.numCols(), block.values(), block.stride(), 
 	ipiv.getRawPtr(), work.getRawPtr(), work.size(), &info );
