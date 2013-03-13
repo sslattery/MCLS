@@ -72,7 +72,7 @@ Teuchos::RCP<const Teuchos::ParameterList>
 EpetraBlockJacobiPreconditioner::getValidParameters() const
 {
     Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::parameterList();
-    plist->set<int>("Jacobi Block Size", 0);
+    plist->set<int>("Jacobi Block Size", 1);
     return plist;
 }
 
@@ -122,7 +122,6 @@ void EpetraBlockJacobiPreconditioner::buildPreconditioner()
     int block_size = d_plist->get<int>("Jacobi Block Size");
 
     // We require that all blocks are local.
-    
     MCLS_REQUIRE( d_A->NumMyRows() % block_size == 0 );
 
     // Get the number of blocks.
