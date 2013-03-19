@@ -171,7 +171,7 @@ class LinearProblem
     // Residual r = b - A*x.
     Teuchos::RCP<Vector> d_r;
 
-    // Preconditioned residual r = PL*(b - A*x).
+    // Preconditioned residual rp = PL*(b - A*x).
     Teuchos::RCP<Vector> d_rp;
 
     // Boolean for linear system status. True if we are ready to solve.

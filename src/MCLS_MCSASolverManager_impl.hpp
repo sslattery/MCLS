@@ -169,7 +169,7 @@ void MCSASolverManager<Vector,Matrix>::setProblem(
     d_problem = problem;
     d_primary_set = Teuchos::nonnull(d_problem);
 
-    // Update the residual problem is it already exists.
+    // Update the residual problem if it already exists.
     if ( Teuchos::nonnull(d_mc_solver) )
     {
 	if ( d_primary_set )
@@ -317,10 +317,10 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	// primary set.
 	if ( d_primary_set )
 	{
-	    VT::update( *d_problem->getLHS(), 
-			Teuchos::ScalarTraits<Scalar>::one(),
-			*d_residual_problem->getLHS(), 
-			Teuchos::ScalarTraits<Scalar>::one() );
+	    VT::update( *d_problem->getLHS(),
+	        	Teuchos::ScalarTraits<Scalar>::one(),
+	        	*d_residual_problem->getLHS(),
+	        	Teuchos::ScalarTraits<Scalar>::one() );
 
 	    d_problem->updatePrecResidual();
 	    residual_norm = VT::normInf( *d_problem->getPrecResidual() );
