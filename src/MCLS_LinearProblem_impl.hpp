@@ -158,22 +158,23 @@ LinearProblem<Vector,Matrix>::getCompositeOperator() const
     const bool left_prec = Teuchos::nonnull( d_PL );
     const bool right_prec = Teuchos::nonnull( d_PR );
 
-    Teuchos::RCP<Matrix> composite = 
-	( left_prec || right_prec ) ? MT::clone(*d_A) : Teuchos::null;
-    Teuchos::RCP<Matrix> temp = 
-	( left_prec && right_prec ) ? MT::clone(*d_A) : Teuchos::null;
+    Teuchos::RCP<Matrix> composite;
 
     if ( left_prec && right_prec )
     {
+        Teuchos::RCP<Matrix> temp = MT::clone( *d_A );
+        composite = MT::clone( *d_PL );
 	MT::multiply( d_A, d_PR, temp );
 	MT::multiply( d_PL, temp, composite );
     }
     else if ( left_prec )
     {
+        composite = MT::clone( *d_PL );
 	MT::multiply( d_PL, d_A, composite );
     }
     else if ( right_prec )
     {
+        composite = MT::clone( *d_A );
 	MT::multiply( d_A, d_PR, composite );
     }
     else
