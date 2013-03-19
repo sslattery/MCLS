@@ -377,6 +377,71 @@ TEUCHOS_UNIT_TEST( LinearProblem, ResidualUpdate )
 }
 
 //---------------------------------------------------------------------------//
+TEUCHOS_UNIT_TEST( LinearProblem, composite_operator )
+{
+    typedef Epetra_RowMatrix MatrixType;
+    typedef Epetra_Vector VectorType;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+	Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
+    int comm_size = comm->getSize();
+
+    int local_num_rows = 10;
+    int global_num_rows = local_num_rows*comm_size;
+    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
+	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
+
+    Teuchos::RCP<Epetra_CrsMatrix> A = 
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
+
+    Teuchos::Array<int> global_columns( 2 );
+    Teuchos::Array<double> values( 2 );
+    for ( int i = 0; i < global_num_rows-1; ++i )
+    {
+	global_columns[0] = i;
+	global_columns[1] = i+1;
+	values[0] = 1;
+	values[1] = 2;
+	A->InsertGlobalValues( i, global_columns().size(), 
+			       &values[0], &global_columns[0] );
+
+    }
+    A->FillComplete();
+
+    Teuchos::RCP<MatrixType> B = A;
+    Teuchos::RCP<MatrixType> C = MT::copyTranspose( *B );
+
+    Teuchos::RCP<VectorType> X = MT::cloneVectorFromMatrixRows( *A );
+    double x_val = 2;
+    VT::putScalar( *X, x_val );
+
+    MCLS::LinearProblem<VectorType,MatrixType> linear_problem( B, X, X );
+    linear_problem.setLeftPrec( C );
+    Teuchos::RCP<const MatrixType> D = linear_problem.getCompositeOperator();
+
+    std::size_t num_entries;
+    Teuchos::Array<int> view_columns(3);
+    Teuchos::Array<double> view_values(3);
+    for ( int i = 1; i < local_num_rows-1; ++i )
+    {
+	MT::getLocalRowCopy( *D, i, view_columns, view_values, num_entries );
+	TEST_EQUALITY( num_entries, 3 );
+	TEST_EQUALITY( view_columns[0], i-1 );
+	TEST_EQUALITY( view_columns[1], i );
+	TEST_EQUALITY( view_columns[2], i+1 );
+	TEST_EQUALITY( view_values[0], 2 );
+	TEST_EQUALITY( view_values[1], 5 );
+	TEST_EQUALITY( view_values[2], 2 );
+    }
+}
+
+//---------------------------------------------------------------------------//
 // end tstEpetraLinearProblem.cpp
 //---------------------------------------------------------------------------//
 
