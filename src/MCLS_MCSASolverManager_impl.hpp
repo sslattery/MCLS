@@ -317,10 +317,10 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	// primary set.
 	if ( d_primary_set )
 	{
-	    VT::update( *d_problem->getLHS(),
-	        	Teuchos::ScalarTraits<Scalar>::one(),
-	        	*d_residual_problem->getLHS(),
-	        	Teuchos::ScalarTraits<Scalar>::one() );
+	    VT::update( *d_problem->getLHS(), 
+			Teuchos::ScalarTraits<Scalar>::one(),
+			*d_residual_problem->getLHS(), 
+			Teuchos::ScalarTraits<Scalar>::one() );
 
 	    d_problem->updatePrecResidual();
 	    residual_norm = VT::normInf( *d_problem->getPrecResidual() );

@@ -170,7 +170,7 @@ void SequentialMCSolverManager<Vector,Matrix>::setProblem(
     d_primary_set = !d_problem.is_null();
 
     // Update the residual problem is it already exists.
-    if ( !d_mc_solver.is_null() )
+    if ( Teuchos::nonnull(d_mc_solver) )
     {
 	if ( d_primary_set )
 	{
@@ -225,6 +225,10 @@ void SequentialMCSolverManager<Vector,Matrix>::setParameters(
 template<class Vector, class Matrix>
 bool SequentialMCSolverManager<Vector,Matrix>::solve()
 {
+    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_mc_solver) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
+
     // Get the convergence parameters on the primary set.
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType 
 	convergence_criteria = 0;
@@ -292,7 +296,8 @@ bool SequentialMCSolverManager<Vector,Matrix>::solve()
 	// Solve the residual Monte Carlo problem.
 	d_mc_solver->solve();
 
-	// Apply the correction and update the residual on the primary set.
+	// Apply the correction and update the preconditioned residual on the
+	// primary set.
 	if ( d_primary_set )
 	{
 	    VT::update( *d_problem->getLHS(), 
