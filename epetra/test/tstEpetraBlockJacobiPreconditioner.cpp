@@ -63,10 +63,13 @@
 #include <Teuchos_TypeTraits.hpp>
 #include <Teuchos_ParameterList.hpp>
 
+#include <Epetra_SerialDenseMatrix.h>
 #include <Epetra_Map.h>
+#include <Epetra_BlockMap.h>
 #include <Epetra_Vector.h>
 #include <Epetra_RowMatrix.h>
 #include <Epetra_CrsMatrix.h>
+#include <Epetra_VbrMatrix.h>
 #include <Epetra_Comm.h>
 #include <Epetra_SerialComm.h>
 
@@ -228,6 +231,137 @@ TEUCHOS_UNIT_TEST( EpetraBlockJacobiPreconditioner, 1_block_matrix )
 }
 
 //---------------------------------------------------------------------------//
+TEUCHOS_UNIT_TEST( EpetraBlockJacobiPreconditioner, vbr_1_block_matrix )
+{
+    typedef Epetra_RowMatrix MatrixType;
+    typedef Epetra_Vector VectorType;
+    typedef MCLS::VectorTraits<VectorType> VT;
+    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
+    typedef MT::scalar_type scalar_type;
+    typedef MT::local_ordinal_type local_ordinal_type;
+    typedef MT::global_ordinal_type global_ordinal_type;
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+	Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
+    int comm_size = comm->getSize();
+    int comm_rank = comm->getRank();
+
+    int local_num_rows = 4;
+    int global_num_rows = comm_size;
+    Teuchos::RCP<Epetra_BlockMap> map = Teuchos::rcp(
+	new Epetra_BlockMap( global_num_rows, 1, 4, 0, *epetra_comm ) );
+
+    Teuchos::Array<int> columns( 4 );
+    columns[0] = local_num_rows*comm_rank;
+    columns[1] = local_num_rows*comm_rank+1;
+    columns[2] = local_num_rows*comm_rank+2;
+    columns[3] = local_num_rows*comm_rank+3;
+
+    Teuchos::Array<int> local_cols( 1, comm_rank );
+
+    // Build a single block on each proc.
+    Teuchos::RCP<Epetra_VbrMatrix> A = 
+	Teuchos::rcp( new Epetra_VbrMatrix( Copy, *map, 1 ) );
+
+    // Build a 4x4 block.
+    int m = 4;
+    int n = 4;
+    Epetra_SerialDenseMatrix block( m, n );
+
+    block(0,0) = 3.2;
+    block(0,1) = -1.43;
+    block(0,2) = 2.98;
+    block(0,3) = 0.32;
+
+    block(1,0) = -4.12;
+    block(1,1) = -7.53;
+    block(1,2) = 1.44;
+    block(1,3) = -3.72;
+
+    block(2,0) = 4.24;
+    block(2,1) = -6.42;
+    block(2,2) = 1.82;
+    block(2,3) = 2.67;
+
+    block(3,0) = -0.23;
+    block(3,1) = 5.8;
+    block(3,2) = 1.13;
+    block(3,3) = -3.73;
+
+    int errval = 0;
+    errval = A->BeginInsertGlobalValues( comm_rank, 1, local_cols.getRawPtr() );
+    TEST_EQUALITY( errval, 0 );
+    errval = A->SubmitBlockEntry(block);
+    TEST_EQUALITY( errval, 0 );
+    errval = A->EndSubmitEntries();
+    TEST_EQUALITY( errval, 0 );
+    errval = A->FillComplete();
+
+    // Build the preconditioner.
+    Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::parameterList();
+    plist->set<int>("Jacobi Block Size", 4);
+    Teuchos::RCP<MCLS::Preconditioner<MatrixType> > preconditioner = 
+	Teuchos::rcp( new MCLS::EpetraBlockJacobiPreconditioner(plist) );
+    preconditioner->setOperator( A );
+    preconditioner->buildPreconditioner();
+    Teuchos::RCP<const MatrixType> M = preconditioner->getPreconditioner();
+
+    // Check the preconditioner. Inverse block values from matlab.
+    Teuchos::Array<int> prec_cols(4);
+    Teuchos::Array<double> prec_vals(4);
+    std::size_t num_entries = 0;
+
+    int global_row = local_num_rows*comm_rank;
+    MT::getGlobalRowCopy( *M, global_row, prec_cols(), prec_vals(), num_entries );
+    TEST_EQUALITY( num_entries, 4 );
+    TEST_EQUALITY( columns[0], prec_cols[0] );
+    TEST_EQUALITY( columns[1], prec_cols[1] );
+    TEST_EQUALITY( columns[2], prec_cols[2] );
+    TEST_EQUALITY( columns[3], prec_cols[3] );
+    TEST_FLOATING_EQUALITY( prec_vals[0], -0.461356423424245, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[1], -0.060920073472551, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[2],  0.547244760641934, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[3],  0.412904055961420, 1.0e-14 );
+
+    global_row = local_num_rows*comm_rank+1;
+    MT::getGlobalRowCopy( *M, global_row, prec_cols(), prec_vals(), num_entries );
+    TEST_EQUALITY( num_entries, 4 );
+    TEST_EQUALITY( columns[0], prec_cols[0] );
+    TEST_EQUALITY( columns[1], prec_cols[1] );
+    TEST_EQUALITY( columns[2], prec_cols[2] );
+    TEST_EQUALITY( columns[3], prec_cols[3] );
+    TEST_FLOATING_EQUALITY( prec_vals[0],  0.154767451798665, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[1], -0.056225122550555, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[2], -0.174451348828054, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[3], -0.055523340725809, 1.0e-14 );
+
+    global_row = local_num_rows*comm_rank+2;
+    MT::getGlobalRowCopy( *M, global_row, prec_cols(), prec_vals(), num_entries );
+    TEST_EQUALITY( num_entries, 4 );
+    TEST_EQUALITY( columns[0], prec_cols[0] );
+    TEST_EQUALITY( columns[1], prec_cols[1] );
+    TEST_EQUALITY( columns[2], prec_cols[2] );
+    TEST_EQUALITY( columns[3], prec_cols[3] );
+    TEST_FLOATING_EQUALITY( prec_vals[0],  0.848746201780808, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[1],  0.045927762119214, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[2], -0.618485718805259, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[3], -0.415712965073367, 1.0e-14 );
+
+    global_row = local_num_rows*comm_rank+3;
+    MT::getGlobalRowCopy( *M, global_row, prec_cols(), prec_vals(), num_entries );
+    TEST_EQUALITY( num_entries, 4 );
+    TEST_EQUALITY( columns[0], prec_cols[0] );
+    TEST_EQUALITY( columns[1], prec_cols[1] );
+    TEST_EQUALITY( columns[2], prec_cols[2] );
+    TEST_EQUALITY( columns[3], prec_cols[3] );
+    TEST_FLOATING_EQUALITY( prec_vals[0],  0.526232280383953, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[1], -0.069757566407458, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[2], -0.492378815120724, 1.0e-14 );
+    TEST_FLOATING_EQUALITY( prec_vals[3], -0.505833501236923, 1.0e-14 );
+}
+
+//---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST( EpetraBlockJacobiPreconditioner, 2_block_matrix )
 {
     typedef Epetra_RowMatrix MatrixType;
@@ -253,29 +387,45 @@ TEUCHOS_UNIT_TEST( EpetraBlockJacobiPreconditioner, 2_block_matrix )
     Teuchos::RCP<Epetra_CrsMatrix> A = 
 	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
 
-    Teuchos::Array<double> values_1( 4 );
+    Teuchos::Array<double> values_1( 8 );
     values_1[0] = 3.2;
     values_1[1] = -1.43;
     values_1[2] = 2.98;
     values_1[3] = 0.32;
+    values_1[4] = -1.3;
+    values_1[5] = -1.3;
+    values_1[6] = -1.3;
+    values_1[7] = -1.3;
 
-    Teuchos::Array<double> values_2( 4 );
+    Teuchos::Array<double> values_2( 8 );
     values_2[0] = -4.12;
     values_2[1] = -7.53;
     values_2[2] = 1.44;
     values_2[3] = -3.72;
+    values_2[4] = -1.3;
+    values_2[5] = -1.3;
+    values_2[6] = -1.3;
+    values_2[7] = -1.3;
 
-    Teuchos::Array<double> values_3( 4 );
+    Teuchos::Array<double> values_3( 8 );
     values_3[0] = 4.24;
     values_3[1] = -6.42;
     values_3[2] = 1.82;
     values_3[3] = 2.67;
+    values_3[4] = -1.3;
+    values_3[5] = -1.3;
+    values_3[6] = -1.3;
+    values_3[7] = -1.3;
 
-    Teuchos::Array<double> values_4( 4 );
+    Teuchos::Array<double> values_4( 8 );
     values_4[0] = -0.23;
     values_4[1] = 5.8;
     values_4[2] = 1.13;
     values_4[3] = -3.73;
+    values_4[4] = -1.3;
+    values_4[5] = -1.3;
+    values_4[6] = -1.3;
+    values_4[7] = -1.3;
 
     Teuchos::Array<Teuchos::Array<double> > values( 4 );
     values[0] = values_1;
@@ -283,17 +433,25 @@ TEUCHOS_UNIT_TEST( EpetraBlockJacobiPreconditioner, 2_block_matrix )
     values[2] = values_3;
     values[3] = values_4;
 
-    Teuchos::Array<int> columns_1( 4 );
+    Teuchos::Array<int> columns_1( 8 );
     columns_1[0] = local_num_rows*comm_rank;
     columns_1[1] = local_num_rows*comm_rank+1;
     columns_1[2] = local_num_rows*comm_rank+2;
     columns_1[3] = local_num_rows*comm_rank+3;
+    columns_1[4] = local_num_rows*comm_rank+4;
+    columns_1[5] = local_num_rows*comm_rank+5;
+    columns_1[6] = local_num_rows*comm_rank+6;
+    columns_1[7] = local_num_rows*comm_rank+7;
 
-    Teuchos::Array<int> columns_2( 4 );
+    Teuchos::Array<int> columns_2( 8 );
     columns_2[0] = local_num_rows*comm_rank+4;
     columns_2[1] = local_num_rows*comm_rank+5;
     columns_2[2] = local_num_rows*comm_rank+6;
     columns_2[3] = local_num_rows*comm_rank+7;
+    columns_2[4] = local_num_rows*comm_rank;
+    columns_2[5] = local_num_rows*comm_rank+1;
+    columns_2[6] = local_num_rows*comm_rank+2;
+    columns_2[7] = local_num_rows*comm_rank+3;
 
     int global_row = 0;
 

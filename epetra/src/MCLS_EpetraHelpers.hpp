@@ -309,29 +309,47 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
     static Teuchos::RCP<Epetra_CrsMatrix>
     createCrsMatrix( const Teuchos::RCP<const matrix_type>& A )
     {
-	Teuchos::RCP<Epetra_CrsMatrix> A_crs = Teuchos::rcp( 
-	    new Epetra_CrsMatrix(Copy, A->RowMatrixRowMap(), 
-				 A->RowMatrixColMap(),A->MaxNumEntries()) );
+        const Epetra_Map &row_map = A->RowMatrixRowMap(); 
+        const Epetra_Map &col_map = A->RowMatrixColMap(); 
+    
+        Teuchos::RCP<Epetra_CrsMatrix> A_crs = Teuchos::rcp(
+            new Epetra_CrsMatrix( Copy, row_map, col_map, 0 ) );
 
-	int max_row_entries = A->MaxNumEntries();
-	int num_local_rows = A->NumMyRows();
-	int num_entries = 0;
+        int num_local_rows = row_map.NumMyElements();
+        Teuchos::Array<int> my_global_rows( num_local_rows );
+        row_map.MyGlobalElements( my_global_rows.getRawPtr() );
 
-	Teuchos::Array<double> values( max_row_entries );
-	Teuchos::Array<int> indices( max_row_entries );
+        int num_local_cols = col_map.NumMyElements() ;
+        Teuchos::Array<int> my_global_cols( num_local_cols );
+        col_map.MyGlobalElements( my_global_cols.getRawPtr() );
 
-	for ( int n = 0; n < num_local_rows; ++n )
-	{
-	    A->ExtractMyRowCopy( n, max_row_entries, num_entries,
-				 values.getRawPtr(), indices.getRawPtr() );
+        int max_entries = A->MaxNumEntries();
+        int num_entries = 0;
+        Teuchos::Array<int> local_indices(max_entries);
+        Teuchos::Array<int> global_indices(max_entries);
+        Teuchos::Array<double> values(max_entries); 
 
-	    A_crs->InsertMyValues( n, num_entries, 
-				   values.getRawPtr(), indices.getRawPtr() );
-	}
+        for( int local_row = 0; local_row < num_local_rows; ++local_row ) 
+        {
+            A->ExtractMyRowCopy( local_row, 
+                                 max_entries,
+                                 num_entries, 
+                                 values.getRawPtr(),
+                                 local_indices.getRawPtr() );
+      
+            for (int j = 0 ; j < num_entries; ++j ) 
+            { 
+                global_indices[j] = my_global_cols[ local_indices[j] ];
+            }
+      
+            A_crs->InsertGlobalValues( my_global_rows[local_row], 
+                                       num_entries, 
+                                       values.getRawPtr(),
+                                       global_indices.getRawPtr() );
+        }
 
-	A_crs->FillComplete();
-
-	return A_crs;
+        A_crs->FillComplete();
+        return A_crs;
     }
 };
 
