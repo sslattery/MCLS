@@ -66,7 +66,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyMclsTestFiles
   SOURCE_PREFIX
     "In_"
   SOURCE_DIR
-    "${PACKAGE_SOURCE_DIR}/../packages/amesos/test/Test_Basic"
+    "${Trilinos_SOURCE_DIR}/packages/amesos/test/Test_Basic"
   EXEDEPS
     test_single_mcls_thyra_solver_driver
   )
