@@ -134,6 +134,17 @@ void TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::buildPreconditioner()
     // Get the number of blocks.
     int num_blocks = d_A->getRowMap()->getNodeNumElements() / block_size;
 
+    // Get the global rows on this proc. We'll sort them for building the
+    // blocks as the blocks should be contiguous in global row indexing.
+    Teuchos::Array<GO> global_rows( d_A->getRowMap()->getNodeNumElements() );
+    {
+	Teuchos::ArrayView<const GO> unsorted_rows = 
+	    d_A->getRowMap()->getNodeElementList();
+	std::copy( unsorted_rows.begin(), unsorted_rows.end(), 
+		   global_rows.begin() );
+    }
+    std::sort( global_rows.begin(), global_rows.end() );
+
     // Build the block preconditioner.
     d_preconditioner = 
 	Tpetra::createCrsMatrix<Scalar,LO,GO>( d_A->getRowMap(), block_size );
@@ -141,7 +152,6 @@ void TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::buildPreconditioner()
     // Populate the preconditioner with inverted blocks.
     Teuchos::SerialDenseMatrix<int,Scalar> block( block_size, block_size );
     GO col_start = 0;
-    GO global_row = 0;
     Teuchos::Array<GO> block_cols( block_size );
     for ( int n = 0; n < num_blocks; ++n )
     {
@@ -155,15 +165,15 @@ void TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::buildPreconditioner()
 	// doing the extraction.
 	for ( int i = 0; i < block_size; ++i )
 	{
-	    global_row = d_A->getRowMap()->getGlobalElement(col_start+i);
 	    for ( int j = 0; j < block_size; ++j )
 	    {
-		block_cols[j] = d_A->getColMap()->getGlobalElement(col_start+j);
+		block_cols[j] = global_rows[col_start]+j;
 	    }
+
 	    for ( int j = 0; j < block_size; ++j )
 	    {
-		block(j,i) = 
-		    getMatrixComponentFromGlobal( d_A, global_row, block_cols[j] );
+		block(j,i) = getMatrixComponentFromGlobal( 
+		    d_A, global_rows[col_start+i], block_cols[j] );
 	    }
 	}
 
@@ -173,11 +183,8 @@ void TpetraBlockJacobiPreconditioner<Scalar,LO,GO>::buildPreconditioner()
 	// Add the block to the preconditioner.
 	for ( int i = 0; i < block_size; ++i )
 	{
-	    global_row = 
-		d_preconditioner->getRowMap()->getGlobalElement(col_start+i);
-
 	    d_preconditioner->insertGlobalValues( 
-		global_row, block_cols(), 
+		global_rows[col_start+i], block_cols(), 
 		Teuchos::ArrayView<Scalar>(block[i], block_size) );
 	}
     }
