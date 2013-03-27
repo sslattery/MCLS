@@ -240,6 +240,7 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
 				       *d_problem->getLHS() );
 	}
     }
+    d_global_comm->barrier();
 
     // This is a direct solve and therefore always converged in the iterative
     // sense. 
