@@ -58,7 +58,7 @@ AdjointTally<Vector>::AdjointTally( const Teuchos::RCP<Vector>& x,
 				    const Teuchos::RCP<Vector>& x_overlap )
     : d_x( x )
     , d_x_overlap( x_overlap )
-    , d_export( d_x_overlap, d_x )
+    , d_export_to_operator( d_x_overlap, d_x )
 { 
     MCLS_ENSURE( !d_x.is_null() );
     MCLS_ENSURE( !d_x_overlap.is_null() );
@@ -66,13 +66,13 @@ AdjointTally<Vector>::AdjointTally( const Teuchos::RCP<Vector>& x,
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Combine the overlap tally with the base decomposition tally in the
- * set. 
+ * \brief Combine the overlap tally with the operator decomposition tally in
+ * the set.
  */
 template<class Vector>
 void AdjointTally<Vector>::combineSetTallies()
 {
-    d_export.doExportAdd();
+    d_export_to_operator.doExportAdd();
 }
 
 //---------------------------------------------------------------------------//
@@ -85,19 +85,25 @@ void AdjointTally<Vector>::combineBlockTallies(
 {
     MCLS_REQUIRE( !block_comm.is_null() );
 
-    Teuchos::ArrayRCP<const Scalar> const_base_view = VT::view( *d_x );
+    Teuchos::ArrayRCP<const Scalar> const_tally_view = VT::view( *d_x );
 
-    Teuchos::ArrayRCP<Scalar> copy_buffer( const_base_view.size() );
+    Teuchos::ArrayRCP<Scalar> copy_buffer( const_tally_view.size() );
 
     Teuchos::reduceAll<int,Scalar>( *block_comm,
 				    Teuchos::REDUCE_SUM,
-				    Teuchos::as<int>( const_base_view.size() ),
-				    const_base_view.getRawPtr(),
+				    Teuchos::as<int>( const_tally_view.size() ),
+				    const_tally_view.getRawPtr(),
 				    copy_buffer.getRawPtr() );
 
-    Teuchos::ArrayRCP<Scalar> base_view = VT::viewNonConst( *d_x );
+    Teuchos::ArrayRCP<Scalar> tally_view = VT::viewNonConst( *d_x );
     
-    std::copy( copy_buffer.begin(), copy_buffer.end(), base_view.begin() );
+    std::copy( copy_buffer.begin(), copy_buffer.end(), tally_view.begin() );
+
+    if ( Teuchos::nonnull(d_x_base) )
+    {
+        MCLS_CHECK( Teuchos::nonnull(d_export_to_base) ); 
+        d_export_to_base->doExportInsert();
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -113,20 +119,21 @@ void AdjointTally<Vector>::normalize( const int& nh )
 
 //---------------------------------------------------------------------------//
 /*
- * \brief Set the base tally vector. The maps are required to be compatible.
+ * \brief Set the base tally vector.
  */
 template<class Vector>
-void AdjointTally<Vector>::setBaseVector( const Teuchos::RCP<Vector>& x )
+void AdjointTally<Vector>::setBaseVector( const Teuchos::RCP<Vector>& x_base )
 {
-    MCLS_REQUIRE( !x.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(x_base) );
 
-    d_x = x;
-    d_export = VectorExport<Vector>( d_x_overlap, d_x );
+    d_x_base = x_base;
+    d_export_to_base = 
+        Teuchos::rcp( new VectorExport<Vector>(d_x, d_x_base) );
 }
 
 //---------------------------------------------------------------------------//
 /*
- * \brief Zero out base decomposition and overlap decomposition tallies.
+ * \brief Zero out operator decomposition and overlap decomposition tallies.
  */
 template<class Vector>
 void AdjointTally<Vector>::zeroOut()
@@ -136,6 +143,12 @@ void AdjointTally<Vector>::zeroOut()
 
     VT::putScalar( *d_x_overlap, 
 		   Teuchos::ScalarTraits<Scalar>::zero() );
+
+    if ( Teuchos::nonnull(d_x_base) )
+    {
+        VT::putScalar( *d_x_base, 
+                       Teuchos::ScalarTraits<Scalar>::zero() );
+    }
 }
 
 //---------------------------------------------------------------------------//

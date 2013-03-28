@@ -260,19 +260,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, SetCombine, LO, GO, Scalar )
 
     tally.combineSetTallies();
 
-    Teuchos::ArrayRCP<const Scalar> C_view = VT::view( *C );
-    typename Teuchos::ArrayRCP<const Scalar>::const_iterator c_view_iterator;
-    for ( c_view_iterator = C_view.begin();
-	  c_view_iterator != C_view.end();
-	  ++c_view_iterator )
+    Teuchos::ArrayRCP<const Scalar> A_view = VT::view( *A );
+    typename Teuchos::ArrayRCP<const Scalar>::const_iterator a_view_iterator;
+    for ( a_view_iterator = A_view.begin();
+	  a_view_iterator != A_view.end();
+	  ++a_view_iterator )
     {
 	if ( comm_size == 1 )
 	{
-	    TEST_EQUALITY( *c_view_iterator, 0 );
+	    TEST_EQUALITY( *a_view_iterator, 0 );
 	}
 	else
 	{
-	    TEST_EQUALITY( *c_view_iterator, a_val + b_val );
+	    TEST_EQUALITY( *a_view_iterator, a_val + b_val );
 	}
     }
 

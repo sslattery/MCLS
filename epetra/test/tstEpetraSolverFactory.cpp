@@ -221,7 +221,7 @@ TEUCHOS_UNIT_TEST( SolverFactory, mcsa_two_by_two )
 
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager->getConvergedStatus() );
-	TEST_EQUALITY( solver_manager->getNumIters(), 6 );
+	TEST_EQUALITY( solver_manager->getNumIters(), 10 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager->achievedTol() > 0.0 );
@@ -259,7 +259,7 @@ TEUCHOS_UNIT_TEST( SolverFactory, mcsa_two_by_two )
 
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager->getConvergedStatus() );
-	TEST_EQUALITY( solver_manager->getNumIters(), 6 );
+	TEST_EQUALITY( solver_manager->getNumIters(), 10 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager->achievedTol() > 0.0 );
@@ -291,7 +291,7 @@ TEUCHOS_UNIT_TEST( SolverFactory, mcsa_two_by_two )
 	converged_status = solver_manager->solve();
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager->getConvergedStatus() );
-	TEST_EQUALITY( solver_manager->getNumIters(), 6 );
+	TEST_EQUALITY( solver_manager->getNumIters(), 10 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager->achievedTol() > 0.0 );
@@ -327,7 +327,7 @@ TEUCHOS_UNIT_TEST( SolverFactory, mcsa_two_by_two )
 	converged_status = solver_manager->solve();
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager->getConvergedStatus() );
-	TEST_EQUALITY( solver_manager->getNumIters(), 6 );
+	TEST_EQUALITY( solver_manager->getNumIters(), 10 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager->achievedTol() > 0.0 );

@@ -96,8 +96,8 @@ class AdjointTally
     // histories.
     void normalize( const int& nh );
 
-    // Set the base tally vector. The maps are required to be compatible.
-    void setBaseVector( const Teuchos::RCP<Vector>& x );
+    // Set the base tally vector.
+    void setBaseVector( const Teuchos::RCP<Vector>& x_base );
 
     // Zero out the tallies.
     void zeroOut();
@@ -114,16 +114,25 @@ class AdjointTally
     // Get the global tally rows in the overlap decomposition.
     Teuchos::Array<Ordinal> overlapRows() const;
 
+    // Get the vector in the operator decomposition.
+    const Vector& opDecompVector() const { return *d_x; }
+
   private:
 
-    // Solution vector in base decomposition.
+    // Solution vector in operator decomposition.
     Teuchos::RCP<Vector> d_x;
 
     // Solution vector in overlap decomposition.
     Teuchos::RCP<Vector> d_x_overlap;
 
-    // Overlap to base decomposition vector export.
-    VectorExport<Vector> d_export;
+    // Solution vector in original decomposition.
+    Teuchos::RCP<Vector> d_x_base;
+
+    // Overlap to operator decomposition vector export.
+    VectorExport<Vector> d_export_to_operator;
+
+    // Operator to base decomposition vector export.
+    Teuchos::RCP<VectorExport<Vector> > d_export_to_base;
 };
 
 //---------------------------------------------------------------------------//

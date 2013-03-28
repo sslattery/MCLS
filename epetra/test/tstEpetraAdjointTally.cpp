@@ -277,19 +277,19 @@ TEUCHOS_UNIT_TEST( AdjointTally, SetCombine )
 
     tally.combineSetTallies();
 
-    Teuchos::ArrayRCP<const double> C_view = VT::view( *C );
-    Teuchos::ArrayRCP<const double>::const_iterator c_view_iterator;
-    for ( c_view_iterator = C_view.begin();
-	  c_view_iterator != C_view.end();
-	  ++c_view_iterator )
+    Teuchos::ArrayRCP<const double> A_view = VT::view( *A );
+    Teuchos::ArrayRCP<const double>::const_iterator a_view_iterator;
+    for ( a_view_iterator = A_view.begin();
+	  a_view_iterator != A_view.end();
+	  ++a_view_iterator )
     {
 	if ( comm_size == 1 )
 	{
-	    TEST_EQUALITY( *c_view_iterator, 0 );
+	    TEST_EQUALITY( *a_view_iterator, 0 );
 	}
 	else
 	{
-	    TEST_EQUALITY( *c_view_iterator, a_val + b_val );
+	    TEST_EQUALITY( *a_view_iterator, a_val + b_val );
 	}
     }
 

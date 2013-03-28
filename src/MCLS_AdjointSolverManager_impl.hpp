@@ -194,12 +194,7 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
 	d_msod_manager->localDomain()->domainTally();
     MCLS_CHECK( !tally.is_null() );
 
-    // Set the primary set's tally vector to the LHS of the linear problem. We
-    // need to do this because the MSODManager just creates some arbitrary
-    // tally vector on all sets. In the primary set, we want to tally directly
-    // into the linear problem vector to get the solution. The MSODManager
-    // builds the tally vectors from the map of the solution vector, so the
-    // set export and block reduction parallel operations are still valid.
+    // Set the primary set's base vector to the LHS of the linear problem. 
     if ( d_primary_set )
     {
 	TT::setBaseVector( *tally, d_problem->getLHS() );
@@ -224,6 +219,9 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
 
     // Combine the tallies across the blocks.
     TT::combineBlockTallies( *tally, d_msod_manager->blockComm() );
+
+    // Barrier before proceeding.
+    d_global_comm->barrier();
 
     // Normalize the tallies by the number of sets.
     TT::normalize( *tally, d_msod_manager->numSets() );

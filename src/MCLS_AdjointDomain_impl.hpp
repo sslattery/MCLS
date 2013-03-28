@@ -76,12 +76,16 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     Teuchos::RCP<Matrix> A_T_overlap = 
 	MT::copyNearestNeighbors( *A_T, num_overlap );
 
+    // Generate a solution vector with the operator decomposition.
+    Teuchos::RCP<Vector> x_op_decomp = 
+	MT::cloneVectorFromMatrixRows( *A_T );
+
     // Generate a solution vector with the overlap decomposition.
     Teuchos::RCP<Vector> x_overlap = 
 	MT::cloneVectorFromMatrixRows( *A_T_overlap );
 
     // Build the adjoint tally from the solution vector and the overlap.
-    d_tally = Teuchos::rcp( new TallyType(x, x_overlap) );
+    d_tally = Teuchos::rcp( new TallyType(x_op_decomp, x_overlap) );
 
     // Allocate space in local row data arrays.
     int num_rows = 
