@@ -44,6 +44,7 @@
 #include "MCLS_SolverManager.hpp"
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
+#include "MCLS_MatrixTraits.hpp"
 #include "MCLS_MSODManager.hpp"
 #include "MCLS_MCSolver.hpp"
 #include "MCLS_UniformAdjointSource.hpp"
@@ -75,6 +76,7 @@ class AdjointSolverManager : public SolverManager<Vector,Matrix>
     typedef VectorTraits<Vector>                    VT;
     typedef typename VT::scalar_type                Scalar;
     typedef Matrix                                  matrix_type;
+    typedef MatrixTraits<Vector,Matrix>             MT;
     typedef LinearProblem<Vector,Matrix>            LinearProblemType;
     typedef AdjointDomain<Vector,Matrix>            DomainType;
     typedef typename DomainType::TallyType          TallyType;

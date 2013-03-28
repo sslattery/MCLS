@@ -42,6 +42,7 @@
 #define MCLS_ADJOINTSOLVERMANAGER_IMPL_HPP
 
 #include "MCLS_DBC.hpp"
+#include "MCLS_VectorExport.hpp"
 
 namespace MCLS
 {
@@ -309,34 +310,28 @@ void AdjointSolverManager<Vector,Matrix>::buildMonteCarloSource()
     // Build the primary source in the primary set.
     if ( d_primary_set )
     {
-	// Left precondition the source if necessary.
-	if ( d_problem->isLeftPrec() )
-	{
-	    Teuchos::RCP<Vector> prec_src = VT::clone( *d_problem->getRHS() );
-	    d_problem->applyLeftPrec( *d_problem->getRHS(), *prec_src );
+        // Export the source vector to the operator decomposition.
+        Teuchos::RCP<Vector> rhs_op_decomp = 
+            MT::cloneVectorFromMatrixRows( *d_problem->getOperator() );
+        VectorExport<Vector> exporter( 
+            Teuchos::rcp_const_cast<Vector>(d_problem->getRHS()), rhs_op_decomp );
+        exporter.doExportInsert();
 
-	    primary_source = Teuchos::rcp(
-		new SourceType( 
-		    prec_src,
-		    d_msod_manager->localDomain(),
-		    d_mc_solver->rngControl(),
-		    d_msod_manager->setComm(),
-		    d_global_comm->getSize(),
-		    d_global_comm->getRank(),
-		    *d_plist ) );
-	}
-	else
-	{
-	    primary_source = Teuchos::rcp(
-		new SourceType( 
-		    Teuchos::rcp_const_cast<Vector>(d_problem->getRHS()),
-		    d_msod_manager->localDomain(),
-		    d_mc_solver->rngControl(),
-		    d_msod_manager->setComm(),
-		    d_global_comm->getSize(),
-		    d_global_comm->getRank(),
-		    *d_plist ) );
-	}
+        // Left precondition the source if necessary.
+        if ( d_problem->isLeftPrec() )
+        {
+            d_problem->applyLeftPrec( *rhs_op_decomp, *rhs_op_decomp );
+        }
+
+        // Build the source.
+        primary_source = Teuchos::rcp( 
+            new SourceType( rhs_op_decomp,
+                            d_msod_manager->localDomain(),
+                            d_mc_solver->rngControl(),
+                            d_msod_manager->setComm(),
+                            d_global_comm->getSize(),
+                            d_global_comm->getRank(),
+                            *d_plist ) );
     }
     d_global_comm->barrier();
 
