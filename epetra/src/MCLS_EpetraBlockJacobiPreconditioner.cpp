@@ -42,7 +42,6 @@
 
 #include "MCLS_EpetraBlockJacobiPreconditioner.hpp"
 
-#include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_LAPACK.hpp>
@@ -148,9 +147,7 @@ void EpetraBlockJacobiPreconditioner::buildPreconditioner()
 
 	// Extract the block. Note that I form the tranposed local block to
 	// facilitate constructing the preconditioner in the second group of
-	// loops. I grab each individual element here because I want the
-	// zero's to build the block, but there's probably a cheaper way of
-	// doing the extraction.
+	// loops. 
 	for ( int i = 0; i < block_size; ++i )
 	{
 	    for ( int j = 0; j < block_size; ++j )
@@ -158,11 +155,8 @@ void EpetraBlockJacobiPreconditioner::buildPreconditioner()
 		block_cols[j] = global_rows[col_start]+j;
 	    }
 
-	    for ( int j = 0; j < block_size; ++j )
-	    {
-		block(j,i) = getMatrixComponentFromGlobal( 
-		    d_A, global_rows[col_start+i], block_cols[j] );
-	    }
+            getBlockRowFromGlobal( 
+                block, i, d_A, global_rows[col_start+i], block_cols );
 	}
 
 	// Invert the block.
@@ -211,27 +205,23 @@ void EpetraBlockJacobiPreconditioner::invertSerialDenseMatrix(
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Get a local component of an operator given a global row and column
- * index. 
+ * \brief Get a row of an operator in a block given a global row and block
+ * column indices.
  */
-double EpetraBlockJacobiPreconditioner::getMatrixComponentFromGlobal( 
+void EpetraBlockJacobiPreconditioner::getBlockRowFromGlobal( 
+    Teuchos::SerialDenseMatrix<int,double>& block,
+    const int block_row,
     const Teuchos::RCP<const matrix_type>& matrix,
-    const int global_row, const int global_col )
+    const int global_row,
+    const Teuchos::Array<int>& global_cols )
 {
     const Epetra_Map row_map = matrix->RowMatrixRowMap();
     const Epetra_Map col_map = matrix->RowMatrixColMap();
 
     MCLS_REQUIRE( row_map.MyGID(global_row) );
 
+    // Extract the local row.
     int local_row = row_map.LID( global_row );
-    int local_col = col_map.LID( global_col );
-
-    // If the block column is not local, then we get a zero for this entry.
-    if ( local_col == Teuchos::OrdinalTraits<int>::invalid() )
-    {
-	return 0.0;
-    }
-
     int max_size = matrix->MaxNumEntries();
     int num_entries = 0;
     Teuchos::Array<int> local_indices( max_size );
@@ -242,16 +232,30 @@ double EpetraBlockJacobiPreconditioner::getMatrixComponentFromGlobal(
     local_values.resize( num_entries );
     local_indices.resize( num_entries );
 
-    Teuchos::Array<int>::iterator local_idx_it =
-	std::find( local_indices.begin(), local_indices.end(), local_col );
-
-    if ( local_idx_it != local_indices.end() )
+    // Load the row into the block.
+    int block_col = 0;
+    Teuchos::Array<int>::const_iterator global_col_it;
+    for ( global_col_it = global_cols.begin();
+          global_col_it != global_cols.end();
+          ++global_col_it )
     {
-	return local_values[ std::distance( local_indices.begin(),
-					    local_idx_it ) ];
-    }
+        MCLS_CHECK( block_col < block.numRows() );
 
-    return 0.0;
+        // Get the local column.
+        int local_col = col_map.LID( *global_col_it );
+
+        // See if there's a non-zero entry for this column.
+        Teuchos::Array<int>::iterator local_idx_it =
+            std::find( local_indices.begin(), local_indices.end(), local_col );
+
+        if ( local_idx_it != local_indices.end() )
+        {
+            block( block_col, block_row ) = local_values[ 
+                std::distance( local_indices.begin(), local_idx_it ) ];
+        }
+
+        ++block_col;
+    }
 }
 
 //---------------------------------------------------------------------------//

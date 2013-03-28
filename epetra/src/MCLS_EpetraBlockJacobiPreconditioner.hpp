@@ -46,6 +46,7 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
+#include <Teuchos_Array.hpp>
 
 #include <Epetra_RowMatrix.h>
 #include <Epetra_CrsMatrix.h>
@@ -103,11 +104,13 @@ class EpetraBlockJacobiPreconditioner : public Preconditioner<Epetra_RowMatrix>
     void invertSerialDenseMatrix( 
 	Teuchos::SerialDenseMatrix<int,double>& block );
 
-    // Get a global component of an operator given a global row and column
-    // index.
-    double getMatrixComponentFromGlobal( 
-	const Teuchos::RCP<const matrix_type>& matrix,
-	const int global_row, const int global_col );
+    // Get a row of an operator in a block given a global row and block column
+    // indices. 
+    void getBlockRowFromGlobal( Teuchos::SerialDenseMatrix<int,double>& block,
+                                const int block_row,
+                                const Teuchos::RCP<const matrix_type>& matrix,
+                                const int global_row,
+                                const Teuchos::Array<int>& global_cols );
 
   private:
 
