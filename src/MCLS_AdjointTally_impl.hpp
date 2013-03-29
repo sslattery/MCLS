@@ -77,11 +77,12 @@ void AdjointTally<Vector>::combineSetTallies()
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Combine the base tallies across a block. 
+ * \brief Combine the base tallies across a block and normalize by the number
+ * of sets.
  */
 template<class Vector>
 void AdjointTally<Vector>::combineBlockTallies(
-    const Teuchos::RCP<const Comm>& block_comm )
+    const Teuchos::RCP<const Comm>& block_comm, const int num_sets )
 {
     MCLS_REQUIRE( !block_comm.is_null() );
 
@@ -101,8 +102,9 @@ void AdjointTally<Vector>::combineBlockTallies(
 
     if ( Teuchos::nonnull(d_x_base) )
     {
-        MCLS_CHECK( Teuchos::nonnull(d_export_to_base) ); 
+        MCLS_CHECK( Teuchos::nonnull(d_export_to_base) );
         d_export_to_base->doExportInsert();
+        VT::scale( *d_x_base, 1.0 / Teuchos::as<double>(num_sets) );
     }
 }
 
@@ -114,7 +116,7 @@ void AdjointTally<Vector>::combineBlockTallies(
 template<class Vector>
 void AdjointTally<Vector>::normalize( const int& nh )
 {
-    VT::scale( *d_x, 1.0 / nh );
+    VT::scale( *d_x, 1.0 / Teuchos::as<double>(nh) );
 }
 
 //---------------------------------------------------------------------------//

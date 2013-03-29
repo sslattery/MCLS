@@ -59,8 +59,8 @@ LinearProblem<Vector,Matrix>::LinearProblem(
     : d_A( A )
     , d_x( x )
     , d_b( b )
-    , d_r( VT::clone( *d_x ) )
-    , d_rp( VT::clone( *d_x ) )
+    , d_r( VT::clone(*d_x) )
+    , d_rp( VT::clone(*d_x) )
 {
     d_status = true;
 
@@ -332,7 +332,8 @@ void LinearProblem<Vector,Matrix>::updatePrecResidual()
     }
     else
     {
-	d_rp = d_r;
+        VT::update( *d_rp, Teuchos::ScalarTraits<Scalar>::zero(),
+                    *d_r, Teuchos::ScalarTraits<Scalar>::one() );
     }
 }
 

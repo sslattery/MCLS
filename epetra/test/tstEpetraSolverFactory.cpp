@@ -203,6 +203,7 @@ TEUCHOS_UNIT_TEST( SolverFactory, mcsa_two_by_two )
 	plist->set<double>("Convergence Tolerance", 1.0e-8);
 	plist->set<int>("Maximum Iterations", 10);
 	plist->set<double>("Weight Cutoff", cutoff);
+        plist->set<int>("Iteration Print Frequency", 1);
 	plist->set<int>("MC Check Frequency", 50);
 	plist->set<bool>("Reproducible MC Mode",true);
 	plist->set<int>("Overlap Size", 2);
@@ -221,7 +222,7 @@ TEUCHOS_UNIT_TEST( SolverFactory, mcsa_two_by_two )
 
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager->getConvergedStatus() );
-	TEST_EQUALITY( solver_manager->getNumIters(), 10 );
+	TEST_EQUALITY( solver_manager->getNumIters(), 6 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager->achievedTol() > 0.0 );
@@ -259,7 +260,7 @@ TEUCHOS_UNIT_TEST( SolverFactory, mcsa_two_by_two )
 
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager->getConvergedStatus() );
-	TEST_EQUALITY( solver_manager->getNumIters(), 10 );
+	TEST_EQUALITY( solver_manager->getNumIters(), 6 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager->achievedTol() > 0.0 );
@@ -291,7 +292,7 @@ TEUCHOS_UNIT_TEST( SolverFactory, mcsa_two_by_two )
 	converged_status = solver_manager->solve();
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager->getConvergedStatus() );
-	TEST_EQUALITY( solver_manager->getNumIters(), 10 );
+	TEST_EQUALITY( solver_manager->getNumIters(), 6 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager->achievedTol() > 0.0 );
@@ -327,7 +328,7 @@ TEUCHOS_UNIT_TEST( SolverFactory, mcsa_two_by_two )
 	converged_status = solver_manager->solve();
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager->getConvergedStatus() );
-	TEST_EQUALITY( solver_manager->getNumIters(), 10 );
+	TEST_EQUALITY( solver_manager->getNumIters(), 6 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager->achievedTol() > 0.0 );

@@ -192,7 +192,7 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
     // Get the domain tally.
     Teuchos::RCP<TallyType> tally = 
 	d_msod_manager->localDomain()->domainTally();
-    MCLS_CHECK( !tally.is_null() );
+    MCLS_CHECK( Teuchos::nonnull(tally) );
 
     // Set the primary set's base vector to the LHS of the linear problem. 
     if ( d_primary_set )
@@ -217,16 +217,13 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
     // Barrier before proceeding.
     d_global_comm->barrier();
 
-    // Combine the tallies across the blocks.
-    TT::combineBlockTallies( *tally, d_msod_manager->blockComm() );
+    // Combine the tallies across the blocks and normalize the tallies by the
+    // number of sets.
+    TT::combineBlockTallies( *tally, 
+                             d_msod_manager->blockComm(),
+                             d_msod_manager->numSets() );
 
     // Barrier before proceeding.
-    d_global_comm->barrier();
-
-    // Normalize the tallies by the number of sets.
-    TT::normalize( *tally, d_msod_manager->numSets() );
-
-    // Barrier before exiting.
     d_global_comm->barrier();
 
     // If we're right preconditioned then we have to recover the original

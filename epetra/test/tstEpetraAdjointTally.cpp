@@ -415,7 +415,7 @@ TEUCHOS_UNIT_TEST( AdjointTally, BlockCombine )
 	}
 
 	tally.combineSetTallies();
-	tally.combineBlockTallies( comm_block );
+	tally.combineBlockTallies( comm_block, 2 );
 
 	// The base tallies should be combined across the blocks. The sets
 	// tallied over different vectors.
@@ -427,7 +427,7 @@ TEUCHOS_UNIT_TEST( AdjointTally, BlockCombine )
 		  c_view_iterator != C_view.end();
 		  ++c_view_iterator )
 	    {
-		TEST_EQUALITY( *c_view_iterator, 2+3+4+6 );
+		TEST_EQUALITY( *c_view_iterator, (2+3+4+6)/2.0 );
 	    }
 	}
 	else

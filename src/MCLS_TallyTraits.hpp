@@ -107,11 +107,13 @@ class TallyTraits
     }
 
     /*!
-     * \brief Combine the tallies together over a block communicator.
+     * \brief Combine the tallies together over a block communicator and
+     * normalize by the number of sets (the size of a block).
      */
     static void combineBlockTallies( 
 	Tally& tally,
-	const Teuchos::RCP<const Comm>& block_comm )
+	const Teuchos::RCP<const Comm>& block_comm,
+        const int num_sets )
     {
 	UndefinedTallyTraits<Tally>::notDefined(); 
     }
