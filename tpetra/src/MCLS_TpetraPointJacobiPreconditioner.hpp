@@ -92,9 +92,13 @@ class TpetraPointJacobiPreconditioner
     // Build the preconditioner.
     void buildPreconditioner();
 
-    //! Get the preconditioner.
-    Teuchos::RCP<const matrix_type> getPreconditioner() const
+    //! Get the left preconditioner.
+    Teuchos::RCP<const matrix_type> getLeftPreconditioner() const
     { return d_preconditioner; }
+
+    //! Get the right preconditioner.
+    Teuchos::RCP<const matrix_type> getRightPreconditioner() const
+    { return Teuchos::null; }
 
   private:
 

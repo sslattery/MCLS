@@ -57,7 +57,7 @@ namespace MCLS
 //---------------------------------------------------------------------------//
 /*!
  * \class EpetraBlockJacobiPreconditioner
- * \brief Block-Jacobi preconditioner for Epetra::CrsMatrix
+ * \brief Block-Jacobi preconditioner for Epetra_RowMatrix
  */
 class EpetraBlockJacobiPreconditioner : public Preconditioner<Epetra_RowMatrix>
 {
@@ -94,9 +94,13 @@ class EpetraBlockJacobiPreconditioner : public Preconditioner<Epetra_RowMatrix>
     // Build the preconditioner.
     void buildPreconditioner();
 
-    //! Get the preconditioner.
-    Teuchos::RCP<const matrix_type> getPreconditioner() const
+    //! Get the left preconditioner.
+    Teuchos::RCP<const matrix_type> getLeftPreconditioner() const
     { return d_preconditioner; }
+
+    //! Get the right preconditioner.
+    Teuchos::RCP<const matrix_type> getRightPreconditioner() const
+    { return Teuchos::null; }
 
   private:
 

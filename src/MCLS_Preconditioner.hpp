@@ -93,8 +93,11 @@ class Preconditioner : public virtual Teuchos::Describable
     //! Build the preconditioner.
     virtual void buildPreconditioner() = 0;
 
-    //! Get the preconditioner.
-    virtual Teuchos::RCP<const Matrix> getPreconditioner() const = 0;
+    //! Get the left preconditioner.
+    virtual Teuchos::RCP<const Matrix> getLeftPreconditioner() const = 0;
+
+    //! Get the right preconditioner.
+    virtual Teuchos::RCP<const Matrix> getRightPreconditioner() const = 0;
 };
 
 //---------------------------------------------------------------------------//

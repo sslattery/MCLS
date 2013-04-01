@@ -190,7 +190,7 @@ void MCLSPreconditionerFactory<Scalar>::initializePrec(
 	mcls_prec->buildPreconditioner();
 	Teuchos::RCP<EpetraLinearOp> epetra_op = Teuchos::rcp( new EpetraLinearOp() );
 	epetra_op->initialize( 
-	    Teuchos::rcp_const_cast<Epetra_RowMatrix>(mcls_prec->getPreconditioner()) );
+	    Teuchos::rcp_const_cast<Epetra_RowMatrix>(mcls_prec->getLeftPreconditioner()) );
 	Teuchos::RCP<const LinearOpBase<Scalar> > thyra_op = epetra_op;
 	defaultPrec->initializeLeft( thyra_op );
     }
@@ -227,7 +227,7 @@ void MCLSPreconditionerFactory<Scalar>::initializePrec(
 	mcls_prec->setOperator( getTpetraCrsMatrix<LO,GO>(*fwdOpSrc) );
 	mcls_prec->buildPreconditioner();
 	Teuchos::RCP<const Tpetra::Operator<Scalar,LO,GO> > tpetra_op = 
-	    mcls_prec->getPreconditioner();
+	    mcls_prec->getLeftPreconditioner();
 	Teuchos::RCP<const LinearOpBase<Scalar> > thyra_op = 
 	    Thyra::createConstLinearOp<Scalar,LO,GO>( tpetra_op );
 	defaultPrec->initializeLeft( thyra_op );
@@ -265,7 +265,7 @@ void MCLSPreconditionerFactory<Scalar>::initializePrec(
 	mcls_prec->setOperator( getTpetraCrsMatrix<LO,GO>(*fwdOpSrc) );
 	mcls_prec->buildPreconditioner();
 	Teuchos::RCP<const Tpetra::Operator<Scalar,LO,GO> > tpetra_op = 
-	    mcls_prec->getPreconditioner();
+	    mcls_prec->getLeftPreconditioner();
 	Teuchos::RCP<const LinearOpBase<Scalar> > thyra_op = 
 	    Thyra::createConstLinearOp<Scalar,LO,GO>( tpetra_op );
 	defaultPrec->initializeLeft( thyra_op );
