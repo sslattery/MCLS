@@ -111,8 +111,64 @@ void EpetraILUTPreconditioner::buildPreconditioner()
     ifpack.Compute();
 
     // Invert L and U.
-    computeInverseL( ifpack.L() );
-    computeInverseU( ifpack.U() );
+    d_inv_l = computeTriInverse( ifpack.L(), false );
+    d_inv_u = computeTriInverse( ifpack.U(), true );
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Compute the inverse of a tri-diagonal matrix from Ifpack.
+ */
+Teuchos::RCP<Epetra_CrsMatrix>
+EpetraILUTPreconditioner::computeTriInverse( const Epetra_CrsMatrix& A,
+                                             bool upper )
+{
+    Teuchos::RCP<Epetra_CrsMatrix> inverse = Teuchos::rcp(
+        new Epetra_CrsMatrix(Copy, A.RowMatrixRowMap(), 0) );
+
+    int j_0 = A.NoDiagonal() ? 0 : 1;
+    int num_rows = A.NumMyRows();
+    int* row_indices;
+    int* row_values;
+    int num_entries = 0;
+    double sum = 0.0;
+
+    // Upper triangular case. Uy=x
+    if ( upper )
+    {
+        for ( int i = num_rows-1; i >= 0; --i )
+        {
+            A.ExtractMyRowView( i, num_entries, row_values, row_indices );
+
+            sum = 0.0;
+            for ( j = j_0; j < num_entries; ++j )
+            {
+                sum += row_values[j] * y[row_indices[j]];
+            }
+
+            y[i] = (x[i] - sum) / row_values[0];
+        }
+    }
+
+    // Lower triangular case. Ly=x
+    else
+    {
+        for ( int i = 0; i < num_rows; ++i )
+        {
+            A.ExtractMyRowView( i, num_entries, row_values, row_indices );
+
+            num_entries -= j_0;
+            sum = 0.0;
+            for ( j = 0; j < num_entries; ++j )
+            {
+                sum += row_values[j] * y[row_indices[j]];
+            }
+
+            y[i] = (x[i] - sum) / row_values[num_entries];
+        }
+    }
+
+    return inverse;
 }
 
 //---------------------------------------------------------------------------//
