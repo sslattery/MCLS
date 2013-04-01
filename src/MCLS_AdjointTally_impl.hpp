@@ -140,16 +140,13 @@ void AdjointTally<Vector>::setBaseVector( const Teuchos::RCP<Vector>& x_base )
 template<class Vector>
 void AdjointTally<Vector>::zeroOut()
 {
-    VT::putScalar( *d_x, 
-		   Teuchos::ScalarTraits<Scalar>::zero() );
+    VT::putScalar( *d_x, Teuchos::ScalarTraits<Scalar>::zero() );
 
-    VT::putScalar( *d_x_overlap, 
-		   Teuchos::ScalarTraits<Scalar>::zero() );
+    VT::putScalar( *d_x_overlap, Teuchos::ScalarTraits<Scalar>::zero() );
 
     if ( Teuchos::nonnull(d_x_base) )
     {
-        VT::putScalar( *d_x_base, 
-                       Teuchos::ScalarTraits<Scalar>::zero() );
+        VT::putScalar( *d_x_base, Teuchos::ScalarTraits<Scalar>::zero() );
     }
 }
 

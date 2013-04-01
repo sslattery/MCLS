@@ -297,15 +297,11 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	// set. 
 	if ( d_primary_set )
 	{
-	    // Update the solution vector with the preconditioned residual
-	    // from the previous iteration.
 	    VT::update( *d_problem->getLHS(), 
 			Teuchos::ScalarTraits<Scalar>::one(),
 			*d_problem->getPrecResidual(), 
 			Teuchos::ScalarTraits<Scalar>::one() );
 
-	    // Compute the new unpreconditioned residual to use as the Monte
-	    // Carlo source.
 	    d_problem->updateResidual();
 	}
 	d_global_comm->barrier();
@@ -317,10 +313,10 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	// primary set.
 	if ( d_primary_set )
 	{
-	    VT::update( *d_problem->getLHS(), 
-			Teuchos::ScalarTraits<Scalar>::one(),
-			*d_residual_problem->getLHS(), 
-			Teuchos::ScalarTraits<Scalar>::one() );
+            VT::update( *d_problem->getLHS(),
+                        Teuchos::ScalarTraits<Scalar>::one(),
+                        *d_residual_problem->getLHS(),
+                        Teuchos::ScalarTraits<Scalar>::one() );
 
 	    d_problem->updatePrecResidual();
 	    residual_norm = VT::normInf( *d_problem->getPrecResidual() );

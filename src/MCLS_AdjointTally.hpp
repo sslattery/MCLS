@@ -147,7 +147,7 @@ inline void AdjointTally<Vector>::tallyHistory( const HistoryType& history )
 {
     MCLS_REQUIRE( history.alive() );
     MCLS_REQUIRE( VT::isGlobalRow( *d_x, history.state() ) ||
-	     VT::isGlobalRow( *d_x_overlap, history.state() ) );
+                  VT::isGlobalRow( *d_x_overlap, history.state() ) );
 
     if ( VT::isGlobalRow( *d_x, history.state() ) )
     {
