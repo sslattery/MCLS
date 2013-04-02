@@ -159,13 +159,7 @@ void RichardsonSolverManager<Vector,Matrix>::setParameters(
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
     MCLS_REQUIRE( Teuchos::nonnull(params) );
-    MCLS_REQUIRE( Teuchos::nonnull(d_mc_solver) );
-
-    // Set the parameters.
     d_plist = params;
-
-    // Propagate the parameters to the existing Monte Carlo solver.
-    d_mc_solver->setParameters( d_plist );
 }
 
 //---------------------------------------------------------------------------//
@@ -177,7 +171,6 @@ template<class Vector, class Matrix>
 bool RichardsonSolverManager<Vector,Matrix>::solve()
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
-    MCLS_REQUIRE( Teuchos::nonnull(d_mc_solver) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
     // Get the convergence parameters on the primary set.

@@ -448,7 +448,7 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 		"MCSA",
 		"Sequential MC",
 		"Adjoint MC",
-                "Richardson",
+                "Richardson"
 		),
 	    tuple<std::string>(
 		"Monte Carlo Synthetic Acceleration solver for nonsymmetric linear "
