@@ -40,7 +40,8 @@ namespace Thyra {
 
 enum EMCLSPrecType {
     PREC_TYPE_POINT_JACOBI,
-    PREC_TYPE_BLOCK_JACOBI
+    PREC_TYPE_BLOCK_JACOBI,
+    PREC_TYPE_ILUT
 };
 
 inline std::istream& operator>>(
@@ -73,6 +74,8 @@ class MCLSPreconditionerFactory : public PreconditionerFactoryBase<Scalar> {
     static const std::string  PointJacobi_name;
     /** \brief . */
     static const std::string  BlockJacobi_name;
+    /** \brief . */
+    static const std::string  ILUT_name;
 
     /** @name Constructors/initializers/accessors */
     //@{

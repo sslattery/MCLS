@@ -50,6 +50,8 @@ int main(int argc, char* argv[])
     int             blockSize              = 1;
     std::string     solverType             = "MCSA";
     std::string     precType               = "Point Jacobi";
+    double          dropTol                = 1.0e-2;
+    double          fillLevel              = 1.5;
 
     CommandLineProcessor  clp;
     clp.throwExceptions(false);
@@ -81,6 +83,8 @@ int main(int argc, char* argv[])
     clp.setOption( "block-size", &blockSize, "Block Jacobi preconditioning block size." );
     clp.setOption( "solver-type", &solverType, "Determines MCLS solver." );
     clp.setOption( "prec-type", &precType, "Determines MCLS preconditioner." );
+    clp.setOption( "drop-tol", &dropTol, "ILUT drop tolerance." );
+    clp.setOption( "fill-level", &fillLevel, "ILUT level-of-fill." );
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
@@ -139,6 +143,9 @@ int main(int argc, char* argv[])
 	Teuchos::ParameterList& precPL_prec = precPL.sublist("Preconditioner Types");
 	Teuchos::ParameterList& precPL_bj = precPL_prec.sublist("Block Jacobi");
 	precPL_bj.set("Jacobi Block Size", blockSize);
+	Teuchos::ParameterList& precPL_ilut = precPL_prec.sublist("ILUT");
+	precPL_ilut.set("fact: drop tolerance", dropTol);
+	precPL_ilut.set("fact: ilut level-of-fill", fillLevel);
     }
     
     success

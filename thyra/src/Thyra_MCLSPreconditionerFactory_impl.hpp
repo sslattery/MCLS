@@ -32,6 +32,7 @@
 #include <MCLS_TpetraBlockJacobiPreconditioner.hpp>
 #include <MCLS_EpetraPointJacobiPreconditioner.hpp>
 #include <MCLS_EpetraBlockJacobiPreconditioner.hpp>
+#include <MCLS_EpetraILUTPreconditioner.hpp>
 
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_implicit_cast.hpp"
@@ -73,6 +74,10 @@ const std::string MCLSPreconditionerFactory<Scalar>::PointJacobi_name =
 template<class Scalar>
 const std::string MCLSPreconditionerFactory<Scalar>::BlockJacobi_name = 
     "Block Jacobi";
+
+template<class Scalar>
+const std::string MCLSPreconditionerFactory<Scalar>::ILUT_name = 
+    "ILUT";
 
 // Constructors/initializers/accessors
 
@@ -168,31 +173,86 @@ void MCLSPreconditionerFactory<Scalar>::initializePrec(
 	// Point Jacobi.
 	if ( d_prec_type == PREC_TYPE_POINT_JACOBI )
 	{
+            // Build.
 	    mcls_prec = Teuchos::rcp( new MCLS::EpetraPointJacobiPreconditioner() );
+            mcls_prec->setOperator( getEpetraRowMatrix(*fwdOpSrc) );
+            mcls_prec->buildPreconditioner();
+
+            // Left.
+            Teuchos::RCP<EpetraLinearOp> epetra_op = 
+                Teuchos::rcp( new EpetraLinearOp() );
+            epetra_op->initialize( 
+                Teuchos::rcp_const_cast<Epetra_RowMatrix>(
+                    mcls_prec->getLeftPreconditioner()) );
+            Teuchos::RCP<const LinearOpBase<Scalar> > thyra_op = epetra_op;
+            defaultPrec->initializeLeft( thyra_op );
+
 	}
 	
 	// Block Jacobi.
 	else if ( d_prec_type == PREC_TYPE_BLOCK_JACOBI )
 	{
+            // Setup.
 	    Teuchos::ParameterList &precTypesPL = 
 		d_plist->sublist(PrecTypes_name);
 	    Teuchos::ParameterList &blockJacobiPL = 
 		precTypesPL.sublist(BlockJacobi_name);
 	    Teuchos::RCP<Teuchos::ParameterList> prec_plist = 
 		Teuchos::rcp( &blockJacobiPL, false );
+
+            // Build.
 	    mcls_prec = Teuchos::rcp( 
 		new MCLS::EpetraBlockJacobiPreconditioner(prec_plist) );
+            mcls_prec->setOperator( getEpetraRowMatrix(*fwdOpSrc) );
+            mcls_prec->buildPreconditioner();
+
+            // Left.
+            Teuchos::RCP<EpetraLinearOp> epetra_op = 
+                Teuchos::rcp( new EpetraLinearOp() );
+            epetra_op->initialize( 
+                Teuchos::rcp_const_cast<Epetra_RowMatrix>(
+                    mcls_prec->getLeftPreconditioner()) );
+            Teuchos::RCP<const LinearOpBase<Scalar> > thyra_op = epetra_op;
+            defaultPrec->initializeLeft( thyra_op );
 	}
 
-	// For now, we just have left preconditioners implemented so we do
-	// this here.
-	mcls_prec->setOperator( getEpetraRowMatrix(*fwdOpSrc) );
-	mcls_prec->buildPreconditioner();
-	Teuchos::RCP<EpetraLinearOp> epetra_op = Teuchos::rcp( new EpetraLinearOp() );
-	epetra_op->initialize( 
-	    Teuchos::rcp_const_cast<Epetra_RowMatrix>(mcls_prec->getLeftPreconditioner()) );
-	Teuchos::RCP<const LinearOpBase<Scalar> > thyra_op = epetra_op;
-	defaultPrec->initializeLeft( thyra_op );
+        // ILUT.
+	else if ( d_prec_type == PREC_TYPE_ILUT )
+	{
+            // Setup.
+	    Teuchos::ParameterList &precTypesPL = 
+		d_plist->sublist(PrecTypes_name);
+	    Teuchos::ParameterList &ilutPL = 
+		precTypesPL.sublist(ILUT_name);
+	    Teuchos::RCP<Teuchos::ParameterList> prec_plist = 
+		Teuchos::rcp( &ilutPL, false );
+            
+            // Build.
+	    mcls_prec = Teuchos::rcp( 
+		new MCLS::EpetraILUTPreconditioner(prec_plist) );
+            mcls_prec->setOperator( getEpetraRowMatrix(*fwdOpSrc) );
+            mcls_prec->buildPreconditioner();
+
+            // Left
+            Teuchos::RCP<EpetraLinearOp> epetra_lop = 
+                Teuchos::rcp( new EpetraLinearOp() );
+            epetra_lop->initialize( 
+                Teuchos::rcp_const_cast<Epetra_RowMatrix>(
+                    mcls_prec->getLeftPreconditioner()) );
+            Teuchos::RCP<const LinearOpBase<Scalar> > thyra_lop = epetra_lop;
+
+            // Right
+            Teuchos::RCP<EpetraLinearOp> epetra_rop = 
+                Teuchos::rcp( new EpetraLinearOp() );
+            epetra_rop->initialize( 
+                Teuchos::rcp_const_cast<Epetra_RowMatrix>(
+                    mcls_prec->getRightPreconditioner()) );
+            Teuchos::RCP<const LinearOpBase<Scalar> > thyra_rop = epetra_rop;
+
+            // Initialize.
+            defaultPrec->initializeLeftRight( thyra_lop, thyra_rop );
+	}
+
     }
     else if ( isTpetraCompatible<int,int>(*fwdOpSrc) )
     {
@@ -355,7 +415,8 @@ MCLSPreconditionerFactory<Scalar>::getValidParameters() const
 	    "Type of preconditioning algorithm to use.",
 	    tuple<std::string>(
 		"Point Jacobi",
-		"Block Jacobi"
+		"Block Jacobi",
+                "ILUT"
 		),
 	    tuple<std::string>(
 		"Point Jacobi preconditioning - Left scales the linear operator"
@@ -363,11 +424,15 @@ MCLSPreconditionerFactory<Scalar>::getValidParameters() const
 
 		"Block Jacobi preconditioning - Left scales the linear operator"
 		"by the inverse of its diagonal blocks. Blocks must be local"
-		"and are of a user-specified size"
+		"and are of a user-specified size",
+
+                "Incomplete LU factorization with threshold - Left/Right"
+                "preconditioning for the linear operator"
 		),
 	    tuple<EMCLSPrecType>(
 		PREC_TYPE_POINT_JACOBI,
-		PREC_TYPE_BLOCK_JACOBI
+		PREC_TYPE_BLOCK_JACOBI,
+                PREC_TYPE_ILUT
 		),
 	    &*validParamList
 	    );
@@ -385,6 +450,11 @@ MCLSPreconditionerFactory<Scalar>::getValidParameters() const
 	{
 	    MCLS::EpetraBlockJacobiPreconditioner prec(Teuchos::parameterList());
 	    precTypesSL.sublist(BlockJacobi_name).setParameters(
+		*(prec.getValidParameters()) );
+	}
+	{
+	    MCLS::EpetraILUTPreconditioner prec(Teuchos::parameterList());
+	    precTypesSL.sublist(ILUT_name).setParameters(
 		*(prec.getValidParameters()) );
 	}
     }

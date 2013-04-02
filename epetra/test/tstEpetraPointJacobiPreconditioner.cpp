@@ -133,7 +133,7 @@ TEUCHOS_UNIT_TEST( EpetraPointJacobiPreconditioner, diag_matrix )
 	Teuchos::rcp( new MCLS::EpetraPointJacobiPreconditioner() );
     preconditioner->setOperator( A );
     preconditioner->buildPreconditioner();
-    Teuchos::RCP<const MatrixType> M = preconditioner->getPreconditioner();
+    Teuchos::RCP<const MatrixType> M = preconditioner->getLeftPreconditioner();
 
     // Check the preconditioner.
     Teuchos::RCP<VectorType> X = MT::cloneVectorFromMatrixRows(*A);
@@ -196,7 +196,7 @@ TEUCHOS_UNIT_TEST( EpetraPointJacobiPreconditioner, tridiag_matrix )
 	Teuchos::rcp( new MCLS::EpetraPointJacobiPreconditioner() );
     preconditioner->setOperator( A );
     preconditioner->buildPreconditioner();
-    Teuchos::RCP<const MatrixType> M = preconditioner->getPreconditioner();
+    Teuchos::RCP<const MatrixType> M = preconditioner->getLeftPreconditioner();
 
     // Check the preconditioner.
     Teuchos::RCP<VectorType> X = MT::cloneVectorFromMatrixRows(*A);

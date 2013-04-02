@@ -67,7 +67,8 @@ class EpetraILUTPreconditioner : public Preconditioner<Epetra_RowMatrix>
     //@}
 
     //! Constructor.
-    EpetraILUTPreconditioner() { /* ... */ }
+    EpetraILUTPreconditioner(
+	const Teuchos::RCP<Teuchos::ParameterList>& params );
 
     //! Destructor.
     ~EpetraILUTPreconditioner() { /* ... */ }
@@ -77,6 +78,7 @@ class EpetraILUTPreconditioner : public Preconditioner<Epetra_RowMatrix>
 
     // Get the current parameters being used for this preconditioner.
     Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const;
+
 
     // Set the parameters for the preconditioner. The preconditioner will
     // modify this list with default parameters that are not defined.
@@ -97,9 +99,18 @@ class EpetraILUTPreconditioner : public Preconditioner<Epetra_RowMatrix>
 
     //! Get the right preconditioner.
     Teuchos::RCP<const matrix_type> getRightPreconditioner() const
-    { return d_r_inv; }
+    { return d_u_inv; }
 
   private:
+    
+    // Compute the inverse of a tridiagonal matrix from Ifpack.
+    Teuchos::RCP<Epetra_CrsMatrix> 
+    computeTriInverse( const Epetra_CrsMatrix& A, bool is_upper );
+
+  private:
+
+    // Parameter list.
+    Teuchos::RCP<Teuchos::ParameterList> d_plist;
 
     // Original operator.
     Teuchos::RCP<const matrix_type> d_A;

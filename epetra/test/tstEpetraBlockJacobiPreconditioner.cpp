@@ -174,7 +174,7 @@ TEUCHOS_UNIT_TEST( EpetraBlockJacobiPreconditioner, 1_block_matrix )
 	Teuchos::rcp( new MCLS::EpetraBlockJacobiPreconditioner(plist) );
     preconditioner->setOperator( A );
     preconditioner->buildPreconditioner();
-    Teuchos::RCP<const MatrixType> M = preconditioner->getPreconditioner();
+    Teuchos::RCP<const MatrixType> M = preconditioner->getLeftPreconditioner();
 
     // Check the preconditioner. Inverse block values from matlab.
     Teuchos::Array<int> prec_cols(4);
@@ -305,7 +305,7 @@ TEUCHOS_UNIT_TEST( EpetraBlockJacobiPreconditioner, vbr_1_block_matrix )
 	Teuchos::rcp( new MCLS::EpetraBlockJacobiPreconditioner(plist) );
     preconditioner->setOperator( A );
     preconditioner->buildPreconditioner();
-    Teuchos::RCP<const MatrixType> M = preconditioner->getPreconditioner();
+    Teuchos::RCP<const MatrixType> M = preconditioner->getLeftPreconditioner();
 
     // Check the preconditioner. Inverse block values from matlab.
     Teuchos::Array<int> prec_cols(4);
@@ -478,7 +478,7 @@ TEUCHOS_UNIT_TEST( EpetraBlockJacobiPreconditioner, 2_block_matrix )
 	Teuchos::rcp( new MCLS::EpetraBlockJacobiPreconditioner(plist) );
     preconditioner->setOperator( A );
     preconditioner->buildPreconditioner();
-    Teuchos::RCP<const MatrixType> M = preconditioner->getPreconditioner();
+    Teuchos::RCP<const MatrixType> M = preconditioner->getLeftPreconditioner();
 
     // Check the preconditioner. Inverse block values from matlab.
     Teuchos::Array<int> prec_cols(4);

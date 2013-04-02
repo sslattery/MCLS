@@ -42,8 +42,6 @@
 #include <MCLS_DBC.hpp>
 
 #include <Teuchos_Array.hpp>
-#include <Teuchos_ArrayView.hpp>
-#include <Teuchos_ArrayRCP.hpp>
 
 #include <Epetra_Vector.h>
 
@@ -53,13 +51,30 @@ namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
+/*!
+ * \brief Constructor.
+ */
+EpetraILUTPreconditioner::EpetraILUTPreconditioner(
+    const Teuchos::RCP<Teuchos::ParameterList>& params )
+    : d_plist( params )
+{
+    MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
+}
+
+//---------------------------------------------------------------------------//
 /*! 
  * \brief Get the valid parameters for this preconditioner.
  */
 Teuchos::RCP<const Teuchos::ParameterList> 
 EpetraILUTPreconditioner::getValidParameters() const
 {
-    return Teuchos::parameterList();
+    Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::parameterList();
+    plist->set<double>("fact: ilut level-of-fill", 1.0);
+    plist->set<double>("fact: drop tolerance", 1.0e-2);
+    plist->set<double>("fact: absolute threshold", 1.0 );
+    plist->set<double>("fact: relative_tolerance", 1.0 );
+    plist->set<double>("fact: relax_value", 1.0 );
+    return plist;
 }
 
 //---------------------------------------------------------------------------//
@@ -69,8 +84,7 @@ EpetraILUTPreconditioner::getValidParameters() const
 Teuchos::RCP<const Teuchos::ParameterList> 
 EpetraILUTPreconditioner::getCurrentParameters() const
 {
-    // This preconditioner has no parameters.
-    return Teuchos::parameterList();
+    return d_plist;
 }
 
 //---------------------------------------------------------------------------//
@@ -81,7 +95,8 @@ EpetraILUTPreconditioner::getCurrentParameters() const
 void EpetraILUTPreconditioner::setParameters( 
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
-    // This preconditioner has no parameters.
+    MCLS_REQUIRE( Teuchos::nonnull(params) );
+    d_plist = params;
 }
 
 //---------------------------------------------------------------------------//
@@ -105,14 +120,17 @@ void EpetraILUTPreconditioner::buildPreconditioner()
     MCLS_REQUIRE( d_A->Filled() );
 
     // Build the Ifpack ILUT preconditioner.
-    Ifpack_ILUT ifpack( *d_A );
-    ifpack.SetParameters( params );
+    Ifpack_ILUT ifpack( d_A.getRawPtr() );
+    ifpack.SetParameters( *d_plist );
     ifpack.Initialize();
     ifpack.Compute();
 
     // Invert L and U.
-    d_inv_l = computeTriInverse( ifpack.L(), false );
-    d_inv_u = computeTriInverse( ifpack.U(), true );
+    d_l_inv = computeTriInverse( ifpack.L(), false );
+    d_u_inv = computeTriInverse( ifpack.U(), true );
+
+    MCLS_ENSURE( Teuchos::nonnull(d_l_inv) );
+    MCLS_ENSURE( Teuchos::nonnull(d_u_inv) );
 }
 
 //---------------------------------------------------------------------------//
@@ -121,52 +139,48 @@ void EpetraILUTPreconditioner::buildPreconditioner()
  */
 Teuchos::RCP<Epetra_CrsMatrix>
 EpetraILUTPreconditioner::computeTriInverse( const Epetra_CrsMatrix& A,
-                                             bool upper )
+                                             bool is_upper )
 {
     Teuchos::RCP<Epetra_CrsMatrix> inverse = Teuchos::rcp(
         new Epetra_CrsMatrix(Copy, A.RowMatrixRowMap(), 0) );
 
-    int j_0 = A.NoDiagonal() ? 0 : 1;
     int num_rows = A.NumMyRows();
-    int* row_indices;
-    int* row_values;
-    int num_entries = 0;
-    double sum = 0.0;
+    Epetra_Vector basis( A.RowMatrixRowMap() );
+    Epetra_Vector inverse_row( A.RowMatrixRowMap() );
+    Teuchos::Array<double> values;
+    Teuchos::Array<int> indices;
 
-    // Upper triangular case. Uy=x
-    if ( upper )
+    // Invert the matrix row-by-row.
+    for ( int i = 0; i < num_rows; ++i )
     {
-        for ( int i = num_rows-1; i >= 0; --i )
+        // Set the basis for this row.
+        basis.PutScalar(0.0);
+        basis[i] = 1.0;
+            
+        // Get the row for the inverse.
+        A.Solve( is_upper, true, false, basis, inverse_row );
+
+        // Get the non-zero elements of the row.
+        for ( int j = 0; j < num_rows; ++j )
         {
-            A.ExtractMyRowView( i, num_entries, row_values, row_indices );
-
-            sum = 0.0;
-            for ( j = j_0; j < num_entries; ++j )
+            if ( inverse_row[j] != 0.0 )
             {
-                sum += row_values[j] * y[row_indices[j]];
-            }
-
-            y[i] = (x[i] - sum) / row_values[0];
+                values.push_back( inverse_row[j] );
+                indices.push_back( A.RowMatrixRowMap().GID(j) );
+            }           
         }
+
+        // Populate the row in the inverse matrix.
+        inverse->InsertGlobalValues( A.RowMatrixRowMap().GID(i),
+                                     values.size(),
+                                     values.getRawPtr(),
+                                     indices.getRawPtr() );
+
+        values.clear();
+        indices.clear();
     }
 
-    // Lower triangular case. Ly=x
-    else
-    {
-        for ( int i = 0; i < num_rows; ++i )
-        {
-            A.ExtractMyRowView( i, num_entries, row_values, row_indices );
-
-            num_entries -= j_0;
-            sum = 0.0;
-            for ( j = 0; j < num_entries; ++j )
-            {
-                sum += row_values[j] * y[row_indices[j]];
-            }
-
-            y[i] = (x[i] - sum) / row_values[num_entries];
-        }
-    }
+    inverse->FillComplete();
 
     return inverse;
 }

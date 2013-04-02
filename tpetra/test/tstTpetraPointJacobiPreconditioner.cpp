@@ -113,7 +113,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TpetraPointJacobiPreconditioner, diag_matrix,
 	Teuchos::rcp( new MCLS::TpetraPointJacobiPreconditioner<Scalar,LO,GO>() );
     preconditioner->setOperator( A );
     preconditioner->buildPreconditioner();
-    Teuchos::RCP<const MatrixType> M = preconditioner->getPreconditioner();
+    Teuchos::RCP<const MatrixType> M = preconditioner->getLeftPreconditioner();
 
     // Check the preconditioner.
     Teuchos::RCP<VectorType> X = MT::cloneVectorFromMatrixRows(*A);
@@ -173,7 +173,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TpetraPointJacobiPreconditioner, tridiag_matr
 	Teuchos::rcp( new MCLS::TpetraPointJacobiPreconditioner<Scalar,LO,GO>() );
     preconditioner->setOperator( A );
     preconditioner->buildPreconditioner();
-    Teuchos::RCP<const MatrixType> M = preconditioner->getPreconditioner();
+    Teuchos::RCP<const MatrixType> M = preconditioner->getLeftPreconditioner();
 
     // Check the preconditioner.
     Teuchos::RCP<VectorType> X = MT::cloneVectorFromMatrixRows(*A);
