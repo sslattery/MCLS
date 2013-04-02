@@ -123,7 +123,9 @@ void EpetraILUTPreconditioner::buildPreconditioner()
     Ifpack_ILUT ifpack( d_A.getRawPtr() );
     ifpack.SetParameters( *d_plist );
     ifpack.Initialize();
+    MCLS_CHECK( ifpack.IsInitialized() );
     ifpack.Compute();
+    MCLS_CHECK( ifpack.IsComputed() );
 
     // Invert L and U.
     d_l_inv = computeTriInverse( ifpack.L(), false );
