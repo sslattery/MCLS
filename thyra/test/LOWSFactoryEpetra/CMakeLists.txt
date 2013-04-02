@@ -68,26 +68,6 @@ TRIBITS_ADD_TEST(
     --max-fwd-error=1e-13 --max-resid=1e-13 --max-iters=1000
     --max-solution-error=1e-6 --matrix-file=KheadK.mtx --solver-type="Richardson" 
     --prec-type="Point Jacobi"
-  POSTFIX_AND_ARGS_12 bcsstk04_richardson
-    --no-use-preconditioner --show-all-tests --num-rhs=1
-    --max-fwd-error=1e-13 --max-resid=1e-13 --max-solution-error=1e-6 
-    --max-iters=1000 --matrix-file=bcsstk04.mtx
-    --solver-type="Richardson" --rich-relax=1.5
-  POSTFIX_AND_ARGS_13 bcsstk04_adjmc_ilut
-    --use-preconditioner --show-all-tests --num-rhs=1
-    --max-fwd-error=1e-2 --max-resid=1e-2 --max-solution-error=1e-2 --max-iters=1
-    --mc-histories=100000 --matrix-file=bcsstk04.mtx
-     --solver-type="Adjoint MC" --prec-type="ILUT" --drop-tol=1.0e-3 --fill-level=1.0
-  POSTFIX_AND_ARGS_14 bcsstk04_mcsa_ilut
-    --use-preconditioner --show-all-tests --num-rhs=1
-    --max-fwd-error=1e-13 --max-resid=1e-13 --max-iters=1000 --mc-histories=1000
-    --max-solution-error=1e-6 --matrix-file=bcsstk04.mtx --solver-type="MCSA" 
-    --prec-type="ILUT" --drop-tol=1.0e-4 --fill-level=2.0
-  POSTFIX_AND_ARGS_15 bcsstk04_seqmc_ilut
-    --use-preconditioner --show-all-tests --num-rhs=1
-    --max-fwd-error=1e-13 --max-resid=1e-13 --max-iters=1000 --mc-histories=1000
-    --max-solution-error=1e-6 --matrix-file=bcsstk04.mtx --solver-type="Sequential MC" 
-    --prec-type="ILUT" --drop-tol=1.0e-4 --fill-level=2.0
   COMM serial mpi
   NUM_MPI_PROCS 1
   )

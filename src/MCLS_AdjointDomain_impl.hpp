@@ -69,6 +69,14 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 
     // Generate the transpose of the operator.
     Teuchos::RCP<Matrix> A_T = MT::copyTranspose( *A );
+    
+    // Scale the transpose operator by the Richardson relaxation parameter.
+    if ( plist.isParameter("Richardson Relaxation") )
+    {
+        Teuchos::RCP<Vector> omega = MT::cloneVectorFromMatrixRows( *A_T );
+        VT::putScalar( *omega, plist.get<double>("Richardson Relaxation") );
+        MT::leftScale( *A_T, *omega );
+    }
 
     // Generate the overlap for the transpose operator.
     int num_overlap = plist.get<int>( "Overlap Size" );

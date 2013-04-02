@@ -101,7 +101,7 @@ AdjointSolverManager<Vector,Matrix>::getValidParameters() const
     plist->set<int>("Overlap Size",0);
     plist->set<int>("Random Number Seed", 433494437);
     plist->set<int>("Number of Sets", 1);
-
+    plist->set<double>("Richardson Relaxation", 1.0);
     return plist;
 }
 
@@ -316,6 +316,13 @@ void AdjointSolverManager<Vector,Matrix>::buildMonteCarloSource()
         if ( d_problem->isLeftPrec() )
         {
             d_problem->applyLeftPrec( *rhs_op_decomp, *rhs_op_decomp );
+        }
+
+        // Scale by the Richardson relaxation parameter.
+        if ( d_plist->isParameter("Richardson Relaxation") )
+        {
+            double omega = d_plist->get<double>("Richardson Relaxation");
+            VT::scale( *rhs_op_decomp, omega );
         }
 
         // Build the source.

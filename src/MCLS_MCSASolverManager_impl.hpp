@@ -262,7 +262,6 @@ bool MCSASolverManager<Vector,Matrix>::solve()
     {
         max_num_iters = d_plist->get<int>("Maximum Iterations");
     }
-    d_num_iters = 0;
     int print_freq = 10;
     if ( d_plist->isParameter("Iteration Print Frequency") )
     {
@@ -285,6 +284,7 @@ bool MCSASolverManager<Vector,Matrix>::solve()
     d_global_comm->barrier();
 
     // Iterate.
+    d_num_iters = 0;
     int do_iterations = 1;
     while( do_iterations )
     {
