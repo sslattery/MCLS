@@ -259,13 +259,6 @@ bool RichardsonSolverManager<Vector,Matrix>::solve()
                             (d_num_iters < max_num_iters);
         }
 
-	// Broadcast iteration status to the blocks.
-	if ( d_num_iters % check_freq == 0 )
-	{
-	    Teuchos::broadcast<int,int>( 
-		*d_block_comm, 0, Teuchos::Ptr<int>(&do_iterations) );
-	}
-
 	// Print iteration data.
 	if ( d_global_comm->getRank() == 0 && d_num_iters % print_freq == 0 )
 	{
@@ -290,10 +283,6 @@ bool RichardsonSolverManager<Vector,Matrix>::solve()
     {
         d_converged_status = 1;
     }
-
-    // Broadcast convergence status to the blocks.
-    Teuchos::broadcast<int,int>( 
-	*d_block_comm, 0, Teuchos::Ptr<int>(&d_converged_status) );
 
     return Teuchos::as<bool>(d_converged_status);
 }

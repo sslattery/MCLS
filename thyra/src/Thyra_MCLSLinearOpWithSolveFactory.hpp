@@ -55,7 +55,8 @@ namespace Thyra {
 enum EMCLSSolverType {
     SOLVER_TYPE_MCSA,
     SOLVER_TYPE_SEQUENTIAL_MC,
-    SOLVER_TYPE_ADJOINT_MC
+    SOLVER_TYPE_ADJOINT_MC,
+    SOLVER_TYPE_RICHARDSON
 };
 
 inline std::istream& operator>>(
@@ -101,6 +102,8 @@ class MCLSLinearOpWithSolveFactory : public LinearOpWithSolveFactoryBase<Scalar>
     static const std::string  SequentialMC_name;
     /** \brief . */
     static const std::string  AdjointMC_name;
+    /** \brief . */
+    static const std::string  Richardson_name;
     /** \brief . */
     static const std::string  ConvergenceTestFrequency_name;
 

@@ -48,6 +48,7 @@
 #include <MCLS_MCSASolverManager.hpp>
 #include <MCLS_SequentialMCSolverManager.hpp>
 #include <MCLS_AdjointSolverManager.hpp>
+#include <MCLS_RichardsonSolverManager.hpp>
 
 #include "MCLS_LinearProblemAdapter.hpp"
 #include "MCLS_SolverManagerAdapter.hpp"
@@ -97,6 +98,10 @@ const std::string MCLSLinearOpWithSolveFactory<Scalar>::SequentialMC_name =
 template<class Scalar>
 const std::string MCLSLinearOpWithSolveFactory<Scalar>::AdjointMC_name = 
     "Adjoint MC";
+
+template<class Scalar>
+const std::string MCLSLinearOpWithSolveFactory<Scalar>::Richardson_name = 
+    "Richardson";
 
 template<class Scalar>
 const std::string MCLSLinearOpWithSolveFactory<Scalar>::ConvergenceTestFrequency_name 
@@ -442,7 +447,8 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 	    tuple<std::string>(
 		"MCSA",
 		"Sequential MC",
-		"Adjoint MC"
+		"Adjoint MC",
+                "Richardson",
 		),
 	    tuple<std::string>(
 		"Monte Carlo Synthetic Acceleration solver for nonsymmetric linear "
@@ -455,12 +461,16 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 
 		"Adjoint Monte Carlo solver for nonsymmetric linear systems "
 		"that performs single right-hand side solves on multiple "
-		"right-hand sides sequentially."
+		"right-hand sides sequentially.",
+
+                "Richardson iteration with relaxation that performs single"
+                "right-hand side solves on multiple right-hand sides sequentially."
 		),
 	    tuple<EMCLSSolverType>(
 		SOLVER_TYPE_MCSA,
 		SOLVER_TYPE_SEQUENTIAL_MC,
-		SOLVER_TYPE_ADJOINT_MC
+		SOLVER_TYPE_ADJOINT_MC,
+                SOLVER_TYPE_RICHARDSON
 		),
 	    &*validParamList
 	    );
@@ -506,6 +516,12 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 	    MCLS::AdjointSolverManager<Epetra_Vector,Epetra_RowMatrix> mgr(
 		Teuchos::DefaultComm<int>::getComm(), Teuchos::parameterList() );
 	    solverTypesSL.sublist(AdjointMC_name).setParameters(
+		*(mgr.getValidParameters()) );
+	}
+	{
+	    MCLS::RichardsonSolverManager<Epetra_Vector,Epetra_RowMatrix> mgr(
+		Teuchos::DefaultComm<int>::getComm(), Teuchos::parameterList() );
+	    solverTypesSL.sublist(Richardson_name).setParameters(
 		*(mgr.getValidParameters()) );
 	}
     }
@@ -887,6 +903,28 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 	    // Create the solver
 	    solver = 
 		rcp(new MCLS::AdjointSolverManager<Vector,Matrix>(
+			Teuchos::DefaultComm<int>::getComm(), solverPL) );
+	    iterativeSolver = Teuchos::rcp( 
+		new MCLS::SolverManagerAdapter<MultiVector,Matrix>(solver) );
+	    iterativeSolver->setProblem( lp );
+
+	    break;
+	}
+
+	case SOLVER_TYPE_RICHARDSON: 
+	{
+	    // Set the PL
+	    if( d_plist.get() ) 
+	    {
+		Teuchos::ParameterList &solverTypesPL = 
+		    d_plist->sublist(SolverTypes_name);
+		Teuchos::ParameterList &richardsonPL = 
+		    solverTypesPL.sublist(Richardson_name);
+		solverPL = Teuchos::rcp( &richardsonPL, false );
+	    }
+	    // Create the solver
+	    solver = 
+		rcp(new MCLS::RichardsonSolverManager<Vector,Matrix>(
 			Teuchos::DefaultComm<int>::getComm(), solverPL) );
 	    iterativeSolver = Teuchos::rcp( 
 		new MCLS::SolverManagerAdapter<MultiVector,Matrix>(solver) );
