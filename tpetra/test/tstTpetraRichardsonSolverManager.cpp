@@ -154,8 +154,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( RichardsonSolverManager, one_by_one, LO, GO, 
     // Solve the problem.
     bool converged_status = solver_manager.solve();
 
-    TEST_ASSERT( !converged_status );
-    TEST_ASSERT( !solver_manager.getConvergedStatus() );
+    TEST_ASSERT( converged_status );
+    TEST_ASSERT( solver_manager.getConvergedStatus() );
     TEST_EQUALITY( solver_manager.getNumIters(), 15 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
 
@@ -171,8 +171,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( RichardsonSolverManager, one_by_one, LO, GO, 
     VT::putScalar( *b, 2.0 );
     VT::putScalar( *x, 0.0 );
     converged_status = solver_manager.solve();
-    TEST_ASSERT( !converged_status );
-    TEST_ASSERT( !solver_manager.getConvergedStatus() );
+    TEST_ASSERT( converged_status );
+    TEST_ASSERT( solver_manager.getConvergedStatus() );
     TEST_EQUALITY( solver_manager.getNumIters(), 15 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
@@ -184,8 +184,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( RichardsonSolverManager, one_by_one, LO, GO, 
     VT::putScalar( *x, 0.0 );
     solver_manager.setProblem( linear_problem );
     converged_status = solver_manager.solve();
-    TEST_ASSERT( !converged_status );
-    TEST_ASSERT( !solver_manager.getConvergedStatus() );
+    TEST_ASSERT( converged_status );
+    TEST_ASSERT( solver_manager.getConvergedStatus() );
     TEST_EQUALITY( solver_manager.getNumIters(), 15 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
@@ -197,8 +197,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( RichardsonSolverManager, one_by_one, LO, GO, 
     VT::putScalar( *b, -2.0 );
     VT::putScalar( *x, 0.0 );
     converged_status = solver_manager.solve();
-    TEST_ASSERT( !converged_status );
-    TEST_ASSERT( !solver_manager.getConvergedStatus() );
+    TEST_ASSERT( converged_status );
+    TEST_ASSERT( solver_manager.getConvergedStatus() );
     TEST_EQUALITY( solver_manager.getNumIters(), 15 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
@@ -300,8 +300,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( RichardsonSolverManager, one_by_one_prec, LO,
     // Solve the problem.
     bool converged_status = solver_manager.solve();
 
-    TEST_ASSERT( !converged_status );
-    TEST_ASSERT( !solver_manager.getConvergedStatus() );
+    TEST_ASSERT( converged_status );
+    TEST_ASSERT( solver_manager.getConvergedStatus() );
     TEST_EQUALITY( solver_manager.getNumIters(), 10 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
 
@@ -317,8 +317,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( RichardsonSolverManager, one_by_one_prec, LO,
     VT::putScalar( *b, 2.0 );
     VT::putScalar( *x, 0.0 );
     converged_status = solver_manager.solve();
-    TEST_ASSERT( !converged_status );
-    TEST_ASSERT( !solver_manager.getConvergedStatus() );
+    TEST_ASSERT( converged_status );
+    TEST_ASSERT( solver_manager.getConvergedStatus() );
     TEST_EQUALITY( solver_manager.getNumIters(), 10 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
@@ -330,8 +330,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( RichardsonSolverManager, one_by_one_prec, LO,
     VT::putScalar( *x, 0.0 );
     solver_manager.setProblem( linear_problem );
     converged_status = solver_manager.solve();
-    TEST_ASSERT( !converged_status );
-    TEST_ASSERT( !solver_manager.getConvergedStatus() );
+    TEST_ASSERT( converged_status );
+    TEST_ASSERT( solver_manager.getConvergedStatus() );
     TEST_EQUALITY( solver_manager.getNumIters(), 10 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
@@ -343,8 +343,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( RichardsonSolverManager, one_by_one_prec, LO,
     VT::putScalar( *b, -2.0 );
     VT::putScalar( *x, 0.0 );
     converged_status = solver_manager.solve();
-    TEST_ASSERT( !converged_status );
-    TEST_ASSERT( !solver_manager.getConvergedStatus() );
+    TEST_ASSERT( converged_status );
+    TEST_ASSERT( solver_manager.getConvergedStatus() );
     TEST_EQUALITY( solver_manager.getNumIters(), 10 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
