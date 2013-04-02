@@ -52,6 +52,7 @@ int main(int argc, char* argv[])
     std::string     precType               = "Point Jacobi";
     double          dropTol                = 1.0e-2;
     double          fillLevel              = 1.5;
+    double          richardsonRelax        = 1.0;
 
     CommandLineProcessor  clp;
     clp.throwExceptions(false);
@@ -85,6 +86,7 @@ int main(int argc, char* argv[])
     clp.setOption( "prec-type", &precType, "Determines MCLS preconditioner." );
     clp.setOption( "drop-tol", &dropTol, "ILUT drop tolerance." );
     clp.setOption( "fill-level", &fillLevel, "ILUT level-of-fill." );
+    clp.setOption( "rich-relax", &richardsonRelax, "Richardson relaxation parameter." );
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
@@ -135,6 +137,13 @@ int main(int argc, char* argv[])
     mclsLOWSFPL_adjmc.set("Overlap Size",int(overlapSize));
     mclsLOWSFPL_adjmc.set("Number of Sets",int(numSets));
     mclsLOWSFPL_adjmc.set("Set Number of Histories",int(numHistories));
+
+    Teuchos::ParameterList& mclsLOWSFPL_richardson =
+      mclsLOWSFPL_solver.sublist("Richardson");
+    mclsLOWSFPL_richardson.set("Maximum Iterations",int(maxIterations));
+    mclsLOWSFPL_richardson.set("Convergence Tolerance",double(maxResid));
+    mclsLOWSFPL_richardson.set("Iteration Print Frequency",int(outputFrequency));
+    mclsLOWSFPL_richardson.set("Richardson Relxation",double(richardsonRelax));
 
     Teuchos::ParameterList precPL("MCLS");
     if(usePreconditioner) 
