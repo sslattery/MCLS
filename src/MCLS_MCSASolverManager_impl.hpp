@@ -111,6 +111,7 @@ MCSASolverManager<Vector,Matrix>::getValidParameters() const
     plist->set<int>("Maximum Iterations", 1000);
     plist->set<int>("Iteration Print Frequency", 10);
     plist->set<int>("Iteration Check Frequency", 1);
+    plist->set<double>("Richardson Relaxation", 1.0);
 
     return plist;
 }
@@ -174,16 +175,8 @@ void MCSASolverManager<Vector,Matrix>::setProblem(
     {
 	if ( d_primary_set )
 	{
-	    d_residual_problem->setOperator( d_problem->getOperator() );
-	    d_residual_problem->setRHS( d_problem->getResidual() );
-	    if ( d_problem->isLeftPrec() )
-	    {
-		d_residual_problem->setLeftPrec( d_problem->getLeftPrec() );
-	    }
-	    if ( d_problem->isRightPrec() )
-	    {
-		d_residual_problem->setRightPrec( d_problem->getRightPrec() );
-	    }
+	    d_residual_problem->setOperator( d_problem->getCompositeOperator() );
+	    d_residual_problem->setRHS( d_problem->getPrecResidual() );
 	}
 	d_global_comm->barrier();
 
@@ -259,6 +252,11 @@ bool MCSASolverManager<Vector,Matrix>::solve()
     d_converged_status = 0;
 
     // Iteration setup.
+    double omega = 1.0;
+    if ( d_plist->isParameter("Richardson Relaxation") )
+    {
+        omega = d_plist->get<double>("Richardson Relaxation");
+    }
     int max_num_iters = 1000;
     if ( d_plist->isParameter("Maximum Iterations") )
     {
@@ -276,7 +274,7 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	check_freq = d_plist->get<int>("Iteration Check Frequency");
     }
 
-    // Setup for iteration.
+    // Set the residual.
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType residual_norm = 0;
     if ( d_primary_set )
     {
@@ -300,9 +298,9 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	    VT::update( *d_problem->getLHS(), 
 			Teuchos::ScalarTraits<Scalar>::one(),
 			*d_problem->getPrecResidual(), 
-			Teuchos::ScalarTraits<Scalar>::one() );
+			omega );
 
-	    d_problem->updateResidual();
+	    d_problem->updatePrecResidual();
 	}
 	d_global_comm->barrier();
 
@@ -349,9 +347,17 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	d_global_comm->barrier();
     }
 
-    // Check for convergence.
+    // Finalize.
     if ( d_primary_set )
     {
+        // Recover the original solution if right preconditioned.
+        if ( d_problem->isRightPrec() )
+        {
+            d_problem->applyRightPrec( *d_problem->getLHS(), 
+                                       *d_problem->getLHS() );
+        }
+
+        // Check for convergence.
 	if ( VT::normInf(*d_problem->getPrecResidual()) <= convergence_criteria )
 	{
 	    d_converged_status = 1;
@@ -377,22 +383,15 @@ void MCSASolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
     // Generate the residual Monte Carlo problem on the primary set. The
-    // unpreconditioned residual is the source.
+    // preconditioned residual is the source and the composite operator is the
+    // domain.
     if ( d_primary_set )
     {
 	Teuchos::RCP<Vector> delta_x = VT::clone( *d_problem->getLHS() );
 	d_residual_problem = Teuchos::rcp(
-	    new LinearProblemType( d_problem->getOperator(),
+	    new LinearProblemType( d_problem->getCompositeOperator(),
 				   delta_x,
-				   d_problem->getResidual() ) );
-	if ( d_problem->isLeftPrec() )
-	{
-	    d_residual_problem->setLeftPrec( d_problem->getLeftPrec() );
-	}
-	if ( d_problem->isRightPrec() )
-	{
-	    d_residual_problem->setRightPrec( d_problem->getRightPrec() );
-	}
+				   d_problem->getPrecResidual() ) );
     }
     d_global_comm->barrier();
 

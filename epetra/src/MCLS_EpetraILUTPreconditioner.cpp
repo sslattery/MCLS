@@ -72,8 +72,8 @@ EpetraILUTPreconditioner::getValidParameters() const
     plist->set<double>("fact: ilut level-of-fill", 1.0);
     plist->set<double>("fact: drop tolerance", 1.0e-2);
     plist->set<double>("fact: absolute threshold", 1.0 );
-    plist->set<double>("fact: relative_tolerance", 1.0 );
-    plist->set<double>("fact: relax_value", 1.0 );
+    plist->set<double>("fact: relative threshold", 1.0 );
+    plist->set<double>("fact: relax value", 1.0 );
     return plist;
 }
 

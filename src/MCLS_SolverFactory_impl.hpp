@@ -45,6 +45,7 @@
 #include "MCLS_AdjointSolverManager.hpp"
 #include "MCLS_MCSASolverManager.hpp"
 #include "MCLS_SequentialMCSolverManager.hpp"
+#include "MCLS_RichardsonSolverManager.hpp"
 
 namespace MCLS
 {
@@ -60,6 +61,7 @@ SolverFactory<Vector,Matrix>::SolverFactory()
     d_name_map["Adjoint MC"] = ADJOINT_MC;
     d_name_map["MCSA"] = MCSA;
     d_name_map["Sequential MC"] = SEQUENTIAL_MC;
+    d_name_map["Richardson"] = RICHARDSON;
 }
 
 //---------------------------------------------------------------------------//
@@ -98,6 +100,12 @@ SolverFactory<Vector,Matrix>::create(
 	case SEQUENTIAL_MC:
 
 	    solver = Teuchos::rcp( new SequentialMCSolverManager<Vector,Matrix>(
+				       global_comm, solver_parameters ) );
+	    break;
+
+	case RICHARDSON:
+
+	    solver = Teuchos::rcp( new RichardsonSolverManager<Vector,Matrix>( 
 				       global_comm, solver_parameters ) );
 	    break;
 

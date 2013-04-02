@@ -78,7 +78,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyMclsTestFiles
   DEST_FILES
     FourByFour.mtx
     KheadK.mtx
-    nos5.mtx
     bcsstk04.mtx
   SOURCE_PREFIX
     "In_"

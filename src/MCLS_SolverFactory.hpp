@@ -92,7 +92,8 @@ class SolverFactory : public virtual Teuchos::Describable
     enum MCLSSolverType {
 	ADJOINT_MC,
 	MCSA,
-	SEQUENTIAL_MC
+	SEQUENTIAL_MC,
+        RICHARDSON
     };
 
     // String name to enum/integer map.

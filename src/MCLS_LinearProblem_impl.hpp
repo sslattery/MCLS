@@ -314,26 +314,29 @@ void LinearProblem<Vector,Matrix>::updateResidual()
 //---------------------------------------------------------------------------//
 /*!
  * \brief Update the preconditioned residual. Preconditioning will be applied
- * if preconditioners are present. The unpreconditioned residual will be
- * updated as well.
+ * if preconditioners are present. 
  */
 template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::updatePrecResidual()
 {
-    // Update the unpreconditioned residual.
-    updateResidual();
-
-    // Apply left preconditioning if necessary.
-    const bool left_prec = Teuchos::nonnull( d_PL );
-
-    if ( left_prec )
+    // Apply right preconditioning if necessary.
+    if ( Teuchos::nonnull(d_PR) )
     {
-	MT::apply( *d_PL, *d_r, *d_rp );
+        MT::apply( *d_PR, *d_x, *d_rp );
+        MT::apply( *d_A, *d_rp, *d_rp );
     }
     else
     {
-        VT::update( *d_rp, Teuchos::ScalarTraits<Scalar>::zero(),
-                    *d_r, Teuchos::ScalarTraits<Scalar>::one() );
+        MT::apply( *d_A, *d_x, *d_rp );
+    }
+
+    VT::update( *d_rp, -Teuchos::ScalarTraits<Scalar>::one(), 
+		*d_b, Teuchos::ScalarTraits<Scalar>::one() );
+
+    // Apply left preconditioning if necessary.
+    if ( Teuchos::nonnull(d_PL) )
+    {
+	MT::apply( *d_PL, *d_rp, *d_rp );
     }
 }
 
