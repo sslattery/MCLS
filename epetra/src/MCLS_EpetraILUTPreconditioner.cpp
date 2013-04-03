@@ -137,7 +137,7 @@ void EpetraILUTPreconditioner::buildPreconditioner()
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Compute the inverse of a tri-diagonal matrix from Ifpack.
+ * \brief Compute the inverse of a triangular matrix from Ifpack.
  */
 Teuchos::RCP<Epetra_CrsMatrix>
 EpetraILUTPreconditioner::computeTriInverse( const Epetra_CrsMatrix& A,
@@ -167,7 +167,8 @@ EpetraILUTPreconditioner::computeTriInverse( const Epetra_CrsMatrix& A,
         // Get the row for the inverse.
         A.Solve( is_upper, true, false, basis, inverse_row );
 
-        // Get the non-zero elements of the row larger than the drop tolerance.
+        // Get the non-zero elements of the row larger than the drop
+        // tolerance.
         for ( int j = 0; j < num_rows; ++j )
         {
             if ( std::abs(inverse_row[j]) > drop_tol )

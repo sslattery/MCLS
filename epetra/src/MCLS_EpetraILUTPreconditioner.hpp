@@ -103,7 +103,7 @@ class EpetraILUTPreconditioner : public Preconditioner<Epetra_RowMatrix>
 
   private:
     
-    // Compute the inverse of a tridiagonal matrix from Ifpack.
+    // Compute the inverse of a triangular matrix from Ifpack.
     Teuchos::RCP<Epetra_CrsMatrix> 
     computeTriInverse( const Epetra_CrsMatrix& A, bool is_upper );
 

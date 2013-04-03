@@ -181,7 +181,8 @@ LinearProblem<Vector,Matrix>::getCompositeOperator() const
     {
 	composite = Teuchos::rcp_const_cast<Matrix>( d_A );
     }
-
+    std::cout << "COMPOSITE MAX ENTRIES " 
+              << MT::getGlobalMaxNumRowEntries(*composite) << std::endl;
     return composite;
 }
 
