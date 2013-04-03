@@ -151,6 +151,11 @@ EpetraILUTPreconditioner::computeTriInverse( const Epetra_CrsMatrix& A,
     Epetra_Vector inverse_row( A.RowMatrixRowMap() );
     Teuchos::Array<double> values;
     Teuchos::Array<int> indices;
+    double drop_tol = 0.0;
+    if ( d_plist->isParameter("fact: drop tolerance") )
+    {
+        drop_tol = d_plist->get<double>("fact: drop tolerance");
+    }
 
     // Invert the matrix row-by-row.
     for ( int i = 0; i < num_rows; ++i )
@@ -162,10 +167,10 @@ EpetraILUTPreconditioner::computeTriInverse( const Epetra_CrsMatrix& A,
         // Get the row for the inverse.
         A.Solve( is_upper, true, false, basis, inverse_row );
 
-        // Get the non-zero elements of the row.
+        // Get the non-zero elements of the row larger than the drop tolerance.
         for ( int j = 0; j < num_rows; ++j )
         {
-            if ( inverse_row[j] != 0.0 )
+            if ( std::abs(inverse_row[j]) > drop_tol )
             {
                 values.push_back( inverse_row[j] );
                 indices.push_back( A.RowMatrixRowMap().GID(j) );
