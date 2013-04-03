@@ -70,11 +70,11 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     // Generate the transpose of the operator.
     Teuchos::RCP<Matrix> A_T = MT::copyTranspose( *A );
     
-    // Scale the transpose operator by the Richardson relaxation parameter.
-    if ( plist.isParameter("Richardson Relaxation") )
+    // Scale the transpose operator by the Neumann relaxation parameter.
+    if ( plist.isParameter("Neumann Relaxation") )
     {
         Teuchos::RCP<Vector> omega = MT::cloneVectorFromMatrixRows( *A_T );
-        VT::putScalar( *omega, plist.get<double>("Richardson Relaxation") );
+        VT::putScalar( *omega, plist.get<double>("Neumann Relaxation") );
         MT::leftScale( *A_T, *omega );
     }
 

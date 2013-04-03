@@ -180,7 +180,7 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
 	Epetra_RowMatrixTransposer transposer( const_cast<matrix_type*>(&matrix) );
 
 	Epetra_CrsMatrix* transpose_matrix;
-	transposer.CreateTranspose( true, transpose_matrix );
+	transposer.CreateTranspose( false, transpose_matrix );
 
 	MCLS_ENSURE( transpose_matrix->Filled() );
 	return Teuchos::RCP<matrix_type>( transpose_matrix );
