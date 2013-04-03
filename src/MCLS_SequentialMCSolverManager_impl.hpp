@@ -162,19 +162,43 @@ template<class Vector, class Matrix>
 void SequentialMCSolverManager<Vector,Matrix>::setProblem( 
     const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem )
 {
-    MCLS_REQUIRE( !d_global_comm.is_null() );
-    MCLS_REQUIRE( !d_plist.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
+
+    // Set the problem.
+    d_primary_set = Teuchos::nonnull(problem);
+
+    // Determine if the linear operator has changed. It is presumed the
+    // preconditioners are bound to the linear operator and will therefore
+    // change when the operator changes. The mechanism here for determining if
+    // the operator has changed is checking if the memory address is the
+    // same. This may not be the best way to check.
+    bool update_operator = true;
+    if ( d_primary_set )
+    {
+        if ( Teuchos::nonnull(d_problem) )
+        {
+            if ( d_problem->getOperator().getRawPtr() == 
+                 problem->getOperator().getRawPtr() )
+            {
+                update_operator = false;
+            }
+        }
+    }
 
     // Set the problem.
     d_problem = problem;
-    d_primary_set = !d_problem.is_null();
 
-    // Update the residual problem is it already exists.
+    // Update the residual problem if it already exists.
     if ( Teuchos::nonnull(d_mc_solver) )
     {
-	if ( d_primary_set )
-	{
-	    d_residual_problem->setOperator( d_problem->getCompositeOperator() );
+        if ( d_primary_set )
+        {
+            if ( update_operator )
+            {
+                d_residual_problem->setOperator( 
+                    d_problem->getCompositeOperator() );
+            }
 	    d_residual_problem->setRHS( d_problem->getPrecResidual() );
 	}
 	d_global_comm->barrier();

@@ -44,6 +44,9 @@
 #include "MCLS_DBC.hpp"
 #include "MCLS_VectorExport.hpp"
 
+#include <Teuchos_CommHelpers.hpp>
+#include <Teuchos_Ptr.hpp>
+
 namespace MCLS
 {
 
@@ -155,12 +158,50 @@ void AdjointSolverManager<Vector,Matrix>::setProblem(
     MCLS_REQUIRE( !d_global_comm.is_null() );
     MCLS_REQUIRE( !d_plist.is_null() );
 
-    d_problem = problem;
-    d_primary_set = !d_problem.is_null();
+    d_primary_set = Teuchos::nonnull( problem );
 
-    // Calling this method implies that a new linear operator has been
-    // provided. Update the parallel domain with this operator.
-    buildMonteCarloDomain();
+    // Determine if the linear operator has changed. It is presumed the
+    // preconditioners are bound to the linear operator and will therefore
+    // change when the operator change. The mechanism here for determining if
+    // the operator has changed is checking if the memory address is the
+    // same. This may not be the best way to check.
+    int update_operator = 1;
+    if ( d_primary_set )
+    {
+        if ( Teuchos::nonnull(d_problem) )
+        {
+            if ( d_problem->getOperator().getRawPtr() == 
+                 problem->getOperator().getRawPtr() )
+            {
+                update_operator = 0;
+            }
+        }
+    }
+
+    // Set the problem.
+    d_problem = problem;
+
+    // Get the block comm if it exists.
+    Teuchos::RCP<const Comm> block_comm;
+    if ( Teuchos::nonnull(d_msod_manager) )
+    {
+        block_comm = d_msod_manager->blockComm();
+    }
+    if ( Teuchos::nonnull(block_comm) )
+    {
+        Teuchos::broadcast<int,int>( 
+            *block_comm, 0, Teuchos::Ptr<int>(&update_operator) );
+    }
+    else
+    {
+        update_operator = 1;
+    }
+
+    // Update the parallel domain with this operator if it has changed.
+    if ( update_operator )
+    {
+        buildMonteCarloDomain();
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -258,7 +299,7 @@ void AdjointSolverManager<Vector,Matrix>::buildMonteCarloDomain()
 	new MSODManager<SourceType>(d_primary_set, d_global_comm, *d_plist) );
 
     // Build the Monte Carlo set solver.
-    if ( d_mc_solver.is_null() )
+    if ( Teuchos::is_null(d_mc_solver) )
     {
 	d_mc_solver = Teuchos::rcp(
 	    new MCSolver<SourceType>(d_msod_manager->setComm(), d_plist) );
