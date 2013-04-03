@@ -176,7 +176,7 @@ bool RichardsonSolverManager<Vector,Matrix>::solve()
     // Get the convergence parameters on the primary set.
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType 
 	convergence_criteria = 0;
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType source_norm = 0;
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType source_norm = 0.0;
 
     typename Teuchos::ScalarTraits<double>::magnitudeType tolerance = 1.0;
     if ( d_plist->isParameter("Convergence Tolerance") )

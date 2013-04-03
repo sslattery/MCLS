@@ -49,6 +49,7 @@
 #include <MCLS_SequentialMCSolverManager.hpp>
 #include <MCLS_AdjointSolverManager.hpp>
 #include <MCLS_RichardsonSolverManager.hpp>
+#include <MCLS_MatrixTraits.hpp>
 
 #include "MCLS_LinearProblemAdapter.hpp"
 #include "MCLS_SolverManagerAdapter.hpp"
@@ -836,12 +837,14 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     RCP<Solver_t> solver = Teuchos::null;
     RCP<Teuchos::ParameterList> solverPL = Teuchos::parameterList();
   
-    // Create the linear solver. We are using the default teuchos communicator
-    // here!!!! This will be MPI_COMM_WORLD in an MPI build an therefore has
-    // implications for using multiple sets with MCLS where the linear problem
-    // is expected to be defined on a subset of the global communicator. The
-    // issue here is that these Thyra operations are potentially not occuring
-    // in the global communicator scope.
+    // Create the linear solver. We are using the linear operator communicator
+    // here!!!! This will probably be MPI_COMM_WORLD in an MPI build an
+    // therefore has implications for using multiple sets with MCLS where the
+    // linear problem is expected to be defined on a subset of the global
+    // communicator. The issue here is that these Thyra operations are
+    // potentially not occuring in the global communicator scope.
+    Teuchos::RCP<const Teuchos::Comm<int> > global_comm = 
+        MCLS::MatrixTraits<Vector,Matrix>::getComm( *matrix );
     switch(d_solver_type) 
     {
 
@@ -859,7 +862,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 	    // Create the solver
 	    solver = 
 		rcp(new MCLS::MCSASolverManager<Vector,Matrix>(
-			Teuchos::DefaultComm<int>::getComm(), solverPL) );
+			global_comm, solverPL) );
 	    iterativeSolver = Teuchos::rcp( 
 		new MCLS::SolverManagerAdapter<MultiVector,Matrix>(solver) );
 	    iterativeSolver->setProblem( lp );
@@ -881,7 +884,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 	    // Create the solver
 	    solver = 
 		rcp(new MCLS::SequentialMCSolverManager<Vector,Matrix>(
-			Teuchos::DefaultComm<int>::getComm(), solverPL) );
+			global_comm, solverPL) );
 	    iterativeSolver = Teuchos::rcp( 
 		new MCLS::SolverManagerAdapter<MultiVector,Matrix>(solver) );
 	    iterativeSolver->setProblem( lp );
@@ -903,7 +906,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 	    // Create the solver
 	    solver = 
 		rcp(new MCLS::AdjointSolverManager<Vector,Matrix>(
-			Teuchos::DefaultComm<int>::getComm(), solverPL) );
+			global_comm, solverPL) );
 	    iterativeSolver = Teuchos::rcp( 
 		new MCLS::SolverManagerAdapter<MultiVector,Matrix>(solver) );
 	    iterativeSolver->setProblem( lp );
@@ -925,7 +928,7 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 	    // Create the solver
 	    solver = 
 		rcp(new MCLS::RichardsonSolverManager<Vector,Matrix>(
-			Teuchos::DefaultComm<int>::getComm(), solverPL) );
+			global_comm, solverPL) );
 	    iterativeSolver = Teuchos::rcp( 
 		new MCLS::SolverManagerAdapter<MultiVector,Matrix>(solver) );
 	    iterativeSolver->setProblem( lp );
