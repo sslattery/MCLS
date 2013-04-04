@@ -155,23 +155,12 @@ TEUCHOS_UNIT_TEST( LinearProblem, Constructor )
 
     MCLS::LinearProblem<VectorType,MatrixType> linear_problem( A, X, B );
     TEST_EQUALITY( linear_problem.getOperator(), A );
-    TEST_EQUALITY( linear_problem.getLHS(), X );
-    TEST_EQUALITY( linear_problem.getRHS(), B );
-    TEST_ASSERT( linear_problem.status() );
 
     Teuchos::RCP<VectorType> Y = VT::clone( *X );
     linear_problem.setLHS( Y );
-    TEST_EQUALITY( linear_problem.getLHS(), Y );
-    TEST_ASSERT( !linear_problem.status() );
-    linear_problem.setProblem();
-    TEST_ASSERT( linear_problem.status() );
 
     Teuchos::RCP<VectorType> C = VT::clone( *B );
     linear_problem.setRHS( C );
-    TEST_EQUALITY( linear_problem.getRHS(), C );
-    TEST_ASSERT( !linear_problem.status() );
-    linear_problem.setProblem();
-    TEST_ASSERT( linear_problem.status() );
 
     TEST_ASSERT( !linear_problem.isLeftPrec() );
     linear_problem.setLeftPrec( A );
@@ -206,7 +195,7 @@ TEUCHOS_UNIT_TEST( LinearProblem, Apply )
 	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
 
     Teuchos::Array<int> global_columns( 1 );
-    Teuchos::Array<double> values( 1, 1 );
+    Teuchos::Array<double> values( 1, 1.0 );
     for ( int i = 0; i < global_num_rows; ++i )
     {
 	global_columns[0] = i;
@@ -239,7 +228,7 @@ TEUCHOS_UNIT_TEST( LinearProblem, Apply )
     }
 
     linear_problem.updateSolution( X );
-
+    linear_problem.exportLHS();
     linear_problem.apply( *X, *Y );
     for ( view_iterator = Y_view.begin();
 	  view_iterator != Y_view.end();
@@ -283,7 +272,7 @@ TEUCHOS_UNIT_TEST( LinearProblem, Apply )
     }
 
     linear_problem.updateSolution( X );
-
+    linear_problem.exportLHS();
     Teuchos::RCP<const MatrixType> composite = 
 	linear_problem.getCompositeOperator();
     MT::apply( *composite, *X, *Y );

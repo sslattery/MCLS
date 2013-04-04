@@ -115,9 +115,6 @@ class AdjointTally
     // Get the global tally rows in the overlap decomposition.
     Teuchos::Array<Ordinal> overlapRows() const;
 
-    // Get the vector in the operator decomposition.
-    const Vector& opDecompVector() const { return *d_x; }
-
   private:
 
     // Solution vector in operator decomposition.
@@ -126,14 +123,8 @@ class AdjointTally
     // Solution vector in overlap decomposition.
     Teuchos::RCP<Vector> d_x_overlap;
 
-    // Solution vector in original decomposition.
-    Teuchos::RCP<Vector> d_x_base;
-
-    // Overlap to operator decomposition vector export.
-    VectorExport<Vector> d_export_to_operator;
-
-    // Operator to base decomposition vector export.
-    Teuchos::RCP<VectorExport<Vector> > d_export_to_base;
+    // Overlap to base decomposition vector export.
+    VectorExport<Vector> d_export;
 };
 
 //---------------------------------------------------------------------------//

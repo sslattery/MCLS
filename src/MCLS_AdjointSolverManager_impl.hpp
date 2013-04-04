@@ -264,20 +264,26 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
                              d_msod_manager->blockComm(),
                              d_msod_manager->numSets() );
 
-    // Barrier before proceeding.
-    d_global_comm->barrier();
-
     // If we're right preconditioned then we have to recover the original
     // solution on the primary set.
     if ( d_primary_set )
     {
 	if ( d_problem->isRightPrec() )
 	{
-	    d_problem->applyRightPrec( *d_problem->getLHS(), 
-				       *d_problem->getLHS() );
+            Teuchos::RCP<Vector> temp = VT::clone(*d_problem->getLHS());
+	    d_problem->applyRightPrec( *d_problem->getLHS(),
+                                       *temp );
+            VT::update( *d_problem->getLHS(),
+                        Teuchos::ScalarTraits<Scalar>::zero(),
+                        *temp,
+                        Teuchos::ScalarTraits<Scalar>::one() );
 	}
+
+        // Export the LHS to the original decomposition.
+        d_problem->exportLHS();
     }
     d_global_comm->barrier();
+
 
     // This is a direct solve and therefore always converged in the iterative
     // sense. 
@@ -346,17 +352,22 @@ void AdjointSolverManager<Vector,Matrix>::buildMonteCarloSource()
     // Build the primary source in the primary set.
     if ( d_primary_set )
     {
-        // Export the source vector to the operator decomposition.
+        // Get a copy of the source vector in the operator decomposition.
         Teuchos::RCP<Vector> rhs_op_decomp = 
             MT::cloneVectorFromMatrixRows( *d_problem->getOperator() );
-        VectorExport<Vector> exporter( 
+        VectorExport<Vector> rhs_export( 
             Teuchos::rcp_const_cast<Vector>(d_problem->getRHS()), rhs_op_decomp );
-        exporter.doExportInsert();
+        rhs_export.doExportInsert();
 
         // Left precondition the source if necessary.
         if ( d_problem->isLeftPrec() )
         {
-            d_problem->applyLeftPrec( *rhs_op_decomp, *rhs_op_decomp );
+            Teuchos::RCP<Vector> temp = VT::clone(*rhs_op_decomp);
+            d_problem->applyLeftPrec( *rhs_op_decomp, *temp );
+            VT::update( *rhs_op_decomp,
+                        Teuchos::ScalarTraits<Scalar>::zero(),
+                        *temp,
+                        Teuchos::ScalarTraits<Scalar>::one() );
         }
 
         // Scale by the Neumann relaxation parameter.

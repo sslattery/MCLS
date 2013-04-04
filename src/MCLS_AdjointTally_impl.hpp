@@ -58,7 +58,7 @@ AdjointTally<Vector>::AdjointTally( const Teuchos::RCP<Vector>& x,
 				    const Teuchos::RCP<Vector>& x_overlap )
     : d_x( x )
     , d_x_overlap( x_overlap )
-    , d_export_to_operator( d_x_overlap, d_x )
+    , d_export( d_x_overlap, d_x )
 { 
     MCLS_ENSURE( !d_x.is_null() );
     MCLS_ENSURE( !d_x_overlap.is_null() );
@@ -72,7 +72,7 @@ AdjointTally<Vector>::AdjointTally( const Teuchos::RCP<Vector>& x,
 template<class Vector>
 void AdjointTally<Vector>::combineSetTallies()
 {
-    d_export_to_operator.doExportAdd();
+    d_export.doExportAdd();
 }
 
 //---------------------------------------------------------------------------//
@@ -99,13 +99,7 @@ void AdjointTally<Vector>::combineBlockTallies(
     Teuchos::ArrayRCP<Scalar> tally_view = VT::viewNonConst( *d_x );
     
     std::copy( copy_buffer.begin(), copy_buffer.end(), tally_view.begin() );
-
-    if ( Teuchos::nonnull(d_x_base) )
-    {
-        MCLS_CHECK( Teuchos::nonnull(d_export_to_base) );
-        d_export_to_base->doExportInsert();
-        VT::scale( *d_x_base, 1.0 / Teuchos::as<double>(num_sets) );
-    }
+    VT::scale( *d_x, 1.0 / Teuchos::as<double>(num_sets) );
 }
 
 //---------------------------------------------------------------------------//
@@ -127,10 +121,8 @@ template<class Vector>
 void AdjointTally<Vector>::setBaseVector( const Teuchos::RCP<Vector>& x_base )
 {
     MCLS_REQUIRE( Teuchos::nonnull(x_base) );
-
-    d_x_base = x_base;
-    d_export_to_base = 
-        Teuchos::rcp( new VectorExport<Vector>(d_x, d_x_base) );
+    d_x = x_base;
+    d_export = VectorExport<Vector>( d_x_overlap, d_x );
 }
 
 //---------------------------------------------------------------------------//
@@ -141,13 +133,7 @@ template<class Vector>
 void AdjointTally<Vector>::zeroOut()
 {
     VT::putScalar( *d_x, Teuchos::ScalarTraits<Scalar>::zero() );
-
     VT::putScalar( *d_x_overlap, Teuchos::ScalarTraits<Scalar>::zero() );
-
-    if ( Teuchos::nonnull(d_x_base) )
-    {
-        VT::putScalar( *d_x_base, Teuchos::ScalarTraits<Scalar>::zero() );
-    }
 }
 
 //---------------------------------------------------------------------------//

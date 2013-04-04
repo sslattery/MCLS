@@ -268,7 +268,7 @@ TEUCHOS_UNIT_TEST( MSODManager, two_by_two )
 
 	tally->combineSetTallies();
 
-	Teuchos::ArrayRCP<const double> x_view = VT::view( tally->opDecompVector() );
+	Teuchos::ArrayRCP<const double> x_view = VT::view( *x );
 	Teuchos::ArrayRCP<const double>::const_iterator x_view_iterator;
 	for ( x_view_iterator = x_view.begin();
 	      x_view_iterator != x_view.end();
@@ -402,7 +402,7 @@ TEUCHOS_UNIT_TEST( MSODManager, two_by_two )
 
 	tally->combineSetTallies();
 
-	x_view = VT::view( tally->opDecompVector() );
+	x_view = VT::view( *x );
 	for ( x_view_iterator = x_view.begin();
 	      x_view_iterator != x_view.end();
 	      ++x_view_iterator )

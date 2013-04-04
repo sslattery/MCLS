@@ -195,6 +195,7 @@ TEUCHOS_UNIT_TEST( RichardsonSolverManager, one_by_one )
     // Now solve the problem with a positive source.
     VT::putScalar( *b, 2.0 );
     VT::putScalar( *x, 0.0 );
+    linear_problem->setLHS(x);
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
@@ -208,6 +209,7 @@ TEUCHOS_UNIT_TEST( RichardsonSolverManager, one_by_one )
     // Reset the domain and solve again with a positive source.
     VT::putScalar( *x, 0.0 );
     solver_manager.setProblem( linear_problem );
+    linear_problem->setLHS(x);
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
@@ -221,6 +223,7 @@ TEUCHOS_UNIT_TEST( RichardsonSolverManager, one_by_one )
     // Reset both and solve with a negative source.
     VT::putScalar( *b, -2.0 );
     VT::putScalar( *x, 0.0 );
+    linear_problem->setLHS(x);
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );

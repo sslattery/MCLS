@@ -59,16 +59,20 @@ LinearProblem<Vector,Matrix>::LinearProblem(
     : d_A( A )
     , d_x( x )
     , d_b( b )
-    , d_r( VT::clone(*d_x) )
-    , d_rp( VT::clone(*d_x) )
+    , d_r( MT::cloneVectorFromMatrixRows(*d_A) )
+    , d_rp( MT::cloneVectorFromMatrixRows(*d_A) )
+    , d_x_op_decomp( MT::cloneVectorFromMatrixRows(*d_A) )
+    , d_lhs_export( Teuchos::rcp(new VectorExport<Vector>(d_x_op_decomp, d_x)) )
 {
-    d_status = true;
+    VectorExport<Vector> lhs_export( d_x, d_x_op_decomp );
+    lhs_export.doExportInsert();
 
     MCLS_ENSURE( !d_A.is_null() );
     MCLS_ENSURE( !d_x.is_null() );
     MCLS_ENSURE( !d_b.is_null() );
     MCLS_ENSURE( !d_r.is_null() );
     MCLS_ENSURE( !d_rp.is_null() );
+    MCLS_ENSURE( !d_x_op_decomp.is_null() );
 }
 
 //---------------------------------------------------------------------------//
@@ -88,9 +92,7 @@ void LinearProblem<Vector,Matrix>::setOperator(
     const Teuchos::RCP<const Matrix>& A )
 {
     MCLS_REQUIRE( !A.is_null() );
-
     d_A = A;
-    d_status = false;
 }
 
 //---------------------------------------------------------------------------//
@@ -101,9 +103,13 @@ template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::setLHS( const Teuchos::RCP<Vector>& x )
 {
     MCLS_REQUIRE( !x.is_null() );
-
     d_x = x;
-    d_status = false;
+
+    VectorExport<Vector> lhs_export( d_x, d_x_op_decomp );
+    lhs_export.doExportInsert();
+
+    d_lhs_export = Teuchos::rcp( new VectorExport<Vector>(d_x_op_decomp, d_x) );
+    MCLS_ENSURE( Teuchos::nonnull(d_lhs_export) );
 }
 
 //---------------------------------------------------------------------------//
@@ -114,9 +120,7 @@ template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::setRHS( const Teuchos::RCP<const Vector>& b )
 {
     MCLS_REQUIRE( !b.is_null() );
-
     d_b = b;
-    d_status = false;
 }
 
 //---------------------------------------------------------------------------//
@@ -128,9 +132,7 @@ void LinearProblem<Vector,Matrix>::setLeftPrec(
     const Teuchos::RCP<const Matrix>& PL )
 {
     MCLS_REQUIRE( !PL.is_null() );
-
     d_PL = PL;
-    d_status = false;
 }
 
 //---------------------------------------------------------------------------//
@@ -142,9 +144,7 @@ void LinearProblem<Vector,Matrix>::setRightPrec(
     const Teuchos::RCP<const Matrix>& PR )
 {
     MCLS_REQUIRE( !PR.is_null() );
-
     d_PR = PR;
-    d_status = false;
 }
 
 //---------------------------------------------------------------------------//
@@ -181,8 +181,7 @@ LinearProblem<Vector,Matrix>::getCompositeOperator() const
     {
 	composite = Teuchos::rcp_const_cast<Matrix>( d_A );
     }
-    std::cout << "COMPOSITE MAX ENTRIES " 
-              << MT::getGlobalMaxNumRowEntries(*composite) << std::endl;
+
     return composite;
 }
 
@@ -200,12 +199,12 @@ void LinearProblem<Vector,Matrix>::updateSolution(
     {
 	Teuchos::RCP<Vector> prec_update = VT::clone(*update);
 	MT::apply( *d_PR, *update, *prec_update );
-	VT::update( *d_x, Teuchos::ScalarTraits<Scalar>::one(),
+	VT::update( *d_x_op_decomp, Teuchos::ScalarTraits<Scalar>::one(),
 		    *prec_update, Teuchos::ScalarTraits<Scalar>::one() );
     }
     else
     {
-	VT::update( *d_x, Teuchos::ScalarTraits<Scalar>::one(),
+	VT::update( *d_x_op_decomp, Teuchos::ScalarTraits<Scalar>::one(),
 		    *update, Teuchos::ScalarTraits<Scalar>::one() );
     }
 }
@@ -308,10 +307,10 @@ template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::updateResidual()
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_A) );
-    MCLS_REQUIRE( Teuchos::nonnull(d_x) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_x_op_decomp) );
     MCLS_REQUIRE( Teuchos::nonnull(d_b) );
 
-    MT::apply( *d_A, *d_x, *d_r );
+    MT::apply( *d_A, *d_x_op_decomp, *d_r );
     VT::update( *d_r, -Teuchos::ScalarTraits<Scalar>::one(), 
 		*d_b, Teuchos::ScalarTraits<Scalar>::one() );
 }
@@ -325,18 +324,19 @@ template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::updatePrecResidual()
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_A) );
-    MCLS_REQUIRE( Teuchos::nonnull(d_x) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_x_op_decomp) );
     MCLS_REQUIRE( Teuchos::nonnull(d_b) );
 
     // Apply right preconditioning if necessary.
     if ( Teuchos::nonnull(d_PR) )
     {
-        MT::apply( *d_PR, *d_x, *d_rp );
-        MT::apply( *d_A, *d_rp, *d_rp );
+        Teuchos::RCP<Vector> temp = VT::clone(*d_rp);
+        MT::apply( *d_PR, *d_x_op_decomp, *temp);
+        MT::apply( *d_A, *temp, *d_rp );
     }
     else
     {
-        MT::apply( *d_A, *d_x, *d_rp );
+        MT::apply( *d_A, *d_x_op_decomp, *d_rp );
     }
 
     VT::update( *d_rp, -Teuchos::ScalarTraits<Scalar>::one(), 
@@ -345,8 +345,24 @@ void LinearProblem<Vector,Matrix>::updatePrecResidual()
     // Apply left preconditioning if necessary.
     if ( Teuchos::nonnull(d_PL) )
     {
-	MT::apply( *d_PL, *d_rp, *d_rp );
+        Teuchos::RCP<Vector> temp = VT::deepCopy(*d_rp);
+	MT::apply( *d_PL, *temp, *d_rp );
     }
+}
+
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Export the LHS to the original decomposition.
+ */
+template<class Vector, class Matrix>
+void LinearProblem<Vector,Matrix>::exportLHS()
+{
+    MCLS_REQUIRE( Teuchos::nonnull(d_x) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_x_op_decomp) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_lhs_export) );
+
+    d_lhs_export->doExportInsert();
 }
 
 //---------------------------------------------------------------------------//

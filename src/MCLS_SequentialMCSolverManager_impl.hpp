@@ -358,8 +358,13 @@ bool SequentialMCSolverManager<Vector,Matrix>::solve()
         // Recover the original solution if right preconditioned.
         if ( d_problem->isRightPrec() )
         {
-            d_problem->applyRightPrec( *d_problem->getLHS(), 
-                                       *d_problem->getLHS() );
+            Teuchos::RCP<Vector> temp = VT::clone(*d_problem->getLHS());
+	    d_problem->applyRightPrec( *d_problem->getLHS(),
+                                       *temp );
+            VT::update( *d_problem->getLHS(),
+                        Teuchos::ScalarTraits<Scalar>::zero(),
+                        *temp,
+                        Teuchos::ScalarTraits<Scalar>::one() );
         }
 
         // Check for convergence.
@@ -367,6 +372,9 @@ bool SequentialMCSolverManager<Vector,Matrix>::solve()
 	{
 	    d_converged_status = 1;
 	}
+
+        // Export to the LHS to the original decomposition.
+        d_problem->exportLHS();
     }
     d_global_comm->barrier();
 

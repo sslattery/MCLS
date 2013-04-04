@@ -179,7 +179,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, NoOverlap )
 
     tally->combineSetTallies();
 
-    Teuchos::ArrayRCP<const double> x_view = VT::view( tally->opDecompVector() );
+    Teuchos::ArrayRCP<const double> x_view = VT::view( *x );
     Teuchos::ArrayRCP<const double>::const_iterator x_view_iterator;
     for ( x_view_iterator = x_view.begin();
 	  x_view_iterator != x_view.end();
@@ -297,7 +297,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, PackUnpack )
 
     tally->combineSetTallies();
 
-    Teuchos::ArrayRCP<const double> x_view = VT::view( tally->opDecompVector() );
+    Teuchos::ArrayRCP<const double> x_view = VT::view( *x );
     Teuchos::ArrayRCP<const double>::const_iterator x_view_iterator;
     for ( x_view_iterator = x_view.begin();
 	  x_view_iterator != x_view.end();
@@ -407,7 +407,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, SomeOverlap )
 
     tally->combineSetTallies();
 
-    Teuchos::ArrayRCP<const double> x_view = VT::view( tally->opDecompVector() );
+    Teuchos::ArrayRCP<const double> x_view = VT::view( *x );
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	if ( comm_rank == 0 || i > 1 )
@@ -545,7 +545,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, SomeOverlapPackUnpack )
 
     tally->combineSetTallies();
 
-    Teuchos::ArrayRCP<const double> x_view = VT::view( tally->opDecompVector() );
+    Teuchos::ArrayRCP<const double> x_view = VT::view( *x );
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	if ( comm_rank == 0 || i > 1 )

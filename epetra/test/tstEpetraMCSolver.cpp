@@ -199,7 +199,7 @@ TEUCHOS_UNIT_TEST( MCSolver, solve )
 
     // Check that we got a negative solution.
     Teuchos::ArrayRCP<const double> x_view = 
-        VT::view( domain->domainTally()->opDecompVector() );
+        VT::view( *x );
     Teuchos::ArrayRCP<const double>::const_iterator x_view_it;
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
