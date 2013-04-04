@@ -307,6 +307,10 @@ void LinearProblem<Vector,Matrix>::applyRightPrec( const Vector& x, Vector& y )
 template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::updateResidual()
 {
+    MCLS_REQUIRE( Teuchos::nonnull(d_A) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_x) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_b) );
+
     MT::apply( *d_A, *d_x, *d_r );
     VT::update( *d_r, -Teuchos::ScalarTraits<Scalar>::one(), 
 		*d_b, Teuchos::ScalarTraits<Scalar>::one() );
@@ -320,6 +324,10 @@ void LinearProblem<Vector,Matrix>::updateResidual()
 template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::updatePrecResidual()
 {
+    MCLS_REQUIRE( Teuchos::nonnull(d_A) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_x) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_b) );
+
     // Apply right preconditioning if necessary.
     if ( Teuchos::nonnull(d_PR) )
     {

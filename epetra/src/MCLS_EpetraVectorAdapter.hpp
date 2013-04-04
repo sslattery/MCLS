@@ -189,7 +189,8 @@ class VectorTraits<Epetra_Vector>
     				    global_ordinal_type global_row,
     				    const scalar_type& value )
     {
-	vector.ReplaceGlobalValue( global_row, 0, value );
+	int error = vector.ReplaceGlobalValue( global_row, 0, value );
+        MCLS_CHECK( 0 == error );
     }
 
     /*!
@@ -200,7 +201,8 @@ class VectorTraits<Epetra_Vector>
     				   local_ordinal_type local_row,
     				   const scalar_type& value )
     {
-	vector.ReplaceMyValue( local_row, 0, value );
+	int error = vector.ReplaceMyValue( local_row, 0, value );
+        MCLS_CHECK( 0 == error );
     }
 
     /*!
@@ -211,7 +213,8 @@ class VectorTraits<Epetra_Vector>
     				    global_ordinal_type global_row,
     				    const scalar_type& value )
     {
-	vector.SumIntoGlobalValue( global_row, 0, value );
+	int error = vector.SumIntoGlobalValue( global_row, 0, value );
+        MCLS_CHECK( 0 == error );
     }
 
     /*!
@@ -222,7 +225,8 @@ class VectorTraits<Epetra_Vector>
     				   local_ordinal_type local_row,
     				   const scalar_type& value )
     {
-	vector.SumIntoMyValue( local_row, 0, value );
+	int error = vector.SumIntoMyValue( local_row, 0, value );
+        MCLS_CHECK( 0 == error );
     }
 
     /*!
@@ -230,7 +234,8 @@ class VectorTraits<Epetra_Vector>
      */
     static void putScalar( vector_type& vector, const scalar_type& value )
     { 
-	vector.PutScalar( value );
+	int error = vector.PutScalar( value );
+        MCLS_CHECK( 0 == error );
     }
 
     /*!
@@ -239,7 +244,8 @@ class VectorTraits<Epetra_Vector>
     static Teuchos::ArrayRCP<const scalar_type> view( const vector_type& vector )
     { 
 	scalar_type* view_pointer;
-	vector.ExtractView( &view_pointer );
+	int error = vector.ExtractView( &view_pointer );
+        MCLS_CHECK( 0 == error );
 	return Teuchos::ArrayRCP<const scalar_type>( 
 	    view_pointer, 0, vector.MyLength(), false );
     }
@@ -251,7 +257,8 @@ class VectorTraits<Epetra_Vector>
     viewNonConst( vector_type& vector )
     { 
 	scalar_type* view_pointer;
-	vector.ExtractView( &view_pointer );
+	int error = vector.ExtractView( &view_pointer );
+        MCLS_CHECK( 0 == error );
 	return Teuchos::ArrayRCP<scalar_type>( 
 	    view_pointer, 0, vector.MyLength(), false );
     }
@@ -263,7 +270,8 @@ class VectorTraits<Epetra_Vector>
     dot( const vector_type& A, const vector_type& B )
     { 
 	scalar_type product;
-	A.Dot( B, &product );
+	int error = A.Dot( B, &product );
+        MCLS_CHECK( 0 == error );
 	return product;
     }
 
@@ -274,7 +282,8 @@ class VectorTraits<Epetra_Vector>
     norm1( const vector_type& vector )
     {
 	scalar_type norm;
-	vector.Norm1( &norm );
+	int error = vector.Norm1( &norm );
+        MCLS_CHECK( 0 == error );
 	return norm;
     }
 
@@ -285,7 +294,8 @@ class VectorTraits<Epetra_Vector>
     norm2( const vector_type& vector )
     {
 	scalar_type norm;
-	vector.Norm2( &norm );
+	int error = vector.Norm2( &norm );
+        MCLS_CHECK( 0 == error );
 	return norm;
     }
 
@@ -296,7 +306,8 @@ class VectorTraits<Epetra_Vector>
     normInf( const vector_type& vector )
     {
 	scalar_type norm;
-	vector.NormInf( &norm );
+	int error = vector.NormInf( &norm );
+        MCLS_CHECK( 0 == error );
 	return norm;
     }
 
@@ -306,7 +317,8 @@ class VectorTraits<Epetra_Vector>
     static scalar_type meanValue( const vector_type& vector )
     {
 	scalar_type mean;
-	vector.MeanValue( &mean );
+	int error = vector.MeanValue( &mean );
+        MCLS_CHECK( 0 == error );
 	return mean;
     }
 
@@ -316,7 +328,8 @@ class VectorTraits<Epetra_Vector>
      */
     static void abs( vector_type& A, const vector_type& B )
     {
-	A.Abs( B );
+	int error = A.Abs( B );
+        MCLS_CHECK( 0 == error );
     }
 
     /*!
@@ -324,7 +337,8 @@ class VectorTraits<Epetra_Vector>
      */
     static void scale( vector_type& A, const scalar_type value )
     {
-	A.Scale( value );
+	int error = A.Scale( value );
+        MCLS_CHECK( 0 == error );
     }
 
     /*!
@@ -333,7 +347,8 @@ class VectorTraits<Epetra_Vector>
     static void 
     scaleCopy( vector_type& A, const scalar_type value, const vector_type& B )
     {
-	A.Scale( value, B );
+	int error = A.Scale( value, B );
+        MCLS_CHECK( 0 == error );
     }
     
     /*!
@@ -342,7 +357,8 @@ class VectorTraits<Epetra_Vector>
      */
     static void reciprocal( vector_type& A, const vector_type& B )
     { 
-	A.Reciprocal( B );
+	int error = A.Reciprocal( B );
+        MCLS_CHECK( 0 == error );
     }
 
     /*!
@@ -351,7 +367,8 @@ class VectorTraits<Epetra_Vector>
     static void update( vector_type& A, const scalar_type& alpha,
     			const vector_type& B, const scalar_type& beta )
     {
-	A.Update( beta, B, alpha );
+	int error = A.Update( beta, B, alpha );
+        MCLS_CHECK( 0 == error );
     }
 
     /*!
@@ -361,7 +378,8 @@ class VectorTraits<Epetra_Vector>
     			const vector_type& B, const scalar_type& beta,
     			const vector_type& C, const scalar_type& gamma )
     {
-	A.Update( beta, B, gamma, C, alpha );
+	int error = A.Update( beta, B, gamma, C, alpha );
+        MCLS_CHECK( 0 == error );
     }
 
     /*!
@@ -372,7 +390,8 @@ class VectorTraits<Epetra_Vector>
 				     const vector_type& B, const vector_type& C, 
 				     const scalar_type& beta)
     { 
-	A.Multiply( beta, B, C, alpha );
+	int error = A.Multiply( beta, B, C, alpha );
+        MCLS_CHECK( 0 == error );
     }
 };
 

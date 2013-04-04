@@ -121,10 +121,13 @@ void EpetraILUTPreconditioner::buildPreconditioner()
 
     // Build the Ifpack ILUT preconditioner.
     Ifpack_ILUT ifpack( d_A.getRawPtr() );
-    ifpack.SetParameters( *d_plist );
-    ifpack.Initialize();
+    int error = ifpack.SetParameters( *d_plist );
+    MCLS_CHECK( 0 == error );
+    error = ifpack.Initialize();
+    MCLS_CHECK( 0 == error );
     MCLS_CHECK( ifpack.IsInitialized() );
-    ifpack.Compute();
+    error = ifpack.Compute();
+    MCLS_CHECK( 0 == error );
     MCLS_CHECK( ifpack.IsComputed() );
 
     // Invert L and U.
@@ -158,6 +161,7 @@ EpetraILUTPreconditioner::computeTriInverse( const Epetra_CrsMatrix& A,
     }
 
     // Invert the matrix row-by-row.
+    int error = 0;
     for ( int i = 0; i < num_rows; ++i )
     {
         // Set the basis for this row.
@@ -165,7 +169,8 @@ EpetraILUTPreconditioner::computeTriInverse( const Epetra_CrsMatrix& A,
         basis[i] = 1.0;
             
         // Get the row for the inverse.
-        A.Solve( is_upper, true, false, basis, inverse_row );
+        error = A.Solve( is_upper, true, false, basis, inverse_row );
+        MCLS_CHECK( 0 == error );
 
         // Get the non-zero elements of the row larger than the drop
         // tolerance.
@@ -179,16 +184,18 @@ EpetraILUTPreconditioner::computeTriInverse( const Epetra_CrsMatrix& A,
         }
 
         // Populate the row in the inverse matrix.
-        inverse->InsertGlobalValues( A.RowMatrixRowMap().GID(i),
-                                     values.size(),
-                                     values.getRawPtr(),
-                                     indices.getRawPtr() );
+        error = inverse->InsertGlobalValues( A.RowMatrixRowMap().GID(i),
+                                             values.size(),
+                                             values.getRawPtr(),
+                                             indices.getRawPtr() );
+        MCLS_CHECK( 0 == error );
 
         values.clear();
         indices.clear();
     }
 
-    inverse->FillComplete();
+    error = inverse->FillComplete();
+    MCLS_CHECK( 0 == error );
 
     return inverse;
 }

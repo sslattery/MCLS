@@ -180,7 +180,8 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
 	Epetra_RowMatrixTransposer transposer( const_cast<matrix_type*>(&matrix) );
 
 	Epetra_CrsMatrix* transpose_matrix;
-	transposer.CreateTranspose( false, transpose_matrix );
+	int error = transposer.CreateTranspose( false, transpose_matrix );
+        MCLS_CHECK( 0 == error );
 
 	MCLS_ENSURE( transpose_matrix->Filled() );
 	return Teuchos::RCP<matrix_type>( transpose_matrix );
@@ -200,7 +201,8 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
 	    new Epetra_Map( 0, 0, matrix.Comm() ) );
 	Teuchos::RCP<Epetra_CrsMatrix> neighbor_matrix = 
 	    Teuchos::rcp( new Epetra_CrsMatrix( Copy, *empty_map, 0 ) );
-	neighbor_matrix->FillComplete();
+	int error = neighbor_matrix->FillComplete();
+        MCLS_CHECK( 0 == error );
 
 	Teuchos::ArrayView<const int> global_rows;
 	Teuchos::ArrayView<const int>::const_iterator global_rows_it;
@@ -256,7 +258,8 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
 		new Epetra_CrsMatrix( Copy, *ghost_map, 0 ) );
 
 	    neighbor_matrix->Export( matrix, ghost_exporter, Insert );
-	    neighbor_matrix->FillComplete();
+	    error = neighbor_matrix->FillComplete();
+            MCLS_CHECK( 0 == error );
 
 	    // Get the next rows in the graph.
 	    ghost_global_rows = getOffProcColsAsRows( *neighbor_matrix );
@@ -329,26 +332,30 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
         Teuchos::Array<int> global_indices(max_entries);
         Teuchos::Array<double> values(max_entries); 
 
+        int error = 0;
         for( int local_row = 0; local_row < num_local_rows; ++local_row ) 
         {
-            A->ExtractMyRowCopy( local_row, 
-                                 max_entries,
-                                 num_entries, 
-                                 values.getRawPtr(),
-                                 local_indices.getRawPtr() );
+            error = A->ExtractMyRowCopy( local_row, 
+                                             max_entries,
+                                             num_entries, 
+                                             values.getRawPtr(),
+                                             local_indices.getRawPtr() );
+            MCLS_CHECK( 0 == error );
       
             for (int j = 0 ; j < num_entries; ++j ) 
             { 
                 global_indices[j] = my_global_cols[ local_indices[j] ];
             }
       
-            A_crs->InsertGlobalValues( my_global_rows[local_row], 
-                                       num_entries, 
-                                       values.getRawPtr(),
-                                       global_indices.getRawPtr() );
+            error = A_crs->InsertGlobalValues( my_global_rows[local_row], 
+                                                   num_entries, 
+                                                   values.getRawPtr(),
+                                                   global_indices.getRawPtr() );
+            MCLS_CHECK( 0 == error );
         }
 
-        A_crs->FillComplete();
+        error = A_crs->FillComplete();
+        MCLS_CHECK( 0 == error );
         return A_crs;
     }
 };

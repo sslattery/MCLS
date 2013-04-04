@@ -110,8 +110,10 @@ void EpetraPointJacobiPreconditioner::buildPreconditioner()
     Teuchos::RCP<Epetra_Vector> diagonal = 
 	Teuchos::rcp( new Epetra_Vector( d_A->RowMatrixRowMap() ) );
 
-    d_A->ExtractDiagonalCopy( *diagonal );
-    diagonal->Reciprocal( *diagonal );
+    int error = d_A->ExtractDiagonalCopy( *diagonal );
+    MCLS_CHECK( 0 == error );
+    error = diagonal->Reciprocal( *diagonal );
+    MCLS_CHECK( 0 == error );
 
     // Build a matrix from the diagonal vector.
     Teuchos::Array<int> rows( d_preconditioner->RowMap().NumMyElements() );
@@ -122,12 +124,14 @@ void EpetraPointJacobiPreconditioner::buildPreconditioner()
     for ( row_it = rows.begin(); row_it != rows.end(); ++row_it )
     {
 	col[0] = *row_it;
-	d_preconditioner->InsertGlobalValues( 
+	error = d_preconditioner->InsertGlobalValues( 
 	    *row_it, 1, &(*diagonal)[local_row], col.getRawPtr() );
+        MCLS_CHECK( 0 == error );
 	++local_row;
     }
 
-    d_preconditioner->FillComplete();
+    error = d_preconditioner->FillComplete();
+    MCLS_CHECK( 0 == error );
 	
     MCLS_ENSURE( Teuchos::nonnull(d_preconditioner) );
     MCLS_ENSURE( d_preconditioner->Filled() );

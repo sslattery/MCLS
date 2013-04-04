@@ -140,6 +140,7 @@ void EpetraBlockJacobiPreconditioner::buildPreconditioner()
     Teuchos::SerialDenseMatrix<int,double> block( block_size, block_size );
     int col_start = 0;
     Teuchos::Array<int> block_cols( block_size );
+    int error = 0;
     for ( int n = 0; n < num_blocks; ++n )
     {
 	// Starting row/column for the block.
@@ -165,9 +166,10 @@ void EpetraBlockJacobiPreconditioner::buildPreconditioner()
 	// Add the block to the preconditioner.
 	for ( int i = 0; i < block_size; ++i )
 	{
-	    d_preconditioner->InsertGlobalValues( 
+	    error = d_preconditioner->InsertGlobalValues( 
 		global_rows[col_start+i], block_size, 
 		block[i], block_cols.getRawPtr() );
+            MCLS_CHECK( 0 == error );
 	}
     }
 
@@ -226,9 +228,10 @@ void EpetraBlockJacobiPreconditioner::getBlockRowFromGlobal(
     int num_entries = 0;
     Teuchos::Array<int> local_indices( max_size );
     Teuchos::Array<double> local_values( max_size );
-    matrix->ExtractMyRowCopy( local_row, max_size, num_entries,
-			      local_values.getRawPtr(), 
-			      local_indices.getRawPtr() );
+    int error = matrix->ExtractMyRowCopy( local_row, max_size, num_entries,
+                                          local_values.getRawPtr(), 
+                                          local_indices.getRawPtr() );
+    MCLS_CHECK( 0 == error );
     local_values.resize( num_entries );
     local_indices.resize( num_entries );
 

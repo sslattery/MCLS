@@ -242,7 +242,6 @@ bool RichardsonSolverManager<Vector,Matrix>::solve()
                     omega );
 
         d_problem->updatePrecResidual();
-
         residual_norm = VT::normInf( *d_problem->getPrecResidual() );
 
         // Check if we're done iterating.
