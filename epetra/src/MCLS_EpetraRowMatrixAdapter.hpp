@@ -375,7 +375,7 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
 
     /*
      * \brief Create a reference-counted pointer to a new matrix with a
-     * specified number of off-process nearest-neighbor global crss.
+     * specified number of off-process nearest-neighbor global rows.
      */
     static Teuchos::RCP<matrix_type> copyNearestNeighbors( 
     	const matrix_type& matrix, const global_ordinal_type& num_neighbors )
