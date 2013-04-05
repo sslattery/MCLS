@@ -94,7 +94,9 @@ class VectorExport<Epetra_Vector>
      */
     void doExportAdd()
     {
-	d_target_vector->Export( *d_source_vector, *d_export, Add );
+	int error = 
+            d_target_vector->Export( *d_source_vector, *d_export, Add );
+        MCLS_CHECK( 0 == error );
     }
 
     /*!
@@ -102,7 +104,9 @@ class VectorExport<Epetra_Vector>
      */
     void doExportInsert()
     {
-	d_target_vector->Export( *d_source_vector, *d_export, Insert );
+	int error = 
+            d_target_vector->Export( *d_source_vector, *d_export, Insert );
+        MCLS_CHECK( 0 == error );
     }
 
   private:
