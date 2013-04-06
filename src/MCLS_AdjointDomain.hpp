@@ -46,7 +46,7 @@
 #include <MCLS_DBC.hpp>
 #include <MCLS_DomainTraits.hpp>
 #include <MCLS_History.hpp>
-#include <MCLS_AdjointTally.hpp>
+#include <MCLS_AdjointCollisionTally.hpp>
 #include <MCLS_SamplingTools.hpp>
 #include <MCLS_Events.hpp>
 #include <MCLS_VectorTraits.hpp>
@@ -90,7 +90,7 @@ class AdjointDomain
     typedef Matrix                                        matrix_type;
     typedef MatrixTraits<Vector,Matrix>                   MT;
     typedef typename VT::global_ordinal_type              Ordinal;
-    typedef AdjointTally<Vector>                          TallyType;
+    typedef AdjointCollisionTally<Vector>                 TallyType;
     typedef typename TallyType::HistoryType               HistoryType;
     typedef std::stack<Teuchos::RCP<HistoryType> >        BankType;
     typedef typename std::tr1::unordered_map<Ordinal,int> MapType;

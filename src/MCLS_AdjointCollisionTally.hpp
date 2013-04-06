@@ -32,14 +32,14 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_AdjointTally.hpp
+ * \file MCLS_AdjointCollisionTally.hpp
  * \author Stuart R. Slattery
- * \brief AdjointTally declaration.
+ * \brief AdjointCollisionTally declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_ADJOINTTALLY_HPP
-#define MCLS_ADJOINTTALLY_HPP
+#ifndef MCLS_ADJOINTCOLLISIONTALLY_HPP
+#define MCLS_ADJOINTCOLLISIONTALLY_HPP
 
 #include <MCLS_DBC.hpp>
 #include <MCLS_History.hpp>
@@ -55,12 +55,12 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 /*!
- * \class AdjointTally
+ * \class AdjointCollisionTally
  * \brief Monte Carlo tally for the linear system solution vector for adjoint
- * problems. 
+ * problems using Gelbard's collision estimator.
  */
 template<class Vector>
-class AdjointTally
+class AdjointCollisionTally
 {
   public:
 
@@ -75,11 +75,11 @@ class AdjointTally
     //@}
 
     // Constructor.
-    AdjointTally( const Teuchos::RCP<Vector>& x, 
+    AdjointCollisionTally( const Teuchos::RCP<Vector>& x, 
 		  const Teuchos::RCP<Vector>& x_overlap );
 
     // Destructor.
-    ~AdjointTally()
+    ~AdjointCollisionTally()
     { /* ... */ }
 
     // Add a history's contribution to the tally.
@@ -134,7 +134,7 @@ class AdjointTally
  * \brief Add a history's contribution to the tally.
  */
 template<class Vector>
-inline void AdjointTally<Vector>::tallyHistory( const HistoryType& history )
+inline void AdjointCollisionTally<Vector>::tallyHistory( const HistoryType& history )
 {
     MCLS_REQUIRE( history.alive() );
     MCLS_REQUIRE( VT::isGlobalRow( *d_x, history.state() ) ||
@@ -164,16 +164,16 @@ inline void AdjointTally<Vector>::tallyHistory( const HistoryType& history )
 //---------------------------------------------------------------------------//
 /*!
  * \class TallyTraits
- * \brief Specialization for AdjointTally.
+ * \brief Specialization for AdjointCollisionTally.
  */
 template<class Vector>
-class TallyTraits<AdjointTally<Vector> >
+class TallyTraits<AdjointCollisionTally<Vector> >
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef AdjointTally<Vector>                       tally_type;
+    typedef AdjointCollisionTally<Vector>                       tally_type;
     typedef typename tally_type::vector_type           vector_type;
     typedef typename tally_type::Ordinal               ordinal_type;
     typedef typename tally_type::HistoryType           history_type;
@@ -277,13 +277,13 @@ class TallyTraits<AdjointTally<Vector> >
 // Template includes.
 //---------------------------------------------------------------------------//
 
-#include "MCLS_AdjointTally_impl.hpp"
+#include "MCLS_AdjointCollisionTally_impl.hpp"
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_ADJOINTTALLY_HPP
+#endif // end MCLS_ADJOINTCOLLISIONTALLY_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_AdjointTally.hpp
+// end MCLS_AdjointCollisionTally.hpp
 // ---------------------------------------------------------------------------//
 

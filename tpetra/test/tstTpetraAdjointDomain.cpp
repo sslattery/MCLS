@@ -51,7 +51,7 @@
 #include <MCLS_VectorTraits.hpp>
 #include <MCLS_TpetraAdapter.hpp>
 #include <MCLS_History.hpp>
-#include <MCLS_AdjointTally.hpp>
+#include <MCLS_AdjointCollisionTally.hpp>
 #include <MCLS_Events.hpp>
 #include <MCLS_RNGControl.hpp>
 
@@ -89,7 +89,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, Typedefs, LO, GO, Scalar )
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::History<GO> HistoryType;
-    typedef MCLS::AdjointTally<VectorType> TallyType;
+    typedef MCLS::AdjointCollisionTally<VectorType> TallyType;
     typedef typename DomainType::HistoryType history_type;
     typedef typename DomainType::TallyType tally_type;
 
@@ -111,7 +111,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, NoOverlap, LO, GO, Scalar )
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::History<GO> HistoryType;
-    typedef MCLS::AdjointTally<VectorType> TallyType;
+    typedef MCLS::AdjointCollisionTally<VectorType> TallyType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -219,7 +219,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, PackUnpack, LO, GO, Scalar )
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::History<GO> HistoryType;
-    typedef MCLS::AdjointTally<VectorType> TallyType;
+    typedef MCLS::AdjointCollisionTally<VectorType> TallyType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -334,7 +334,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, SomeOverlap, LO, GO, Scalar )
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::History<GO> HistoryType;
-    typedef MCLS::AdjointTally<VectorType> TallyType;
+    typedef MCLS::AdjointCollisionTally<VectorType> TallyType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -463,7 +463,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, PackUnpackSomeOverlap, LO, GO,
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::History<GO> HistoryType;
-    typedef MCLS::AdjointTally<VectorType> TallyType;
+    typedef MCLS::AdjointCollisionTally<VectorType> TallyType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -599,7 +599,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, Transition, LO, GO, Scalar )
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::History<GO> HistoryType;
-    typedef MCLS::AdjointTally<VectorType> TallyType;
+    typedef MCLS::AdjointCollisionTally<VectorType> TallyType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -680,7 +680,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, Diagonal, LO, GO, Scalar )
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::History<GO> HistoryType;
-    typedef MCLS::AdjointTally<VectorType> TallyType;
+    typedef MCLS::AdjointCollisionTally<VectorType> TallyType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
