@@ -52,6 +52,7 @@
 #include <MCLS_VectorTraits.hpp>
 #include <MCLS_EpetraAdapter.hpp>
 #include <MCLS_History.hpp>
+#include <MCLS_AdjointTally.hpp>
 #include <MCLS_Events.hpp>
 #include <MCLS_RNGControl.hpp>
 
@@ -105,6 +106,7 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Typedefs )
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::History<int> HistoryType;
+    typedef MCLS::AdjointTally<VectorType> TallyType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     typedef MCLS::DomainTransporter<DomainType> TransportType;
@@ -113,6 +115,9 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Typedefs )
 
     TEST_EQUALITY_CONST( 
 	(Teuchos::TypeTraits::is_same<HistoryType, history_type>::value)
+	== true, true );
+    TEST_EQUALITY_CONST( 
+	(Teuchos::TypeTraits::is_same<TallyType, tally_type>::value)
 	== true, true );
 }
 
@@ -124,6 +129,7 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff )
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::History<int> HistoryType;
+    typedef MCLS::AdjointTally<VectorType> TallyType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -236,6 +242,7 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff2 )
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::History<int> HistoryType;
+    typedef MCLS::AdjointTally<VectorType> TallyType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -357,6 +364,7 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Boundary )
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::History<int> HistoryType;
+    typedef MCLS::AdjointTally<VectorType> TallyType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 

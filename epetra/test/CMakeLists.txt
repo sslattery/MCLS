@@ -50,8 +50,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  EpetraAdjointCollisionTally_tests
-  SOURCES tstEpetraAdjointCollisionTally.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  EpetraAdjointTally_tests
+  SOURCES tstEpetraAdjointTally.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 4
   STANDARD_PASS_OUTPUT
