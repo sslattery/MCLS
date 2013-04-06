@@ -55,9 +55,11 @@ namespace MCLS
  */
 template<class Vector>
 AdjointTally<Vector>::AdjointTally( const Teuchos::RCP<Vector>& x, 
-				    const Teuchos::RCP<Vector>& x_overlap )
+				    const Teuchos::RCP<Vector>& x_overlap,
+                                    const int estimator )
     : d_x( x )
     , d_x_overlap( x_overlap )
+    , d_estimator( estimator )
     , d_export( d_x_overlap, d_x )
 { 
     MCLS_ENSURE( !d_x.is_null() );

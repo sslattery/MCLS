@@ -43,9 +43,9 @@
 
 #include <algorithm>
 
-#include <MCLS_MatrixTraits.hpp>
-#include <MCLS_Serializer.hpp>
-#include <MCLS_Preconditioner.hpp>
+#include "MCLS_MatrixTraits.hpp"
+#include "MCLS_Serializer.hpp"
+#include "MCLS_Preconditioner.hpp"
 
 #include <Teuchos_as.hpp>
 #include <Teuchos_Array.hpp>

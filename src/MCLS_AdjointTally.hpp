@@ -41,11 +41,12 @@
 #ifndef MCLS_ADJOINTTALLY_HPP
 #define MCLS_ADJOINTTALLY_HPP
 
-#include <MCLS_DBC.hpp>
-#include <MCLS_History.hpp>
-#include <MCLS_VectorExport.hpp>
-#include <MCLS_VectorTraits.hpp>
-#include <MCLS_TallyTraits.hpp>
+#include "MCLS_DBC.hpp"
+#include "MCLS_History.hpp"
+#include "MCLS_VectorExport.hpp"
+#include "MCLS_VectorTraits.hpp"
+#include "MCLS_TallyTraits.hpp"
+#include "MCLS_Estimators.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
@@ -76,7 +77,8 @@ class AdjointTally
 
     // Constructor.
     AdjointTally( const Teuchos::RCP<Vector>& x, 
-		  const Teuchos::RCP<Vector>& x_overlap );
+		  const Teuchos::RCP<Vector>& x_overlap,
+                  const int estimator = 0 );
 
     // Destructor.
     ~AdjointTally()
@@ -122,6 +124,9 @@ class AdjointTally
 
     // Solution vector in overlap decomposition.
     Teuchos::RCP<Vector> d_x_overlap;
+
+    // Monte Carlo estimator type.
+    int d_estimator;
 
     // Overlap to base decomposition vector export.
     VectorExport<Vector> d_export;
