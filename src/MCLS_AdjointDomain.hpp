@@ -54,6 +54,7 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
+#include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -154,20 +155,29 @@ class AdjointDomain
 
   private:
 
+    // Monte Carlo estimator type.
+    int d_estimator;
+
     // Domain tally.
     Teuchos::RCP<TallyType> d_tally;
 
     // Local row indexer.
-    MapType d_row_indexer;
+    Teuchos::RCP<MapType> d_row_indexer;
 
     // Local columns.
-    Teuchos::Array<Teuchos::Array<Ordinal> > d_columns;
+    Teuchos::ArrayRCP<Teuchos::Array<Ordinal> > d_columns;
 
     // Local CDFs.
-    Teuchos::Array<Teuchos::Array<double> > d_cdfs;
+    Teuchos::ArrayRCP<Teuchos::Array<double> > d_cdfs;
+
+    // Local iteration matrix values.
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > d_h;
+
+    // Global columns.
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<Ordinal> > d_global_cols;
 
     // Local weights.
-    Teuchos::Array<double> d_weights;
+    Teuchos::ArrayRCP<double> d_weights;
 
     // Neighboring domain process ranks from which we will receive.
     Teuchos::Array<int> d_receive_ranks;
@@ -194,8 +204,8 @@ inline void AdjointDomain<Vector,Matrix>::processTransition(
     MCLS_REQUIRE( isLocalState(history.state()) );
 
     typename MapType::const_iterator index = 
-	d_row_indexer.find( history.state() );
-    MCLS_CHECK( index != d_row_indexer.end() );
+	d_row_indexer->find( history.state() );
+    MCLS_CHECK( index != d_row_indexer->end() );
 
     // Sample the row CDF to get a new state.
     history.setState( 
@@ -215,8 +225,8 @@ template<class Vector, class Matrix>
 inline bool AdjointDomain<Vector,Matrix>::isLocalState( 
     const Ordinal& state ) const
 {
-   typename MapType::const_iterator index = d_row_indexer.find( state );
-   return ( index != d_row_indexer.end() );
+   typename MapType::const_iterator index = d_row_indexer->find( state );
+   return ( index != d_row_indexer->end() );
 }
 
 //---------------------------------------------------------------------------//

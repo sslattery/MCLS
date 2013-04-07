@@ -51,6 +51,8 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 
+#include <boost/tr1/unordered_map.hpp>
+
 namespace MCLS
 {
 
@@ -73,6 +75,7 @@ class AdjointTally
     typedef typename VT::scalar_type                            Scalar;
     typedef History<Ordinal>                                    HistoryType;
     typedef Teuchos::Comm<int>                                  Comm;
+    typedef typename std::tr1::unordered_map<Ordinal,int>       MapType;
     //@}
 
     // Constructor.
@@ -117,6 +120,20 @@ class AdjointTally
     // Get the global tally rows in the overlap decomposition.
     Teuchos::Array<Ordinal> overlapRows() const;
 
+    // Set the iteration matrix with the tally.
+    void setIterationMatrix( 
+        const Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >& h,
+        const Teuchos::ArrayRCP<Teuchos::ArrayRCP<Ordinal> >& columns,
+        const Teuchos::RCP<MapType>& row_indexer );
+
+  private:
+
+    // Collision estimator tally.
+    inline void collisionEstimatorTally( const HistoryType& history );
+
+    // Expected value estimator tally.
+    inline void expectedValueEstimatorTally( const HistoryType& history );
+
   private:
 
     // Solution vector in operator decomposition.
@@ -130,6 +147,15 @@ class AdjointTally
 
     // Overlap to base decomposition vector export.
     VectorExport<Vector> d_export;
+
+    // Local (transposed) iteration matrix values.
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > d_h;
+
+    // Local iteration matrix global columns.
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<Ordinal> > d_columns;
+
+    // Iteration matrix local row indexer.
+    Teuchos::RCP<MapType> d_row_indexer;
 };
 
 //---------------------------------------------------------------------------//
@@ -145,12 +171,39 @@ inline void AdjointTally<Vector>::tallyHistory( const HistoryType& history )
     MCLS_REQUIRE( VT::isGlobalRow( *d_x, history.state() ) ||
                   VT::isGlobalRow( *d_x_overlap, history.state() ) );
 
-    if ( VT::isGlobalRow( *d_x, history.state() ) )
+    if ( COLLISION == d_estimator )
+    {
+        collisionEstimatorTally( history );
+    }
+
+    if ( EXPECTED_VALUE == d_estimator )
+    {
+        expectedValueEstimatorTally( history );
+    }
+
+    else
+    {
+	MCLS_INSIST( COLLISION == d_estimator || EXPECTED_VALUE == d_estimator,
+                     "Estimator type not supported!" );
+    }
+}
+
+//---------------------------------------------------------------------------//
+/*
+ * \brief Collision estimator tally.
+ */
+template<class Vector>
+inline void AdjointTally<Vector>::collisionEstimatorTally( 
+    const HistoryType& history )
+{
+    // The collision estimator tally sums the history's current weight into
+    // x(i) where the index i is the history's current state.
+    if ( VT::isGlobalRow(*d_x, history.state()) )
     {
 	VT::sumIntoGlobalValue( *d_x, history.state(), history.weight() );
     }
 
-    else if ( VT::isGlobalRow( *d_x_overlap, history.state() ) )
+    else if ( VT::isGlobalRow(*d_x_overlap, history.state()) )
     {
 	VT::sumIntoGlobalValue( 
 	    *d_x_overlap, history.state(), history.weight() );
@@ -158,9 +211,56 @@ inline void AdjointTally<Vector>::tallyHistory( const HistoryType& history )
 
     else
     {
-	MCLS_INSIST( VT::isGlobalRow( *d_x, history.state() ) ||
-                     VT::isGlobalRow( *d_x_overlap, history.state() ),
+	MCLS_INSIST( VT::isGlobalRow(*d_x, history.state()) ||
+                     VT::isGlobalRow(*d_x_overlap, history.state()),
                      "History state is not local to tally!" );
+    }
+}
+
+//---------------------------------------------------------------------------//
+/*
+ * \brief Expected value estimator tally.
+ */
+template<class Vector>
+inline void AdjointTally<Vector>::expectedValueEstimatorTally( 
+    const HistoryType& history )
+{
+    MCLS_REQUIRE( Teuchos::nonnull(d_h) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_columns) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_row_indexer) );
+
+    // Get the local row.
+    typename MapType::const_iterator index = 
+	d_row_indexer->find( history.state() );
+    MCLS_CHECK( index != d_row_indexer->end() );
+
+    // The expected value estimator sums the history's weight multiplied by
+    // the transpose iteration matrix value h^T_(i,j) into each tally state
+    // x(j) where the index i is the history's current state.
+    typename Teuchos::ArrayRCP<Ordinal>::const_iterator col_it;
+    Teuchos::ArrayRCP<double>::const_iterator val_it;
+    for ( col_it = d_columns[index->second].begin(),
+          val_it = d_h[index->second].begin();
+          col_it != d_columns[index->second].end();
+          ++col_it, ++val_it )
+    {
+        if ( VT::isGlobalRow(*d_x, *col_it) )
+        {
+            VT::sumIntoGlobalValue( *d_x, *col_it, history.weight()*(*val_it) );
+        }
+
+        else if ( VT::isGlobalRow(*d_x_overlap, *col_it) )
+        {
+            VT::sumIntoGlobalValue( 
+                *d_x_overlap, *col_it, history.weight()*(*val_it) );
+        }
+
+        else
+        {
+            MCLS_INSIST( VT::isGlobalRow(*d_x, *col_it) ||
+                         VT::isGlobalRow(*d_x_overlap, *col_it),
+                         "History state is not local to tally!" );
+        }
     }
 }
 

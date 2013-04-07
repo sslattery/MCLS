@@ -46,9 +46,11 @@
 #include "MCLS_MatrixTraits.hpp"
 #include "MCLS_Serializer.hpp"
 #include "MCLS_Preconditioner.hpp"
+#include "MCLS_Estimators.hpp"
 
 #include <Teuchos_as.hpp>
 #include <Teuchos_Array.hpp>
+#include <Teuchos_OrdinalTraits.hpp>
 
 #include <Tpetra_Distributor.hpp>
 
@@ -63,9 +65,17 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     const Teuchos::RCP<const Matrix>& A,
     const Teuchos::RCP<Vector>& x,
     const Teuchos::ParameterList& plist )
+    : d_row_indexer( Teuchos::rcp(new MapType()) )
 {
     MCLS_REQUIRE( !A.is_null() );
     MCLS_REQUIRE( !x.is_null() );
+
+    // Get the estimator type. User the collision estimator as the default.
+    d_estimator = COLLISION;
+    if ( plist.isParameter("Estimator Type") )
+    {
+        d_estimator = plist.get<int>("Estimator Type");
+    }
 
     // Generate the transpose of the operator.
     Teuchos::RCP<Matrix> A_T = MT::copyTranspose( *A );
@@ -89,14 +99,23 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 	MT::cloneVectorFromMatrixRows( *A_T_overlap );
 
     // Build the adjoint tally from the solution vector and the overlap.
-    d_tally = Teuchos::rcp( new TallyType(x, x_overlap) );
+    d_tally = Teuchos::rcp( new TallyType(x, x_overlap, d_estimator) );
 
     // Allocate space in local row data arrays.
     int num_rows = 
 	MT::getLocalNumRows( *A_T ) + MT::getLocalNumRows( *A_T_overlap );
-    d_columns.resize( num_rows );
-    d_cdfs.resize( num_rows );
-    d_weights.resize( num_rows );
+    d_columns = Teuchos::ArrayRCP<Teuchos::Array<Ordinal> >( num_rows );
+    d_cdfs = Teuchos::ArrayRCP<Teuchos::Array<double> >( num_rows );
+    d_weights = Teuchos::ArrayRCP<double>( num_rows );
+
+    // Allocate for the iteration matrix rows if using expected value
+    // estimator. 
+    if ( EXPECTED_VALUE == d_estimator )
+    {
+        d_h = Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( num_rows );
+        d_global_cols = 
+            Teuchos::ArrayRCP<Teuchos::ArrayRCP<Ordinal> >( num_rows );
+    }
 
     // Build the local CDFs and weights.
     addMatrixToDomain( A_T );
@@ -118,6 +137,13 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     distributor.createFromSends( d_send_ranks() );
     d_receive_ranks = distributor.getImagesFrom();
 
+    // If we're using the expected value estimator, provide the iteration
+    // matrix to the tally.
+    if ( EXPECTED_VALUE == d_estimator )
+    {
+        d_tally->setIterationMatrix( d_h, d_global_cols, d_row_indexer );
+    }
+
     MCLS_ENSURE( !d_tally.is_null() );
 }
 
@@ -134,6 +160,7 @@ template<class Vector, class Matrix>
 AdjointDomain<Vector,Matrix>::AdjointDomain( 
     const Teuchos::ArrayView<char>& buffer,
     const Teuchos::RCP<const Comm>& set_comm )
+    : d_row_indexer( Teuchos::rcp(new MapType()) )
 {
     Ordinal num_rows = 0;
     int num_receives = 0;
@@ -144,6 +171,10 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 
     Deserializer ds;
     ds.setBuffer( buffer() );
+
+    // Unpack the estimator type.
+    ds >> d_estimator;
+    MCLS_CHECK( d_estimator >= 0 );
 
     // Unpack the local number of rows.
     ds >> num_rows;
@@ -176,13 +207,13 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     for ( Ordinal n = 0; n < num_rows; ++n )
     {
 	ds >> global_row >> local_row;
-	d_row_indexer[global_row] = local_row;
+	(*d_row_indexer)[global_row] = local_row;
     }
 
     // Unpack the local columns.
-    d_columns.resize( num_rows );
+    d_columns = Teuchos::ArrayRCP<Teuchos::Array<Ordinal> >( num_rows );
     Ordinal num_cols = 0;
-    typename Teuchos::Array<Teuchos::Array<Ordinal> >::iterator column_it;
+    typename Teuchos::ArrayRCP<Teuchos::Array<Ordinal> >::iterator column_it;
     typename Teuchos::Array<Ordinal>::iterator index_it;
     for( column_it = d_columns.begin(); 
 	 column_it != d_columns.end(); 
@@ -202,9 +233,9 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     }
 
     // Unpack the local cdfs.
-    d_cdfs.resize( num_rows );
+    d_cdfs = Teuchos::ArrayRCP<Teuchos::Array<double> >( num_rows );
     Ordinal num_values = 0;
-    Teuchos::Array<Teuchos::Array<double> >::iterator cdf_it;
+    Teuchos::ArrayRCP<Teuchos::Array<double> >::iterator cdf_it;
     Teuchos::Array<double>::iterator value_it;
     for( cdf_it = d_cdfs.begin(); cdf_it != d_cdfs.end(); ++cdf_it )
     {
@@ -212,7 +243,7 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 	ds >> num_values;
 	cdf_it->resize( num_values );
 
-	// Unpack the column indices.
+	// Unpack the cdf values.
 	for ( value_it = cdf_it->begin();
 	      value_it != cdf_it->end();
 	      ++value_it )
@@ -221,9 +252,56 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 	}
     }
 
+    // If using the expected value estimator, unpack the local iteration
+    // matrix and global_cols.
+    if ( EXPECTED_VALUE == d_estimator )
+    {
+        // Unpack the iteration matrix values.
+        d_h = Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( num_rows );
+        num_values = 0;
+        Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >::iterator h_it;
+        Teuchos::ArrayRCP<double>::iterator h_val_it;
+        for( h_it = d_h.begin(); h_it != d_h.end(); ++h_it )
+        {
+            // Unpack the number of entries in the row h.
+            ds >> num_values;
+            *h_it = Teuchos::ArrayRCP<double>( num_values );
+
+            // Unpack the iteration matrix values.
+            for ( h_val_it = h_it->begin();
+                  h_val_it != h_it->end();
+                  ++h_val_it )
+            {
+                ds >> *h_val_it;
+            }
+        }
+
+        // Unpack the iteration matrix columns.
+        d_global_cols = Teuchos::ArrayRCP<Teuchos::ArrayRCP<Ordinal> >( num_rows );
+        num_values = 0;
+        typename Teuchos::ArrayRCP<Teuchos::ArrayRCP<Ordinal> >::iterator col_it;
+        typename Teuchos::ArrayRCP<Ordinal>::iterator col_val_it;
+        for( col_it = d_global_cols.begin(); 
+             col_it != d_global_cols.end(); 
+             ++col_it )
+        {
+            // Unpack the number of columns in the row h.
+            ds >> num_values;
+            *col_it = Teuchos::ArrayRCP<Ordinal>( num_values );
+
+            // Unpack the iteration matrix global columns.
+            for ( col_val_it = col_it->begin();
+                  col_val_it != col_it->end();
+                  ++col_val_it )
+            {
+                ds >> *col_val_it;
+            }
+        }
+    }
+
     // Unpack the local weights.
-    d_weights.resize( num_rows );
-    Teuchos::Array<double>::iterator weight_it;
+    d_weights = Teuchos::ArrayRCP<double>( num_rows );
+    Teuchos::ArrayRCP<double>::iterator weight_it;
     for ( weight_it = d_weights.begin();
 	  weight_it != d_weights.end();
 	  ++weight_it )
@@ -289,6 +367,13 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 	VT::createFromRows( set_comm, overlap_rows() );
     d_tally = Teuchos::rcp( new TallyType(base_x, overlap_x) );
 
+    // Set the iteration matrix data with the tally if using the expected
+    // value estimator.
+    if ( EXPECTED_VALUE == d_estimator )
+    {
+        d_tally->setIterationMatrix( d_h, d_global_cols, d_row_indexer );
+    }
+
     MCLS_ENSURE( !d_tally.is_null() );
 }
 
@@ -308,8 +393,11 @@ Teuchos::Array<char> AdjointDomain<Vector,Matrix>::pack() const
     Serializer s;
     s.setBuffer( buffer() );
 
+    // Pack the estimator type.
+    s << Teuchos::as<int>(d_estimator);
+
     // Pack the local number of rows.
-    s << Teuchos::as<Ordinal>(d_row_indexer.size());
+    s << Teuchos::as<Ordinal>(d_row_indexer->size());
 
     // Pack in the number of receive neighbors.
     s << Teuchos::as<int>(d_receive_ranks.size());
@@ -328,15 +416,16 @@ Teuchos::Array<char> AdjointDomain<Vector,Matrix>::pack() const
 
     // Pack up the local row indexer by key-value pairs.
     typename MapType::const_iterator row_index_it;
-    for ( row_index_it = d_row_indexer.begin();
-	  row_index_it != d_row_indexer.end();
+    for ( row_index_it = d_row_indexer->begin();
+	  row_index_it != d_row_indexer->end();
 	  ++row_index_it )
     {
 	s << row_index_it->first << row_index_it->second;
     }
 
     // Pack up the local columns.
-    typename Teuchos::Array<Teuchos::Array<Ordinal> >::const_iterator column_it;
+    typename Teuchos::ArrayRCP<Teuchos::Array<Ordinal> >::const_iterator 
+        column_it;
     typename Teuchos::Array<Ordinal>::const_iterator index_it;
     for( column_it = d_columns.begin(); 
 	 column_it != d_columns.end(); 
@@ -355,7 +444,7 @@ Teuchos::Array<char> AdjointDomain<Vector,Matrix>::pack() const
     }
 
     // Pack up the local cdfs.
-    Teuchos::Array<Teuchos::Array<double> >::const_iterator cdf_it;
+    Teuchos::ArrayRCP<Teuchos::Array<double> >::const_iterator cdf_it;
     Teuchos::Array<double>::const_iterator value_it;
     for( cdf_it = d_cdfs.begin(); cdf_it != d_cdfs.end(); ++cdf_it )
     {
@@ -371,8 +460,50 @@ Teuchos::Array<char> AdjointDomain<Vector,Matrix>::pack() const
 	}
     }
 
+    // If using the expected value estimator, pack the local iteration
+    // matrix and global_cols.
+    if ( EXPECTED_VALUE == d_estimator )
+    {
+        // Pack the iteration matrix values.
+        Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >::const_iterator h_it;
+        Teuchos::ArrayRCP<double>::const_iterator h_val_it;
+        for( h_it = d_h.begin(); h_it != d_h.end(); ++h_it )
+        {
+            // Pack the number of entries in the row h.
+            s << Teuchos::as<Ordinal>( h_it->size() );
+
+            // Pack the iteration matrix values.
+            for ( h_val_it = h_it->begin();
+                  h_val_it != h_it->end();
+                  ++h_val_it )
+            {
+                s << *h_val_it;
+            }
+        }
+
+        // Pack the iteration matrix columns.
+        typename Teuchos::ArrayRCP<Teuchos::ArrayRCP<Ordinal> >::const_iterator
+            col_it;
+        typename Teuchos::ArrayRCP<Ordinal>::const_iterator col_val_it;
+        for( col_it = d_global_cols.begin(); 
+             col_it != d_global_cols.end(); 
+             ++col_it )
+        {
+            // Pack the number of columns in the row h.
+            s << Teuchos::as<Ordinal>( col_it->size() );
+
+            // Pack the iteration matrix global columns.
+            for ( col_val_it = col_it->begin();
+                  col_val_it != col_it->end();
+                  ++col_val_it )
+            {
+                s << *col_val_it;
+            }
+        }
+    }
+
     // Pack up the local weights.
-    Teuchos::Array<double>::const_iterator weight_it;
+    Teuchos::ArrayRCP<double>::const_iterator weight_it;
     for ( weight_it = d_weights.begin();
 	  weight_it != d_weights.end();
 	  ++weight_it )
@@ -442,8 +573,11 @@ std::size_t AdjointDomain<Vector,Matrix>::getPackedBytes() const
     Serializer s;
     s.computeBufferSizeMode();
 
+    // Pack the estimator type.
+    s << Teuchos::as<int>(d_estimator);
+
     // Pack the local number of rows.
-    s << Teuchos::as<Ordinal>(d_row_indexer.size());
+    s << Teuchos::as<Ordinal>(d_row_indexer->size());
 
     // Pack in the number of receive neighbors.
     s << Teuchos::as<int>(d_receive_ranks.size());
@@ -462,15 +596,16 @@ std::size_t AdjointDomain<Vector,Matrix>::getPackedBytes() const
 
     // Pack up the local row indexer by key-value pairs.
     typename MapType::const_iterator row_index_it;
-    for ( row_index_it = d_row_indexer.begin();
-	  row_index_it != d_row_indexer.end();
+    for ( row_index_it = d_row_indexer->begin();
+	  row_index_it != d_row_indexer->end();
 	  ++row_index_it )
     {
 	s << row_index_it->first << row_index_it->second;
     }
 
     // Pack up the local columns.
-    typename Teuchos::Array<Teuchos::Array<Ordinal> >::const_iterator column_it;
+    typename Teuchos::ArrayRCP<Teuchos::Array<Ordinal> >::const_iterator 
+        column_it;
     typename Teuchos::Array<Ordinal>::const_iterator index_it;
     for( column_it = d_columns.begin(); 
 	 column_it != d_columns.end(); 
@@ -489,7 +624,7 @@ std::size_t AdjointDomain<Vector,Matrix>::getPackedBytes() const
     }
 
     // Pack up the local cdfs.
-    Teuchos::Array<Teuchos::Array<double> >::const_iterator cdf_it;
+    Teuchos::ArrayRCP<Teuchos::Array<double> >::const_iterator cdf_it;
     Teuchos::Array<double>::const_iterator value_it;
     for( cdf_it = d_cdfs.begin(); cdf_it != d_cdfs.end(); ++cdf_it )
     {
@@ -505,8 +640,50 @@ std::size_t AdjointDomain<Vector,Matrix>::getPackedBytes() const
 	}
     }
 
+    // If using the expected value estimator, pack the local iteration
+    // matrix and global_cols.
+    if ( EXPECTED_VALUE == d_estimator )
+    {
+        // Pack the iteration matrix values.
+        Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >::const_iterator h_it;
+        Teuchos::ArrayRCP<double>::const_iterator h_val_it;
+        for( h_it = d_h.begin(); h_it != d_h.end(); ++h_it )
+        {
+            // Pack the number of entries in the row h.
+            s << Teuchos::as<Ordinal>( h_it->size() );
+
+            // Pack the iteration matrix values.
+            for ( h_val_it = h_it->begin();
+                  h_val_it != h_it->end();
+                  ++h_val_it )
+            {
+                s << *h_val_it;
+            }
+        }
+
+        // Pack the iteration matrix columns.
+        typename Teuchos::ArrayRCP<Teuchos::ArrayRCP<Ordinal> >::const_iterator
+            col_it;
+        typename Teuchos::ArrayRCP<Ordinal>::const_iterator col_val_it;
+        for( col_it = d_global_cols.begin(); 
+             col_it != d_global_cols.end(); 
+             ++col_it )
+        {
+            // Pack the number of columns in the row h.
+            s << Teuchos::as<Ordinal>( col_it->size() );
+
+            // Pack the iteration matrix global columns.
+            for ( col_val_it = col_it->begin();
+                  col_val_it != col_it->end();
+                  ++col_val_it )
+            {
+                s << *col_val_it;
+            }
+        }
+    }
+
     // Pack up the local weights.
-    Teuchos::Array<double>::const_iterator weight_it;
+    Teuchos::ArrayRCP<double>::const_iterator weight_it;
     for ( weight_it = d_weights.begin();
 	  weight_it != d_weights.end();
 	  ++weight_it )
@@ -611,7 +788,7 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
 
     Ordinal local_num_rows = MT::getLocalNumRows( *A );
     Ordinal global_row = 0;
-    int offset = d_row_indexer.size();
+    int offset = d_row_indexer->size();
     int max_entries = MT::getGlobalMaxNumRowEntries( *A );
     std::size_t num_entries = 0;
     typename Teuchos::Array<Ordinal>::const_iterator diagonal_iterator;
@@ -621,7 +798,7 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
     {
 	// Add the global row id and local row id to the indexer.
 	global_row = MT::getGlobalRow(*A, i);
-	d_row_indexer[global_row] = i+offset;
+	(*d_row_indexer)[global_row] = i+offset;
 
 	// Allocate column and CDF memory for this row.
 	d_columns[i+offset].resize( max_entries );
@@ -652,6 +829,27 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
 		    Teuchos::as<typename Teuchos::Array<Ordinal>::const_iterator>(
 			d_columns[i+offset].begin()), diagonal_iterator) ] -= 1;
 	}
+
+        // If we're using the expected value estimator, copy the current CDF
+        // values into the transposed iteration matrix as they are currently
+        // equivalent. Also create the global columns from the local columns.
+        if ( EXPECTED_VALUE == d_estimator )
+        {
+            d_h[i+offset] = Teuchos::ArrayRCP<double>( num_entries );
+            std::copy( d_cdfs[i+offset].begin(), d_cdfs[i+offset].end(), 
+                       d_h[i+offset].begin() );
+
+            d_global_cols[i+offset] = Teuchos::ArrayRCP<Ordinal>( num_entries );
+            typename Teuchos::Array<Ordinal>::const_iterator local_it;
+            typename Teuchos::ArrayRCP<Ordinal>::iterator global_it;
+            for ( local_it = d_columns[i+offset].begin(),
+                 global_it = d_global_cols[i+offset].begin();
+                  local_it != d_columns[i+offset].end();
+                  ++local_it, ++global_it )
+            {
+                *global_it = MT::getGlobalCol( *A, *local_it );
+            }
+        }
 
 	// Accumulate the absolute value of the PDF values to get a
 	// non-normalized CDF for the row.

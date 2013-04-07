@@ -37,6 +37,7 @@ APPEND_SET(HEADERS
   MCLS_DomainTraits.hpp
   MCLS_DomainTransporter.hpp
   MCLS_DomainTransporter_impl.hpp
+  MCLS_Estimators.hpp
   MCLS_Events.hpp
   MCLS_GlobalRNG.hpp
   MCLS_History.hpp

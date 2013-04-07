@@ -207,6 +207,23 @@ AdjointTally<Vector>::overlapRows() const
 }
 
 //---------------------------------------------------------------------------//
+/*!
+ * \brief Set the iteration matrix with the tally
+ */
+template<class Vector>
+void AdjointTally<Vector>::setIterationMatrix( 
+    const Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >& h,
+    const Teuchos::ArrayRCP<Teuchos::ArrayRCP<Ordinal> >& columns,
+    const Teuchos::RCP<MapType>& row_indexer )
+{
+    MCLS_REQUIRE( EXPECTED_VALUE == d_estimator );
+    d_h = h;
+    d_columns = columns;
+    d_row_indexer = row_indexer;
+    MCLS_ENSURE( Teuchos::nonnull(d_row_indexer) );
+}
+
+//---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 

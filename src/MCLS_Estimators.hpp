@@ -41,6 +41,8 @@
 #ifndef MCLS_ESTIMATORS_HPP
 #define MCLS_ESTIMATORS_HPP
 
+#include <string>
+
 namespace MCLS
 {
 
