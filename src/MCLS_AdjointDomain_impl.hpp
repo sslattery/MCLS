@@ -142,6 +142,21 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     if ( EXPECTED_VALUE == d_estimator )
     {
         d_tally->setIterationMatrix( d_h, d_global_cols, d_row_indexer );
+
+        Teuchos::Array<Ordinal> boundary_rows( d_bnd_to_neighbor.size() );
+        typename Teuchos::Array<Ordinal>::iterator bnd_rows_it;
+        typename MapType::const_iterator map_it;
+        for ( bnd_rows_it = boundary_rows.begin(),
+                   map_it = d_bnd_to_neighbor.begin();
+              bnd_rows_it != boundary_rows.end();
+              ++bnd_rows_it, ++map_it )
+        {
+            *bnd_rows_it = map_it->first;
+        }
+
+        Teuchos::RCP<Vector> bnd_tally_vector = 
+            VT::createFromRows( MT::getComm(*A), boundary_rows() );
+        d_tally->setBoundaryVector( bnd_tally_vector );
     }
 
     MCLS_ENSURE( !d_tally.is_null() );
@@ -368,10 +383,25 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     d_tally = Teuchos::rcp( new TallyType(base_x, overlap_x) );
 
     // Set the iteration matrix data with the tally if using the expected
-    // value estimator.
+    // value estimator along with the boundary tally vector.
     if ( EXPECTED_VALUE == d_estimator )
     {
         d_tally->setIterationMatrix( d_h, d_global_cols, d_row_indexer );
+
+        Teuchos::Array<Ordinal> boundary_rows( d_bnd_to_neighbor.size() );
+        typename Teuchos::Array<Ordinal>::iterator bnd_rows_it;
+        typename MapType::const_iterator map_it;
+        for ( bnd_rows_it = boundary_rows.begin(),
+                   map_it = d_bnd_to_neighbor.begin();
+              bnd_rows_it != boundary_rows.end();
+              ++bnd_rows_it, ++map_it )
+        {
+            *bnd_rows_it = map_it->first;
+        }
+
+        Teuchos::RCP<Vector> bnd_tally_vector = 
+            VT::createFromRows( set_comm, boundary_rows() );
+        d_tally->setBoundaryVector( bnd_tally_vector );
     }
 
     MCLS_ENSURE( !d_tally.is_null() );

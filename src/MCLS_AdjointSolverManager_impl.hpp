@@ -43,6 +43,7 @@
 
 #include "MCLS_DBC.hpp"
 #include "MCLS_VectorExport.hpp"
+#include "MCLS_Estimators.hpp"
 
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_Ptr.hpp>
@@ -230,6 +231,13 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
     MCLS_REQUIRE( !d_msod_manager.is_null() );
     MCLS_REQUIRE( !d_mc_solver.is_null() );
 
+    // Get the estimator type.
+    int estimator = COLLISION;
+    if ( d_plist->isParameter("Estimator Type") )
+    {
+        estimator = d_plist->get<int>("Estimator Type");
+    }
+
     // Get the domain tally.
     Teuchos::RCP<TallyType> tally = 
 	d_msod_manager->localDomain()->domainTally();
@@ -264,15 +272,37 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
                              d_msod_manager->blockComm(),
                              d_msod_manager->numSets() );
 
-    // If we're right preconditioned then we have to recover the original
-    // solution on the primary set.
+    // Finalize.
     if ( d_primary_set )
     {
+        // If we used the expected value estimator we have to add the RHS into
+        // the solution.
+        if ( EXPECTED_VALUE == estimator )
+        {
+            if ( d_problem->isLeftPrec() )
+            {
+                Teuchos::RCP<Vector> temp = VT::clone( *d_problem->getRHS() );
+                d_problem->applyLeftPrec( *d_problem->getRHS(), *temp );
+                VT::update( *d_problem->getLHS(),
+                            Teuchos::ScalarTraits<Scalar>::one(),
+                            *temp,
+                            Teuchos::ScalarTraits<Scalar>::one() );
+            }
+            else
+            {
+                VT::update( *d_problem->getLHS(),
+                            Teuchos::ScalarTraits<Scalar>::one(),
+                            *d_problem->getRHS(),
+                            Teuchos::ScalarTraits<Scalar>::one() );
+            }
+        }
+
+        // If we're right preconditioned then we have to recover the original
+        // solution on the primary set.
 	if ( d_problem->isRightPrec() )
 	{
             Teuchos::RCP<Vector> temp = VT::clone(*d_problem->getLHS());
-	    d_problem->applyRightPrec( *d_problem->getLHS(),
-                                       *temp );
+	    d_problem->applyRightPrec( *d_problem->getLHS(), *temp );
             VT::update( *d_problem->getLHS(),
                         Teuchos::ScalarTraits<Scalar>::zero(),
                         *temp,

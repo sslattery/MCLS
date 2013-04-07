@@ -75,6 +75,11 @@ template<class Vector>
 void AdjointTally<Vector>::combineSetTallies()
 {
     d_export.doExportAdd();
+
+    if ( EXPECTED_VALUE == d_estimator )
+    {
+        d_export_boundary->doExportAdd();
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -125,6 +130,27 @@ void AdjointTally<Vector>::setBaseVector( const Teuchos::RCP<Vector>& x_base )
     MCLS_REQUIRE( Teuchos::nonnull(x_base) );
     d_x = x_base;
     d_export = VectorExport<Vector>( d_x_overlap, d_x );
+
+    if ( EXPECTED_VALUE == d_estimator )
+    {
+        MCLS_CHECK( Teuchos::nonnull(d_x_boundary) );
+        d_export_boundary = Teuchos::rcp( 
+            new VectorExport<Vector>( d_x_boundary, d_x ) );
+    }
+}
+
+//---------------------------------------------------------------------------//
+/*
+ * \brief Set the boundary tally vector.
+ */
+template<class Vector>
+void AdjointTally<Vector>::setBoundaryVector( const Teuchos::RCP<Vector>& x_boundary )
+{
+    MCLS_REQUIRE( EXPECTED_VALUE == d_estimator );
+    MCLS_REQUIRE( Teuchos::nonnull(x_boundary) );
+    d_x_boundary = x_boundary;
+    d_export_boundary = Teuchos::rcp( 
+        new VectorExport<Vector>( d_x_boundary, d_x ) );
 }
 
 //---------------------------------------------------------------------------//
@@ -136,6 +162,11 @@ void AdjointTally<Vector>::zeroOut()
 {
     VT::putScalar( *d_x, Teuchos::ScalarTraits<Scalar>::zero() );
     VT::putScalar( *d_x_overlap, Teuchos::ScalarTraits<Scalar>::zero() );
+
+    if ( EXPECTED_VALUE == d_estimator )
+    {
+        VT::putScalar( *d_x_boundary, Teuchos::ScalarTraits<Scalar>::zero() );
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -217,10 +248,12 @@ void AdjointTally<Vector>::setIterationMatrix(
     const Teuchos::RCP<MapType>& row_indexer )
 {
     MCLS_REQUIRE( EXPECTED_VALUE == d_estimator );
+    MCLS_REQUIRE( Teuchos::nonnull(h) );
+    MCLS_REQUIRE( Teuchos::nonnull(columns) );
+    MCLS_REQUIRE( Teuchos::nonnull(row_indexer) );
     d_h = h;
     d_columns = columns;
     d_row_indexer = row_indexer;
-    MCLS_ENSURE( Teuchos::nonnull(d_row_indexer) );
 }
 
 //---------------------------------------------------------------------------//
