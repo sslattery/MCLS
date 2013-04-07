@@ -55,15 +55,11 @@ namespace MCLS
  */
 template<class Vector>
 AdjointTally<Vector>::AdjointTally( const Teuchos::RCP<Vector>& x, 
-				    const Teuchos::RCP<Vector>& x_overlap,
                                     const int estimator )
     : d_x( x )
-    , d_x_overlap( x_overlap )
     , d_estimator( estimator )
-    , d_export( d_x_overlap, d_x )
 { 
     MCLS_ENSURE( !d_x.is_null() );
-    MCLS_ENSURE( !d_x_overlap.is_null() );
 }
 
 //---------------------------------------------------------------------------//
@@ -74,11 +70,20 @@ AdjointTally<Vector>::AdjointTally( const Teuchos::RCP<Vector>& x,
 template<class Vector>
 void AdjointTally<Vector>::combineSetTallies()
 {
-    d_export.doExportAdd();
-
-    if ( EXPECTED_VALUE == d_estimator )
+    if ( COLLISION == d_estimator )
     {
-        d_export_boundary->doExportAdd();
+        d_export->doExportAdd();
+    }
+
+    else if ( EXPECTED_VALUE == d_estimator )
+    {
+        d_export_im->doExportInsert();
+    }
+
+    else
+    {
+	MCLS_INSIST( COLLISION == d_estimator || EXPECTED_VALUE == d_estimator,
+                     "Estimator type not supported!" );
     }
 }
 
@@ -91,6 +96,7 @@ template<class Vector>
 void AdjointTally<Vector>::combineBlockTallies(
     const Teuchos::RCP<const Comm>& block_comm, const int num_sets )
 {
+    MCLS_REQUIRE( Teuchos::nonnull(d_x) );
     MCLS_REQUIRE( !block_comm.is_null() );
 
     Teuchos::ArrayRCP<const Scalar> const_tally_view = VT::view( *d_x );
@@ -129,28 +135,56 @@ void AdjointTally<Vector>::setBaseVector( const Teuchos::RCP<Vector>& x_base )
 {
     MCLS_REQUIRE( Teuchos::nonnull(x_base) );
     d_x = x_base;
-    d_export = VectorExport<Vector>( d_x_overlap, d_x );
 
-    if ( EXPECTED_VALUE == d_estimator )
+    if ( COLLISION == d_estimator )
     {
-        MCLS_CHECK( Teuchos::nonnull(d_x_boundary) );
-        d_export_boundary = Teuchos::rcp( 
-            new VectorExport<Vector>( d_x_boundary, d_x ) );
+        d_export = Teuchos::rcp(
+            new VectorExport<Vector>(d_x_overlap, d_x) );
+    }
+
+    else if ( EXPECTED_VALUE == d_estimator )
+    {
+        MCLS_CHECK( Teuchos::nonnull(d_x_im) );
+        d_export_im = Teuchos::rcp( 
+            new VectorExport<Vector>( d_x_im, d_x ) );
+    }
+
+    else
+    {
+	MCLS_INSIST( COLLISION == d_estimator || EXPECTED_VALUE == d_estimator,
+                     "Estimator type not supported!" );
     }
 }
 
 //---------------------------------------------------------------------------//
 /*
- * \brief Set the boundary tally vector.
+ * \brief Set the overlap tally vector.
  */
 template<class Vector>
-void AdjointTally<Vector>::setBoundaryVector( const Teuchos::RCP<Vector>& x_boundary )
+void AdjointTally<Vector>::setOverlapVector( const Teuchos::RCP<Vector>& x_overlap )
 {
+    MCLS_REQUIRE( Teuchos::nonnull(d_x) );
+    MCLS_REQUIRE( Teuchos::nonnull(x_overlap) );
+    d_x_overlap = x_overlap;
+    if ( COLLISION == d_estimator )
+    {
+        d_export = Teuchos::rcp( new VectorExport<Vector>(d_x_overlap, d_x) );
+    }
+}
+
+//---------------------------------------------------------------------------//
+/*
+ * \brief Set the iteration matrix tally vector.
+ */
+template<class Vector>
+void AdjointTally<Vector>::setIterationMatrixVector( 
+    const Teuchos::RCP<Vector>& x_im )
+{
+    MCLS_REQUIRE( Teuchos::nonnull(d_x) );
     MCLS_REQUIRE( EXPECTED_VALUE == d_estimator );
-    MCLS_REQUIRE( Teuchos::nonnull(x_boundary) );
-    d_x_boundary = x_boundary;
-    d_export_boundary = Teuchos::rcp( 
-        new VectorExport<Vector>( d_x_boundary, d_x ) );
+    MCLS_REQUIRE( Teuchos::nonnull(x_im) );
+    d_x_im = x_im;
+    d_export_im = Teuchos::rcp( new VectorExport<Vector>(d_x_im, d_x) );
 }
 
 //---------------------------------------------------------------------------//
@@ -161,11 +195,21 @@ template<class Vector>
 void AdjointTally<Vector>::zeroOut()
 {
     VT::putScalar( *d_x, Teuchos::ScalarTraits<Scalar>::zero() );
-    VT::putScalar( *d_x_overlap, Teuchos::ScalarTraits<Scalar>::zero() );
 
-    if ( EXPECTED_VALUE == d_estimator )
+    if ( COLLISION == d_estimator )
     {
-        VT::putScalar( *d_x_boundary, Teuchos::ScalarTraits<Scalar>::zero() );
+        VT::putScalar( *d_x_overlap, Teuchos::ScalarTraits<Scalar>::zero() );
+    }
+
+    else if ( EXPECTED_VALUE == d_estimator )
+    {
+        VT::putScalar( *d_x_im, Teuchos::ScalarTraits<Scalar>::zero() );
+    }
+
+    else
+    {
+	MCLS_INSIST( COLLISION == d_estimator || EXPECTED_VALUE == d_estimator,
+                     "Estimator type not supported!" );
     }
 }
 
@@ -177,6 +221,7 @@ template<class Vector>
 typename AdjointTally<Vector>::Ordinal 
 AdjointTally<Vector>::numBaseRows() const
 {
+    MCLS_CHECK( Teuchos::nonnull(d_x) );
     return VT::getLocalLength( *d_x );
 }
 
@@ -188,6 +233,7 @@ template<class Vector>
 typename AdjointTally<Vector>::Ordinal 
 AdjointTally<Vector>::numOverlapRows() const
 {
+    MCLS_CHECK( Teuchos::nonnull(d_x_overlap) );
     return VT::getLocalLength( *d_x_overlap );
 }
 
@@ -199,6 +245,8 @@ template<class Vector>
 Teuchos::Array<typename AdjointTally<Vector>::Ordinal>
 AdjointTally<Vector>::baseRows() const
 {
+    MCLS_CHECK( Teuchos::nonnull(d_x) );
+
     Teuchos::Array<Ordinal> base_rows( VT::getLocalLength(*d_x) );
     typename Teuchos::Array<Ordinal>::iterator row_it;
     typename VT::local_ordinal_type local_row = 
@@ -222,6 +270,8 @@ template<class Vector>
 Teuchos::Array<typename AdjointTally<Vector>::Ordinal>
 AdjointTally<Vector>::overlapRows() const
 {
+    MCLS_CHECK( Teuchos::nonnull(d_x_overlap) );
+
     Teuchos::Array<Ordinal> overlap_rows( VT::getLocalLength(*d_x_overlap) );
     typename Teuchos::Array<Ordinal>::iterator row_it;
     typename VT::local_ordinal_type local_row = 
@@ -243,8 +293,8 @@ AdjointTally<Vector>::overlapRows() const
  */
 template<class Vector>
 void AdjointTally<Vector>::setIterationMatrix( 
-    const Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >& h,
-    const Teuchos::ArrayRCP<Teuchos::ArrayRCP<Ordinal> >& columns,
+    const Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<double> > >& h,
+    const Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > >& columns,
     const Teuchos::RCP<MapType>& row_indexer )
 {
     MCLS_REQUIRE( EXPECTED_VALUE == d_estimator );

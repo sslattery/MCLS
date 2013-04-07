@@ -153,6 +153,9 @@ class AdjointDomain
     void buildBoundary( const Teuchos::RCP<const Matrix>& A,
 			const Teuchos::RCP<const Matrix>& base_A );
 
+    // Build the iteration matrix.
+    void buildIterationMatrix( const Teuchos::RCP<const Matrix>& A );
+
   private:
 
     // Monte Carlo estimator type.
@@ -161,20 +164,20 @@ class AdjointDomain
     // Domain tally.
     Teuchos::RCP<TallyType> d_tally;
 
-    // Local row indexer.
+    // Global-to-local row indexer.
     Teuchos::RCP<MapType> d_row_indexer;
 
-    // Local columns.
+    // Local CDF columns.
     Teuchos::ArrayRCP<Teuchos::Array<Ordinal> > d_columns;
 
-    // Local CDFs.
+    // Local CDF values.
     Teuchos::ArrayRCP<Teuchos::Array<double> > d_cdfs;
 
     // Local iteration matrix values.
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > d_h;
+    Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<double> > > d_h;
 
-    // Global columns.
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<Ordinal> > d_global_cols;
+    // Local iteration matrix columns.
+    Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > > d_im_cols;
 
     // Local weights.
     Teuchos::ArrayRCP<double> d_weights;

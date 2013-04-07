@@ -61,6 +61,8 @@
 #include <Epetra_Vector.h>
 #include <Epetra_RowMatrix.h>
 #include <Epetra_CrsMatrix.h>
+#include <Epetra_Map.h>
+#include <Epetra_Import.h>
 
 #ifdef HAVE_MPI
 #include <Teuchos_DefaultMpiComm.hpp>
@@ -100,6 +102,29 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
     { 
 	return Teuchos::rcp( 
 	    new Epetra_CrsMatrix(Copy,matrix.RowMatrixRowMap(),0) );
+    }
+
+    /*!
+     * \brief Create a reference-counted pointer to a new matrix filled with
+     * values exported from a given matrix with a parallel distribution as
+     * given by the input rows.
+     */
+    static Teuchos::RCP<matrix_type> exportFromRows( 
+        const Teuchos::RCP<const matrix_type>& matrix,
+        const Teuchos::ArrayView<const global_ordinal_type>& global_rows )
+    { 
+	Epetra_Map target_map( -1, 
+                               Teuchos::as<int>(global_rows.size()),
+                               global_rows.getRawPtr(),
+                               0,
+                               matrix->Comm() );
+
+        Epetra_Import importer( matrix->RowMatrixRowMap(), target_map );
+
+        return Teuchos::rcp( 
+            new Epetra_CrsMatrix( 
+                *Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(matrix), 
+                importer) );
     }
 
     /*!
@@ -163,6 +188,14 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
     }
 
     /*!
+     * \brief Get the local number of cols.
+     */
+    static local_ordinal_type getLocalNumCols( const matrix_type& matrix )
+    {
+	return Teuchos::as<local_ordinal_type>( matrix.NumMyCols() );
+    }
+
+    /*!
      * \brief Get the maximum number of entries in a row globally.
      */
     static global_ordinal_type getGlobalMaxNumRowEntries( const matrix_type& matrix )
@@ -221,10 +254,36 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
 	const Teuchos::ArrayView<int>& ranks )
     {
 	Teuchos::Array<local_ordinal_type> local_rows( global_rows.size() );
-	matrix.RowMatrixRowMap().RemoteIDList( global_rows.size(),
-					       global_rows.getRawPtr(),
-					       ranks.getRawPtr(),
-					       local_rows.getRawPtr() );
+	int error = matrix.RowMatrixRowMap().RemoteIDList( 
+            global_rows.size(),
+            global_rows.getRawPtr(),
+            ranks.getRawPtr(),
+            local_rows.getRawPtr() );
+        MCLS_CHECK( 0 == error );
+    }
+
+    /*!
+     * \brief Get the global rows owned by this proc.
+     */
+    static void getMyGlobalRows( 
+	const matrix_type& matrix,
+	const Teuchos::ArrayView<global_ordinal_type>& global_rows )
+    {
+        int error = matrix.RowMatrixRowMap().MyGlobalElements( 
+            global_rows.getRawPtr() );
+        MCLS_CHECK( 0 == error );
+    }
+
+    /*!
+     * \brief Get the global columns owned by this proc.
+     */
+    static void getMyGlobalCols( 
+	const matrix_type& matrix,
+	const Teuchos::ArrayView<global_ordinal_type>& global_cols )
+    {
+        int error = matrix.RowMatrixColMap().MyGlobalElements( 
+            global_cols.getRawPtr() );
+        MCLS_CHECK( 0 == error );
     }
 
     /*!

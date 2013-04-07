@@ -99,6 +99,19 @@ class MatrixTraits
     }
 
     /*!
+     * \brief Create a reference-counted pointer to a new matrix filled with
+     * values exported from a given matrix with a parallel distribution as
+     * given by the input rows.
+     */
+    static Teuchos::RCP<Matrix> exportFromRows( 
+        const Teuchos::RCP<const Matrix>& matrix,
+        const Teuchos::ArrayView<const global_ordinal_type>& global_rows )
+    { 
+	UndefinedMatrixTraits<Vector,Matrix>::notDefined(); 
+	return Teuchos::null; 
+    }
+
+    /*!
      * \brief Create a reference-counted pointer to a new empty vector from a
      * matrix to give the vector the same parallel distribution as the
      * matrix parallel row distribution.
@@ -145,6 +158,15 @@ class MatrixTraits
      * \brief Get the local number of rows.
      */
     static local_ordinal_type getLocalNumRows( const Matrix& matrix )
+    {
+	UndefinedMatrixTraits<Vector,Matrix>::notDefined();
+	return 0; 
+    }
+
+    /*!
+     * \brief Get the local number of cols.
+     */
+    static local_ordinal_type getLocalNumCols( const Matrix& matrix )
     {
 	UndefinedMatrixTraits<Vector,Matrix>::notDefined();
 	return 0; 
@@ -206,6 +228,28 @@ class MatrixTraits
 	const Matrix& matrix,
 	const Teuchos::ArrayView<global_ordinal_type>& global_rows,
 	const Teuchos::ArrayView<int>& ranks )
+    {
+	UndefinedMatrixTraits<Vector,Matrix>::notDefined(); 
+	return 0; 
+    }
+
+    /*!
+     * \brief Get the global rows owned by this proc.
+     */
+    static void getMyGlobalRows( 
+	const Matrix& matrix,
+	const Teuchos::ArrayView<global_ordinal_type>& global_rows )
+    {
+	UndefinedMatrixTraits<Vector,Matrix>::notDefined(); 
+	return 0; 
+    }
+
+    /*!
+     * \brief Get the global columns owned by this proc.
+     */
+    static void getMyGlobalCols( 
+	const Matrix& matrix,
+	const Teuchos::ArrayView<global_ordinal_type>& global_cols )
     {
 	UndefinedMatrixTraits<Vector,Matrix>::notDefined(); 
 	return 0; 

@@ -95,6 +95,25 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
     }
 
     /*!
+     * \brief Create a reference-counted pointer to a new matrix filled with
+     * values exported from a given matrix with a parallel distribution as
+     * given by the input rows.
+     */
+    static Teuchos::RCP<matrix_type> exportFromRows( 
+        const Teuchos::RCP<const matrix_type>& matrix,
+        const Teuchos::ArrayView<const global_ordinal_type>& global_rows )
+    { 
+        Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type> > 
+	    target_map = 
+	    Tpetra::createNonContigMap<local_ordinal_type,global_ordinal_type>( 
+		global_rows(), matrix->getComm() );
+
+        Tpetra::Import<LO,GO> importer( matrix->getRowMap(), target_map );
+
+        return TMH::importAndFillCompleteMatrix( *matrix, importer );        
+    }
+
+    /*!
      * \brief Create a reference-counted pointer to a new empty vector from a
      * matrix to give the vector the same parallel distribution as the
      * matrix parallel row distribution.
@@ -140,6 +159,14 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
     static LO getLocalNumRows( const matrix_type& matrix )
     {
 	return Teuchos::as<LO>( matrix.getRowMap()->getNodeNumElements() );
+    }
+
+    /*!
+     * \brief Get the local number of cols.
+     */
+    static LO getLocalNumCols( const matrix_type& matrix )
+    {
+	return Teuchos::as<LO>( matrix.getColMap()->getNodeNumElements() );
     }
 
     /*!
@@ -197,6 +224,30 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
 	const Teuchos::ArrayView<int>& ranks )
     {
 	matrix.getRowMap()->getRemoteIndexList( global_rows, ranks );
+    }
+
+    /*!
+     * \brief Get the global rows owned by this proc.
+     */
+    static void getMyGlobalRows( 
+	const matrix_type& matrix,
+	const Teuchos::ArrayView<global_ordinal_type>& global_rows )
+    {
+        Teuchos::ArrayView<const global_ordinal_type> rows =
+            matrix.getRowMap()->getNodeElementList();
+        std::copy( rows.begin(), rows.end(), global_rows.begin() );
+    }
+
+    /*!
+     * \brief Get the global columns owned by this proc.
+     */
+    static void getMyGlobalCols( 
+	const matrix_type& matrix,
+	const Teuchos::ArrayView<global_ordinal_type>& global_cols )
+    {
+        Teuchos::ArrayView<const global_ordinal_type> cols =
+            matrix.getColMap()->getNodeElementList();
+        std::copy( cols.begin(), cols.end(), global_cols.begin() );
     }
 
     /*!
