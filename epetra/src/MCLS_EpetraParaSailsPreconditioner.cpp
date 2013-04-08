@@ -32,13 +32,13 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_EpetraPointJacobiPreconditioner.cpp
+ * \file MCLS_EpetraParaSailsPreconditioner.cpp
  * \author Stuart R. Slattery
- * \brief Point Jacobi preconditioning for Epetra.
+ * \brief ParaSails preconditioning for Epetra.
  */
 //---------------------------------------------------------------------------//
 
-#include "MCLS_EpetraPointJacobiPreconditioner.hpp"
+#include "MCLS_EpetraParaSailsPreconditioner.hpp"
 #include <MCLS_DBC.hpp>
 
 #include <Teuchos_Array.hpp>
@@ -47,17 +47,39 @@
 
 #include <Epetra_Vector.h>
 
+#include <ParaSails.h>
+#include <Matrix.h>
+
+#ifdef HAVE_MPI
+#include <Epetra_MpiComm.h>
+#endif
+
 namespace MCLS
 {
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Constructor.
+ */
+EpetraParaSailsPreconditioner::EpetraParaSailsPreconditioner(
+    const Teuchos::RCP<Teuchos::ParameterList>& params )
+    : d_plist( params )
+{
+    MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
+}
 
 //---------------------------------------------------------------------------//
 /*! 
  * \brief Get the valid parameters for this preconditioner.
  */
 Teuchos::RCP<const Teuchos::ParameterList> 
-EpetraPointJacobiPreconditioner::getValidParameters() const
+EpetraParaSailsPreconditioner::getValidParameters() const
 {
-    return Teuchos::parameterList();
+    Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::parameterList();
+    d_plist->set<double>("ParaSails: Threshold", 1.0);
+    d_plist->set<double>("ParaSails: Number of Levels", 1.0);
+    d_plist->set<double>("ParaSails: Filter", 1.0);
+    return plist;
 }
 
 //---------------------------------------------------------------------------//
@@ -65,10 +87,9 @@ EpetraPointJacobiPreconditioner::getValidParameters() const
  * \brief Get the current parameters being used for this preconditioner.
  */
 Teuchos::RCP<const Teuchos::ParameterList> 
-EpetraPointJacobiPreconditioner::getCurrentParameters() const
+EpetraParaSailsPreconditioner::getCurrentParameters() const
 {
-    // This preconditioner has no parameters.
-    return Teuchos::parameterList();
+    return d_plist;
 }
 
 //---------------------------------------------------------------------------//
@@ -76,17 +97,18 @@ EpetraPointJacobiPreconditioner::getCurrentParameters() const
  * \brief Set the parameters for the preconditioner. The preconditioner will
  * modify this list with default parameters that are not defined. 
  */
-void EpetraPointJacobiPreconditioner::setParameters( 
+void EpetraParaSailsPreconditioner::setParameters( 
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
-    // This preconditioner has no parameters.
+    MCLS_REQUIRE( Teuchos::nonnull(params) );
+    d_plist = params;
 }
 
 //---------------------------------------------------------------------------//
 /*! 
  * \brief Set the operator with the preconditioner.
  */
-void EpetraPointJacobiPreconditioner::setOperator( 
+void EpetraParaSailsPreconditioner::setOperator( 
     const Teuchos::RCP<const matrix_type>& A )
 {
     MCLS_REQUIRE( Teuchos::nonnull(A) );
@@ -97,39 +119,96 @@ void EpetraPointJacobiPreconditioner::setOperator(
 /*! 
  * \brief Build the preconditioner.
  */
-void EpetraPointJacobiPreconditioner::buildPreconditioner()
+void EpetraParaSailsPreconditioner::buildPreconditioner()
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_A) );
     MCLS_REQUIRE( d_A->Filled() );
 
-    // Create the preconditioner.
-    d_preconditioner = Teuchos::rcp( 
-	new Epetra_CrsMatrix(Copy,d_A->RowMatrixRowMap(),1,true) );
-	    
-    // Compute the inverse of the diagonal.
-    Teuchos::RCP<Epetra_Vector> diagonal = 
-	Teuchos::rcp( new Epetra_Vector( d_A->RowMatrixRowMap() ) );
+    // Get the ParaSails parameters.
+    double threshold = d_plist->get<double>("ParaSails: Threshold");
+    double num_levels = d_plist->get<double>("ParaSails: Number of Levels");
+    double filter = d_plist->get<double>("ParaSails: Filter");
 
-    int error = d_A->ExtractDiagonalCopy( *diagonal );
-    MCLS_CHECK( 0 == error );
-    error = diagonal->Reciprocal( *diagonal );
-    MCLS_CHECK( 0 == error );
+    // Extract the raw MPI handle.
+    Teuchos::RCP<const Epetra_Comm> epetra_comm = 
+        Teuchos::rcp( &(d_A->Comm()), false );
+    Teuchos::RCP<const Epetra_MpiComm> mpi_epetra_comm =
+        Teuchos::rcp_dynamic_cast<const Epetra_MpiComm>( epetra_comm );
+    MPI_Comm raw_mpi_comm = mpi_epetra_comm->Comm();
 
-    // Build a matrix from the diagonal vector.
-    Teuchos::Array<int> rows( d_preconditioner->RowMap().NumMyElements() );
-    d_preconditioner->RowMap().MyGlobalElements( rows.getRawPtr() );
-    Teuchos::Array<int>::const_iterator row_it;
-    Teuchos::Array<int> col(1);
+    // Create a ParaSails matrix from the operator. Right now we'll assume the
+    // global indices are contiguous.
+    Teuchos::ArrayRCP<double> values( d_A->MaxNumEntries() );
+    Teuchos::ArrayRCP<int> indices( d_A->MaxNumEntries() );
+    int error = 0;
+    int num_entries = 0;
     int local_row = 0;
-    for ( row_it = rows.begin(); row_it != rows.end(); ++row_it )
+    int beg_row = d_A->RowMatrixRowMap().MinMyGID();
+    int end_row = d_A->RowMatrixRowMap().MaxMyGID();
+    Teuchos::ArrayRCP<int>::iterator col_it;
+    Matrix* epetra_matrix = MatrixCreate( raw_mpi_comm, beg_row,end_row );
+    for ( int i = beg_row; i < end_row+1; ++i )
     {
-	col[0] = *row_it;
-	error = d_preconditioner->InsertGlobalValues( 
-	    *row_it, 1, &(*diagonal)[local_row], col.getRawPtr() );
+        // Get the Epetra row.
+	MCLS_CHECK( d_A->RowMatrixRowMap().MyGID(i) );
+	local_row = d_A->RowMatrixRowMap().LID(i);
+	error = d_A->ExtractMyRowCopy( local_row, 
+                                       Teuchos::as<int>(values.size()), 
+                                       num_entries,
+                                       values.getRawPtr(), 
+                                       indices.getRawPtr() );
         MCLS_CHECK( 0 == error );
-	++local_row;
-    }
+	for ( col_it = indices.begin(); 
+              col_it != indices.begin()+num_entries; 
+              ++col_it )
+	{
+	    *col_it = d_A->RowMatrixColMap().GID(*col_it);
+	}
 
+        // Insert it into the Epetra ParaSails matrix.
+        MatrixSetRow( epetra_matrix, i, num_entries, 
+                      indices.getRawPtr(), values.getRawPtr() );
+    }
+    values.clear();
+    indices.clear();
+
+    // Fill Complete the Epetra ParaSails matrix.
+    MatrixComplete( epetra_matrix );
+
+    // Create a ParaSails preconditioner.
+    ParaSails* parasails = ParaSailsCreate( raw_mpi_comm, beg_row, end_row, 0 );
+    ParaSailsSetupPattern( parasails, epetra_matrix, threshold, num_levels );
+    ParaSailsSetupValues( parasails, epetra_matrix, filter );
+
+    // Destroy the ParaSails copy of the operator.
+    MatrixDestroy( epetra_matrix );
+
+    // Extract the ParaSails preconditioner into the Epetra preconditioner.
+    d_preconditioner = Teuchos::rcp( 
+	new Epetra_CrsMatrix(Copy,d_A->RowMatrixRowMap(),0) );
+    Teuchos::ArrayView<int> mlens( parasails->M->lens, end_row-beg_row+1 );
+    int max_m_entries = *std::max( mlens.begin(), mlens.end() );
+    int num_m_entries = 0;
+    int* m_indices_ptr;
+    double* m_values_ptr;
+    Teuchos::ArrayRCP<double> m_values( max_m_entries );
+    Teuchos::ArrayRCP<int> m_indices( max_m_entries );
+    for ( int i = beg_row; i < end_row+1; ++i )
+    {
+        m_indices_ptr = m_indices.getRawPtr();
+        m_values_ptr = m_values.getRawPtr();
+        MatrixGetRow( parasails->M, i, &num_m_entries, 
+                      &m_indices_ptr, &m_values_ptr );
+
+        error = d_preconditioner->InsertGlobalValues(
+            i, num_m_entries, m_values.getRawPtr(), m_indices.getRawPtr() );
+        MCLS_CHECK( 0 == error );
+    }
+	    
+    // ParaSails cleanup.
+    ParaSailsDestroy( parasails );
+
+    // Finalize.
     error = d_preconditioner->FillComplete();
     MCLS_CHECK( 0 == error );
 	
@@ -142,5 +221,5 @@ void EpetraPointJacobiPreconditioner::buildPreconditioner()
 } // end namespace MCLS
 
 //---------------------------------------------------------------------------//
-// end MCLS_EpetraPointJacobiPreconditioner.cpp
+// end MCLS_EpetraParaSailsPreconditioner.cpp
 //---------------------------------------------------------------------------//

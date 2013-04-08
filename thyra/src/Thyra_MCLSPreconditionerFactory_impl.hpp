@@ -33,6 +33,7 @@
 #include <MCLS_EpetraPointJacobiPreconditioner.hpp>
 #include <MCLS_EpetraBlockJacobiPreconditioner.hpp>
 #include <MCLS_EpetraILUTPreconditioner.hpp>
+#include <MCLS_EpetraParaSailsPreconditioner.hpp>
 
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_implicit_cast.hpp"
@@ -78,6 +79,10 @@ const std::string MCLSPreconditionerFactory<Scalar>::BlockJacobi_name =
 template<class Scalar>
 const std::string MCLSPreconditionerFactory<Scalar>::ILUT_name = 
     "ILUT";
+
+template<class Scalar>
+const std::string MCLSPreconditionerFactory<Scalar>::ParaSails_name = 
+    "ParaSails";
 
 // Constructors/initializers/accessors
 
@@ -253,6 +258,34 @@ void MCLSPreconditionerFactory<Scalar>::initializePrec(
             defaultPrec->initializeLeftRight( thyra_lop, thyra_rop );
 	}
 
+        // ParaSails.
+	else if ( d_prec_type == PREC_TYPE_PARASAILS )
+	{
+            // Setup.
+	    Teuchos::ParameterList &precTypesPL = 
+		d_plist->sublist(PrecTypes_name);
+	    Teuchos::ParameterList &parasailsPL = 
+		precTypesPL.sublist(ParaSails_name);
+	    Teuchos::RCP<Teuchos::ParameterList> prec_plist = 
+		Teuchos::rcp( &parasailsPL, false );
+            
+            // Build.
+	    mcls_prec = Teuchos::rcp( 
+		new MCLS::EpetraParaSailsPreconditioner(prec_plist) );
+            mcls_prec->setOperator( getEpetraRowMatrix(*fwdOpSrc) );
+            mcls_prec->buildPreconditioner();
+
+            // Right
+            Teuchos::RCP<EpetraLinearOp> epetra_rop = 
+                Teuchos::rcp( new EpetraLinearOp() );
+            epetra_rop->initialize( 
+                Teuchos::rcp_const_cast<Epetra_RowMatrix>(
+                    mcls_prec->getRightPreconditioner()) );
+            Teuchos::RCP<const LinearOpBase<Scalar> > thyra_rop = epetra_rop;
+
+            // Initialize.
+            defaultPrec->initializeRight( thyra_rop );
+	}
     }
     else if ( isTpetraCompatible<int,int>(*fwdOpSrc) )
     {
@@ -416,7 +449,8 @@ MCLSPreconditionerFactory<Scalar>::getValidParameters() const
 	    tuple<std::string>(
 		"Point Jacobi",
 		"Block Jacobi",
-                "ILUT"
+                "ILUT",
+                "ParaSails"
 		),
 	    tuple<std::string>(
 		"Point Jacobi preconditioning - Left scales the linear operator"
@@ -427,12 +461,16 @@ MCLSPreconditionerFactory<Scalar>::getValidParameters() const
 		"and are of a user-specified size",
 
                 "Incomplete LU factorization with threshold - Left/Right"
+                "preconditioning for the linear operator",
+
+                "ParaSails parallel sparse approximate inverse - Right"
                 "preconditioning for the linear operator"
 		),
 	    tuple<EMCLSPrecType>(
 		PREC_TYPE_POINT_JACOBI,
 		PREC_TYPE_BLOCK_JACOBI,
-                PREC_TYPE_ILUT
+                PREC_TYPE_ILUT,
+                PREC_TYPE_PARASAILS
 		),
 	    &*validParamList
 	    );
@@ -455,6 +493,11 @@ MCLSPreconditionerFactory<Scalar>::getValidParameters() const
 	{
 	    MCLS::EpetraILUTPreconditioner prec(Teuchos::parameterList());
 	    precTypesSL.sublist(ILUT_name).setParameters(
+		*(prec.getValidParameters()) );
+	}
+	{
+	    MCLS::EpetraParaSailsPreconditioner prec(Teuchos::parameterList());
+	    precTypesSL.sublist(ParaSails_name).setParameters(
 		*(prec.getValidParameters()) );
 	}
     }

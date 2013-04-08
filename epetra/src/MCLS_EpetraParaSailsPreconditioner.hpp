@@ -32,14 +32,14 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_EpetraPointJacobiPreconditioner.hpp
+ * \file MCLS_EpetraParaSailsPreconditioner.hpp
  * \author Stuart R. Slattery
- * \brief Point Jacobi preconditioning for Epetra.
+ * \brief ParaSails preconditioning for Epetra.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_EPETRAPOINTJACOBI_HPP
-#define MCLS_EPETRAPOINTJACOBI_HPP
+#ifndef MCLS_EPETRAPARASAILS_HPP
+#define MCLS_EPETRAPARASAILS_HPP
 
 #include <MCLS_Preconditioner.hpp>
 
@@ -54,10 +54,11 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 /*!
- * \class EpetraPointJacobiPreconditioner
- * \brief Point-Jacobi preconditioner for Epetra_RowMatrix
+ * \class EpetraParaSailsPreconditioner
+ * \brief ParaSails sparse approximate inverse preconditioner for
+ * Epetra_RowMatrix.
  */
-class EpetraPointJacobiPreconditioner : public Preconditioner<Epetra_RowMatrix>
+class EpetraParaSailsPreconditioner : public Preconditioner<Epetra_RowMatrix>
 {
   public:
 
@@ -66,11 +67,12 @@ class EpetraPointJacobiPreconditioner : public Preconditioner<Epetra_RowMatrix>
     typedef Epetra_RowMatrix                        matrix_type;
     //@}
 
-    //! Constructor.
-    EpetraPointJacobiPreconditioner() { /* ... */ }
+    // Constructor.
+    EpetraParaSailsPreconditioner(
+        const Teuchos::RCP<Teuchos::ParameterList>& params );
 
     //! Destructor.
-    ~EpetraPointJacobiPreconditioner() { /* ... */ }
+    ~EpetraParaSailsPreconditioner() { /* ... */ }
 
     // Get the valid parameters for this preconditioner.
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
@@ -93,13 +95,16 @@ class EpetraPointJacobiPreconditioner : public Preconditioner<Epetra_RowMatrix>
 
     //! Get the left preconditioner.
     Teuchos::RCP<const matrix_type> getLeftPreconditioner() const
-    { return d_preconditioner; }
+    { return Teuchos::null; }
 
     //! Get the right preconditioner.
     Teuchos::RCP<const matrix_type> getRightPreconditioner() const
-    { return Teuchos::null; }
+    { return d_preconditioner; }
 
   private:
+
+    // Parameter list.
+    Teuchos::RCP<Teuchos::ParameterList> d_plist;
 
     // Original operator.
     Teuchos::RCP<const matrix_type> d_A;
@@ -112,8 +117,8 @@ class EpetraPointJacobiPreconditioner : public Preconditioner<Epetra_RowMatrix>
 
 } // end namespace MCLS
 
-#endif // end MCLS_EPETRAPOINTJACOBI_HPP
+#endif // end MCLS_EPETRAPARASAILS_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_EpetraPointJacobiPreconditioner.hpp
+// end MCLS_EpetraParaSailsPreconditioner.hpp
 //---------------------------------------------------------------------------//
