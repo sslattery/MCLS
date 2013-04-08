@@ -100,17 +100,17 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
      * given by the input rows.
      */
     static Teuchos::RCP<matrix_type> exportFromRows( 
-        const Teuchos::RCP<const matrix_type>& matrix,
+        const matrix_type& matrix,
         const Teuchos::ArrayView<const global_ordinal_type>& global_rows )
     { 
         Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type> > 
 	    target_map = 
 	    Tpetra::createNonContigMap<local_ordinal_type,global_ordinal_type>( 
-		global_rows(), matrix->getComm() );
+		global_rows(), matrix.getComm() );
 
-        Tpetra::Import<LO,GO> importer( matrix->getRowMap(), target_map );
+        Tpetra::Import<LO,GO> importer( matrix.getRowMap(), target_map );
 
-        return TMH::importAndFillCompleteMatrix( *matrix, importer );        
+        return TMH::importAndFillCompleteMatrix( matrix, importer );        
     }
 
     /*!

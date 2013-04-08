@@ -257,18 +257,8 @@ inline void AdjointTally<Vector>::expectedValueEstimatorTally(
           ++col_it, ++val_it )
     {
         MCLS_CHECK( VT::isGlobalRow(*d_x_im, *col_it) );
-
-        if ( VT::isGlobalRow(*d_x_im, *col_it) )
-        {
-            VT::sumIntoGlobalValue( 
-                *d_x_im, *col_it, history.weight()*(*val_it) );
-        }
-
-        else
-        {
-            MCLS_INSIST( VT::isGlobalRow(*d_x_im, *col_it),
-                         "History state is not local to tally!" );
-        }
+        VT::sumIntoGlobalValue( *d_x_im, *col_it, 
+                                history.weight()*std::abs(*val_it) );
     }
 }
 

@@ -104,7 +104,7 @@ class MatrixTraits
      * given by the input rows.
      */
     static Teuchos::RCP<Matrix> exportFromRows( 
-        const Teuchos::RCP<const Matrix>& matrix,
+        const Matrix& matrix,
         const Teuchos::ArrayView<const global_ordinal_type>& global_rows )
     { 
 	UndefinedMatrixTraits<Vector,Matrix>::notDefined(); 

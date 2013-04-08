@@ -279,6 +279,14 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
         // the solution.
         if ( EXPECTED_VALUE == estimator )
         {
+            // Get the Neumann relaxation parameter.
+            double omega = 1.0;
+            if ( d_plist->isParameter("Neumann Relaxation") )
+            {
+                omega = d_plist->get<double>("Neumann Relaxation");
+            }
+
+            // Left precondition if necessary.
             if ( d_problem->isLeftPrec() )
             {
                 Teuchos::RCP<Vector> temp = VT::clone( *d_problem->getRHS() );
@@ -286,14 +294,14 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
                 VT::update( *d_problem->getLHS(),
                             Teuchos::ScalarTraits<Scalar>::one(),
                             *temp,
-                            Teuchos::ScalarTraits<Scalar>::one() );
+                            omega );
             }
             else
             {
                 VT::update( *d_problem->getLHS(),
                             Teuchos::ScalarTraits<Scalar>::one(),
                             *d_problem->getRHS(),
-                            Teuchos::ScalarTraits<Scalar>::one() );
+                            omega );
             }
         }
 
@@ -313,7 +321,6 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
         d_problem->exportLHS();
     }
     d_global_comm->barrier();
-
 
     // This is a direct solve and therefore always converged in the iterative
     // sense. 

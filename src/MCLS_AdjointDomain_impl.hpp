@@ -155,9 +155,12 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
             *domain_row_it = indexer_it->first;
         }
 
+        // Generate the transpose of the operator.
+        Teuchos::RCP<Matrix> A_T = MT::copyTranspose( *A );
+
         // Export the original operator into the domain row decomposition.
         Teuchos::RCP<Matrix> A_domain_decomp = 
-            MT::exportFromRows( A, domain_rows() );
+            MT::exportFromRows( *A_T, domain_rows() );
         domain_rows.clear();
 
         // Apply Neumann relaxation parameter.
@@ -420,9 +423,11 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     {
         // Get all of the columns in the local iteration matrix and build the
         // iteration matrix tally vector.
-        Teuchos::ArrayView<const Ordinal> im_cols( &(*im_unique_cols.begin()),
-                                                   im_unique_cols.size() );
-        Teuchos::RCP<Vector> x_im = VT::createFromRows( set_comm, im_cols );
+        Teuchos::Array<Ordinal> im_cols( im_unique_cols.size() );
+        std::copy( im_unique_cols.begin(), im_unique_cols.end(), im_cols.begin() );
+        im_unique_cols.clear();
+        Teuchos::RCP<Vector> x_im = VT::createFromRows( set_comm, im_cols() );
+        im_cols.clear();
 
         // Update the tally.
         d_tally->setIterationMatrix( d_h, d_im_cols, d_row_indexer );
@@ -994,7 +999,6 @@ void AdjointDomain<Vector,Matrix>::buildIterationMatrix(
     // Setup.
     Ordinal local_num_rows = MT::getLocalNumRows( *A );
     Ordinal global_row = 0;
-    int offset = d_row_indexer->size();
     int max_entries = MT::getGlobalMaxNumRowEntries( *A );
     std::size_t num_entries = 0;
     typename Teuchos::Array<Ordinal>::const_iterator diagonal_iterator;
@@ -1013,35 +1017,35 @@ void AdjointDomain<Vector,Matrix>::buildIterationMatrix(
 	global_row = MT::getGlobalRow(*A, i);
 
 	// Allocate column and value memory for this row.
-	d_im_cols[i+offset] = Teuchos::rcp( 
+	d_im_cols[i] = Teuchos::rcp( 
             new Teuchos::Array<Ordinal>(max_entries) );
-	d_h[i+offset] = Teuchos::rcp( 
+	d_h[i] = Teuchos::rcp( 
             new Teuchos::Array<double>(max_entries) );
 
 	// Add the columns and base PDF values for this row.
 	MT::getGlobalRowCopy( *A, 
 			      global_row,
-			      (*d_im_cols[i+offset])(), 
-			      (*d_h[i+offset])(), 
+			      (*d_im_cols[i])(), 
+			      (*d_h[i])(), 
 			      num_entries );
     
 	// Check for degeneracy.
 	MCLS_CHECK( num_entries > 0 );
 
 	// Resize local column and CDF arrays for this row.
-	d_im_cols[i+offset]->resize( num_entries );
-	d_h[i+offset]->resize( num_entries );
+	d_im_cols[i]->resize( num_entries );
+	d_h[i]->resize( num_entries );
 
 	// If this row contains an entry on the diagonal, subtract 1 for the
 	// identity matrix (H^T = I-A^T).
-	diagonal_iterator = std::find( d_im_cols[i+offset]->begin(),
-				       d_im_cols[i+offset]->end(),
+	diagonal_iterator = std::find( d_im_cols[i]->begin(),
+				       d_im_cols[i]->end(),
 				       global_row );
-	if ( diagonal_iterator != d_im_cols[i+offset]->end() )
+	if ( diagonal_iterator != d_im_cols[i]->end() )
         {
-	    (*d_h[i+offset])[ std::distance(
+	    (*d_h[i])[ std::distance(
 		    Teuchos::as<typename Teuchos::Array<Ordinal>::const_iterator>(
-			d_im_cols[i+offset]->begin()), diagonal_iterator) ] -= 1.0;
+			d_im_cols[i]->begin()), diagonal_iterator) ] -= 1.0;
         }
     }
 }

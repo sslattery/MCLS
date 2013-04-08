@@ -106,25 +106,29 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
 
     /*!
      * \brief Create a reference-counted pointer to a new matrix filled with
-     * values exported from a given matrix with a parallel distribution as
+     * values imported from a given matrix with a parallel distribution as
      * given by the input rows.
      */
     static Teuchos::RCP<matrix_type> exportFromRows( 
-        const Teuchos::RCP<const matrix_type>& matrix,
+        const matrix_type& matrix,
         const Teuchos::ArrayView<const global_ordinal_type>& global_rows )
     { 
 	Epetra_Map target_map( -1, 
                                Teuchos::as<int>(global_rows.size()),
                                global_rows.getRawPtr(),
                                0,
-                               matrix->Comm() );
+                               matrix.Comm() );
 
-        Epetra_Import importer( matrix->RowMatrixRowMap(), target_map );
+        Teuchos::RCP<Epetra_CrsMatrix> new_matrix = Teuchos::rcp( 
+            new Epetra_CrsMatrix(Copy,target_map,0) );
 
-        return Teuchos::rcp( 
-            new Epetra_CrsMatrix( 
-                *Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(matrix), 
-                importer) );
+        Epetra_Import importer( matrix.RowMatrixRowMap(), target_map );
+
+        new_matrix->Import( matrix, importer, Insert );
+
+        new_matrix->FillComplete();
+        MCLS_ENSURE( new_matrix->Filled() );
+        return new_matrix;        
     }
 
     /*!
