@@ -79,7 +79,9 @@ class AdjointTally
     //@}
 
     // Constructor.
-    AdjointTally( const Teuchos::RCP<Vector>& x, const int estimator );
+    AdjointTally( const Teuchos::RCP<Vector>& x, 
+                  const Teuchos::RCP<Vector>& x_tally,
+                  const int estimator );
 
     // Destructor.
     ~AdjointTally()
@@ -103,30 +105,24 @@ class AdjointTally
     // Set the base tally vector.
     void setBaseVector( const Teuchos::RCP<Vector>& x_base );
 
-    // Set the overlap tally vector.
-    void setOverlapVector( const Teuchos::RCP<Vector>& x_overlap );
-
-    // Set the iterationmatrix tally vector.
-    void setIterationMatrixVector( const Teuchos::RCP<Vector>& x_im );
-
     // Zero out the tallies.
     void zeroOut();
 
     // Get the number global rows in the base decomposition.
     Ordinal numBaseRows() const;
 
-    // Get the number global rows in the overlap decomposition.
-    Ordinal numOverlapRows() const;
+    // Get the number global rows in the tally decomposition.
+    Ordinal numTallyRows() const;
 
     // Get the global tally rows in the base decomposition.
     Teuchos::Array<Ordinal> baseRows() const;
 
-    // Get the global tally rows in the overlap decomposition.
-    Teuchos::Array<Ordinal> overlapRows() const;
+    // Get the global tally rows in the tally decomposition.
+    Teuchos::Array<Ordinal> tallyRows() const;
 
     // Set the iteration matrix with the tally.
     void setIterationMatrix( 
-        const Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<double> > >& h,
+        const Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >& h,
         const Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > >& columns,
         const Teuchos::RCP<MapType>& row_indexer );
 
@@ -143,23 +139,17 @@ class AdjointTally
     // Solution vector in operator decomposition.
     Teuchos::RCP<Vector> d_x;
 
-    // Solution vector in overlap decomposition.
-    Teuchos::RCP<Vector> d_x_overlap;
+    // Solution vector in tally decomposition.
+    Teuchos::RCP<Vector> d_x_tally;
    
-    // Solution vector in the iteration matrix decomposition.
-    Teuchos::RCP<Vector> d_x_im;
-
     // Monte Carlo estimator type.
     int d_estimator;
 
-    // Overlap to base decomposition vector export.
+    // Tally to base decomposition vector export.
     Teuchos::RCP<VectorExport<Vector> > d_export;
 
-    // Iteration matrix to base decomposition vector export.
-    Teuchos::RCP<VectorExport<Vector> > d_export_im;
-
     // Local iteration matrix values.
-    Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<double> > > d_h;
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > d_h;
 
     // Local iteration matrix global columns.
     Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > > d_columns;
@@ -178,13 +168,14 @@ template<class Vector>
 inline void AdjointTally<Vector>::tallyHistory( const HistoryType& history )
 {
     MCLS_REQUIRE( history.alive() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_x_tally) );
 
     if ( COLLISION == d_estimator )
     {
         collisionEstimatorTally( history );
     }
 
-    if ( EXPECTED_VALUE == d_estimator )
+    else if ( EXPECTED_VALUE == d_estimator )
     {
         expectedValueEstimatorTally( history );
     }
@@ -204,28 +195,10 @@ template<class Vector>
 inline void AdjointTally<Vector>::collisionEstimatorTally( 
     const HistoryType& history )
 {
-    MCLS_REQUIRE( VT::isGlobalRow( *d_x, history.state() ) ||
-                  VT::isGlobalRow( *d_x_overlap, history.state() ) );
-
     // The collision estimator tally sums the history's current weight into
     // x(i) where the index i is the history's current state.
-    if ( VT::isGlobalRow(*d_x, history.state()) )
-    {
-	VT::sumIntoGlobalValue( *d_x, history.state(), history.weight() );
-    }
-
-    else if ( VT::isGlobalRow(*d_x_overlap, history.state()) )
-    {
-	VT::sumIntoGlobalValue( 
-	    *d_x_overlap, history.state(), history.weight() );
-    }
-
-    else
-    {
-	MCLS_INSIST( VT::isGlobalRow(*d_x, history.state()) ||
-                     VT::isGlobalRow(*d_x_overlap, history.state()),
-                     "History state is not local to tally!" );
-    }
+    MCLS_REQUIRE( VT::isGlobalRow(*d_x_tally, history.state()) );
+    VT::sumIntoGlobalValue( *d_x_tally, history.state(), history.weight() );
 }
 
 //---------------------------------------------------------------------------//
@@ -239,7 +212,6 @@ inline void AdjointTally<Vector>::expectedValueEstimatorTally(
     MCLS_REQUIRE( Teuchos::nonnull(d_h) );
     MCLS_REQUIRE( Teuchos::nonnull(d_columns) );
     MCLS_REQUIRE( Teuchos::nonnull(d_row_indexer) );
-    MCLS_REQUIRE( Teuchos::nonnull(d_x_im) );
 
     // Get the local row.
     typename MapType::const_iterator index = 
@@ -247,18 +219,19 @@ inline void AdjointTally<Vector>::expectedValueEstimatorTally(
     MCLS_CHECK( index != d_row_indexer->end() );
 
     // The expected value estimator sums the history's weight multiplied by
-    // the transpose iteration matrix value h^T_(i,j) into each tally state
-    // x(j) where the index i is the history's current state.
+    // the absolute value of the transpose iteration matrix component
+    // h^T_(i,j) into each tally state x(j) where the index i is the history's
+    // current state.
     typename Teuchos::Array<Ordinal>::const_iterator col_it;
-    Teuchos::Array<double>::const_iterator val_it;
+    Teuchos::ArrayRCP<double>::const_iterator val_it;
     for ( col_it = d_columns[index->second]->begin(),
-          val_it = d_h[index->second]->begin();
+          val_it = d_h[index->second].begin();
           col_it != d_columns[index->second]->end();
           ++col_it, ++val_it )
     {
-        MCLS_CHECK( VT::isGlobalRow(*d_x_im, *col_it) );
-        VT::sumIntoGlobalValue( *d_x_im, *col_it, 
-                                history.weight()*std::abs(*val_it) );
+        MCLS_CHECK( VT::isGlobalRow(*d_x_tally, *col_it) );
+        VT::sumIntoGlobalValue( *d_x_tally, *col_it, 
+                                history.weight()*(*val_it) );
     }
 }
 
@@ -347,11 +320,11 @@ class TallyTraits<AdjointTally<Vector> >
     }
 
     /*!
-     * \brief Get the number of global rows in the overlap decompostion.
+     * \brief Get the number of global rows in the tally decompostion.
      */
-    static ordinal_type numOverlapRows( const tally_type& tally )
+    static ordinal_type numTallyRows( const tally_type& tally )
     {
-	return tally.numOverlapRows();
+	return tally.numTallyRows();
     }
 
     /*!
@@ -363,12 +336,12 @@ class TallyTraits<AdjointTally<Vector> >
     }
 
     /*!
-     * \brief Get the global tally rows in the overlap decompostion.
+     * \brief Get the global tally rows in the tally decompostion.
      */
     static Teuchos::Array<ordinal_type> 
-    overlapRows( const tally_type& tally )
+    tallyRows( const tally_type& tally )
     {
-	return tally.overlapRows();
+	return tally.tallyRows();
     }
 };
 

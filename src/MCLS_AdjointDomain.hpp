@@ -42,6 +42,7 @@
 #define MCLS_ADJOINTDOMAIN_HPP
 
 #include <stack>
+#include <set>
 
 #include "MCLS_DBC.hpp"
 #include "MCLS_DomainTraits.hpp"
@@ -78,6 +79,17 @@ namespace MCLS
  * overlap and neighboring domains. This object is responsible for creating
  * the tally for the solution vector over the domain as it has ownership of
  * the parallel decomposition of the domain.
+ *
+ * For all estimator types, the AdjointDomain constructs weights for all
+ * transitions, cumulative distribution functions for each local state in the
+ * system that can be sampled, and the associated states for those CDFs to
+ * which a given initial state in the local system can transition to.
+ *
+ * If the expected value estimator is used, and additional copy of the
+ * iteration matrix values are constructed. No other information is copied as
+ * this data has the same non-zero structure and parallel distribution as the
+ * CDFs generated for each state as the CDFs are derived from the iteration
+ * matrix.
  */
 template<class Vector, class Matrix>
 class AdjointDomain
@@ -147,14 +159,12 @@ class AdjointDomain
   private:
 
     // Add matrix data to the local domain.
-    void addMatrixToDomain( const Teuchos::RCP<const Matrix>& A );
+    void addMatrixToDomain( const Teuchos::RCP<const Matrix>& A,
+                            std::set<Ordinal>& tally_states );
 
     // Build boundary data.
     void buildBoundary( const Teuchos::RCP<const Matrix>& A,
 			const Teuchos::RCP<const Matrix>& base_A );
-
-    // Build the iteration matrix.
-    void buildIterationMatrix( const Teuchos::RCP<const Matrix>& A );
 
   private:
 
@@ -168,16 +178,13 @@ class AdjointDomain
     Teuchos::RCP<MapType> d_row_indexer;
 
     // Local CDF columns.
-    Teuchos::ArrayRCP<Teuchos::Array<Ordinal> > d_columns;
+    Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > > d_columns;
 
     // Local CDF values.
     Teuchos::ArrayRCP<Teuchos::Array<double> > d_cdfs;
 
     // Local iteration matrix values.
-    Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<double> > > d_h;
-
-    // Local iteration matrix columns.
-    Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > > d_im_cols;
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > d_h;
 
     // Local weights.
     Teuchos::ArrayRCP<double> d_weights;
@@ -212,7 +219,7 @@ inline void AdjointDomain<Vector,Matrix>::processTransition(
 
     // Sample the row CDF to get a new state.
     history.setState( 
-	d_columns[index->second][ 
+	(*d_columns[index->second])[ 
 	    SamplingTools::sampleDiscreteCDF( d_cdfs[index->second](),
 					      history.rng().random() ) ] );
 

@@ -99,7 +99,7 @@ class TallyTraits
 
     /*!
      * \brief Combine the tallies together over a set. This is generally
-     * combining the overlap and base tallies.
+     * combining the tally and base tallies.
      */
     static void combineSetTallies( Tally& tally )
     {
@@ -153,9 +153,9 @@ class TallyTraits
     }
 
     /*!
-     * \brief Get the number of global rows in the overlap decompostion.
+     * \brief Get the number of global rows in the tally decompostion.
      */
-    static ordinal_type numOverlapRows( const Tally& tally )
+    static ordinal_type numTallyRows( const Tally& tally )
     {
 	UndefinedTallyTraits<Tally>::notDefined(); 
     }
@@ -169,9 +169,9 @@ class TallyTraits
     }
 
     /*!
-     * \brief Get the global tally rows in the overlap decompostion.
+     * \brief Get the global tally rows in the tally decompostion.
      */
-    static Teuchos::Array<ordinal_type> overlapRows( const Tally& tally )
+    static Teuchos::Array<ordinal_type> tallyRows( const Tally& tally )
     {
 	UndefinedTallyTraits<Tally>::notDefined(); 
     }

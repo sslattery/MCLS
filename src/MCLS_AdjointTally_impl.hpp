@@ -54,12 +54,18 @@ namespace MCLS
  * \brief Constructor.
  */
 template<class Vector>
-AdjointTally<Vector>::AdjointTally( const Teuchos::RCP<Vector>& x, 
+AdjointTally<Vector>::AdjointTally( const Teuchos::RCP<Vector>& x,
+                                    const Teuchos::RCP<Vector>& x_tally,
                                     const int estimator )
     : d_x( x )
+    , d_x_tally( x_tally )
     , d_estimator( estimator )
 { 
-    MCLS_ENSURE( !d_x.is_null() );
+    d_export = Teuchos::rcp( new VectorExport<Vector>(d_x_tally, d_x) );
+    MCLS_ENSURE( Teuchos::nonnull(d_x) );
+    MCLS_ENSURE( Teuchos::nonnull(d_x_tally) );
+    MCLS_ENSURE( Teuchos::nonnull(d_export) );
+    MCLS_ENSURE( COLLISION == estimator || EXPECTED_VALUE == estimator );
 }
 
 //---------------------------------------------------------------------------//
@@ -70,21 +76,7 @@ AdjointTally<Vector>::AdjointTally( const Teuchos::RCP<Vector>& x,
 template<class Vector>
 void AdjointTally<Vector>::combineSetTallies()
 {
-    if ( COLLISION == d_estimator )
-    {
-        d_export->doExportAdd();
-    }
-
-    else if ( EXPECTED_VALUE == d_estimator )
-    {
-        d_export_im->doExportInsert();
-    }
-
-    else
-    {
-	MCLS_INSIST( COLLISION == d_estimator || EXPECTED_VALUE == d_estimator,
-                     "Estimator type not supported!" );
-    }
+    d_export->doExportInsert();
 }
 
 //---------------------------------------------------------------------------//
@@ -134,57 +126,9 @@ template<class Vector>
 void AdjointTally<Vector>::setBaseVector( const Teuchos::RCP<Vector>& x_base )
 {
     MCLS_REQUIRE( Teuchos::nonnull(x_base) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_x_tally) );
     d_x = x_base;
-
-    if ( COLLISION == d_estimator )
-    {
-        d_export = Teuchos::rcp(
-            new VectorExport<Vector>(d_x_overlap, d_x) );
-    }
-
-    else if ( EXPECTED_VALUE == d_estimator )
-    {
-        MCLS_CHECK( Teuchos::nonnull(d_x_im) );
-        d_export_im = Teuchos::rcp( 
-            new VectorExport<Vector>( d_x_im, d_x ) );
-    }
-
-    else
-    {
-	MCLS_INSIST( COLLISION == d_estimator || EXPECTED_VALUE == d_estimator,
-                     "Estimator type not supported!" );
-    }
-}
-
-//---------------------------------------------------------------------------//
-/*
- * \brief Set the overlap tally vector.
- */
-template<class Vector>
-void AdjointTally<Vector>::setOverlapVector( const Teuchos::RCP<Vector>& x_overlap )
-{
-    MCLS_REQUIRE( Teuchos::nonnull(d_x) );
-    MCLS_REQUIRE( Teuchos::nonnull(x_overlap) );
-    d_x_overlap = x_overlap;
-    if ( COLLISION == d_estimator )
-    {
-        d_export = Teuchos::rcp( new VectorExport<Vector>(d_x_overlap, d_x) );
-    }
-}
-
-//---------------------------------------------------------------------------//
-/*
- * \brief Set the iteration matrix tally vector.
- */
-template<class Vector>
-void AdjointTally<Vector>::setIterationMatrixVector( 
-    const Teuchos::RCP<Vector>& x_im )
-{
-    MCLS_REQUIRE( Teuchos::nonnull(d_x) );
-    MCLS_REQUIRE( EXPECTED_VALUE == d_estimator );
-    MCLS_REQUIRE( Teuchos::nonnull(x_im) );
-    d_x_im = x_im;
-    d_export_im = Teuchos::rcp( new VectorExport<Vector>(d_x_im, d_x) );
+    d_export = Teuchos::rcp( new VectorExport<Vector>(d_x_tally, d_x) );
 }
 
 //---------------------------------------------------------------------------//
@@ -194,23 +138,10 @@ void AdjointTally<Vector>::setIterationMatrixVector(
 template<class Vector>
 void AdjointTally<Vector>::zeroOut()
 {
+    MCLS_REQUIRE( Teuchos::nonnull(d_x) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_x_tally) );
     VT::putScalar( *d_x, Teuchos::ScalarTraits<Scalar>::zero() );
-
-    if ( COLLISION == d_estimator )
-    {
-        VT::putScalar( *d_x_overlap, Teuchos::ScalarTraits<Scalar>::zero() );
-    }
-
-    else if ( EXPECTED_VALUE == d_estimator )
-    {
-        VT::putScalar( *d_x_im, Teuchos::ScalarTraits<Scalar>::zero() );
-    }
-
-    else
-    {
-	MCLS_INSIST( COLLISION == d_estimator || EXPECTED_VALUE == d_estimator,
-                     "Estimator type not supported!" );
-    }
+    VT::putScalar( *d_x_tally, Teuchos::ScalarTraits<Scalar>::zero() );
 }
 
 //---------------------------------------------------------------------------//
@@ -227,14 +158,14 @@ AdjointTally<Vector>::numBaseRows() const
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Get the number global rows in the overlap decomposition.
+ * \brief Get the number global rows in the tally decomposition.
  */
 template<class Vector>
 typename AdjointTally<Vector>::Ordinal 
-AdjointTally<Vector>::numOverlapRows() const
+AdjointTally<Vector>::numTallyRows() const
 {
-    MCLS_CHECK( Teuchos::nonnull(d_x_overlap) );
-    return VT::getLocalLength( *d_x_overlap );
+    MCLS_CHECK( Teuchos::nonnull(d_x_tally) );
+    return VT::getLocalLength( *d_x_tally );
 }
 
 //---------------------------------------------------------------------------//
@@ -264,27 +195,27 @@ AdjointTally<Vector>::baseRows() const
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Get the global rows in the overlap decomposition.
+ * \brief Get the global rows in the tally decomposition.
  */
 template<class Vector>
 Teuchos::Array<typename AdjointTally<Vector>::Ordinal>
-AdjointTally<Vector>::overlapRows() const
+AdjointTally<Vector>::tallyRows() const
 {
-    MCLS_CHECK( Teuchos::nonnull(d_x_overlap) );
+    MCLS_CHECK( Teuchos::nonnull(d_x_tally) );
 
-    Teuchos::Array<Ordinal> overlap_rows( VT::getLocalLength(*d_x_overlap) );
+    Teuchos::Array<Ordinal> tally_rows( VT::getLocalLength(*d_x_tally) );
     typename Teuchos::Array<Ordinal>::iterator row_it;
     typename VT::local_ordinal_type local_row = 
 	Teuchos::OrdinalTraits<typename VT::local_ordinal_type>::zero();
-    for ( row_it = overlap_rows.begin();
-	  row_it != overlap_rows.end();
+    for ( row_it = tally_rows.begin();
+	  row_it != tally_rows.end();
 	  ++row_it )
     {
-	*row_it = VT::getGlobalRow( *d_x_overlap, local_row );
+	*row_it = VT::getGlobalRow( *d_x_tally, local_row );
 	++local_row;
     }
 
-    return overlap_rows;
+    return tally_rows;
 }
 
 //---------------------------------------------------------------------------//
@@ -293,7 +224,7 @@ AdjointTally<Vector>::overlapRows() const
  */
 template<class Vector>
 void AdjointTally<Vector>::setIterationMatrix( 
-    const Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<double> > >& h,
+    const Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >& h,
     const Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > >& columns,
     const Teuchos::RCP<MapType>& row_indexer )
 {
