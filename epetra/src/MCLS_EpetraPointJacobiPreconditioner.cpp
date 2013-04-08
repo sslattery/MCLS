@@ -104,7 +104,7 @@ void EpetraPointJacobiPreconditioner::buildPreconditioner()
 
     // Create the preconditioner.
     d_preconditioner = Teuchos::rcp( 
-	new Epetra_CrsMatrix(Copy,d_A->RowMatrixRowMap(),1) );
+	new Epetra_CrsMatrix(Copy,d_A->RowMatrixRowMap(),1,true) );
 	    
     // Compute the inverse of the diagonal.
     Teuchos::RCP<Epetra_Vector> diagonal = 
