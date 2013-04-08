@@ -180,7 +180,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SourceTransporter, transport, LO, GO, Scalar 
     HistoryType::setByteSize( control->getSize() );
 
     // Create the adjoint source with a set number of histories.
-    int mult = 10;
+    int mult = 100;
     double cutoff = 1.0e-6;
     plist.set<int>("Set Number of Histories", mult*global_num_rows);
     plist.set<double>("Weight Cutoff", cutoff);
@@ -198,6 +198,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SourceTransporter, transport, LO, GO, Scalar 
 
     // Do transport.
     source_transporter.transport();
+    domain->domainTally()->combineSetTallies();
 
     // Check that we got a negative solution.
     Teuchos::ArrayRCP<const Scalar> x_view = 

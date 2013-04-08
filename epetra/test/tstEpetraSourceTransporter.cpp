@@ -143,7 +143,7 @@ TEUCHOS_UNIT_TEST( SourceTransporter, transport )
     Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
     int comm_size = comm->getSize();
 
-    int local_num_rows = 10;
+    int local_num_rows = 100;
     int global_num_rows = local_num_rows*comm_size;
     Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
@@ -218,6 +218,7 @@ TEUCHOS_UNIT_TEST( SourceTransporter, transport )
 
     // Do transport.
     source_transporter.transport();
+    domain->domainTally()->combineSetTallies();
 
     // Check that we got a negative solution.
     Teuchos::ArrayRCP<const double> x_view = 
