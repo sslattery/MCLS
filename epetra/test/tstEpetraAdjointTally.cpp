@@ -122,21 +122,36 @@ TEUCHOS_UNIT_TEST( AdjointTally, TallyHistory )
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
     Teuchos::RCP<VectorType> A = Teuchos::rcp( new Epetra_Vector( *map_a ) );
 
+    Teuchos::Array<int> forward_rows( local_num_rows );
+    for ( int i = 0; i < local_num_rows; ++i )
+    {
+	forward_rows[i] = i + local_num_rows*comm_rank;
+    }
     Teuchos::Array<int> inverse_rows( local_num_rows );
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	inverse_rows[i] = 
 	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
     }
+    Teuchos::Array<int> tally_rows( forward_rows.size() + inverse_rows.size() );
+    std::sort( forward_rows.begin(), forward_rows.end() );
+    std::sort( inverse_rows.begin(), inverse_rows.end() );
+    std::merge( forward_rows.begin(), forward_rows.end(),
+                inverse_rows.begin(), inverse_rows.end(),
+                tally_rows.begin() );
+    Teuchos::Array<int>::iterator unique_it = 
+        std::unique( tally_rows.begin(), tally_rows.end() );
+    tally_rows.resize( std::distance(tally_rows.begin(),unique_it) );
+
     Teuchos::RCP<Epetra_Map> map_b = Teuchos::rcp(
 		new Epetra_Map( -1, 
-				Teuchos::as<int>(inverse_rows.size()),
-				inverse_rows.getRawPtr(),
+				Teuchos::as<int>(tally_rows.size()),
+				tally_rows.getRawPtr(),
 				0,
 				*epetra_comm ) );
     Teuchos::RCP<VectorType> B = Teuchos::rcp( new Epetra_Vector( *map_b ) );
 
-    MCLS::AdjointTally<VectorType> tally( A, B );
+    MCLS::AdjointTally<VectorType> tally( A, B, 0 );
 
     double a_val = 2;
     double b_val = 3;
@@ -153,21 +168,23 @@ TEUCHOS_UNIT_TEST( AdjointTally, TallyHistory )
 	history.live();
 	tally.tallyHistory( history );
     }
-    
+
     Teuchos::ArrayRCP<const double> A_view = VT::view( *A );
     Teuchos::ArrayRCP<const double>::const_iterator a_view_iterator;
     for ( a_view_iterator = A_view.begin();
 	  a_view_iterator != A_view.end();
 	  ++a_view_iterator )
     {
-	if ( comm_size == 1 )
-	{
-	    TEST_EQUALITY( *a_view_iterator, a_val + b_val );
-	}
-	else
-	{
-	    TEST_EQUALITY( *a_view_iterator, a_val );
-	}
+        TEST_EQUALITY( *a_view_iterator, 0.0 );
+    }
+
+    tally.combineSetTallies();
+
+    for ( a_view_iterator = A_view.begin();
+	  a_view_iterator != A_view.end();
+	  ++a_view_iterator )
+    {
+        TEST_EQUALITY( *a_view_iterator, a_val + b_val );
     }
 
     Teuchos::ArrayRCP<const double> B_view = VT::view( *B );
@@ -176,14 +193,21 @@ TEUCHOS_UNIT_TEST( AdjointTally, TallyHistory )
 	  b_view_iterator != B_view.end();
 	  ++b_view_iterator )
     {
-	if ( comm_size == 1 )
-	{
-	    TEST_EQUALITY( *b_view_iterator, 0 );
-	}
-	else
-	{
-	    TEST_EQUALITY( *b_view_iterator, b_val );
-	}
+        if ( comm_size == 1 )
+        {
+            TEST_EQUALITY( *b_view_iterator, a_val+b_val );
+        }
+        else
+        {
+            if ( std::distance(B_view.begin(),b_view_iterator) < 10 )
+            {
+                TEST_EQUALITY( *b_view_iterator, a_val );
+            }
+            else
+            {
+                TEST_EQUALITY( *b_view_iterator, b_val );
+            }
+        }
     }
 
     TEST_EQUALITY( tally.numBaseRows(), VT::getLocalLength(*A) );
@@ -195,13 +219,12 @@ TEUCHOS_UNIT_TEST( AdjointTally, TallyHistory )
 	TEST_EQUALITY( base_rows[i], VT::getGlobalRow(*A,i) )
     }
 
-    TEST_EQUALITY( tally.numOverlapRows(), VT::getLocalLength(*B) );
-    Teuchos::Array<int> overlap_rows = tally.overlapRows();
-    TEST_EQUALITY( Teuchos::as<int>(overlap_rows.size()),
-		   tally.numOverlapRows() );
-    for ( int i = 0; i < overlap_rows.size(); ++i )
+    TEST_EQUALITY( tally.numTallyRows(), VT::getLocalLength(*B) );
+    Teuchos::Array<int> tally_states = tally.tallyRows();
+    TEST_EQUALITY( Teuchos::as<int>(tally_states.size()), tally.numTallyRows() );
+    for ( int i = 0; i < tally_states.size(); ++i )
     {
-	TEST_EQUALITY( overlap_rows[i], VT::getGlobalRow(*B,i) )
+	TEST_EQUALITY( tally_states[i], VT::getGlobalRow(*B,i) )
     }
 
     tally.zeroOut();
@@ -209,13 +232,13 @@ TEUCHOS_UNIT_TEST( AdjointTally, TallyHistory )
 	  a_view_iterator != A_view.end();
 	  ++a_view_iterator )
     {
-	TEST_EQUALITY( *a_view_iterator, 0 );
+	TEST_EQUALITY( *a_view_iterator, 0.0 );
     }
     for ( b_view_iterator = B_view.begin();
 	  b_view_iterator != B_view.end();
 	  ++b_view_iterator )
     {
-	TEST_EQUALITY( *b_view_iterator, 0 );
+	TEST_EQUALITY( *b_view_iterator, 0.0 );
     }
 }
 
@@ -238,21 +261,36 @@ TEUCHOS_UNIT_TEST( AdjointTally, SetCombine )
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
     Teuchos::RCP<VectorType> A = Teuchos::rcp( new Epetra_Vector( *map_a ) );
 
+    Teuchos::Array<int> forward_rows( local_num_rows );
+    for ( int i = 0; i < local_num_rows; ++i )
+    {
+	forward_rows[i] = i + local_num_rows*comm_rank;
+    }
     Teuchos::Array<int> inverse_rows( local_num_rows );
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	inverse_rows[i] = 
 	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
     }
+    Teuchos::Array<int> tally_rows( forward_rows.size() + inverse_rows.size() );
+    std::sort( forward_rows.begin(), forward_rows.end() );
+    std::sort( inverse_rows.begin(), inverse_rows.end() );
+    std::merge( forward_rows.begin(), forward_rows.end(),
+                inverse_rows.begin(), inverse_rows.end(),
+                tally_rows.begin() );
+    Teuchos::Array<int>::iterator unique_it = 
+        std::unique( tally_rows.begin(), tally_rows.end() );
+    tally_rows.resize( std::distance(tally_rows.begin(),unique_it) );
+
     Teuchos::RCP<Epetra_Map> map_b = Teuchos::rcp(
 		new Epetra_Map( -1, 
-				Teuchos::as<int>(inverse_rows.size()),
-				inverse_rows.getRawPtr(),
+				Teuchos::as<int>(tally_rows.size()),
+				tally_rows.getRawPtr(),
 				0,
 				*epetra_comm ) );
     Teuchos::RCP<VectorType> B = Teuchos::rcp( new Epetra_Vector( *map_b ) );
 
-    MCLS::AdjointTally<VectorType> tally( A, B );
+    MCLS::AdjointTally<VectorType> tally( A, B, 0 );
 
     // Sub in a map-compatible base vector to ensure we can swap vectors and
     // still do the parallel export operation.
@@ -275,22 +313,22 @@ TEUCHOS_UNIT_TEST( AdjointTally, SetCombine )
 	tally.tallyHistory( history );
     }
 
-    tally.combineSetTallies();
-
     Teuchos::ArrayRCP<const double> C_view = VT::view( *C );
     Teuchos::ArrayRCP<const double>::const_iterator c_view_iterator;
     for ( c_view_iterator = C_view.begin();
 	  c_view_iterator != C_view.end();
 	  ++c_view_iterator )
     {
-	if ( comm_size == 1 )
-	{
-	    TEST_EQUALITY( *c_view_iterator, 0 );
-	}
-	else
-	{
-	    TEST_EQUALITY( *c_view_iterator, a_val + b_val );
-	}
+        TEST_EQUALITY( *c_view_iterator, 0.0 );
+    }
+
+    tally.combineSetTallies();
+
+    for ( c_view_iterator = C_view.begin();
+	  c_view_iterator != C_view.end();
+	  ++c_view_iterator )
+    {
+        TEST_EQUALITY( *c_view_iterator, a_val + b_val );
     }
 
     Teuchos::ArrayRCP<const double> B_view = VT::view( *B );
@@ -299,14 +337,21 @@ TEUCHOS_UNIT_TEST( AdjointTally, SetCombine )
 	  b_view_iterator != B_view.end();
 	  ++b_view_iterator )
     {
-	if ( comm_size == 1 )
-	{
-	    TEST_EQUALITY( *b_view_iterator, 0 );
-	}
-	else
-	{
-	    TEST_EQUALITY( *b_view_iterator, b_val );
-	}
+        if ( comm_size == 1 )
+        {
+            TEST_EQUALITY( *b_view_iterator, a_val+b_val );
+        }
+        else
+        {
+            if ( std::distance(B_view.begin(),b_view_iterator) < 10 )
+            {
+                TEST_EQUALITY( *b_view_iterator, a_val );
+            }
+            else
+            {
+                TEST_EQUALITY( *b_view_iterator, b_val );
+            }
+        }
     }
 }
 
@@ -366,21 +411,36 @@ TEUCHOS_UNIT_TEST( AdjointTally, BlockCombine )
 	    new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
 	Teuchos::RCP<VectorType> A = Teuchos::rcp( new Epetra_Vector( *map_a ) );
 
-	Teuchos::Array<int> inverse_rows( local_num_rows );
-	for ( int i = 0; i < local_num_rows; ++i )
-	{
-	    inverse_rows[i] = 
-		(local_num_rows-1-i) + local_num_rows*(set_size-1-set_rank);
-	}
+        Teuchos::Array<int> forward_rows( local_num_rows );
+        for ( int i = 0; i < local_num_rows; ++i )
+        {
+            forward_rows[i] = i + local_num_rows*set_rank;
+        }
+        Teuchos::Array<int> inverse_rows( local_num_rows );
+        for ( int i = 0; i < local_num_rows; ++i )
+        {
+            inverse_rows[i] = 
+                (local_num_rows-1-i) + local_num_rows*(set_size-1-set_rank);
+        }
+        Teuchos::Array<int> tally_rows( forward_rows.size() + inverse_rows.size() );
+        std::sort( forward_rows.begin(), forward_rows.end() );
+        std::sort( inverse_rows.begin(), inverse_rows.end() );
+        std::merge( forward_rows.begin(), forward_rows.end(),
+                    inverse_rows.begin(), inverse_rows.end(),
+                    tally_rows.begin() );
+        Teuchos::Array<int>::iterator unique_it = 
+            std::unique( tally_rows.begin(), tally_rows.end() );
+        tally_rows.resize( std::distance(tally_rows.begin(),unique_it) );
+
 	Teuchos::RCP<Epetra_Map> map_b = Teuchos::rcp(
 	    new Epetra_Map( -1, 
-			    Teuchos::as<int>(inverse_rows.size()),
-			    inverse_rows.getRawPtr(),
+			    Teuchos::as<int>(tally_rows.size()),
+			    tally_rows.getRawPtr(),
 			    0,
 			    *epetra_comm ) );
 	Teuchos::RCP<VectorType> B = Teuchos::rcp( new Epetra_Vector( *map_b ) );
 
-	MCLS::AdjointTally<VectorType> tally( A, B );
+	MCLS::AdjointTally<VectorType> tally( A, B, 0 );
 
 	// Sub in a base vector over just set 0 after we have made the tally.
 	Teuchos::RCP<VectorType> C;
@@ -442,14 +502,21 @@ TEUCHOS_UNIT_TEST( AdjointTally, BlockCombine )
 	    }
 	}
 
-	// The overlap shouldn't change.
+	// The underlying tally vector shouldn't change.
 	Teuchos::ArrayRCP<const double> B_view = VT::view( *B );
 	Teuchos::ArrayRCP<const double>::const_iterator b_view_iterator;
 	for ( b_view_iterator = B_view.begin();
 	      b_view_iterator != B_view.end();
 	      ++b_view_iterator )
 	{
-	    TEST_EQUALITY( *b_view_iterator, b_val );
+            if ( std::distance(B_view.begin(),b_view_iterator) < 10 )
+            {
+                TEST_EQUALITY( *b_view_iterator, a_val );
+            }
+            else
+            {
+                TEST_EQUALITY( *b_view_iterator, b_val );
+            }
 	}
     }
 }
@@ -473,21 +540,36 @@ TEUCHOS_UNIT_TEST( AdjointTally, Normalize )
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
     Teuchos::RCP<VectorType> A = Teuchos::rcp( new Epetra_Vector( *map_a ) );
 
+    Teuchos::Array<int> forward_rows( local_num_rows );
+    for ( int i = 0; i < local_num_rows; ++i )
+    {
+	forward_rows[i] = i + local_num_rows*comm_rank;
+    }
     Teuchos::Array<int> inverse_rows( local_num_rows );
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	inverse_rows[i] = 
 	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
     }
+    Teuchos::Array<int> tally_rows( forward_rows.size() + inverse_rows.size() );
+    std::sort( forward_rows.begin(), forward_rows.end() );
+    std::sort( inverse_rows.begin(), inverse_rows.end() );
+    std::merge( forward_rows.begin(), forward_rows.end(),
+                inverse_rows.begin(), inverse_rows.end(),
+                tally_rows.begin() );
+    Teuchos::Array<int>::iterator unique_it =
+        std::unique( tally_rows.begin(), tally_rows.end() );
+    tally_rows.resize( std::distance(tally_rows.begin(),unique_it) );
+
     Teuchos::RCP<Epetra_Map> map_b = Teuchos::rcp(
 		new Epetra_Map( -1, 
-				Teuchos::as<int>(inverse_rows.size()),
-				inverse_rows.getRawPtr(),
+				Teuchos::as<int>(tally_rows.size()),
+				tally_rows.getRawPtr(),
 				0,
 				*epetra_comm ) );
     Teuchos::RCP<VectorType> B = Teuchos::rcp( new Epetra_Vector( *map_b ) );
 
-    MCLS::AdjointTally<VectorType> tally( A, B );
+    MCLS::AdjointTally<VectorType> tally( A, B, 0 );
     double a_val = 2;
     double b_val = 3;
     for ( int i = 0; i < local_num_rows; ++i )
@@ -514,14 +596,7 @@ TEUCHOS_UNIT_TEST( AdjointTally, Normalize )
 	  a_view_iterator != A_view.end();
 	  ++a_view_iterator )
     {
-	if ( comm_size == 1 )
-	{
-	    TEST_EQUALITY( *a_view_iterator, 0 );
-	}
-	else
-	{
-	    TEST_EQUALITY( *a_view_iterator, (a_val + b_val) / nh );
-	}
+        TEST_EQUALITY( *a_view_iterator, (a_val + b_val) / nh );
     }
 
     Teuchos::ArrayRCP<const double> B_view = VT::view( *B );
@@ -530,14 +605,21 @@ TEUCHOS_UNIT_TEST( AdjointTally, Normalize )
 	  b_view_iterator != B_view.end();
 	  ++b_view_iterator )
     {
-	if ( comm_size == 1 )
-	{
-	    TEST_EQUALITY( *b_view_iterator, 0 );
-	}
-	else
-	{
-	    TEST_EQUALITY( *b_view_iterator, b_val );
-	}
+        if ( comm_size == 1 )
+        {
+            TEST_EQUALITY( *b_view_iterator, a_val+b_val );
+        }
+        else
+        {
+            if ( std::distance(B_view.begin(),b_view_iterator) < 10 )
+            {
+                TEST_EQUALITY( *b_view_iterator, a_val );
+            }
+            else
+            {
+                TEST_EQUALITY( *b_view_iterator, b_val );
+            }
+        }
     }
 }
 

@@ -109,17 +109,32 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, TallyHistory, LO, GO, Scalar )
 	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
     Teuchos::RCP<VectorType> A = Tpetra::createVector<Scalar,LO,GO>( map_a );
 
+    Teuchos::Array<GO> forward_rows( local_num_rows );
+    for ( int i = 0; i < local_num_rows; ++i )
+    {
+	forward_rows[i] = i + local_num_rows*comm_rank;
+    }
     Teuchos::Array<GO> inverse_rows( local_num_rows );
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	inverse_rows[i] = 
 	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
     }
+    Teuchos::Array<GO> tally_rows( forward_rows.size() + inverse_rows.size() );
+    std::sort( forward_rows.begin(), forward_rows.end() );
+    std::sort( inverse_rows.begin(), inverse_rows.end() );
+    std::merge( forward_rows.begin(), forward_rows.end(),
+                inverse_rows.begin(), inverse_rows.end(),
+                tally_rows.begin() );
+    typename Teuchos::Array<GO>::iterator unique_it = 
+        std::unique( tally_rows.begin(), tally_rows.end() );
+    tally_rows.resize( std::distance(tally_rows.begin(),unique_it) );
+
     Teuchos::RCP<const Tpetra::Map<LO,GO> > map_b = 
-	Tpetra::createNonContigMap<LO,GO>( inverse_rows(), comm );
+	Tpetra::createNonContigMap<LO,GO>( tally_rows(), comm );
     Teuchos::RCP<VectorType> B = Tpetra::createVector<Scalar,LO,GO>( map_b );
 
-    MCLS::AdjointTally<VectorType> tally( A, B );
+    MCLS::AdjointTally<VectorType> tally( A, B, 0 );
     Scalar a_val = 2;
     Scalar b_val = 3;
     for ( int i = 0; i < local_num_rows; ++i )
@@ -142,14 +157,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, TallyHistory, LO, GO, Scalar )
 	  a_view_iterator != A_view.end();
 	  ++a_view_iterator )
     {
-	if ( comm_size == 1 )
-	{
-	    TEST_EQUALITY( *a_view_iterator, a_val + b_val );
-	}
-	else
-	{
-	    TEST_EQUALITY( *a_view_iterator, a_val );
-	}
+        TEST_EQUALITY( *a_view_iterator, 0.0 );
+    }
+
+    tally.combineSetTallies();
+
+    for ( a_view_iterator = A_view.begin();
+	  a_view_iterator != A_view.end();
+	  ++a_view_iterator )
+    {
+        TEST_EQUALITY( *a_view_iterator, a_val + b_val );
     }
 
     Teuchos::ArrayRCP<const Scalar> B_view = VT::view( *B );
@@ -158,14 +175,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, TallyHistory, LO, GO, Scalar )
 	  b_view_iterator != B_view.end();
 	  ++b_view_iterator )
     {
-	if ( comm_size == 1 )
-	{
-	    TEST_EQUALITY( *b_view_iterator, 0 );
-	}
-	else
-	{
-	    TEST_EQUALITY( *b_view_iterator, b_val );
-	}
+        if ( comm_size == 1 )
+        {
+            TEST_EQUALITY( *b_view_iterator, a_val+b_val );
+        }
+        else
+        {
+            if ( std::distance(B_view.begin(),b_view_iterator) < 10 )
+            {
+                TEST_EQUALITY( *b_view_iterator, a_val );
+            }
+            else
+            {
+                TEST_EQUALITY( *b_view_iterator, b_val );
+            }
+        }
     }
 
     TEST_EQUALITY( tally.numBaseRows(), VT::getLocalLength(*A) );
@@ -177,13 +201,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, TallyHistory, LO, GO, Scalar )
 	TEST_EQUALITY( base_rows[i], VT::getGlobalRow(*A,i) )
     }
 
-    TEST_EQUALITY( tally.numOverlapRows(), VT::getLocalLength(*B) );
-    Teuchos::Array<GO> overlap_rows = tally.overlapRows();
-    TEST_EQUALITY( Teuchos::as<GO>(overlap_rows.size()),
-		   tally.numOverlapRows() );
-    for ( int i = 0; i < overlap_rows.size(); ++i )
+    TEST_EQUALITY( tally.numTallyRows(), VT::getLocalLength(*B) );
+    Teuchos::Array<GO> tally_states = tally.tallyRows();
+    TEST_EQUALITY( Teuchos::as<GO>(tally_states.size()), tally.numTallyRows() );
+    for ( int i = 0; i < tally_states.size(); ++i )
     {
-	TEST_EQUALITY( overlap_rows[i], VT::getGlobalRow(*B,i) )
+	TEST_EQUALITY( tally_states[i], VT::getGlobalRow(*B,i) )
     }
 
     tally.zeroOut();
@@ -191,13 +214,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, TallyHistory, LO, GO, Scalar )
 	  a_view_iterator != A_view.end();
 	  ++a_view_iterator )
     {
-	TEST_EQUALITY( *a_view_iterator, 0 );
+	TEST_EQUALITY( *a_view_iterator, 0.0 );
     }
     for ( b_view_iterator = B_view.begin();
 	  b_view_iterator != B_view.end();
 	  ++b_view_iterator )
     {
-	TEST_EQUALITY( *b_view_iterator, 0 );
+	TEST_EQUALITY( *b_view_iterator, 0.0 );
     }
 }
 
@@ -221,25 +244,41 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, SetCombine, LO, GO, Scalar )
 	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
     Teuchos::RCP<VectorType> A = Tpetra::createVector<Scalar,LO,GO>( map_a );
 
+    Teuchos::Array<GO> forward_rows( local_num_rows );
+    for ( int i = 0; i < local_num_rows; ++i )
+    {
+	forward_rows[i] = i + local_num_rows*comm_rank;
+    }
     Teuchos::Array<GO> inverse_rows( local_num_rows );
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	inverse_rows[i] = 
 	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
     }
+    Teuchos::Array<GO> tally_rows( forward_rows.size() + inverse_rows.size() );
+    std::sort( forward_rows.begin(), forward_rows.end() );
+    std::sort( inverse_rows.begin(), inverse_rows.end() );
+    std::merge( forward_rows.begin(), forward_rows.end(),
+                inverse_rows.begin(), inverse_rows.end(),
+                tally_rows.begin() );
+    typename Teuchos::Array<GO>::iterator unique_it = 
+        std::unique( tally_rows.begin(), tally_rows.end() );
+    tally_rows.resize( std::distance(tally_rows.begin(),unique_it) );
+
     Teuchos::RCP<const Tpetra::Map<LO,GO> > map_b = 
-	Tpetra::createNonContigMap<LO,GO>( inverse_rows(), comm );
+	Tpetra::createNonContigMap<LO,GO>( tally_rows(), comm );
     Teuchos::RCP<VectorType> B = Tpetra::createVector<Scalar,LO,GO>( map_b );
 
-    MCLS::AdjointTally<VectorType> tally( A, B );
+    MCLS::AdjointTally<VectorType> tally( A, B, 0 );
 
     // Sub in a map-compatible base vector to ensure we can swap vectors and
     // still do the parallel export operation.
     Teuchos::RCP<VectorType> C = VT::clone(*A);
     tally.setBaseVector( C );
 
-    Scalar a_val = 2.0;
-    Scalar b_val = 3.0;
+    // Do the tallies.
+    Scalar a_val = 2;
+    Scalar b_val = 3;
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	GO state = i + local_num_rows*comm_rank;
@@ -253,8 +292,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, SetCombine, LO, GO, Scalar )
 	history.live();
 	tally.tallyHistory( history );
     }
-
-    tally.combineSetTallies();
     
     Teuchos::ArrayRCP<const Scalar> C_view = VT::view( *C );
     typename Teuchos::ArrayRCP<const Scalar>::const_iterator c_view_iterator;
@@ -262,14 +299,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, SetCombine, LO, GO, Scalar )
 	  c_view_iterator != C_view.end();
 	  ++c_view_iterator )
     {
-	if ( comm_size == 1 )
-	{
-	    TEST_EQUALITY( *c_view_iterator, 0 );
-	}
-	else
-	{
-	    TEST_EQUALITY( *c_view_iterator, a_val + b_val );
-	}
+        TEST_EQUALITY( *c_view_iterator, 0.0 );
+    }
+
+    tally.combineSetTallies();
+
+    for ( c_view_iterator = C_view.begin();
+	  c_view_iterator != C_view.end();
+	  ++c_view_iterator )
+    {
+        TEST_EQUALITY( *c_view_iterator, a_val + b_val );
     }
 
     Teuchos::ArrayRCP<const Scalar> B_view = VT::view( *B );
@@ -278,14 +317,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, SetCombine, LO, GO, Scalar )
 	  b_view_iterator != B_view.end();
 	  ++b_view_iterator )
     {
-	if ( comm_size == 1 )
-	{
-	    TEST_EQUALITY( *b_view_iterator, 0 );
-	}
-	else
-	{
-	    TEST_EQUALITY( *b_view_iterator, b_val );
-	}
+        if ( comm_size == 1 )
+        {
+            TEST_EQUALITY( *b_view_iterator, a_val+b_val );
+        }
+        else
+        {
+            if ( std::distance(B_view.begin(),b_view_iterator) < 10 )
+            {
+                TEST_EQUALITY( *b_view_iterator, a_val );
+            }
+            else
+            {
+                TEST_EQUALITY( *b_view_iterator, b_val );
+            }
+        }
     }
 }
 
@@ -345,17 +391,32 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, BlockCombine, LO, GO, Scalar )
 	    Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm_set );
 	Teuchos::RCP<VectorType> A = Tpetra::createVector<Scalar,LO,GO>( map_a );
 
-	Teuchos::Array<GO> inverse_rows( local_num_rows );
-	for ( int i = 0; i < local_num_rows; ++i )
-	{
-	    inverse_rows[i] = 
-		(local_num_rows-1-i) + local_num_rows*(set_size-1-set_rank);
-	}
-	Teuchos::RCP<const Tpetra::Map<LO,GO> > map_b = 
-	    Tpetra::createNonContigMap<LO,GO>( inverse_rows(), comm_set );
-	Teuchos::RCP<VectorType> B = Tpetra::createVector<Scalar,LO,GO>( map_b );
+        Teuchos::Array<GO> forward_rows( local_num_rows );
+        for ( int i = 0; i < local_num_rows; ++i )
+        {
+            forward_rows[i] = i + local_num_rows*set_rank;
+        }
+        Teuchos::Array<GO> inverse_rows( local_num_rows );
+        for ( int i = 0; i < local_num_rows; ++i )
+        {
+            inverse_rows[i] = 
+                (local_num_rows-1-i) + local_num_rows*(set_size-1-set_rank);
+        }
+        Teuchos::Array<GO> tally_rows( forward_rows.size() + inverse_rows.size() );
+        std::sort( forward_rows.begin(), forward_rows.end() );
+        std::sort( inverse_rows.begin(), inverse_rows.end() );
+        std::merge( forward_rows.begin(), forward_rows.end(),
+                    inverse_rows.begin(), inverse_rows.end(),
+                    tally_rows.begin() );
+        typename Teuchos::Array<GO>::iterator unique_it = 
+            std::unique( tally_rows.begin(), tally_rows.end() );
+        tally_rows.resize( std::distance(tally_rows.begin(),unique_it) );
 
-	MCLS::AdjointTally<VectorType> tally( A, B );
+        Teuchos::RCP<const Tpetra::Map<LO,GO> > map_b = 
+            Tpetra::createNonContigMap<LO,GO>( tally_rows(), comm_set );
+        Teuchos::RCP<VectorType> B = Tpetra::createVector<Scalar,LO,GO>( map_b );
+
+        MCLS::AdjointTally<VectorType> tally( A, B, 0 );
 
 	// Sub in a base vector over just set 0 after we have made the tally.
 	Teuchos::RCP<VectorType> C;
@@ -417,14 +478,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, BlockCombine, LO, GO, Scalar )
 	    }
 	}
 
-	// The overlap shouldn't change.
+	// The underlying tally vector shouldn't change.
 	Teuchos::ArrayRCP<const Scalar> B_view = VT::view( *B );
 	typename Teuchos::ArrayRCP<const Scalar>::const_iterator b_view_iterator;
 	for ( b_view_iterator = B_view.begin();
 	      b_view_iterator != B_view.end();
 	      ++b_view_iterator )
 	{
-	    TEST_EQUALITY( *b_view_iterator, b_val );
+            if ( std::distance(B_view.begin(),b_view_iterator) < 10 )
+            {
+                TEST_EQUALITY( *b_view_iterator, a_val );
+            }
+            else
+            {
+                TEST_EQUALITY( *b_view_iterator, b_val );
+            }
 	}
     }
 }
@@ -449,17 +517,33 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, Normalize, LO, GO, Scalar )
 	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
     Teuchos::RCP<VectorType> A = Tpetra::createVector<Scalar,LO,GO>( map_a );
 
+    Teuchos::Array<GO> forward_rows( local_num_rows );
+    for ( int i = 0; i < local_num_rows; ++i )
+    {
+	forward_rows[i] = i + local_num_rows*comm_rank;
+    }
     Teuchos::Array<GO> inverse_rows( local_num_rows );
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	inverse_rows[i] = 
 	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
     }
+    Teuchos::Array<GO> tally_rows( forward_rows.size() + inverse_rows.size() );
+    std::sort( forward_rows.begin(), forward_rows.end() );
+    std::sort( inverse_rows.begin(), inverse_rows.end() );
+    std::merge( forward_rows.begin(), forward_rows.end(),
+                inverse_rows.begin(), inverse_rows.end(),
+                tally_rows.begin() );
+    typename Teuchos::Array<GO>::iterator unique_it =
+        std::unique( tally_rows.begin(), tally_rows.end() );
+    tally_rows.resize( std::distance(tally_rows.begin(),unique_it) );
+
     Teuchos::RCP<const Tpetra::Map<LO,GO> > map_b = 
-	Tpetra::createNonContigMap<LO,GO>( inverse_rows(), comm );
+	Tpetra::createNonContigMap<LO,GO>( tally_rows(), comm );
     Teuchos::RCP<VectorType> B = Tpetra::createVector<Scalar,LO,GO>( map_b );
 
-    MCLS::AdjointTally<VectorType> tally( A, B );
+    MCLS::AdjointTally<VectorType> tally( A, B, 0 );
+
     Scalar a_val = 2;
     Scalar b_val = 3;
     for ( int i = 0; i < local_num_rows; ++i )
@@ -486,14 +570,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, Normalize, LO, GO, Scalar )
 	  a_view_iterator != A_view.end();
 	  ++a_view_iterator )
     {
-	if ( comm_size == 1 )
-	{
-	    TEST_EQUALITY( *a_view_iterator, 0 );
-	}
-	else
-	{
-	    TEST_EQUALITY( *a_view_iterator, (a_val + b_val) / nh );
-	}
+        TEST_EQUALITY( *a_view_iterator, (a_val + b_val) / nh );
     }
 
     Teuchos::ArrayRCP<const Scalar> B_view = VT::view( *B );
@@ -502,14 +579,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, Normalize, LO, GO, Scalar )
 	  b_view_iterator != B_view.end();
 	  ++b_view_iterator )
     {
-	if ( comm_size == 1 )
-	{
-	    TEST_EQUALITY( *b_view_iterator, 0 );
-	}
-	else
-	{
-	    TEST_EQUALITY( *b_view_iterator, b_val );
-	}
+        if ( comm_size == 1 )
+        {
+            TEST_EQUALITY( *b_view_iterator, a_val+b_val );
+        }
+        else
+        {
+            if ( std::distance(B_view.begin(),b_view_iterator) < 10 )
+            {
+                TEST_EQUALITY( *b_view_iterator, a_val );
+            }
+            else
+            {
+                TEST_EQUALITY( *b_view_iterator, b_val );
+            }
+        }
     }
 }
 

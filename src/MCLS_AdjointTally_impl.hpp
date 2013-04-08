@@ -76,7 +76,7 @@ AdjointTally<Vector>::AdjointTally( const Teuchos::RCP<Vector>& x,
 template<class Vector>
 void AdjointTally<Vector>::combineSetTallies()
 {
-    d_export->doExportInsert();
+    d_export->doExportAdd();
 }
 
 //---------------------------------------------------------------------------//
