@@ -124,9 +124,9 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one )
     global_columns[0] = 0;
     global_columns[1] = 1;
     global_columns[2] = 2;
-    values[0] = 0.14;
+    values[0] = 1.0;
     values[1] = 0.14;
-    values[2] = 1.0;
+    values[2] = 0.0;
     A->InsertGlobalValues( 0, global_columns.size(), 
 			   &values[0], &global_columns[0] );
     for ( int i = 1; i < global_num_rows-1; ++i )
@@ -143,7 +143,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one )
     global_columns[0] = global_num_rows-3;
     global_columns[1] = global_num_rows-2;
     global_columns[2] = global_num_rows-1;
-    values[0] = 0.14;
+    values[0] = 0.0;
     values[1] = 0.14;
     values[2] = 1.0;
     A->InsertGlobalValues( global_num_rows-1, global_columns.size(), 
@@ -165,7 +165,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one )
     // Solver parameters.
     Teuchos::RCP<Teuchos::ParameterList> plist = 
 	Teuchos::rcp( new Teuchos::ParameterList() );
-    double cutoff = 1.0e-6;
+    double cutoff = 1.0e-8;
     plist->set<std::string>("MC Type", "Adjoint");
     plist->set<double>("Convergence Tolerance", 1.0e-8);
     plist->set<int>("Maximum Iterations", 10);
@@ -188,9 +188,9 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one )
     // Solve the problem.
     bool converged_status = solver_manager.solve();
 
-    TEST_ASSERT( !converged_status );
-    TEST_ASSERT( !solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), 10 );
+    TEST_ASSERT( converged_status );
+    TEST_ASSERT( solver_manager.getConvergedStatus() );
+    TEST_EQUALITY( solver_manager.getNumIters(), 9 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
 
     // Check that we got a negative solution.
@@ -206,9 +206,9 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one )
     VT::putScalar( *x, 0.0 );
     linear_problem->setLHS(x);
     converged_status = solver_manager.solve();
-    TEST_ASSERT( !converged_status );
-    TEST_ASSERT( !solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), 10 );
+    TEST_ASSERT( converged_status );
+    TEST_ASSERT( solver_manager.getConvergedStatus() );
+    TEST_EQUALITY( solver_manager.getNumIters(), 9 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -220,9 +220,9 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one )
     linear_problem->setLHS(x);
     solver_manager.setProblem( linear_problem );
     converged_status = solver_manager.solve();
-    TEST_ASSERT( !converged_status );
-    TEST_ASSERT( !solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), 10 );
+    TEST_ASSERT( converged_status );
+    TEST_ASSERT( solver_manager.getConvergedStatus() );
+    TEST_EQUALITY( solver_manager.getNumIters(), 9 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -234,9 +234,9 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one )
     VT::putScalar( *x, 0.0 );
     linear_problem->setLHS(x);
     converged_status = solver_manager.solve();
-    TEST_ASSERT( !converged_status );
-    TEST_ASSERT( !solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), 10 );
+    TEST_ASSERT( converged_status );
+    TEST_ASSERT( solver_manager.getConvergedStatus() );
+    TEST_EQUALITY( solver_manager.getNumIters(), 9 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -365,9 +365,9 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two )
 	// Solve the problem.
 	bool converged_status = solver_manager.solve();
 
-	TEST_ASSERT( !converged_status );
-	TEST_ASSERT( !solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 10 );
+	TEST_ASSERT( converged_status );
+	TEST_ASSERT( solver_manager.getConvergedStatus() );
+	TEST_EQUALITY( solver_manager.getNumIters(), 7 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
@@ -403,9 +403,9 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two )
 
 	converged_status = solver_manager.solve();
 
-	TEST_ASSERT( !converged_status );
-	TEST_ASSERT( !solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 10 );
+	TEST_ASSERT( converged_status );
+	TEST_ASSERT( solver_manager.getConvergedStatus() );
+	TEST_EQUALITY( solver_manager.getNumIters(), 7 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
@@ -435,9 +435,9 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two )
 	comm->barrier();
 	solver_manager.setProblem( linear_problem );
 	converged_status = solver_manager.solve();
-	TEST_ASSERT( !converged_status );
-	TEST_ASSERT( !solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 10 );
+	TEST_ASSERT( converged_status );
+	TEST_ASSERT( solver_manager.getConvergedStatus() );
+	TEST_EQUALITY( solver_manager.getNumIters(), 7 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
@@ -471,9 +471,9 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two )
 	comm->barrier();
 
 	converged_status = solver_manager.solve();
-	TEST_ASSERT( !converged_status );
-	TEST_ASSERT( !solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 10 );
+	TEST_ASSERT( converged_status );
+	TEST_ASSERT( solver_manager.getConvergedStatus() );
+	TEST_EQUALITY( solver_manager.getNumIters(), 7 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );

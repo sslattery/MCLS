@@ -95,7 +95,7 @@ class EpetraParaSailsPreconditioner : public Preconditioner<Epetra_RowMatrix>
 
     //! Get the left preconditioner.
     Teuchos::RCP<const matrix_type> getLeftPreconditioner() const
-    { return Teuchos::null; }
+    { return d_preconditioner; }
 
     //! Get the right preconditioner.
     Teuchos::RCP<const matrix_type> getRightPreconditioner() const

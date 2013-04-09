@@ -38,8 +38,8 @@ TRIBITS_ADD_TEST(
     --max-fwd-error=1e-2 --max-resid=1e-2 --max-solution-error=1e-2 --max-iters=1
     --mc-histories=100000 --matrix-file=KheadK.mtx
      --solver-type="Adjoint MC" --prec-type="Block Jacobi" --block-size=2
-  POSTFIX_AND_ARGS_6 KheadK_adjmc_nrhs3
-    --use-preconditioner --show-all-tests --num-rhs=3
+  POSTFIX_AND_ARGS_6 KheadK_adjmc_nrhs2
+    --use-preconditioner --show-all-tests --num-rhs=2
     --max-fwd-error=1e-2 --max-resid=1e-2 --max-solution-error=1e-2 --max-iters=1
     --mc-histories=100000 --matrix-file=KheadK.mtx
      --solver-type="Adjoint MC" --prec-type="Block Jacobi" --block-size=2

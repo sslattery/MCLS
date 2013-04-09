@@ -726,7 +726,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, Diagonal, LO, GO, Scalar )
 	    domain.processTransition( history );
 
 	    TEST_EQUALITY( history.state(), i );
-	    TEST_EQUALITY( history.weight(), weight*(comm_size*3-1) );
+	    TEST_EQUALITY( history.weight(), -weight*(comm_size*3-1) );
 	}
     }
 }

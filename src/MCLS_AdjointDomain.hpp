@@ -218,13 +218,15 @@ inline void AdjointDomain<Vector,Matrix>::processTransition(
     MCLS_CHECK( index != d_row_indexer->end() );
 
     // Sample the row CDF to get a new state.
-    history.setState( 
-	(*d_columns[index->second])[ 
-	    SamplingTools::sampleDiscreteCDF( d_cdfs[index->second](),
-					      history.rng().random() ) ] );
+    Ordinal new_state = 
+        SamplingTools::sampleDiscreteCDF( d_cdfs[index->second](),
+                                          history.rng().random() );
+    history.setState( (*d_columns[index->second])[new_state] );
 
     // Update the history weight with the transition weight.
-    history.multiplyWeight( d_weights[index->second] );
+    history.multiplyWeight( d_weights[index->second] *
+                            d_h[index->second][new_state] /
+                            std::abs(d_h[index->second][new_state]) );
 }
 
 //---------------------------------------------------------------------------//

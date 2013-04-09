@@ -109,25 +109,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSolver, solve, LO, GO, Scalar )
     global_columns[0] = 0;
     global_columns[1] = 1;
     global_columns[2] = 2;
-    values[0] = 0.24/comm_size;
-    values[1] = 0.24/comm_size;
-    values[2] = 1.0/comm_size;
+    values[0] = 1.0/comm_size;
+    values[1] = 0.14/comm_size;
+    values[2] = 0.0/comm_size;
     A->insertGlobalValues( 0, global_columns(), values() );
     for ( int i = 1; i < global_num_rows-1; ++i )
     {
 	global_columns[0] = i-1;
 	global_columns[1] = i;
 	global_columns[2] = i+1;
-	values[0] = 0.24/comm_size;
+	values[0] = 0.14/comm_size;
 	values[1] = 1.0/comm_size;
-	values[2] = 0.24/comm_size;
+	values[2] = 0.14/comm_size;
 	A->insertGlobalValues( i, global_columns(), values() );
     }
     global_columns[0] = global_num_rows-3;
     global_columns[1] = global_num_rows-2;
     global_columns[2] = global_num_rows-1;
-    values[0] = 0.24/comm_size;
-    values[1] = 0.24/comm_size;
+    values[0] = 0.0/comm_size;
+    values[1] = 0.14/comm_size;
     values[2] = 1.0/comm_size;
     A->insertGlobalValues( global_num_rows-1, global_columns(), values() );
     A->fillComplete();
@@ -140,7 +140,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSolver, solve, LO, GO, Scalar )
     // Build the RHS with negative numbers. this gives us a negative
     // solution. 
     Teuchos::RCP<VectorType> b = MT::cloneVectorFromMatrixRows( *A );
-    VT::putScalar( *b, -1.0 );
+    VT::putScalar( *b, -2.0 );
 
     // Create the solver.
     Teuchos::RCP<Teuchos::ParameterList> plist = 
@@ -156,7 +156,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSolver, solve, LO, GO, Scalar )
     Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( A, x, *plist ) );
 
     // Create the adjoint source with a set number of histories.
-    int mult = 10;
+    int mult = 100;
     plist->set<int>("Set Number of Histories", mult*global_num_rows);
     Teuchos::RCP<SourceType> source = Teuchos::rcp(
 	new SourceType( b, domain, solver.rngControl(), comm, 

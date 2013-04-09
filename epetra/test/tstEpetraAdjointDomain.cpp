@@ -758,7 +758,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Diagonal )
 	    domain.processTransition( history );
 
 	    TEST_EQUALITY( history.state(), i );
-	    TEST_EQUALITY( history.weight(), weight*2 );
+	    TEST_EQUALITY( history.weight(), -weight*2 );
 	}
     }
 }
