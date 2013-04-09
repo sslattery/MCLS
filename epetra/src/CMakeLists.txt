@@ -42,7 +42,7 @@ TRIBITS_ADD_LIBRARY(
   mclsepetra
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS mcls epetra epetraext
+  DEPLIBS mcls epetra epetraext parasails
   )
 
 INSTALL(FILES 
