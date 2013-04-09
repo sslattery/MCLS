@@ -48,7 +48,6 @@
 #include <Epetra_Vector.h>
 
 #include <ParaSails.h>
-#include <Matrix.h>
 
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
@@ -76,9 +75,9 @@ Teuchos::RCP<const Teuchos::ParameterList>
 EpetraParaSailsPreconditioner::getValidParameters() const
 {
     Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::parameterList();
-    d_plist->set<double>("ParaSails: Threshold", 1.0);
-    d_plist->set<double>("ParaSails: Number of Levels", 1.0);
-    d_plist->set<double>("ParaSails: Filter", 1.0);
+    d_plist->set<double>("ParaSails: Threshold", 0.0);
+    d_plist->set<int>("ParaSails: Number of Levels", 0.0);
+    d_plist->set<double>("ParaSails: Filter", 0.0);
     return plist;
 }
 
@@ -126,7 +125,7 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
 
     // Get the ParaSails parameters.
     double threshold = d_plist->get<double>("ParaSails: Threshold");
-    double num_levels = d_plist->get<double>("ParaSails: Number of Levels");
+    int num_levels = d_plist->get<int>("ParaSails: Number of Levels");
     double filter = d_plist->get<double>("ParaSails: Filter");
 
     // Extract the raw MPI handle.
@@ -189,19 +188,16 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
     Teuchos::ArrayView<int> mlens( parasails->M->lens, end_row-beg_row+1 );
     int max_m_entries = *std::max( mlens.begin(), mlens.end() );
     int num_m_entries = 0;
-    int* m_indices_ptr;
-    double* m_values_ptr;
     Teuchos::ArrayRCP<double> m_values( max_m_entries );
     Teuchos::ArrayRCP<int> m_indices( max_m_entries );
+    int* m_indices_ptr = m_indices.getRawPtr();
+    double* m_values_ptr = m_values.getRawPtr();
     for ( int i = beg_row; i < end_row+1; ++i )
     {
-        m_indices_ptr = m_indices.getRawPtr();
-        m_values_ptr = m_values.getRawPtr();
         MatrixGetRow( parasails->M, i, &num_m_entries, 
                       &m_indices_ptr, &m_values_ptr );
-
         error = d_preconditioner->InsertGlobalValues(
-            i, num_m_entries, m_values.getRawPtr(), m_indices.getRawPtr() );
+            i, num_m_entries, m_values_ptr, m_indices_ptr );
         MCLS_CHECK( 0 == error );
     }
 	    
