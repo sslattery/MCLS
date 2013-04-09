@@ -1,6 +1,0 @@
-INCLUDE(TribitsTplDeclareLibraries)
-
-TRIBITS_TPL_DECLARE_LIBRARIES(ParaSails
-  REQUIRED_HEADERS ParaSails.h
-  REQUIRED_LIBS_NAMES ParaSails
-  )
