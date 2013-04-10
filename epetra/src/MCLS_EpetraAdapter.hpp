@@ -44,6 +44,7 @@
 #include "MCLS_EpetraVectorAdapter.hpp"
 #include "MCLS_EpetraVectorExport.hpp"
 #include "MCLS_EpetraRowMatrixAdapter.hpp"
+#include "MCLS_EpetraMatrixAlgorithms.hpp"
 
 #endif // end MCLS_EPETRAADAPTER_HPP
 

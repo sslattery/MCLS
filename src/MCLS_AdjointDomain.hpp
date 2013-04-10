@@ -52,6 +52,7 @@
 #include "MCLS_Events.hpp"
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_MatrixTraits.hpp"
+#include "MCLS_MatrixAlgorithms.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
@@ -102,6 +103,7 @@ class AdjointDomain
     typedef VectorTraits<Vector>                          VT;
     typedef Matrix                                        matrix_type;
     typedef MatrixTraits<Vector,Matrix>                   MT;
+    typedef MatrixAlgorithms<Vector,Matrix>               MA;
     typedef typename VT::global_ordinal_type              Ordinal;
     typedef AdjointTally<Vector>                          TallyType;
     typedef typename TallyType::HistoryType               HistoryType;
@@ -160,10 +162,8 @@ class AdjointDomain
 
     // Add matrix data to the local domain.
     void addMatrixToDomain( const Teuchos::RCP<const Matrix>& A,
-                            std::set<Ordinal>& tally_states,
-                            const double filter_tol,
-                            const int fill_value,
-                            const double weight_recovery );
+                            const Teuchos::RCP<const Vector>& recovered_weights,
+                            std::set<Ordinal>& tally_states );
 
     // Build boundary data.
     void buildBoundary( const Teuchos::RCP<const Matrix>& A,

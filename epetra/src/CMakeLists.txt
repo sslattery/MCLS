@@ -20,6 +20,7 @@ APPEND_SET(HEADERS
   MCLS_EpetraBlockJacobiPreconditioner.hpp
   MCLS_EpetraHelpers.hpp
   MCLS_EpetraILUTPreconditioner.hpp
+  MCLS_EpetraMatrixAlgorithms.hpp
   MCLS_EpetraParaSailsPreconditioner.hpp
   MCLS_EpetraPointJacobiPreconditioner.hpp
   MCLS_EpetraRowMatrixAdapter.hpp

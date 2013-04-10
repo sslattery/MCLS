@@ -446,14 +446,13 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
 	    return EpetraMatrixHelpers<matrix_type>::copyNearestNeighbors( 
 		matrix, num_neighbors );
     }
-
 };
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_EPETRAROWMATRIXADAPTER_HPP
-
 } // end namespace MCLS
+
+#endif // end MCLS_EPETRAROWMATRIXADAPTER_HPP
 
 //---------------------------------------------------------------------------//
 // end MCLS_EpetraRowMatrixAdapter.hpp

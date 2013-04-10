@@ -360,20 +360,7 @@ class MatrixTraits
 	UndefinedMatrixTraits<Vector,Matrix>::notDefined(); 
 	return Teuchos::null; 
     }
-
-    /*
-     * \brief Create a reference-counted pointer to a new matrix with a copy
-     * of a specified number of off-process nearest-neighbor global rows.
-     */
-    static Teuchos::RCP<Matrix> 
-    copyNearestNeighbors( const Matrix& matrix,
-			  const global_ordinal_type& num_neighbors )
-    { 
-	UndefinedMatrixTraits<Vector,Matrix>::notDefined(); 
-	return Teuchos::null; 
-    }
-
-  };
+};
 
 //---------------------------------------------------------------------------//
 
