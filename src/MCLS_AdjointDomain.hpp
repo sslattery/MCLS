@@ -160,7 +160,10 @@ class AdjointDomain
 
     // Add matrix data to the local domain.
     void addMatrixToDomain( const Teuchos::RCP<const Matrix>& A,
-                            std::set<Ordinal>& tally_states );
+                            std::set<Ordinal>& tally_states,
+                            const double filter_tol,
+                            const int fill_value,
+                            const double weight_recovery );
 
     // Build boundary data.
     void buildBoundary( const Teuchos::RCP<const Matrix>& A,

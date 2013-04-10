@@ -42,6 +42,7 @@
 #define MCLS_ADJOINTDOMAIN_IMPL_HPP
 
 #include <algorithm>
+#include <limits>
 
 #include "MCLS_MatrixTraits.hpp"
 #include "MCLS_Serializer.hpp"
@@ -86,6 +87,30 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 
     // Isolate domain generation for memory management.
     {
+        // Get the filter tolerance.
+        double filter_tol = 0.0;
+        if ( plist.isParameter("Domain Filter Tolerance") )
+        {
+            filter_tol = plist.get<double>("Domain Filter Tolerance");
+        }
+        MCLS_CHECK( 0.0 <= filter_tol );
+
+        // Get the fill value.
+        int fill_value = std::numeric_limits<int>::max();
+        if ( plist.isParameter("Domain Fill Value") )
+        {
+            fill_value = plist.get<int>("Domain Fill Value");
+        }
+        MCLS_CHECK( 0 <= fill_value );
+
+        // Get the weight recovery value.
+        double weight_recovery = 0.0;
+        if ( plist.isParameter("Domain Weight Recovery") )
+        {
+            weight_recovery = plist.get<double>("Domain Weight Recovery");
+        }
+        MCLS_CHECK( 0.0 <= weight_recovery && 1.0 >= weight_recovery );
+
         // Generate the transpose of the operator.
         Teuchos::RCP<Matrix> A_T = MT::copyTranspose( *A );
 
@@ -117,8 +142,10 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
         d_h = Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( num_rows );
 
         // Build the local CDFs and weights.
-        addMatrixToDomain( A_T, tally_states );
-        addMatrixToDomain( A_T_overlap, tally_states );
+        addMatrixToDomain( A_T, tally_states, 
+                           filter_tol, fill_value, weight_recovery );
+        addMatrixToDomain( A_T_overlap, tally_states, 
+                           filter_tol, fill_value, weight_recovery );
 
         // Get the boundary states and their owning process ranks.
         if ( num_overlap == 0 )
@@ -209,7 +236,7 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 
     // Unpack the number of tally rows in the tally.
     ds >> num_tally;
-    MCLS_CHECK( num_tally == num_rows );
+    MCLS_CHECK( num_tally > 0 );
 
     // Unpack the local row indexer by key-value pairs.
     Ordinal global_row = 0;
@@ -719,7 +746,8 @@ int AdjointDomain<Vector,Matrix>::owningNeighbor( const Ordinal& state ) const
  */
 template<class Vector, class Matrix>
 void AdjointDomain<Vector,Matrix>::addMatrixToDomain( 
-    const Teuchos::RCP<const Matrix>& A, std::set<Ordinal>& tally_states )
+    const Teuchos::RCP<const Matrix>& A, std::set<Ordinal>& tally_states,
+    const double filter_tol, const int fill_value, const double weight_recovery )
 {
     MCLS_REQUIRE( !A.is_null() );
 
@@ -728,11 +756,17 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
     int offset = d_row_indexer->size();
     int max_entries = MT::getGlobalMaxNumRowEntries( *A );
     std::size_t num_entries = 0;
-    typename Teuchos::Array<Ordinal>::const_iterator diagonal_iterator;
+    double filter_sum = 0.0;
+    typename Teuchos::Array<Ordinal>::iterator column_iterator;
     Teuchos::Array<double>::iterator cdf_iterator;
+    Teuchos::Array<double> sorted_values;
+    Teuchos::Array<double>::iterator sorted_values_it;
 
     for ( Ordinal i = 0; i < local_num_rows; ++i )
     {
+        // Reset the filter sum.
+        filter_sum = 0.0;
+
 	// Add the global row id and local row id to the indexer.
 	global_row = MT::getGlobalRow(*A, i);
 	(*d_row_indexer)[global_row] = i+offset;
@@ -756,20 +790,86 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
 	d_columns[i+offset]->resize( num_entries );
 	d_cdfs[i+offset].resize( num_entries );
 
-	// If this row contains an entry on the diagonal, add 1 for the
+	// If this row contains an entry on the column, add 1 for the
 	// identity matrix (H^T = I-A^T).
-	diagonal_iterator = std::find( d_columns[i+offset]->begin(),
-				       d_columns[i+offset]->end(),
-				       global_row );
-	if ( diagonal_iterator != d_columns[i+offset]->end() )
+	column_iterator = std::find( d_columns[i+offset]->begin(),
+                                     d_columns[i+offset]->end(),
+                                     global_row );
+	if ( column_iterator != d_columns[i+offset]->end() )
 	{
-	    d_cdfs[i+offset][ std::distance(
-		    Teuchos::as<typename Teuchos::Array<Ordinal>::const_iterator>(
-			d_columns[i+offset]->begin()), diagonal_iterator) ] += 1.0;
+	    d_cdfs[i+offset][ std::distance(d_columns[i+offset]->begin(),
+                                            column_iterator) ] += 1.0;
         }
 
+        // Apply the filter tolerance.
+        for ( cdf_iterator = d_cdfs[i+offset].begin(),
+           column_iterator = d_columns[i+offset]->begin();
+              cdf_iterator != d_cdfs[i+offset].end();
+              ++cdf_iterator, ++column_iterator )
+        {
+            if ( std::abs(*cdf_iterator) < filter_tol )
+            {
+                filter_sum += std::abs(*cdf_iterator);
+                *cdf_iterator = 0.0;
+                *column_iterator = -1;
+            }
+        }
+        cdf_iterator = std::remove( d_cdfs[i+offset].begin(), 
+                                    d_cdfs[i+offset].end(), 0.0 );
+        d_cdfs[i+offset].resize( std::distance(d_cdfs[i+offset].begin(),
+                                               cdf_iterator) );
+        column_iterator = std::remove( d_columns[i+offset]->begin(), 
+                                       d_columns[i+offset]->end(), -1 );
+        d_columns[i+offset]->resize( std::distance(d_columns[i+offset]->begin(),
+                                                   column_iterator) );
+
+        // Apply the fill level.
+        if ( d_cdfs[i+offset].size() > fill_value )
+        {
+            // Get the fill value cutoff.
+            sorted_values.resize(d_cdfs[i+offset].size() );
+            std::copy( d_cdfs[i+offset].begin(), d_cdfs[i+offset].end(), 
+                       sorted_values.begin() );
+            for( sorted_values_it = sorted_values.begin();
+                 sorted_values_it != sorted_values.end();
+                 ++sorted_values_it )
+            {
+                *sorted_values_it = std::abs( *sorted_values_it );
+            }
+            std::nth_element( sorted_values.begin(), 
+                              sorted_values.end()-fill_value,
+                              sorted_values.end() );
+
+            // Filter any values below the fill value cutoff.
+            for ( cdf_iterator = d_cdfs[i+offset].begin(),
+               column_iterator = d_columns[i+offset]->begin();
+                  cdf_iterator != d_cdfs[i+offset].end();
+                  ++cdf_iterator, ++column_iterator )
+            {
+                if ( std::abs(*cdf_iterator) <
+                     *(sorted_values.end()-fill_value) )
+                {
+                    filter_sum += std::abs(*cdf_iterator);
+                    *cdf_iterator = 0.0;
+                    *column_iterator = -1;
+                }
+            }
+            cdf_iterator = std::remove( d_cdfs[i+offset].begin(), 
+                                        d_cdfs[i+offset].end(), 0.0 );
+            d_cdfs[i+offset].resize( std::distance(d_cdfs[i+offset].begin(),
+                                                   cdf_iterator) );
+            column_iterator = std::remove( d_columns[i+offset]->begin(), 
+                                           d_columns[i+offset]->end(), -1 );
+            d_columns[i+offset]->resize( std::distance(d_columns[i+offset]->begin(),
+                                                       column_iterator) );
+        }
+
+	// Check again for degeneracy and consistency.
+	MCLS_CHECK( d_cdfs[i+offset].size() > 0 );
+        MCLS_CHECK( d_cdfs[i+offset].size() == d_columns[i+offset]->size() );
+
         // Save the current cdf state as the iteration matrix.
-        d_h[i+offset] = Teuchos::ArrayRCP<double>( num_entries );
+        d_h[i+offset] = Teuchos::ArrayRCP<double>( d_cdfs[i+offset].size() );
         std::copy( d_cdfs[i+offset].begin(), d_cdfs[i+offset].end(),
                    d_h[i+offset].begin() );
 
@@ -796,8 +896,10 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
 	    *cdf_iterator /= d_weights[i+offset];
 	    MCLS_CHECK( *cdf_iterator >= 0.0 );
 	}
-
 	MCLS_CHECK( std::abs(1.0 - d_cdfs[i+offset].back()) < 1.0e-6 );
+
+        // Recover the weight.
+        d_weights[i+offset] += filter_sum*weight_recovery;
 
         // If we're using the collision estimator, add the global row as a
         // local tally state.
@@ -897,4 +999,3 @@ void AdjointDomain<Vector,Matrix>::buildBoundary(
 //---------------------------------------------------------------------------//
 // end MCLS_AdjointDomain_impl.hpp
 // ---------------------------------------------------------------------------//
-
