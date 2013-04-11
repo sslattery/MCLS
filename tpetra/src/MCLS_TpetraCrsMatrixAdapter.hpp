@@ -352,9 +352,10 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
      */
     static void multiply( const Teuchos::RCP<const matrix_type>& A, 
 			  const Teuchos::RCP<const matrix_type>& B, 
-			  const Teuchos::RCP<matrix_type>& C ) 
+			  const Teuchos::RCP<matrix_type>& C,
+                          bool use_transpose ) 
     {
-	Tpetra::MatrixMatrix::Multiply( *A, false, *B, false, *C );
+	Tpetra::MatrixMatrix::Multiply( *A, use_transpose, *B, use_transpose, *C );
     }
 
     /*!

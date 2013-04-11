@@ -197,8 +197,15 @@ void MCSASolverManager<Vector,Matrix>::setProblem(
         {
             if ( update_operator )
             {
-                d_residual_problem->setOperator( 
-                    d_problem->getCompositeOperator() );
+                d_residual_problem->setOperator( d_problem->getOperator() );
+                if ( d_problem->isLeftPrec() )
+                {
+                    d_residual_problem->setLeftPrec( d_problem->getLeftPrec() );
+                }
+                if ( d_problem->isRightPrec() )
+                {
+                    d_residual_problem->setRightPrec( d_problem->getRightPrec() );
+                }
             }
 	    d_residual_problem->setRHS( d_problem->getPrecResidual() );
 	}
@@ -415,15 +422,25 @@ void MCSASolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
     // Generate the residual Monte Carlo problem on the primary set. The
-    // preconditioned residual is the source and the composite operator is the
-    // domain.
+    // preconditioned residual is the source and the transposed composite
+    // operator is the domain. We pass the preconditioners and operator
+    // separately to defer composite operator construction until the last
+    // possible moment.
     if ( d_primary_set )
     {
 	Teuchos::RCP<Vector> delta_x = VT::clone( *d_problem->getLHS() );
 	d_residual_problem = Teuchos::rcp(
-	    new LinearProblemType( d_problem->getCompositeOperator(),
+	    new LinearProblemType( d_problem->getOperator(),
 				   delta_x,
 				   d_problem->getPrecResidual() ) );
+        if ( d_problem->isLeftPrec() )
+        {
+            d_residual_problem->setLeftPrec( d_problem->getLeftPrec() );
+        }
+        if ( d_problem->isRightPrec() )
+        {
+            d_residual_problem->setRightPrec( d_problem->getRightPrec() );
+        }
     }
     d_global_comm->barrier();
 
@@ -441,7 +458,7 @@ void MCSASolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
     {
 	d_mc_solver = Teuchos::rcp( 
 	    new AdjointSolverManager<Vector,Matrix>(
-		d_residual_problem, d_global_comm, d_plist) );
+		d_residual_problem, d_global_comm, d_plist, true) );
 
 	// Get the block constant communicator.
 	MCLS_CHECK( Teuchos::nonnull(d_mc_solver) );

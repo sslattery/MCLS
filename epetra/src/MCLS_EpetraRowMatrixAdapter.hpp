@@ -394,9 +394,10 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
      */
     static void multiply( const Teuchos::RCP<const matrix_type>& A, 
 			  const Teuchos::RCP<const matrix_type>& B, 
-			  const Teuchos::RCP<matrix_type>& C )
+			  const Teuchos::RCP<matrix_type>& C,
+                          bool use_transpose )
     { 
-	EpetraMatrixHelpers<matrix_type>::multiply( A, B, C);
+	EpetraMatrixHelpers<matrix_type>::multiply( A, B, C, use_transpose);
     }
 
     /*!

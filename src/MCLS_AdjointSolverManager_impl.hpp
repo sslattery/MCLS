@@ -59,9 +59,11 @@ namespace MCLS
 template<class Vector, class Matrix>
 AdjointSolverManager<Vector,Matrix>::AdjointSolverManager( 
     const Teuchos::RCP<const Comm>& global_comm,
-    const Teuchos::RCP<Teuchos::ParameterList>& plist )
+    const Teuchos::RCP<Teuchos::ParameterList>& plist,
+    bool internal_solver )
     : d_global_comm( global_comm )
     , d_plist( plist )
+    , d_internal_solver( internal_solver )
 {
     MCLS_REQUIRE( !d_global_comm.is_null() );
     MCLS_REQUIRE( !d_plist.is_null() );
@@ -75,10 +77,12 @@ template<class Vector, class Matrix>
 AdjointSolverManager<Vector,Matrix>::AdjointSolverManager( 
     const Teuchos::RCP<LinearProblemType>& problem,
     const Teuchos::RCP<const Comm>& global_comm,
-    const Teuchos::RCP<Teuchos::ParameterList>& plist )
+    const Teuchos::RCP<Teuchos::ParameterList>& plist,
+    bool internal_solver )
     : d_problem( problem )
     , d_global_comm( global_comm )
     , d_plist( plist )
+    , d_internal_solver( internal_solver )
     , d_primary_set( !d_problem.is_null() )
 {
     MCLS_REQUIRE( !d_global_comm.is_null() );
@@ -287,7 +291,7 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
             }
 
             // Left precondition if necessary.
-            if ( d_problem->isLeftPrec() )
+            if ( d_problem->isLeftPrec() && !d_internal_solver )
             {
                 Teuchos::RCP<Vector> temp = VT::clone( *d_problem->getRHS() );
                 d_problem->applyLeftPrec( *d_problem->getRHS(), *temp );
@@ -307,7 +311,7 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
 
         // If we're right preconditioned then we have to recover the original
         // solution on the primary set.
-	if ( d_problem->isRightPrec() )
+	if ( d_problem->isRightPrec() && !d_internal_solver )
 	{
             Teuchos::RCP<Vector> temp = VT::clone(*d_problem->getLHS());
 	    d_problem->applyRightPrec( *d_problem->getLHS(), *temp );
@@ -351,14 +355,14 @@ void AdjointSolverManager<Vector,Matrix>::buildMonteCarloDomain()
     // Set a global scope variable for the primary domain.
     Teuchos::RCP<DomainType> primary_domain;
 
-    // Build the primary domain in the primary set using the composite
-    // operator.
+    // Build the primary domain in the primary set using the tranposed
+    // composite operator.
     if ( d_primary_set )
     {
-	primary_domain = Teuchos::rcp( 
-	    new DomainType( d_problem->getCompositeOperator(),
-			    d_problem->getLHS(),
-			    *d_plist ) );
+        primary_domain = Teuchos::rcp( 
+            new DomainType( d_problem->getTransposeCompositeOperator(),
+                            d_problem->getLHS(),
+                            *d_plist ) );
     }
     d_global_comm->barrier();
 
@@ -397,7 +401,7 @@ void AdjointSolverManager<Vector,Matrix>::buildMonteCarloSource()
         rhs_export.doExportInsert();
 
         // Left precondition the source if necessary.
-        if ( d_problem->isLeftPrec() )
+        if ( d_problem->isLeftPrec() && !d_internal_solver )
         {
             Teuchos::RCP<Vector> temp = VT::clone(*rhs_op_decomp);
             d_problem->applyLeftPrec( *rhs_op_decomp, *temp );

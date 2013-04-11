@@ -87,12 +87,14 @@ class AdjointSolverManager : public SolverManager<Vector,Matrix>
 
     // Comm constructor. setProblem() must be called before solve().
     AdjointSolverManager( const Teuchos::RCP<const Comm>& global_comm,
-			  const Teuchos::RCP<Teuchos::ParameterList>& plist );
+			  const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                          bool internal_solver = false );
 
     // Constructor.
     AdjointSolverManager( const Teuchos::RCP<LinearProblemType>& problem,
 			  const Teuchos::RCP<const Comm>& global_comm,
-			  const Teuchos::RCP<Teuchos::ParameterList>& plist );
+			  const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                          bool internal_solver = false );
 
     //! Destructor.
     ~AdjointSolverManager() { /* ... */ }
@@ -154,6 +156,9 @@ class AdjointSolverManager : public SolverManager<Vector,Matrix>
 
     // Parameters.
     Teuchos::RCP<Teuchos::ParameterList> d_plist;
+
+    // Boolean for internal solver (i.e. inside of MCSA).
+    bool d_internal_solver;
 
     // Primary set indicator.
     bool d_primary_set;

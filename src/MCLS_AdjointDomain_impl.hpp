@@ -89,6 +89,11 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     Teuchos::RCP<Matrix> reduced_H;
     Teuchos::RCP<Vector> recovered_weights;
     {
+        // Get a non-const operator that we can modify. Whatever is passed
+        // into this constructor should never be the original operator. As the
+        // tranpose is required as the input here, this should always be OK.
+        Teuchos::RCP<Matrix> A_T = Teuchos::rcp_const_cast<Matrix>(A);
+
         // Get the filter tolerance.
         double filter_tol = 0.0;
         if ( plist.isParameter("Domain Filter Tolerance") )
@@ -113,9 +118,6 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
         }
         MCLS_CHECK( 0.0 <= weight_recovery && 1.0 >= weight_recovery );
     
-        // Generate the transpose of the operator.
-        Teuchos::RCP<Matrix> A_T = MT::copyTranspose( *A );
-
         // Apply the Neumann relaxation parameter (-omega*A^T).
         if ( plist.isParameter("Neumann Relaxation") )
         {

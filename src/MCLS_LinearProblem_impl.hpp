@@ -164,22 +164,69 @@ LinearProblem<Vector,Matrix>::getCompositeOperator() const
     {
         Teuchos::RCP<Matrix> temp = MT::clone( *d_A );
         composite = MT::clone( *d_PL );
-	MT::multiply( d_A, d_PR, temp );
-	MT::multiply( d_PL, temp, composite );
+	MT::multiply( d_A, d_PR, temp, false );
+	MT::multiply( d_PL, temp, composite, false );
     }
     else if ( left_prec )
     {
         composite = MT::clone( *d_PL );
-	MT::multiply( d_PL, d_A, composite );
+	MT::multiply( d_PL, d_A, composite, false );
     }
     else if ( right_prec )
     {
         composite = MT::clone( *d_A );
-	MT::multiply( d_A, d_PR, composite );
+	MT::multiply( d_A, d_PR, composite, false );
     }
     else
     {
 	composite = Teuchos::rcp_const_cast<Matrix>( d_A );
+    }
+
+    return composite;
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Get the transposed composite linear operator.
+ */
+template<class Vector, class Matrix>
+Teuchos::RCP<const Matrix> 
+LinearProblem<Vector,Matrix>::getTransposeCompositeOperator() const
+{
+    const bool left_prec = Teuchos::nonnull( d_PL );
+    const bool right_prec = Teuchos::nonnull( d_PR );
+
+    Teuchos::RCP<Matrix> composite;
+
+    if ( left_prec && right_prec )
+    {
+        Teuchos::RCP<Matrix> PL_T = MT::copyTranspose( *d_PL );
+        Teuchos::RCP<Matrix> A_T = MT::copyTranspose( *d_A );
+        Teuchos::RCP<Matrix> temp = MT::clone( *A_T );
+	MT::multiply( A_T, PL_T, temp, false );
+        PL_T = Teuchos::null;
+        A_T = Teuchos::null;
+        Teuchos::RCP<Matrix> PR_T = MT::copyTranspose( *d_PR );
+        composite = MT::clone( *PR_T );        
+	MT::multiply( PR_T, temp, composite, false );
+    }
+    else if ( right_prec )
+    {
+        Teuchos::RCP<Matrix> A_T = MT::copyTranspose( *d_A );
+        Teuchos::RCP<Matrix> PR_T = MT::copyTranspose( *d_PR );
+        composite = MT::clone( *PR_T );
+	MT::multiply( PR_T, A_T, composite, false );
+    }
+    else if ( left_prec )
+    {
+        Teuchos::RCP<Matrix> A_T = MT::copyTranspose( *d_A );
+        composite = MT::clone( *A_T );
+        Teuchos::RCP<Matrix> PL_T = MT::copyTranspose( *d_PL );
+	MT::multiply( A_T, PL_T, composite, false );
+    }
+    else
+    {
+	composite = MT::copyTranspose( *d_A );
     }
 
     return composite;
