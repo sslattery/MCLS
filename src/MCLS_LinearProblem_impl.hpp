@@ -163,8 +163,8 @@ LinearProblem<Vector,Matrix>::getCompositeOperator() const
     if ( left_prec && right_prec )
     {
         Teuchos::RCP<Matrix> temp = MT::clone( *d_A );
-        composite = MT::clone( *d_PL );
 	MT::multiply( d_A, d_PR, temp, false );
+        composite = MT::clone( *d_PL );
 	MT::multiply( d_PL, temp, composite, false );
     }
     else if ( left_prec )
@@ -200,12 +200,13 @@ LinearProblem<Vector,Matrix>::getTransposeCompositeOperator() const
 
     if ( left_prec && right_prec )
     {
-        Teuchos::RCP<Matrix> PL_T = MT::copyTranspose( *d_PL );
-        Teuchos::RCP<Matrix> A_T = MT::copyTranspose( *d_A );
-        Teuchos::RCP<Matrix> temp = MT::clone( *A_T );
-	MT::multiply( A_T, PL_T, temp, false );
-        PL_T = Teuchos::null;
-        A_T = Teuchos::null;
+        Teuchos::RCP<Matrix> temp;
+        {
+            Teuchos::RCP<Matrix> PL_T = MT::copyTranspose( *d_PL );
+            Teuchos::RCP<Matrix> A_T = MT::copyTranspose( *d_A );
+            temp = MT::clone( *A_T );
+            MT::multiply( A_T, PL_T, temp, false );
+        }
         Teuchos::RCP<Matrix> PR_T = MT::copyTranspose( *d_PR );
         composite = MT::clone( *PR_T );        
 	MT::multiply( PR_T, temp, composite, false );
