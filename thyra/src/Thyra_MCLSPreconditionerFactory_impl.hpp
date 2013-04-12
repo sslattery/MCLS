@@ -463,7 +463,7 @@ MCLSPreconditionerFactory<Scalar>::getValidParameters() const
                 "Incomplete LU factorization with threshold - Left/Right"
                 "preconditioning for the linear operator",
 
-                "ParaSails parallel sparse approximate inverse - Right"
+                "ParaSails parallel sparse approximate inverse - Left"
                 "preconditioning for the linear operator"
 		),
 	    tuple<EMCLSPrecType>(
