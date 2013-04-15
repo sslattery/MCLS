@@ -398,9 +398,6 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	{
 	    d_converged_status = 1;
 	}
-
-        // Export to the LHS to the original decomposition.
-        d_problem->exportLHS();
     }
     d_global_comm->barrier();
 

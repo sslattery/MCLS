@@ -169,7 +169,7 @@ class MatrixAlgorithms<Epetra_Vector,Epetra_RowMatrix>
                 {
                     if ( std::abs(*value_iterator) <
                          *(sorted_values.end()-fill_value) || 
-                         std::abs(*value_iterator) < filter_tol )
+                         std::abs(*value_iterator) <= filter_tol )
                     {
                         filter_sum += std::abs(*value_iterator);
                         *value_iterator = 0.0;
@@ -192,7 +192,7 @@ class MatrixAlgorithms<Epetra_Vector,Epetra_RowMatrix>
                       value_iterator != values.end();
                       ++value_iterator, ++index_iterator )
                 {
-                    if ( std::abs(*value_iterator) < filter_tol )
+                    if ( std::abs(*value_iterator) <= filter_tol )
                     {
                         filter_sum += std::abs(*value_iterator);
                         *value_iterator = 0.0;

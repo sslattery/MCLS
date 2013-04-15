@@ -42,7 +42,6 @@
 #define MCLS_ADJOINTSOLVERMANAGER_IMPL_HPP
 
 #include "MCLS_DBC.hpp"
-#include "MCLS_VectorExport.hpp"
 #include "MCLS_Estimators.hpp"
 
 #include <Teuchos_CommHelpers.hpp>
@@ -320,9 +319,6 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
                         *temp,
                         Teuchos::ScalarTraits<Scalar>::one() );
 	}
-
-        // Export the LHS to the original decomposition.
-        d_problem->exportLHS();
     }
     d_global_comm->barrier();
 
@@ -393,19 +389,15 @@ void AdjointSolverManager<Vector,Matrix>::buildMonteCarloSource()
     // Build the primary source in the primary set.
     if ( d_primary_set )
     {
-        // Get a copy of the source vector in the operator decomposition.
-        Teuchos::RCP<Vector> rhs_op_decomp = 
-            MT::cloneVectorFromMatrixRows( *d_problem->getOperator() );
-        VectorExport<Vector> rhs_export( 
-            Teuchos::rcp_const_cast<Vector>(d_problem->getRHS()), rhs_op_decomp );
-        rhs_export.doExportInsert();
+        // Get a copy of the source so we can modify it.
+        Teuchos::RCP<Vector> rhs_copy = VT::deepCopy( *d_problem->getRHS() );
 
         // Left precondition the source if necessary.
         if ( d_problem->isLeftPrec() && !d_internal_solver )
         {
-            Teuchos::RCP<Vector> temp = VT::clone(*rhs_op_decomp);
-            d_problem->applyLeftPrec( *rhs_op_decomp, *temp );
-            VT::update( *rhs_op_decomp,
+            Teuchos::RCP<Vector> temp = VT::clone(*rhs_copy);
+            d_problem->applyLeftPrec( *rhs_copy, *temp );
+            VT::update( *rhs_copy,
                         Teuchos::ScalarTraits<Scalar>::zero(),
                         *temp,
                         Teuchos::ScalarTraits<Scalar>::one() );
@@ -415,12 +407,12 @@ void AdjointSolverManager<Vector,Matrix>::buildMonteCarloSource()
         if ( d_plist->isParameter("Neumann Relaxation") )
         {
             double omega = d_plist->get<double>("Neumann Relaxation");
-            VT::scale( *rhs_op_decomp, omega );
+            VT::scale( *rhs_copy, omega );
         }
 
         // Build the source.
         primary_source = Teuchos::rcp( 
-            new SourceType( rhs_op_decomp,
+            new SourceType( rhs_copy,
                             d_msod_manager->localDomain(),
                             d_mc_solver->rngControl(),
                             d_msod_manager->setComm(),

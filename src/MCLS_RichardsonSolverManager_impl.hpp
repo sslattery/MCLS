@@ -281,9 +281,6 @@ bool RichardsonSolverManager<Vector,Matrix>::solve()
         d_converged_status = 1;
     }
 
-    // Export to the LHS to the original decomposition.
-    d_problem->exportLHS();
-
     return Teuchos::as<bool>(d_converged_status);
 }
 

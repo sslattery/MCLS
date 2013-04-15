@@ -43,7 +43,6 @@
 
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_MatrixTraits.hpp"
-#include "MCLS_VectorExport.hpp"
 
 #include <Teuchos_RCP.hpp>
 
@@ -96,7 +95,7 @@ class LinearProblem
     Teuchos::RCP<const Matrix> getOperator() const { return d_A; }
 
     //! Get the left-hand side.
-    Teuchos::RCP<Vector> getLHS() const { return d_x_op_decomp; }
+    Teuchos::RCP<Vector> getLHS() const { return d_x; }
 
     //! Get the right-hand side.
     Teuchos::RCP<const Vector> getRHS() const { return d_b; }
@@ -120,9 +119,6 @@ class LinearProblem
     //! preconditioners are present.
     Teuchos::RCP<const Vector> getPrecResidual() const { return d_rp; }
     
-    // Export the LHS to the original decomposition.
-    void exportLHS();
-
     //! Determine if the linear system is left preconditioned.
     bool isLeftPrec() const { return Teuchos::nonnull(d_PL); }
 
@@ -174,12 +170,6 @@ class LinearProblem
 
     // Preconditioned residual rp = PL*(b - A*PR*x).
     Teuchos::RCP<Vector> d_rp;
-
-    // Left-hand side in operator decomposition.
-    Teuchos::RCP<Vector> d_x_op_decomp;
-
-    // Operator to original decomposition LHS vector export.
-    Teuchos::RCP<VectorExport<Vector> > d_lhs_export;
 };
 
 //---------------------------------------------------------------------------//
