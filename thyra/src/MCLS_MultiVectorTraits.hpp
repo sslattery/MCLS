@@ -44,6 +44,7 @@
 #include <MCLS_VectorTraits.hpp>
 #include <MCLS_TpetraAdapter.hpp>
 #include <MCLS_EpetraAdapter.hpp>
+#include <MCLS_DBC.hpp>
 
 #include <Teuchos_RCP.hpp>
 
@@ -51,12 +52,13 @@
 #include <Epetra_Map.h>
 #include <Epetra_Vector.h>
 #include <Epetra_MultiVector.h>
+#include <Epetra_RowMatrix.h>
 
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_MultiVector.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 
 #include <Thyra_MultiVectorBase.hpp>
-#include <Thyra_SpmdVectorSpaceBase.hpp>
 #include <Thyra_EpetraThyraWrappers.hpp>
 #include <Thyra_TpetraThyraWrappers.hpp>
 
@@ -70,7 +72,7 @@ namespace MCLS
  *
  * Will throw a compile-time error if these traits are not specialized.
  */
-template<class MultiVector>
+template<class MultiVector, class Matrix>
 struct UndefinedMultiVectorTraits
 {
     static inline void notDefined()
@@ -87,7 +89,7 @@ struct UndefinedMultiVectorTraits
  * MultiVectorTraits defines an interface for parallel distributed vectors
  * (e.g. Tpetra::MultiVector or Epetra_MultiVector).
  */
-template<class MultiVector>
+template<class MultiVector, class Matrix>
 class MultiVectorTraits
 {
   public:
@@ -99,44 +101,71 @@ class MultiVectorTraits
     typedef typename MultiVector::scalar_type                scalar_type;
     typedef typename MultiVector::local_ordinal_type         local_ordinal_type;
     typedef typename MultiVector::global_ordinal_type        global_ordinal_type;
+    typedef Matrix                                           matrix_type;
     //@}
 
     //! Get the number of vectors in this multivector.
     static int getNumVectors( const MultiVector& multivector )
     { 
-	UndefinedMultiVectorTraits<MultiVector>::notDefined(); 
+	UndefinedMultiVectorTraits<MultiVector,Matrix>::notDefined(); 
 	return 0;
     }
 
     //! Return a vector given its id in the multivector.
     static Teuchos::RCP<const vector_type> getVector( const int id )
     {
-	UndefinedMultiVectorTraits<MultiVector>::notDefined(); 
+	UndefinedMultiVectorTraits<MultiVector,Matrix>::notDefined(); 
 	return Teuchos::null;
     }
 
     //! Return a vector given its id in the multivector.
     static Teuchos::RCP<vector_type> getVectorNonConst( const int id )
     {
-	UndefinedMultiVectorTraits<MultiVector>::notDefined(); 
+	UndefinedMultiVectorTraits<MultiVector,Matrix>::notDefined(); 
 	return Teuchos::null;
     }
 
-    //! Return a multivector given a Thyra base multivector.
+    //! Return a multivector given a Thyra base multivector in the range space
+    //! decomposition of the given linear operator.
     static Teuchos::RCP<multivector_type>
-    getMultiVectorFromThyra( 
-	const Teuchos::RCP<Thyra::MultiVectorBase<scalar_type> >& thyra_mv )
+    getRangeMultiVectorFromThyra( 
+	const Teuchos::RCP<Thyra::MultiVectorBase<scalar_type> >& thyra_mv,
+        const Teuchos::RCP<const matrix_type>& matrix )
     {
-	UndefinedMultiVectorTraits<MultiVector>::notDefined(); 
+	UndefinedMultiVectorTraits<MultiVector,Matrix>::notDefined(); 
 	return Teuchos::null;
     }
 
-    //! Return a multivector given a Thyra base multivector.
+    //! Return a multivector given a Thyra base multivector in the range space
+    //! decomposition of the given linear operator.
     static Teuchos::RCP<const multivector_type>
-    getConstMultiVectorFromThyra( 
-	const Teuchos::RCP<const Thyra::MultiVectorBase<scalar_type> >& thyra_mv )
+    getConstRangeMultiVectorFromThyra( 
+	const Teuchos::RCP<const Thyra::MultiVectorBase<scalar_type> >& thyra_mv,
+        const Teuchos::RCP<const matrix_type>& matrix )
     {
-	UndefinedMultiVectorTraits<MultiVector>::notDefined(); 
+	UndefinedMultiVectorTraits<MultiVector,Matrix>::notDefined(); 
+	return Teuchos::null;
+    }
+
+    //! Return a multivector given a Thyra base multivector in the domain space
+    //! decomposition of the given linear operator.
+    static Teuchos::RCP<multivector_type>
+    getDomainMultiVectorFromThyra( 
+	const Teuchos::RCP<Thyra::MultiVectorBase<scalar_type> >& thyra_mv,
+        const Teuchos::RCP<const matrix_type>& matrix )
+    {
+	UndefinedMultiVectorTraits<MultiVector,Matrix>::notDefined(); 
+	return Teuchos::null;
+    }
+
+    //! Return a multivector given a Thyra base multivector in the domain space
+    //! decomposition of the given linear operator.
+    static Teuchos::RCP<const multivector_type>
+    getConstDomainMultiVectorFromThyra( 
+	const Teuchos::RCP<const Thyra::MultiVectorBase<scalar_type> >& thyra_mv,
+        const Teuchos::RCP<const matrix_type>& matrix )
+    {
+	UndefinedMultiVectorTraits<MultiVector,Matrix>::notDefined(); 
 	return Teuchos::null;
     }
 };
@@ -145,7 +174,7 @@ class MultiVectorTraits
 // Specialization for Epetra_MultiVector.
 //---------------------------------------------------------------------------//
 template<>
-class MultiVectorTraits<Epetra_MultiVector>
+class MultiVectorTraits<Epetra_MultiVector, Epetra_RowMatrix>
 {
   public:
 
@@ -157,6 +186,7 @@ class MultiVectorTraits<Epetra_MultiVector>
     typedef VT::scalar_type                             scalar_type;
     typedef VT::local_ordinal_type                      local_ordinal_type;
     typedef VT::global_ordinal_type                     global_ordinal_type;
+    typedef Epetra_RowMatrix                             matrix_type;
     //@}
 
     //! Get the number of vectors in this multivector.
@@ -179,34 +209,60 @@ class MultiVectorTraits<Epetra_MultiVector>
 	return Teuchos::rcp( multivector(id), false );
     }
 
-    //! Return a multivector given a Thyra base multivector.
+    //! Return a multivector given a Thyra base multivector in the range space
+    //! decomposition of the given linear operator.
     static Teuchos::RCP<multivector_type>
-    getMultiVectorFromThyra( 
-	const Teuchos::RCP<Thyra::MultiVectorBase<scalar_type> >& thyra_mv )
+    getRangeMultiVectorFromThyra( 
+	const Teuchos::RCP<Thyra::MultiVectorBase<scalar_type> >& thyra_mv,
+        const Teuchos::RCP<const matrix_type>& matrix )
     {
-	Teuchos::RCP<const Thyra::SpmdVectorSpaceBase<scalar_type> > space =
-	    Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<scalar_type> >(
-		thyra_mv->range() );
-	Teuchos::RCP<const Epetra_Comm> comm = 
-	    Thyra::get_Epetra_Comm( *space->getComm() );
-	Teuchos::RCP<const Epetra_Map> map =
-	    Thyra::get_Epetra_Map( *space, comm );
-	return Thyra::get_Epetra_MultiVector( *map, *thyra_mv );
+        const Epetra_Map& range_map = matrix->OperatorRangeMap();
+        Teuchos::RCP<multivector_type> epetra_mv =
+            Thyra::get_Epetra_MultiVector( range_map, thyra_mv );
+        MCLS_ENSURE( Teuchos::nonnull(epetra_mv) );
+        return epetra_mv;
     }
 
-    //! Return a multivector given a Thyra base multivector.
+    //! Return a multivector given a Thyra base multivector in the range space
+    //! decomposition of the given linear operator.
     static Teuchos::RCP<const multivector_type>
-    getConstMultiVectorFromThyra( 
-	const Teuchos::RCP<const Thyra::MultiVectorBase<scalar_type> >& thyra_mv )
+    getConstRangeMultiVectorFromThyra( 
+	const Teuchos::RCP<const Thyra::MultiVectorBase<scalar_type> >& thyra_mv,
+        const Teuchos::RCP<const matrix_type>& matrix )
     {
-	Teuchos::RCP<const Thyra::SpmdVectorSpaceBase<scalar_type> > space =
-	    Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<scalar_type> >(
-		thyra_mv->range() );
-	Teuchos::RCP<const Epetra_Comm> comm = 
-	    Thyra::get_Epetra_Comm( *space->getComm() );
-	Teuchos::RCP<const Epetra_Map> map =
-	    Thyra::get_Epetra_Map( *space, comm );
-	return Thyra::get_Epetra_MultiVector( *map, *thyra_mv );
+        const Epetra_Map& range_map = matrix->OperatorRangeMap();
+        Teuchos::RCP<const multivector_type> epetra_mv = 
+            Thyra::get_Epetra_MultiVector( range_map, thyra_mv );
+        MCLS_ENSURE( Teuchos::nonnull(epetra_mv) );
+        return epetra_mv;
+    }
+
+    //! Return a multivector given a Thyra base multivector in the domain space
+    //! decomposition of the given linear operator.
+    static Teuchos::RCP<multivector_type>
+    getDomainMultiVectorFromThyra( 
+	const Teuchos::RCP<Thyra::MultiVectorBase<scalar_type> >& thyra_mv,
+        const Teuchos::RCP<const matrix_type>& matrix )
+    {
+        const Epetra_Map& domain_map = matrix->OperatorDomainMap();
+        Teuchos::RCP<multivector_type> epetra_mv = 
+            Thyra::get_Epetra_MultiVector( domain_map, thyra_mv );
+        MCLS_ENSURE( Teuchos::nonnull(epetra_mv) );
+        return epetra_mv;
+    }
+
+    //! Return a multivector given a Thyra base multivector in the domain space
+    //! decomposition of the given linear operator.
+    static Teuchos::RCP<const multivector_type>
+    getConstDomainMultiVectorFromThyra( 
+	const Teuchos::RCP<const Thyra::MultiVectorBase<scalar_type> >& thyra_mv,
+        const Teuchos::RCP<const matrix_type>& matrix )
+    {
+        const Epetra_Map& domain_map = matrix->OperatorDomainMap();
+        Teuchos::RCP<const multivector_type> epetra_mv = 
+            Thyra::get_Epetra_MultiVector( domain_map, thyra_mv );
+        MCLS_ENSURE( Teuchos::nonnull(epetra_mv) );
+        return epetra_mv;
     }
 };
 
@@ -214,7 +270,8 @@ class MultiVectorTraits<Epetra_MultiVector>
 // Specialization for Tpetra::MultiVector.
 //---------------------------------------------------------------------------//
 template<class Scalar, class LO, class GO>
-class MultiVectorTraits<Tpetra::MultiVector<Scalar,LO,GO> >
+class MultiVectorTraits<Tpetra::MultiVector<Scalar,LO,GO>,
+                        Tpetra::CrsMatrix<Scalar,LO,GO> >
 {
   public:
 
@@ -226,6 +283,7 @@ class MultiVectorTraits<Tpetra::MultiVector<Scalar,LO,GO> >
     typedef typename VT::scalar_type                    scalar_type;
     typedef typename VT::local_ordinal_type             local_ordinal_type;
     typedef typename VT::global_ordinal_type            global_ordinal_type;
+    typedef Tpetra::CrsMatrix<Scalar,LO,GO>              matrix_type;
     //@}
 
     //! Get the number of vectors in this multivector.
@@ -250,8 +308,9 @@ class MultiVectorTraits<Tpetra::MultiVector<Scalar,LO,GO> >
 
     //! Return a multivector given a Thyra base multivector.
     static Teuchos::RCP<multivector_type>
-    getMultiVectorFromThyra( 
-	const Teuchos::RCP<Thyra::MultiVectorBase<scalar_type> >& thyra_mv )
+    getRangeMultiVectorFromThyra( 
+	const Teuchos::RCP<Thyra::MultiVectorBase<scalar_type> >& thyra_mv,
+        const Teuchos::RCP<const matrix_type>& matrix = Teuchos::null )
     {
 	return Thyra::TpetraOperatorVectorExtraction<
 	    Scalar,LO,GO>::getTpetraMultiVector( thyra_mv );
@@ -259,8 +318,29 @@ class MultiVectorTraits<Tpetra::MultiVector<Scalar,LO,GO> >
 
     //! Return a multivector given a Thyra base multivector.
     static Teuchos::RCP<const multivector_type>
-    getConstMultiVectorFromThyra( 
-	const Teuchos::RCP<const Thyra::MultiVectorBase<scalar_type> >& thyra_mv )
+    getConstRangeMultiVectorFromThyra( 
+	const Teuchos::RCP<const Thyra::MultiVectorBase<scalar_type> >& thyra_mv,
+        const Teuchos::RCP<const matrix_type>& matrix = Teuchos::null )
+    {
+	return Thyra::TpetraOperatorVectorExtraction<
+	    Scalar,LO,GO>::getConstTpetraMultiVector( thyra_mv );
+    }
+
+    //! Return a multivector given a Thyra base multivector.
+    static Teuchos::RCP<multivector_type>
+    getDomainMultiVectorFromThyra( 
+	const Teuchos::RCP<Thyra::MultiVectorBase<scalar_type> >& thyra_mv,
+        const Teuchos::RCP<const matrix_type>& matrix = Teuchos::null )
+    {
+	return Thyra::TpetraOperatorVectorExtraction<
+	    Scalar,LO,GO>::getTpetraMultiVector( thyra_mv );
+    }
+
+    //! Return a multivector given a Thyra base multivector.
+    static Teuchos::RCP<const multivector_type>
+    getConstDomainMultiVectorFromThyra( 
+	const Teuchos::RCP<const Thyra::MultiVectorBase<scalar_type> >& thyra_mv,
+        const Teuchos::RCP<const matrix_type>& matrix = Teuchos::null )
     {
 	return Thyra::TpetraOperatorVectorExtraction<
 	    Scalar,LO,GO>::getConstTpetraMultiVector( thyra_mv );

@@ -478,12 +478,16 @@ SolveStatus<Scalar> MCLSLinearOpWithSolve<Scalar>::solveImpl(
     }
 
     // Set the problem.
-    d_linear_problem->setLHS( Teuchos::rcpFromPtr(X) );
-    d_linear_problem->setRHS( Teuchos::rcpFromRef(B) );
+    d_linear_problem->setLHS( X );
+    d_linear_problem->setRHS( B );
 
     // Solve the linear system.
     SolveStatus<Scalar> status = d_solver->solve( tmp_pl );
     total_timer.stop();
+
+    // Release the LHS/RHS views.
+    d_linear_problem->releaseLHS();
+    d_linear_problem->releaseRHS();
 
     // Report the overall timing.
     if ( out.get() && 

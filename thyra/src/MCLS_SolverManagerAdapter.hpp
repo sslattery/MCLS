@@ -102,15 +102,15 @@ class SolverManagerBase : public virtual Teuchos::Describable
  * \brief SolverManager adapter for Thyra blocked systems.
  */
 template<class MultiVector, class Matrix>
-class SolverManagerAdapter 
-    : public SolverManagerBase<typename MultiVectorTraits<MultiVector>::scalar_type>
+class SolverManagerAdapter : public SolverManagerBase<
+    typename MultiVectorTraits<MultiVector,Matrix>::scalar_type>
 {
   public:
 
     //@{
     //! Typedefs.
     typedef MultiVector                                 multivector_type;
-    typedef MultiVectorTraits<MultiVector>              MVT;
+    typedef MultiVectorTraits<MultiVector,Matrix>       MVT;
     typedef typename MVT::vector_type                   Vector;
     typedef Vector                                      vector_type;
     typedef typename VectorTraits<Vector>::scalar_type  Scalar;

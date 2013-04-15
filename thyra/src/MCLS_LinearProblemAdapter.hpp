@@ -47,6 +47,7 @@
 #include "MCLS_MultiVectorTraits.hpp"
 
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_Ptr.hpp>
 #include <Teuchos_Describable.hpp>
 
 #include <Thyra_MultiVectorBase.hpp>
@@ -78,10 +79,16 @@ class LinearProblemBase : public virtual Teuchos::Describable
     virtual ~LinearProblemBase() { /* ... */ }
 
     //! Set the left-hand side.
-    virtual void setLHS( const Teuchos::RCP<multivector_type>& x ) = 0;
+    virtual void setLHS( const Teuchos::Ptr<multivector_type>& x ) = 0;
 
     //! Set the right-hand side.
-    virtual void setRHS( const Teuchos::RCP<const multivector_type>& b ) = 0;
+    virtual void setRHS( const multivector_type& b ) = 0;
+
+    //! Release the left-hand side.
+    virtual void releaseLHS() = 0;
+
+    //! Release the right-hand side.
+    virtual void releaseRHS() = 0;
 
     //! Set the linear operator.
     void setOperator( const Teuchos::RCP<const linear_op_type>& A ) 
@@ -125,14 +132,14 @@ class LinearProblemBase : public virtual Teuchos::Describable
  */
 template<class MultiVector, class Matrix>
 class LinearProblemAdapter : public LinearProblemBase<
-    typename MultiVectorTraits<MultiVector>::scalar_type>
+    typename MultiVectorTraits<MultiVector,Matrix>::scalar_type>
 {
   public:
 
     //@{
     //! Typedefs.
     typedef MultiVector                                  multivector_type;
-    typedef MultiVectorTraits<MultiVector>               MVT;
+    typedef MultiVectorTraits<MultiVector,Matrix>        MVT;
     typedef typename MVT::vector_type                    Vector;
     typedef Matrix                                       matrix_type;
     typedef LinearProblemBase<typename MVT::scalar_type> Base;
@@ -140,7 +147,12 @@ class LinearProblemAdapter : public LinearProblemBase<
 
     //! Default constructor.
     LinearProblemAdapter()
-	: d_num_problems(0)
+        : d_A( Teuchos::null )
+        , d_x( Teuchos::null )
+        , d_b( Teuchos::null )
+        , d_PL( Teuchos::null )
+        , d_PR( Teuchos::null )
+	, d_num_problems(0)
     { /* ... */ }
 
     //! Constructor.
@@ -151,6 +163,8 @@ class LinearProblemAdapter : public LinearProblemBase<
 	: d_A( A )
 	, d_x( x )
 	, d_b( b )
+        , d_PL( Teuchos::null )
+        , d_PR( Teuchos::null )
 	, d_num_problems( num_problems )
     { /* ... */ }
 
@@ -204,9 +218,11 @@ class LinearProblemAdapter : public LinearProblemBase<
     void setLHS( const Teuchos::RCP<MultiVector>& x ) { d_x = x; }
 
     //! Overload for Thyra operator.
-    void setLHS( const Teuchos::RCP<typename Base::multivector_type>& x )
+    void setLHS( const Teuchos::Ptr<typename Base::multivector_type>& x )
     { 
-	d_x = MVT::getMultiVectorFromThyra( x );
+        MCLS_REQUIRE( Teuchos::nonnull(x) );
+        MCLS_REQUIRE( Teuchos::nonnull(d_A) );
+        d_x = MVT::getDomainMultiVectorFromThyra( Teuchos::rcpFromPtr(x), d_A );
 	MCLS_ENSURE( Teuchos::nonnull(d_x) );
     }
 
@@ -214,11 +230,19 @@ class LinearProblemAdapter : public LinearProblemBase<
     void setRHS( const Teuchos::RCP<const MultiVector>& b ) { d_b = b; }
 
     //! Overload for Thyra operator.
-    void setRHS( const Teuchos::RCP<const typename Base::multivector_type>& b )
+    void setRHS( const typename Base::multivector_type& b )
     { 
-	d_b = MVT::getConstMultiVectorFromThyra( b );
+        MCLS_REQUIRE( Teuchos::nonnull(d_A) );
+	d_b = MVT::getConstRangeMultiVectorFromThyra( 
+            Teuchos::rcpFromRef(b), d_A );
 	MCLS_ENSURE( Teuchos::nonnull(d_b) );
     }
+
+    //! Release the left-hand side.
+    void releaseLHS() { d_x = Teuchos::null; }
+
+    //! Release the right-hand side.
+    void releaseRHS() { d_b = Teuchos::null; }
 
     //! Set the left preconditioner.
     void setLeftPrec( const Teuchos::RCP<const Matrix>& PL ) { d_PL = PL; }
