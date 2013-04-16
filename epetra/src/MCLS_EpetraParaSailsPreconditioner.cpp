@@ -205,6 +205,11 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
     ParaSailsSetupPattern( parasails, epetra_matrix, threshold, num_levels );
     ParaSailsSetupValues( parasails, epetra_matrix, filter );
 
+    // Parasails timing output - only if DBC is enabled.
+    MCLS_REMEMBER( std::cout << std::endl );
+    MCLS_REMEMBER( ParaSailsStatsPattern(parasails, epetra_matrix) );
+    MCLS_REMEMBER( ParaSailsStatsValues(parasails, epetra_matrix) );
+
     // Destroy the ParaSails copy of the operator.
     MatrixDestroy( epetra_matrix );
 
@@ -217,6 +222,7 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
 
     // Extract the ParaSails preconditioner into the contiguous preconditioner.
     int num_m_entries = 0;
+    Teuchos::Array<int> global_indices;
     int* m_indices_ptr;
     double* m_values_ptr;
     for ( int i = beg_row; i < end_row+1; ++i )
@@ -226,11 +232,16 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
         MatrixGetRow( parasails->M, local_row, &num_m_entries, 
                       &m_indices_ptr, &m_values_ptr );
 
+        global_indices.resize( num_m_entries );
+        NumberingLocalToGlobal( parasails->M->numb, num_m_entries,
+                                m_indices_ptr, global_indices.getRawPtr() );
+
         MCLS_CHECK( contiguous_M->RowMatrixRowMap().MyGID(i) );
         error = contiguous_M->InsertGlobalValues(
-            i, num_m_entries, m_values_ptr, m_indices_ptr );
+            i, num_m_entries, m_values_ptr, global_indices.getRawPtr() );
         MCLS_CHECK( 0 == error );
     }
+    global_indices.clear();
     
     // Barrier before continuing.
     d_A->Comm().Barrier();
@@ -245,7 +256,7 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
 
     // Export the contiguous preconditioner into the operator decomposition.
     d_preconditioner = Teuchos::rcp(
-	new Epetra_CrsMatrix(Copy,d_A->RowMatrixRowMap(),0) );
+	new Epetra_CrsMatrix(Copy,d_A->RowMatrixRowMap(),max_m_entries) );
     Epetra_Export base_export( linear_map, d_A->RowMatrixRowMap() );
     error = d_preconditioner->Export( *contiguous_M, base_export, Insert );
     MCLS_CHECK( 0 == error );
