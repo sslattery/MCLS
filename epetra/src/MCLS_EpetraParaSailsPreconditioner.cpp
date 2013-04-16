@@ -46,6 +46,8 @@
 #include <Teuchos_ArrayRCP.hpp>
 
 #include <Epetra_Vector.h>
+#include <Epetra_Map.h>
+#include <Epetra_Export.h>
 
 #include <ParaSails.h>
 
@@ -135,41 +137,65 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
         Teuchos::rcp_dynamic_cast<const Epetra_MpiComm>( epetra_comm );
     MPI_Comm raw_mpi_comm = mpi_epetra_comm->Comm();
 
-    // Create a ParaSails matrix from the operator. Right now we'll assume the
-    // global indices are contiguous.
-    Teuchos::ArrayRCP<double> values( d_A->MaxNumEntries() );
-    Teuchos::ArrayRCP<int> indices( d_A->MaxNumEntries() );
+    // Export the operator to a row decomposition that is globally
+    // contiguous. ParaSails requires this unfortunately.
     int error = 0;
+    Epetra_Map linear_map( d_A->NumGlobalRows(), 0, d_A->Comm() );
+    Teuchos::RCP<Epetra_CrsMatrix> contiguous_A = Teuchos::rcp( 
+        new Epetra_CrsMatrix(Copy,linear_map,d_A->MaxNumEntries()) );
+    Epetra_Export linear_export( d_A->RowMatrixRowMap(), linear_map );
+    error = contiguous_A->Export( *d_A, linear_export, Insert );
+    MCLS_CHECK( 0 == error );
+    error = contiguous_A->FillComplete();
+    MCLS_CHECK( 0 == error );
+    MCLS_CHECK( contiguous_A->Filled() );
+
+    // Check that the global ids are contiguous in the new operator.
+    MCLS_CHECK( contiguous_A->RowMatrixRowMap().LinearMap() );
+    MCLS_CHECK( contiguous_A->MaxNumEntries() > 0 );
+
+    // Create a ParaSails matrix from the row-contiguous operator. 
+    Teuchos::ArrayRCP<double> values( contiguous_A->MaxNumEntries() );
+    Teuchos::ArrayRCP<int> indices( contiguous_A->MaxNumEntries() );
+    Teuchos::ArrayRCP<int>::iterator indices_it;
     int num_entries = 0;
     int local_row = 0;
-    int beg_row = d_A->RowMatrixRowMap().MinMyGID();
-    int end_row = d_A->RowMatrixRowMap().MaxMyGID();
+    int beg_row = contiguous_A->RowMatrixRowMap().MinMyGID();
+    int end_row = contiguous_A->RowMatrixRowMap().MaxMyGID();
     Teuchos::ArrayRCP<int>::iterator col_it;
-    Matrix* epetra_matrix = MatrixCreate( raw_mpi_comm, beg_row,end_row );
+    Matrix* epetra_matrix = MatrixCreate( raw_mpi_comm, beg_row, end_row );
     for ( int i = beg_row; i < end_row+1; ++i )
     {
         // Get the Epetra row.
-	MCLS_CHECK( d_A->RowMatrixRowMap().MyGID(i) );
-	local_row = d_A->RowMatrixRowMap().LID(i);
-	error = d_A->ExtractMyRowCopy( local_row, 
-                                       Teuchos::as<int>(values.size()), 
-                                       num_entries,
-                                       values.getRawPtr(), 
-                                       indices.getRawPtr() );
+	MCLS_CHECK( contiguous_A->RowMatrixRowMap().MyGID(i) );
+	local_row = contiguous_A->RowMatrixRowMap().LID(i);
+
+	error = contiguous_A->ExtractMyRowCopy( local_row, 
+                                                Teuchos::as<int>(values.size()), 
+                                                num_entries,
+                                                values.getRawPtr(), 
+                                                indices.getRawPtr() );
         MCLS_CHECK( 0 == error );
+        MCLS_CHECK( num_entries > 0 );
+
+        // Convert the local indices into global indices.
 	for ( col_it = indices.begin(); 
               col_it != indices.begin()+num_entries; 
               ++col_it )
 	{
-	    *col_it = d_A->RowMatrixColMap().GID(*col_it);
+	    *col_it = contiguous_A->RowMatrixColMap().GID(*col_it);
 	}
 
         // Insert it into the Epetra ParaSails matrix.
+        MCLS_CHECK( d_A->Comm().MyPID() == MatrixRowPe(epetra_matrix, i) );
         MatrixSetRow( epetra_matrix, i, num_entries, 
                       indices.getRawPtr(), values.getRawPtr() );
     }
     values.clear();
     indices.clear();
+
+    // Free the contiguous copy of the operator.
+    contiguous_A = Teuchos::null;
 
     // Fill Complete the Epetra ParaSails matrix.
     MatrixComplete( epetra_matrix );
@@ -182,32 +208,55 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
     // Destroy the ParaSails copy of the operator.
     MatrixDestroy( epetra_matrix );
 
-    // Extract the ParaSails preconditioner into the Epetra preconditioner.
-    d_preconditioner = Teuchos::rcp( 
-	new Epetra_CrsMatrix(Copy,d_A->RowMatrixRowMap(),0) );
+    // Build a contiguous preconditioner.
     Teuchos::ArrayView<int> mlens( parasails->M->lens, end_row-beg_row+1 );
-    int max_m_entries = *std::max( mlens.begin(), mlens.end() );
+    int max_m_entries = *std::max_element( mlens.begin(), mlens.end() );
+    MCLS_CHECK( max_m_entries > 0 );
+    Teuchos::RCP<Epetra_CrsMatrix> contiguous_M = Teuchos::rcp( 
+        new Epetra_CrsMatrix(Copy,linear_map,max_m_entries) );
+
+    // Extract the ParaSails preconditioner into the contiguous preconditioner.
     int num_m_entries = 0;
-    Teuchos::ArrayRCP<double> m_values( max_m_entries );
-    Teuchos::ArrayRCP<int> m_indices( max_m_entries );
-    int* m_indices_ptr = m_indices.getRawPtr();
-    double* m_values_ptr = m_values.getRawPtr();
+    int* m_indices_ptr;
+    double* m_values_ptr;
     for ( int i = beg_row; i < end_row+1; ++i )
     {
-        MatrixGetRow( parasails->M, i, &num_m_entries, 
+        local_row = i-beg_row;
+        MCLS_CHECK( d_A->Comm().MyPID() == MatrixRowPe(parasails->M, i) );
+        MatrixGetRow( parasails->M, local_row, &num_m_entries, 
                       &m_indices_ptr, &m_values_ptr );
-        error = d_preconditioner->InsertGlobalValues(
+
+        MCLS_CHECK( contiguous_M->RowMatrixRowMap().MyGID(i) );
+        error = contiguous_M->InsertGlobalValues(
             i, num_m_entries, m_values_ptr, m_indices_ptr );
         MCLS_CHECK( 0 == error );
     }
-	    
+    
+    // Barrier before continuing.
+    d_A->Comm().Barrier();
+
     // ParaSails cleanup.
     ParaSailsDestroy( parasails );
 
-    // Finalize.
+    // Finalize extracted inverse.
+    error = contiguous_M->FillComplete();
+    MCLS_CHECK( 0 == error );
+    MCLS_CHECK( contiguous_M->Filled() );
+
+    // Export the contiguous preconditioner into the operator decomposition.
+    d_preconditioner = Teuchos::rcp(
+	new Epetra_CrsMatrix(Copy,d_A->RowMatrixRowMap(),0) );
+    Epetra_Export base_export( linear_map, d_A->RowMatrixRowMap() );
+    error = d_preconditioner->Export( *contiguous_M, base_export, Insert );
+    MCLS_CHECK( 0 == error );
+
+    // Free the contiguous copy of the preconditioner.
+    contiguous_M = Teuchos::null;
+
+    // Finalize the preconditioner.
     error = d_preconditioner->FillComplete();
     MCLS_CHECK( 0 == error );
-	
+
     MCLS_ENSURE( Teuchos::nonnull(d_preconditioner) );
     MCLS_ENSURE( d_preconditioner->Filled() );
 }

@@ -258,7 +258,8 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
 	    neighbor_matrix = Teuchos::rcp( 
 		new Epetra_CrsMatrix( Copy, *ghost_map, 0 ) );
 
-	    neighbor_matrix->Export( matrix, ghost_exporter, Insert );
+	    error = neighbor_matrix->Export( matrix, ghost_exporter, Insert );
+            MCLS_CHECK( 0 == error );
 	    error = neighbor_matrix->FillComplete();
             MCLS_CHECK( 0 == error );
 
