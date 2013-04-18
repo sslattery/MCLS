@@ -131,8 +131,8 @@ void EpetraILUTPreconditioner::buildPreconditioner()
     MCLS_CHECK( ifpack.IsComputed() );
 
     // Invert L and U.
-    d_l_inv = computeTriInverse( ifpack.L(), false );
-    d_u_inv = computeTriInverse( ifpack.U(), true );
+    d_l_inv = computeTriInverse( ifpack.L(), d_A->RowMatrixRowMap(), false );
+    d_u_inv = computeTriInverse( ifpack.U(), d_A->RowMatrixRowMap(), true );
 
     MCLS_ENSURE( Teuchos::nonnull(d_l_inv) );
     MCLS_ENSURE( Teuchos::nonnull(d_u_inv) );
@@ -144,14 +144,15 @@ void EpetraILUTPreconditioner::buildPreconditioner()
  */
 Teuchos::RCP<Epetra_CrsMatrix>
 EpetraILUTPreconditioner::computeTriInverse( const Epetra_CrsMatrix& A,
+                                             const Epetra_Map& prec_map,
                                              bool is_upper )
 {
     Teuchos::RCP<Epetra_CrsMatrix> inverse = Teuchos::rcp(
-        new Epetra_CrsMatrix(Copy, A.RowMatrixRowMap(), 0) );
+        new Epetra_CrsMatrix(Copy, prec_map, 0) );
 
     int num_rows = A.NumMyRows();
-    Epetra_Vector basis( A.RowMatrixRowMap() );
-    Epetra_Vector inverse_row( A.RowMatrixRowMap() );
+    Epetra_Vector basis( prec_map );
+    Epetra_Vector inverse_row( prec_map );
     Teuchos::Array<double> values;
     Teuchos::Array<int> indices;
     double drop_tol = 0.0;
@@ -179,12 +180,12 @@ EpetraILUTPreconditioner::computeTriInverse( const Epetra_CrsMatrix& A,
             if ( std::abs(inverse_row[j]) > drop_tol )
             {
                 values.push_back( inverse_row[j] );
-                indices.push_back( A.RowMatrixRowMap().GID(j) );
+                indices.push_back( prec_map.GID(j) );
             }           
         }
 
         // Populate the row in the inverse matrix.
-        error = inverse->InsertGlobalValues( A.RowMatrixRowMap().GID(i),
+        error = inverse->InsertGlobalValues( prec_map.GID(i),
                                              values.size(),
                                              values.getRawPtr(),
                                              indices.getRawPtr() );

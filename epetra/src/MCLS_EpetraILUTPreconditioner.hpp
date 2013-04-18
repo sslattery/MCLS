@@ -46,6 +46,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
+#include <Epetra_Map.h>
 #include <Epetra_RowMatrix.h>
 #include <Epetra_CrsMatrix.h>
 
@@ -105,7 +106,8 @@ class EpetraILUTPreconditioner : public Preconditioner<Epetra_RowMatrix>
     
     // Compute the inverse of a triangular matrix from Ifpack.
     Teuchos::RCP<Epetra_CrsMatrix> 
-    computeTriInverse( const Epetra_CrsMatrix& A, bool is_upper );
+    computeTriInverse( const Epetra_CrsMatrix& A, const Epetra_Map& prec_map,
+                       bool is_upper );
 
   private:
 
