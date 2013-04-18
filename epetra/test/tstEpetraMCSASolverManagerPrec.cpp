@@ -209,7 +209,14 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_prec )
 
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), 8 );
+    if ( comm_size == 1 )
+    {
+        TEST_EQUALITY( solver_manager.getNumIters(), 6 );
+    }
+    else
+    {
+        TEST_EQUALITY( solver_manager.getNumIters(), 8 );
+    }
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
 
     // Check that we got a negative solution.
@@ -226,7 +233,14 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_prec )
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), 8 );
+    if ( comm_size == 1 )
+    {
+        TEST_EQUALITY( solver_manager.getNumIters(), 6 );
+    }
+    else
+    {
+        TEST_EQUALITY( solver_manager.getNumIters(), 8 );
+    }
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -239,7 +253,14 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_prec )
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), 1 );
+    if ( comm_size == 1 )
+    {
+        TEST_EQUALITY( solver_manager.getNumIters(), 6 );
+    }
+    else
+    {
+        TEST_EQUALITY( solver_manager.getNumIters(), 8 );
+    }
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -252,7 +273,14 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_prec )
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), 8 );
+    if ( comm_size == 1 )
+    {
+        TEST_EQUALITY( solver_manager.getNumIters(), 6 );
+    }
+    else
+    {
+        TEST_EQUALITY( solver_manager.getNumIters(), 8 );
+    }
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {

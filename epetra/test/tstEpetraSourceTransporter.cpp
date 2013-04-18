@@ -143,7 +143,7 @@ TEUCHOS_UNIT_TEST( SourceTransporter, transport )
     Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
     int comm_size = comm->getSize();
 
-    int local_num_rows = 100;
+    int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
     Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
 	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
@@ -158,7 +158,7 @@ TEUCHOS_UNIT_TEST( SourceTransporter, transport )
     global_columns[1] = 1;
     global_columns[2] = 2;
     values[0] = 1.0/comm_size;
-    values[1] = 0.13/comm_size;
+    values[1] = 0.12/comm_size;
     values[2] = 0.0/comm_size;
     A->InsertGlobalValues( 0, global_columns.size(), 
 			   &values[0], &global_columns[0] );
@@ -167,9 +167,9 @@ TEUCHOS_UNIT_TEST( SourceTransporter, transport )
 	global_columns[0] = i-1;
 	global_columns[1] = i;
 	global_columns[2] = i+1;
-	values[0] = 0.13/comm_size;
+	values[0] = 0.12/comm_size;
 	values[1] = 1.0/comm_size;
-	values[2] = 0.13/comm_size;
+	values[2] = 0.12/comm_size;
 	A->InsertGlobalValues( i, global_columns.size(), 
 			       &values[0], &global_columns[0] );
     }
@@ -177,13 +177,13 @@ TEUCHOS_UNIT_TEST( SourceTransporter, transport )
     global_columns[1] = global_num_rows-2;
     global_columns[2] = global_num_rows-1;
     values[0] = 0.0/comm_size;
-    values[1] = 0.13/comm_size;
+    values[1] = 0.12/comm_size;
     values[2] = 1.0/comm_size;
     A->InsertGlobalValues( global_num_rows-1, global_columns.size(), 
 			   &values[0], &global_columns[0] );
     A->FillComplete();
 
-    Teuchos::RCP<MatrixType> B = A;
+    Teuchos::RCP<MatrixType> B = MT::copyTranspose(*A);
     Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *B );
     VT::putScalar( *x, 0.0 );
     Teuchos::RCP<VectorType> b = MT::cloneVectorFromMatrixRows( *B );
@@ -200,7 +200,7 @@ TEUCHOS_UNIT_TEST( SourceTransporter, transport )
     HistoryType::setByteSize( control->getSize() );
 
     // Create the adjoint source with a set number of histories.
-    int mult = 10;
+    int mult = 100;
     double cutoff = 1.0e-6;
     plist.set<int>("Set Number of Histories", mult*global_num_rows);
     plist.set<double>("Weight Cutoff", cutoff);

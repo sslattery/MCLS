@@ -54,6 +54,7 @@
 #include <MCLS_AdjointTally.hpp>
 #include <MCLS_Events.hpp>
 #include <MCLS_RNGControl.hpp>
+#include <MCLS_MatrixTraits.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -125,6 +126,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, NoOverlap, LO, GO, Scalar )
 
     // Build the linear operator and solution vector.
     Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
+    Teuchos::Array<GO> first_columns( 1, 0 );
+    Teuchos::Array<Scalar> first_values( 1, 2.0 );
+    A->insertGlobalValues( 0, first_columns(), first_values() );
     Teuchos::Array<GO> global_columns( 2 );
     Teuchos::Array<Scalar> values( 2 );
     for ( int i = 1; i < global_num_rows; ++i )
@@ -138,11 +142,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, NoOverlap, LO, GO, Scalar )
     A->fillComplete();
 
     Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *A );
+    Teuchos::RCP<MatrixType> A_T = MT::copyTranspose(*A);
 
     // Build the adjoint domain.
     Teuchos::ParameterList plist;
     plist.set<int>( "Overlap Size", 0 );
-    MCLS::AdjointDomain<VectorType,MatrixType> domain( A, x, plist );
+    MCLS::AdjointDomain<VectorType,MatrixType> domain( A_T, x, plist );
 
     // Check the tally.
     Scalar x_val = 2;
@@ -233,6 +238,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, PackUnpack, LO, GO, Scalar )
 
     // Build the linear operator and solution vector.
     Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
+    Teuchos::Array<GO> first_columns( 1, 0 );
+    Teuchos::Array<Scalar> first_values( 1, 2.0 );
+    A->insertGlobalValues( 0, first_columns(), first_values() );
     Teuchos::Array<GO> global_columns( 2 );
     Teuchos::Array<Scalar> values( 2 );
     for ( int i = 1; i < global_num_rows; ++i )
@@ -246,11 +254,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, PackUnpack, LO, GO, Scalar )
     A->fillComplete();
 
     Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *A );
+    Teuchos::RCP<MatrixType> A_T = MT::copyTranspose(*A);
 
     // Build the adjoint domain.
     Teuchos::ParameterList plist;
     plist.set<int>( "Overlap Size", 0 );
-    MCLS::AdjointDomain<VectorType,MatrixType> primary_domain( A, x, plist );
+    MCLS::AdjointDomain<VectorType,MatrixType> primary_domain( A_T, x, plist );
 
     // Pack the domain into a buffer.
     Teuchos::Array<char> domain_buffer = primary_domain.pack();
@@ -348,6 +357,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, SomeOverlap, LO, GO, Scalar )
 
     // Build the linear operator and solution vector.
     Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
+    Teuchos::Array<GO> first_columns( 1, 0 );
+    Teuchos::Array<Scalar> first_values( 1, 2.0 );
+    A->insertGlobalValues( 0, first_columns(), first_values() );
     Teuchos::Array<GO> global_columns( 2 );
     Teuchos::Array<Scalar> values( 2 );
     for ( int i = 1; i < global_num_rows; ++i )
@@ -361,11 +373,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, SomeOverlap, LO, GO, Scalar )
     A->fillComplete();
 
     Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *A );
+    Teuchos::RCP<MatrixType> A_T = MT::copyTranspose(*A);
 
     // Build the adjoint domain.
     Teuchos::ParameterList plist;
     plist.set<int>( "Overlap Size", 2 );
-    MCLS::AdjointDomain<VectorType,MatrixType> domain( A, x, plist );
+    MCLS::AdjointDomain<VectorType,MatrixType> domain( A_T, x, plist );
 
     // Check the tally.
     Scalar x_val = 2;
@@ -477,6 +490,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, PackUnpackSomeOverlap, LO, GO,
 
     // Build the linear operator and solution vector.
     Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
+    Teuchos::Array<GO> first_columns( 1, 0 );
+    Teuchos::Array<Scalar> first_values( 1, 2.0 );
+    A->insertGlobalValues( 0, first_columns(), first_values() );
     Teuchos::Array<GO> global_columns( 2 );
     Teuchos::Array<Scalar> values( 2 );
     for ( int i = 1; i < global_num_rows; ++i )
@@ -490,11 +506,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, PackUnpackSomeOverlap, LO, GO,
     A->fillComplete();
 
     Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *A );
+    Teuchos::RCP<MatrixType> A_T = MT::copyTranspose(*A);
 
     // Build the adjoint domain.
     Teuchos::ParameterList plist;
     plist.set<int>( "Overlap Size", 2 );
-    MCLS::AdjointDomain<VectorType,MatrixType> primary_domain( A, x, plist );
+    MCLS::AdjointDomain<VectorType,MatrixType> primary_domain( A_T, x, plist );
 
     // Pack the domain into a buffer.
     Teuchos::Array<char> domain_buffer = primary_domain.pack();
@@ -621,17 +638,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, Transition, LO, GO, Scalar )
 	values[0] = -0.5;
 	A->insertGlobalValues( i, global_columns(), values() );
     }
-    global_columns[0] = global_num_rows-1;
     values[0] = -0.5;
+    global_columns[0] = global_num_rows-1;
     A->insertGlobalValues( global_num_rows-1, global_columns(), values() );
     A->fillComplete();
 
     Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *A );
+    Teuchos::RCP<MatrixType> A_T = MT::copyTranspose(*A);
 
     // Build the adjoint domain.
     Teuchos::ParameterList plist;
     plist.set<int>( "Overlap Size", 2 );
-    MCLS::AdjointDomain<VectorType,MatrixType> domain( A, x, plist );
+    MCLS::AdjointDomain<VectorType,MatrixType> domain( A_T, x, plist );
 
     // Process a history transition in the domain.
     MCLS::RNGControl control( 2394723 );
@@ -708,7 +726,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointDomain, Diagonal, LO, GO, Scalar )
 
     // Build the adjoint domain.
     Teuchos::ParameterList plist;
-    plist.set<int>( "Overlap Size", 2 );
+    plist.set<int>( "Overlap Size", 0 );
     MCLS::AdjointDomain<VectorType,MatrixType> domain( A, x, plist );
 
     // Process a history transition in the domain.

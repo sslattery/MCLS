@@ -214,7 +214,6 @@ void MCSASolverManager<Vector,Matrix>::setProblem(
 	// Set the updated residual problem with the Monte Carlo solver.
 	d_mc_solver->setProblem( d_residual_problem );
     }
-
     // Otherwise this is initialization.
     else
     {

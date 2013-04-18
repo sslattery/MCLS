@@ -90,20 +90,22 @@ class MatrixAlgorithms<Tpetra::Vector<Scalar,LO,GO>,
      */
     static void reducedDomainApproximation( 
         const matrix_type& matrix,
+        const double neumann_relax,
         const double filter_tol,
         const int fill_value,
         const double weight_recovery,
         Teuchos::RCP<matrix_type>& reduced_H,
         Teuchos::RCP<vector_type>& recovered_weights )
     { 
-        reduced_H = Tpetra::createCrsMatrix<Scalar,LO,GO>( matrix.getRowMap() );
+        GO max_entries = MT::getGlobalMaxNumRowEntries( matrix );
+        reduced_H = Tpetra::createCrsMatrix<Scalar,LO,GO>( 
+            matrix.getRowMap(), max_entries );
         recovered_weights = MT::cloneVectorFromMatrixRows( *reduced_H );
 
         Teuchos::ArrayRCP<double> rweights_view = 
             VT::viewNonConst( *recovered_weights );
         LO local_num_rows = MT::getLocalNumRows( matrix );
         GO global_row = 0;
-        GO max_entries = MT::getGlobalMaxNumRowEntries( matrix );
         std::size_t num_entries = 0;
         Scalar filter_sum = 0.0;
         Teuchos::Array<Scalar> sorted_values;
@@ -126,11 +128,8 @@ class MatrixAlgorithms<Tpetra::Vector<Scalar,LO,GO>,
             values.resize( max_entries );
 
             // Get the values and indices for this row
-            MT::getGlobalRowCopy( matrix, 
-                                  global_row,
-                                  indices(),
-                                  values(),
-                                  num_entries );
+            MT::getGlobalRowCopy( 
+                matrix, global_row, indices(), values(), num_entries );
 
             // Check for degeneracy.
             MCLS_CHECK( num_entries > 0 );
@@ -139,38 +138,29 @@ class MatrixAlgorithms<Tpetra::Vector<Scalar,LO,GO>,
             indices.resize( num_entries );
             values.resize( num_entries );
 
+            // Scale by the Neumann relaxation parameter and -1 to build
+            // -omega*A.
+            for ( value_iterator = values.begin();
+                  value_iterator != values.end();
+                  ++value_iterator )
+            {
+                *value_iterator *= -neumann_relax;
+            }
+
             // If this row contains an entry on the column, add 1 for the
             // identity matrix (H = I-A).
             index_iterator = std::find( indices.begin(), indices.end(),
                                         global_row );
             if ( index_iterator != indices.end() )
             {
-                indices[ std::distance(indices.begin(),index_iterator) ] += 1.0;
+                values[ std::distance(indices.begin(),index_iterator) ] += 1.0;
             }
 
-            // Apply the filter tolerance.
-            for ( value_iterator = values.begin(),
-                  index_iterator = indices.begin();
-                  value_iterator != values.end();
-                  ++value_iterator, ++index_iterator )
-            {
-                if ( std::abs(*value_iterator) < filter_tol )
-                {
-                    filter_sum += std::abs(*value_iterator);
-                    *value_iterator = 0.0;
-                    *index_iterator = -1;
-                }
-            }
-            value_iterator = std::remove( values.begin(), values.end(), 0.0 );
-            values.resize( std::distance(values.begin(),value_iterator) );
-            index_iterator = std::remove( indices.begin(), indices.end(), -1 );
-            indices.resize( std::distance(indices.begin(),index_iterator) );
-
-            // Apply the fill level.
+            // Apply the fill level and filter tolerance.
             if ( values.size() > fill_value )
             {
                 // Get the fill value cutoff.
-                sorted_values.resize(values.size() );
+                sorted_values.resize( values.size() );
                 std::copy( values.begin(), values.end(), sorted_values.begin() );
                 for( sorted_values_it = sorted_values.begin();
                      sorted_values_it != sorted_values.end();
@@ -182,14 +172,39 @@ class MatrixAlgorithms<Tpetra::Vector<Scalar,LO,GO>,
                                   sorted_values.end()-fill_value,
                                   sorted_values.end() );
 
-                // Filter any values below the fill value cutoff.
+                // Filter any values below the fill value cutoff or the filter
+                // tolerance. 
                 for ( value_iterator = values.begin(),
                       index_iterator = indices.begin();
                       value_iterator != values.end();
                       ++value_iterator, ++index_iterator )
                 {
                     if ( std::abs(*value_iterator) <
-                         *(sorted_values.end()-fill_value) )
+                         *(sorted_values.end()-fill_value) || 
+                         std::abs(*value_iterator) <= filter_tol )
+                    {
+                        filter_sum += std::abs(*value_iterator);
+                        *value_iterator = 0.0;
+                        *index_iterator = -1;
+                    }
+                }
+
+                value_iterator = 
+                    std::remove( values.begin(), values.end(), 0.0 );
+                values.resize( std::distance(values.begin(),value_iterator) );
+                index_iterator = 
+                    std::remove( indices.begin(), indices.end(), -1 );
+                indices.resize( std::distance(indices.begin(),index_iterator) );
+            }
+            else
+            {
+                // Filter any values below the the filter tolerance.
+                for ( value_iterator = values.begin(),
+                      index_iterator = indices.begin();
+                      value_iterator != values.end();
+                      ++value_iterator, ++index_iterator )
+                {
+                    if ( std::abs(*value_iterator) <= filter_tol )
                     {
                         filter_sum += std::abs(*value_iterator);
                         *value_iterator = 0.0;

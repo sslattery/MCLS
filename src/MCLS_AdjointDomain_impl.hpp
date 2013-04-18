@@ -89,11 +89,6 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     Teuchos::RCP<Matrix> reduced_H;
     Teuchos::RCP<Vector> recovered_weights;
     {
-        // Get a non-const operator that we can modify. Whatever is passed
-        // into this constructor should never be the original operator. As the
-        // tranpose is required as the input here, this should always be OK.
-        Teuchos::RCP<Matrix> A_T = Teuchos::rcp_const_cast<Matrix>(A);
-
         // Get the filter tolerance.
         double filter_tol = 0.0;
         if ( plist.isParameter("Domain Filter Tolerance") )
@@ -108,7 +103,7 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
         {
             fill_value = plist.get<int>("Domain Fill Value");
         }
-        MCLS_CHECK( 0 <= fill_value );
+        MCLS_CHECK( 0 < fill_value );
 
         // Get the weight recovery value.
         double weight_recovery = 0.0;
@@ -118,43 +113,47 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
         }
         MCLS_CHECK( 0.0 <= weight_recovery && 1.0 >= weight_recovery );
     
-        // Apply the Neumann relaxation parameter (-omega*A^T).
+        // Get the Neumann relaxation parameter.
+        double neumann_relax = 1.0;
         if ( plist.isParameter("Neumann Relaxation") )
         {
-            Teuchos::RCP<Vector> omega = MT::cloneVectorFromMatrixRows(*A_T);
-            VT::putScalar( *omega, -1.0*plist.get<double>("Neumann Relaxation") );
-            MT::leftScale( *A_T, *omega );
+            neumann_relax = plist.get<double>("Neumann Relaxation");
         }
-        else
-        {
-            Teuchos::RCP<Vector> omega = MT::cloneVectorFromMatrixRows(*A_T);
-            VT::putScalar( *omega, -1.0 );
-            MT::leftScale( *A_T, *omega );
-        }
+        MCLS_CHECK( 0.0 < neumann_relax );
 
         // Apply the reduced domain approximation to build a reduced iteration
         // matrix. 
-        MA::reducedDomainApproximation( *A_T, filter_tol, 
+        MA::reducedDomainApproximation( *A, neumann_relax, filter_tol, 
                                         fill_value, weight_recovery, 
                                         reduced_H, recovered_weights );
     }
 
-    // Generate the Monte Carlo domain and tally.
+    // Generate the Monte Carlo domain.
     {
         // Generate the overlap for the transpose operator.
-        Teuchos::RCP<Matrix> reduced_H_overlap = 
-            MT::copyNearestNeighbors( *reduced_H, num_overlap );
-        Teuchos::RCP<Vector> recovered_weights_overlap =
-            MT::cloneVectorFromMatrixRows( *reduced_H_overlap );
+        Teuchos::RCP<Matrix> reduced_H_overlap;
+        Teuchos::RCP<Vector> recovered_weights_overlap;
+        if ( num_overlap > 0 )
         {
-            VectorExport<Vector> rweight_export( recovered_weights,
-                                                 recovered_weights_overlap );
-            rweight_export.doExportInsert();
+            reduced_H_overlap = 
+                MT::copyNearestNeighbors( *reduced_H, num_overlap );
+            recovered_weights_overlap =
+                MT::cloneVectorFromMatrixRows( *reduced_H_overlap );
+            {
+                VectorExport<Vector> rweight_export( 
+                    recovered_weights, recovered_weights_overlap );
+                rweight_export.doExportInsert();
+            }
+        }
+
+        // Get the total number of local rows.
+        int num_rows = MT::getLocalNumRows( *reduced_H );
+        if ( num_overlap > 0 )
+        { 
+            num_rows += MT::getLocalNumRows( *reduced_H_overlap );
         }
 
         // Allocate space in local row data arrays.
-        int num_rows = MT::getLocalNumRows( *reduced_H ) + 
-                       MT::getLocalNumRows( *reduced_H_overlap );
         d_columns = 
             Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > >( num_rows );
         d_cdfs = Teuchos::ArrayRCP<Teuchos::Array<double> >( num_rows );
@@ -163,17 +162,20 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 
         // Build the local CDFs and weights.
         addMatrixToDomain( reduced_H, recovered_weights, tally_states );
-        addMatrixToDomain( reduced_H_overlap, recovered_weights_overlap, 
-                           tally_states );
+        if ( num_overlap > 0 )
+        {
+            addMatrixToDomain( 
+                reduced_H_overlap, recovered_weights_overlap, tally_states );
+        }
 
         // Get the boundary states and their owning process ranks.
         if ( num_overlap == 0 )
         {
-            buildBoundary( reduced_H, A );
+            buildBoundary( reduced_H, reduced_H );
         }
         else
         {
-            buildBoundary( reduced_H_overlap, A );
+            buildBoundary( reduced_H_overlap, reduced_H );
         }
     }
 
@@ -200,7 +202,7 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     {
         d_tally->setIterationMatrix( d_h, d_columns, d_row_indexer );
     }
-    
+
     MCLS_ENSURE( !d_tally.is_null() );
 }
 
@@ -817,13 +819,13 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
 	      cdf_iterator != d_cdfs[i+offset].end();
 	      ++cdf_iterator )
 	{
-	    *cdf_iterator = std::abs( (*cdf_iterator) ) + *(cdf_iterator-1);
+	    *cdf_iterator = std::abs( *cdf_iterator ) + *(cdf_iterator-1);
 	}
 
 	// The final value in the non-normalized CDF is the weight for this
 	// row. This is the absolute value row sum of the iteration matrix.
 	d_weights[i+offset] = d_cdfs[i+offset].back();
-	MCLS_CHECK( d_weights[i+offset] >= 0 );
+	MCLS_CHECK( d_weights[i+offset] > 0.0 );
 
 	// Normalize the CDF for the row.
 	for ( cdf_iterator = d_cdfs[i+offset].begin();
@@ -833,7 +835,7 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
 	    *cdf_iterator /= d_weights[i+offset];
 	    MCLS_CHECK( *cdf_iterator >= 0.0 );
 	}
-	MCLS_CHECK( std::abs(1.0 - d_cdfs[i+offset].back()) < 1.0e-6 );
+	MCLS_CHECK( std::abs(1.0 - d_cdfs[i+offset].back()) < 1.0e-8 );
 
         // Recover the weight.
         d_weights[i+offset] += rweights_view[i];
@@ -855,6 +857,12 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
             {
                 tally_states.insert( *col_it );
             }
+        }
+        else
+        {
+            MCLS_INSIST( COLLISION == d_estimator || 
+                         EXPECTED_VALUE == d_estimator,
+                         "Unsupported estimator type" );
         }
     }
 }

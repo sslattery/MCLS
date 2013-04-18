@@ -179,7 +179,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MSODManager, two_by_two, LO, GO, Scalar )
 	    A->fillComplete();
 
 	    // Build the primary adjoint domain.
-	    primary_domain = Teuchos::rcp( new DomainType(A, x, plist) );
+	    primary_domain = Teuchos::rcp( 
+                new DomainType(MT::copyTranspose(*A), x, plist) );
 
 	    // Create the primary adjoint source with default values.
 	    Teuchos::RCP<VectorType> b = VT::clone( *x );

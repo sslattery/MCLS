@@ -263,7 +263,7 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
     // Set the local source with the solver.
     d_mc_solver->setSource( d_msod_manager->localSource() );
 
-    // Solve the problem.
+    // Solve the Monte Carlo problem over the set.
     d_mc_solver->solve();
 
     // Barrier before proceeding.

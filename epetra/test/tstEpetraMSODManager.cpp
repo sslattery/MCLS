@@ -199,7 +199,7 @@ TEUCHOS_UNIT_TEST( MSODManager, two_by_two )
 	    A->FillComplete();
 
 	    // Build the primary adjoint domain.
-	    Teuchos::RCP<MatrixType> B = A;
+	    Teuchos::RCP<MatrixType> B = MT::copyTranspose(*A);
 	    primary_domain = Teuchos::rcp( new DomainType(B, x, plist) );
 
 	    // Create the primary adjoint source with default values.

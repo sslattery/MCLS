@@ -158,6 +158,7 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_not_set )
 			   &values[0], &global_columns[0] );
     A->FillComplete();
 
+    Teuchos::RCP<MatrixType> A_T = MT::copyTranspose(*A);
     Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *A );
     Teuchos::RCP<VectorType> b = MT::cloneVectorFromMatrixRows( *A );
     VT::putScalar( *b, -1.0 );
@@ -165,7 +166,7 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_not_set )
     // Build the adjoint domain.
     Teuchos::ParameterList plist;
     plist.set<int>( "Overlap Size", 0 );
-    Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( A, x, plist ) );
+    Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( A_T, x, plist ) );
 
     // History setup.
     Teuchos::RCP<MCLS::RNGControl> control = Teuchos::rcp(
@@ -253,6 +254,7 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, PackUnpack )
 			   &values[0], &global_columns[0] );
     A->FillComplete();
 
+    Teuchos::RCP<MatrixType> A_T = MT::copyTranspose(*A);
     Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *A );
     Teuchos::RCP<VectorType> b = MT::cloneVectorFromMatrixRows( *A );
     VT::putScalar( *b, -1.0 );
@@ -260,7 +262,7 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, PackUnpack )
     // Build the adjoint domain.
     Teuchos::ParameterList plist;
     plist.set<int>( "Overlap Size", 0 );
-    Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( A, x, plist ) );
+    Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( A_T, x, plist ) );
 
     // History setup.
     Teuchos::RCP<MCLS::RNGControl> control = Teuchos::rcp(
@@ -355,6 +357,7 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_set_pu )
 			   &values[0], &global_columns[0] );
     A->FillComplete();
 
+    Teuchos::RCP<MatrixType> A_T = MT::copyTranspose(*A);
     Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *A );
     Teuchos::RCP<VectorType> b = MT::cloneVectorFromMatrixRows( *A );
     VT::putScalar( *b, -1.0 );
@@ -362,7 +365,7 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_set_pu )
     // Build the adjoint domain.
     Teuchos::ParameterList plist;
     plist.set<int>( "Overlap Size", 0 );
-    Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( A, x, plist ) );
+    Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( A_T, x, plist ) );
 
     // History setup.
     Teuchos::RCP<MCLS::RNGControl> control = Teuchos::rcp(
@@ -459,6 +462,7 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_set )
 			   &values[0], &global_columns[0] );
     A->FillComplete();
 
+    Teuchos::RCP<MatrixType> A_T = MT::copyTranspose(*A);
     Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *A );
     Teuchos::RCP<VectorType> b = MT::cloneVectorFromMatrixRows( *A );
     VT::putScalar( *b, -1.0 );
@@ -466,7 +470,7 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_set )
     // Build the adjoint domain.
     Teuchos::ParameterList plist;
     plist.set<int>( "Overlap Size", 0 );
-    Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( A, x, plist ) );
+    Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( A_T, x, plist ) );
 
     // History setup.
     Teuchos::RCP<MCLS::RNGControl> control = Teuchos::rcp(

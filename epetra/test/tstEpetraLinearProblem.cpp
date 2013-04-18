@@ -228,7 +228,6 @@ TEUCHOS_UNIT_TEST( LinearProblem, Apply )
     }
 
     linear_problem.updateSolution( X );
-    linear_problem.exportLHS();
     linear_problem.apply( *X, *Y );
     for ( view_iterator = Y_view.begin();
 	  view_iterator != Y_view.end();
@@ -272,7 +271,6 @@ TEUCHOS_UNIT_TEST( LinearProblem, Apply )
     }
 
     linear_problem.updateSolution( X );
-    linear_problem.exportLHS();
     Teuchos::RCP<const MatrixType> composite = 
 	linear_problem.getCompositeOperator();
     MT::apply( *composite, *X, *Y );

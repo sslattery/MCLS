@@ -142,7 +142,10 @@ TEUCHOS_UNIT_TEST( AdjointDomain, NoOverlap )
     // Build the linear operator and solution vector.
     Teuchos::RCP<Epetra_CrsMatrix> A = 	
 	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
-
+    Teuchos::Array<int> first_columns( 1, 0 );
+    Teuchos::Array<double> first_values( 1, 2.0 );
+    A->InsertGlobalValues( 0, first_columns().size(), 
+                           &first_values[0], &first_columns[0] );
     Teuchos::Array<int> global_columns( 2 );
     Teuchos::Array<double> values( 2 );
     for ( int i = 1; i < global_num_rows; ++i )
@@ -156,7 +159,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, NoOverlap )
     }
     A->FillComplete();
 
-    Teuchos::RCP<MatrixType> B = A;
+    Teuchos::RCP<MatrixType> B = MT::copyTranspose(*A);
     Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *B );
 
     // Build the adjoint domain.
@@ -253,7 +256,10 @@ TEUCHOS_UNIT_TEST( AdjointDomain, PackUnpack )
     // Build the linear operator and solution vector.
     Teuchos::RCP<Epetra_CrsMatrix> A = 	
 	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
-
+    Teuchos::Array<int> first_columns( 1, 0 );
+    Teuchos::Array<double> first_values( 1, 2.0 );
+    A->InsertGlobalValues( 0, first_columns().size(), 
+                           &first_values[0], &first_columns[0] );
     Teuchos::Array<int> global_columns( 2 );
     Teuchos::Array<double> values( 2 );
     for ( int i = 1; i < global_num_rows; ++i )
@@ -267,7 +273,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, PackUnpack )
     }
     A->FillComplete();
 
-    Teuchos::RCP<MatrixType> B = A;
+    Teuchos::RCP<MatrixType> B = MT::copyTranspose(*A);
     Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *B );
 
     // Build the adjoint domain.
@@ -371,6 +377,10 @@ TEUCHOS_UNIT_TEST( AdjointDomain, SomeOverlap )
     // Build the linear operator and solution vector.
     Teuchos::RCP<Epetra_CrsMatrix> A = 	
 	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
+    Teuchos::Array<int> first_columns( 1, 0 );
+    Teuchos::Array<double> first_values( 1, 2.0 );
+    A->InsertGlobalValues( 0, first_columns().size(), 
+                           &first_values[0], &first_columns[0] );
     Teuchos::Array<int> global_columns( 2 );
     Teuchos::Array<double> values( 2 );
     for ( int i = 1; i < global_num_rows; ++i )
@@ -384,7 +394,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, SomeOverlap )
     }
     A->FillComplete();
 
-    Teuchos::RCP<MatrixType> B = A;
+    Teuchos::RCP<MatrixType> B = MT::copyTranspose(*A);
     Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *B );
 
     // Build the adjoint domain.
@@ -502,6 +512,10 @@ TEUCHOS_UNIT_TEST( AdjointDomain, SomeOverlapPackUnpack )
     // Build the linear operator and solution vector.
     Teuchos::RCP<Epetra_CrsMatrix> A = 	
 	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
+    Teuchos::Array<int> first_columns( 1, 0 );
+    Teuchos::Array<double> first_values( 1, 2.0 );
+    A->InsertGlobalValues( 0, first_columns().size(), 
+                           &first_values[0], &first_columns[0] );
     Teuchos::Array<int> global_columns( 2 );
     Teuchos::Array<double> values( 2 );
     for ( int i = 1; i < global_num_rows; ++i )
@@ -515,7 +529,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, SomeOverlapPackUnpack )
     }
     A->FillComplete();
 
-    Teuchos::RCP<MatrixType> B = A;
+    Teuchos::RCP<MatrixType> B = MT::copyTranspose(*A);
     Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *B );
 
     // Build the adjoint domain.
@@ -649,13 +663,13 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Transition )
 	A->InsertGlobalValues( i, global_columns().size(), 
 			       &values[0], &global_columns[0] );
     }
-    global_columns[0] = global_num_rows-1;
     values[0] = -0.5;
+    global_columns[0] = global_num_rows-1;
     A->InsertGlobalValues( global_num_rows-1, global_columns.size(), 
 			   &values[0], &global_columns[0] );
     A->FillComplete();
 
-    Teuchos::RCP<MatrixType> B = A;
+    Teuchos::RCP<MatrixType> B = MT::copyTranspose(*A);
     Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *B );
 
     // Build the adjoint domain.
@@ -735,7 +749,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Diagonal )
     }
     A->FillComplete();
 
-    Teuchos::RCP<MatrixType> B = A;
+    Teuchos::RCP<MatrixType> B = MT::copyTranspose(*A);
     Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *B );
 
     // Build the adjoint domain.

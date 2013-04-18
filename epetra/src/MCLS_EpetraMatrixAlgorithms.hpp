@@ -87,6 +87,7 @@ class MatrixAlgorithms<Epetra_Vector,Epetra_RowMatrix>
      */
     static void reducedDomainApproximation( 
         const matrix_type& matrix,
+        const double neumann_relax,
         const double filter_tol,
         const int fill_value,
         const double weight_recovery,
@@ -134,6 +135,15 @@ class MatrixAlgorithms<Epetra_Vector,Epetra_RowMatrix>
             // Resize local index and value arrays for this row.
             indices.resize( num_entries );
             values.resize( num_entries );
+
+            // Scale by the Neumann relaxation parameter and -1 to build
+            // -omega*A.
+            for ( value_iterator = values.begin();
+                  value_iterator != values.end();
+                  ++value_iterator )
+            {
+                *value_iterator *= -neumann_relax;
+            }
 
             // If this row contains an entry on the column, add 1 for the
             // identity matrix (H = I-A).

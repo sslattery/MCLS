@@ -91,6 +91,7 @@ class MatrixAlgorithms
      */
     static void reducedDomainApproximation( 
         const Matrix& matrix,
+        const double neumann_relax,
         const double filter_tol,
         const int fill_value,
         const double weight_recovery,

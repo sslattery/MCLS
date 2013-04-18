@@ -203,7 +203,7 @@ TEUCHOS_UNIT_TEST( DomainCommunicator, Communicate )
 			       &values[0], &global_columns[0] );
 	A->FillComplete();
 
-	Teuchos::RCP<MatrixType> B = A;
+	Teuchos::RCP<MatrixType> B = MT::copyTranspose(*A);
 	Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *B );
 
 	// Build the adjoint domain.

@@ -161,7 +161,7 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff )
 			   &values[0], &global_columns[0] );
     A->FillComplete();
 
-    Teuchos::RCP<MatrixType> B = A;
+    Teuchos::RCP<MatrixType> B = MT::copyTranspose(*A);
     Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *A );
 
     // Build the adjoint domain.
@@ -275,7 +275,7 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff2 )
 			   &values[0], &global_columns[0] );
     A->FillComplete();
 
-    Teuchos::RCP<MatrixType> B = A;
+    Teuchos::RCP<MatrixType> B = MT::copyTranspose(*A);
     Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *A );
 
     // Build the adjoint domain.
@@ -419,7 +419,7 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Boundary )
 			       &values[0], &global_columns[0] );
 	A->FillComplete();
 
-	Teuchos::RCP<MatrixType> B = A;
+	Teuchos::RCP<MatrixType> B = MT::copyTranspose(*A);
 	Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *A );
 
 	// Build the adjoint domain.

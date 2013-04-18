@@ -168,11 +168,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Communicate, LO, GO, Scal
 	A->fillComplete();
 
 	Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *A );
+        Teuchos::RCP<MatrixType> A_T = MT::copyTranspose(*A);
 
 	// Build the adjoint domain.
 	Teuchos::ParameterList plist;
 	plist.set<int>( "Overlap Size", 0 );
-	Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( A, x, plist ) );
+	Teuchos::RCP<DomainType> domain = 
+            Teuchos::rcp( new DomainType( A_T, x, plist ) );
 
 	// History setup.
 	HistoryType::setByteSize( control.getSize() );
