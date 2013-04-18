@@ -71,18 +71,17 @@ class CommTools
 	bool is_complete = false;
 
 #ifdef HAVE_MPI
-	MCLS_REQUIRE( !handle.is_null() );
-	Teuchos::ArrayView<char>::size_type num_bytes = 
-	    Teuchos::rcp_dynamic_cast<Teuchos::MpiCommRequest<int> >( 
-		handle )->numBytes();
-	MPI_Request raw_request = 
-	    Teuchos::rcp_dynamic_cast<Teuchos::MpiCommRequest<int> >( 
-		handle )->releaseRawMpiRequest();
+	MCLS_REQUIRE( Teuchos::nonnull(handle) );
+        Teuchos::RCP<Teuchos::MpiCommRequestBase<int> > handle_base =
+	    Teuchos::rcp_dynamic_cast<Teuchos::MpiCommRequestBase<int> >(handle);
+        MCLS_CHECK( Teuchos::nonnull(handle_base) );
+	MPI_Request raw_request = handle_base->releaseRawMpiRequest();
 	MPI_Status raw_status;
 	int flag = 0;
 	MPI_Test( &raw_request, &flag, &raw_status );
 	is_complete = ( flag != 0 );
-	handle = Teuchos::mpiCommRequest<int>( raw_request, num_bytes );
+	handle = Teuchos::rcp( 
+            new Teuchos::MpiCommRequestBase<int>(raw_request) );
 #else
 	is_complete = true;
 #endif
