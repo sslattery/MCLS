@@ -51,6 +51,7 @@
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayRCP.hpp>
+#include <Teuchos_as.hpp>
 
 #include <Epetra_Vector.h>
 #include <Epetra_RowMatrix.h>
@@ -106,12 +107,14 @@ class MatrixAlgorithms<Epetra_Vector,Epetra_RowMatrix>
         std::size_t num_entries = 0;
         double filter_sum = 0.0;
         int error = 0;
-        Teuchos::Array<int>::iterator index_iterator;
-        Teuchos::Array<double>::iterator value_iterator;
-        Teuchos::Array<double> sorted_values;
-        Teuchos::Array<double>::iterator sorted_values_it;
-        Teuchos::Array<double> values;
-        Teuchos::Array<int> indices;
+        int values_size = 0;
+        int indices_size = 0;
+        Teuchos::ArrayRCP<int>::iterator index_iterator;
+        Teuchos::ArrayRCP<double>::iterator value_iterator;
+        Teuchos::ArrayRCP<double> sorted_values( max_entries );
+        Teuchos::ArrayRCP<double>::iterator sorted_values_it;
+        Teuchos::ArrayRCP<double> values( max_entries );
+        Teuchos::ArrayRCP<int> indices( max_entries );
 
         for ( int i = 0; i < local_num_rows; ++i )
         {
@@ -121,10 +124,6 @@ class MatrixAlgorithms<Epetra_Vector,Epetra_RowMatrix>
             // Get the global row.
             global_row = MT::getGlobalRow( matrix, i );
 
-            // Allocate index and value memory for this row.
-            indices.resize( max_entries );
-            values.resize( max_entries );
-
             // Get the values and indices for this row
             MT::getGlobalRowCopy( 
                 matrix, global_row, indices(), values(), num_entries );
@@ -132,14 +131,10 @@ class MatrixAlgorithms<Epetra_Vector,Epetra_RowMatrix>
             // Check for degeneracy.
             MCLS_CHECK( num_entries > 0 );
 
-            // Resize local index and value arrays for this row.
-            indices.resize( num_entries );
-            values.resize( num_entries );
-
             // Scale by the Neumann relaxation parameter and -1 to build
             // -omega*A.
             for ( value_iterator = values.begin();
-                  value_iterator != values.end();
+                  value_iterator != values.begin()+num_entries;
                   ++value_iterator )
             {
                 *value_iterator *= -neumann_relax;
@@ -147,38 +142,39 @@ class MatrixAlgorithms<Epetra_Vector,Epetra_RowMatrix>
 
             // If this row contains an entry on the column, add 1 for the
             // identity matrix (H = I-A).
-            index_iterator = std::find( indices.begin(), indices.end(),
+            index_iterator = std::find( indices.begin(), 
+                                        indices.begin()+num_entries,
                                         global_row );
-            if ( index_iterator != indices.end() )
+            if ( index_iterator != indices.begin()+num_entries )
             {
                 values[ std::distance(indices.begin(),index_iterator) ] += 1.0;
             }
 
             // Apply the fill level and filter tolerance.
-            if ( values.size() > fill_value )
+            if ( Teuchos::as<int>(num_entries) > fill_value )
             {
                 // Get the fill value cutoff.
-                sorted_values.resize( values.size() );
-                std::copy( values.begin(), values.end(), sorted_values.begin() );
+                std::copy( values.begin(), values.begin()+num_entries, 
+                           sorted_values.begin() );
                 for( sorted_values_it = sorted_values.begin();
-                     sorted_values_it != sorted_values.end();
+                     sorted_values_it != sorted_values.begin()+num_entries;
                      ++sorted_values_it )
                 {
                     *sorted_values_it = std::abs( *sorted_values_it );
                 }
                 std::nth_element( sorted_values.begin(), 
-                                  sorted_values.end()-fill_value,
-                                  sorted_values.end() );
+                                  sorted_values.begin()+num_entries-fill_value,
+                                  sorted_values.begin()+num_entries );
 
                 // Filter any values below the fill value cutoff or the filter
                 // tolerance. 
                 for ( value_iterator = values.begin(),
                       index_iterator = indices.begin();
-                      value_iterator != values.end();
+                      value_iterator != values.begin()+num_entries;
                       ++value_iterator, ++index_iterator )
                 {
                     if ( std::abs(*value_iterator) <
-                         *(sorted_values.end()-fill_value) || 
+                         *(sorted_values.begin()+num_entries-fill_value) || 
                          std::abs(*value_iterator) <= filter_tol )
                     {
                         filter_sum += std::abs(*value_iterator);
@@ -186,20 +182,17 @@ class MatrixAlgorithms<Epetra_Vector,Epetra_RowMatrix>
                         *index_iterator = -1;
                     }
                 }
-
                 value_iterator = 
-                    std::remove( values.begin(), values.end(), 0.0 );
-                values.resize( std::distance(values.begin(),value_iterator) );
+                    std::remove( values.begin(), values.begin()+num_entries, 0.0 );
                 index_iterator = 
-                    std::remove( indices.begin(), indices.end(), -1 );
-                indices.resize( std::distance(indices.begin(),index_iterator) );
+                    std::remove( indices.begin(), indices.begin()+num_entries, -1 );
             }
             else
             {
                 // Filter any values below the the filter tolerance.
                 for ( value_iterator = values.begin(),
                       index_iterator = indices.begin();
-                      value_iterator != values.end();
+                      value_iterator != values.begin()+num_entries;
                       ++value_iterator, ++index_iterator )
                 {
                     if ( std::abs(*value_iterator) <= filter_tol )
@@ -210,20 +203,20 @@ class MatrixAlgorithms<Epetra_Vector,Epetra_RowMatrix>
                     }
                 }
                 value_iterator = 
-                    std::remove( values.begin(), values.end(), 0.0 );
-                values.resize( std::distance(values.begin(),value_iterator) );
+                    std::remove( values.begin(), values.begin()+num_entries, 0.0 );
                 index_iterator = 
-                    std::remove( indices.begin(), indices.end(), -1 );
-                indices.resize( std::distance(indices.begin(),index_iterator) );
+                    std::remove( indices.begin(), indices.begin()+num_entries, -1 );
             }
 
             // Check again for degeneracy and consistency.
-            MCLS_CHECK( values.size() > 0 );
-            MCLS_CHECK( values.size() == indices.size() );
+            values_size = std::distance( values.begin(), value_iterator );
+            MCLS_REMEMBER( indices_size = std::distance(indices.begin(), index_iterator) );
+            MCLS_CHECK( values_size > 0 );
+            MCLS_CHECK( values_size == indices_size );
 
             // Add the values to the reduced iteration matrix.
             error = reduced_H_crs->InsertGlobalValues( global_row,
-                                                       values.size(),
+                                                       values_size,
                                                        values.getRawPtr(),
                                                        indices.getRawPtr() );
             MCLS_CHECK( 0 == error );
