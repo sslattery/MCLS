@@ -156,13 +156,14 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
 
     // Create a ParaSails matrix from the row-contiguous operator. 
     Teuchos::ArrayRCP<double> values( contiguous_A->MaxNumEntries() );
+    Teuchos::ArrayRCP<double>::iterator values_it;
     Teuchos::ArrayRCP<int> indices( contiguous_A->MaxNumEntries() );
     Teuchos::ArrayRCP<int>::iterator indices_it;
     int num_entries = 0;
     int local_row = 0;
     int beg_row = contiguous_A->RowMatrixRowMap().MinMyGID();
     int end_row = contiguous_A->RowMatrixRowMap().MaxMyGID();
-    Teuchos::ArrayRCP<int>::iterator col_it;
+    Teuchos::ArrayRCP<int>::iterator col_it, col_it_2;
     Matrix* epetra_matrix = MatrixCreate( raw_mpi_comm, beg_row, end_row );
     for ( int i = beg_row; i < end_row+1; ++i )
     {
@@ -178,9 +179,26 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
         MCLS_CHECK( 0 == error );
         MCLS_CHECK( num_entries > 0 );
 
+        // Get rid of the zero entries.
+        double tol = 1.0e-15;
+        for ( values_it = values.begin(), indices_it = indices.begin();
+              values_it != values.begin()+num_entries;
+              ++values_it, ++indices_it )
+        {
+            if ( std::abs(*values_it) < tol )
+            {
+                *values_it = 0.0;
+                *indices_it = -1;
+            }
+        }
+        values_it = 
+            std::remove( values.begin(), values.begin()+num_entries, 0.0 );
+        indices_it = 
+            std::remove( indices.begin(), indices.begin()+num_entries, -1 );
+
         // Convert the local indices into global indices.
 	for ( col_it = indices.begin(); 
-              col_it != indices.begin()+num_entries; 
+              col_it != indices_it; 
               ++col_it )
 	{
 	    *col_it = contiguous_A->RowMatrixColMap().GID(*col_it);
@@ -188,6 +206,7 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
 
         // Insert it into the Epetra ParaSails matrix.
         MCLS_CHECK( d_A->Comm().MyPID() == MatrixRowPe(epetra_matrix, i) );
+        num_entries = std::distance( values.begin(), values_it );
         MatrixSetRow( epetra_matrix, i, num_entries, 
                       indices.getRawPtr(), values.getRawPtr() );
     }
