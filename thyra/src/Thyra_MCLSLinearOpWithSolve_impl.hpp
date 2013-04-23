@@ -445,7 +445,7 @@ SolveStatus<Scalar> MCLSLinearOpWithSolve<Scalar>::solveImpl(
 	{
 	    tmp_pl->set("Convergence Tolerance", d_default_tol);
 	}
-	else if (solve_measure(SOLVE_MEASURE_NORM_RESIDUAL, SOLVE_MEASURE_NORM_RHS)) 
+	else
 	{
 	    if (requested_tol != SolveCriteria<Scalar>::unspecifiedTolerance()) 
 	    {
@@ -454,10 +454,6 @@ SolveStatus<Scalar> MCLSLinearOpWithSolve<Scalar>::solveImpl(
 	    else {
 		tmp_pl->set("Convergence Tolerance", d_default_tol);
 	    }
-	}
-	else
-	{
-	    tmp_pl->set("Convergence Tolerance", 1.0);
 	}
 
 	// Set the maximum number of iterations.
