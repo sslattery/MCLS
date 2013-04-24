@@ -1,31 +1,42 @@
-/*@HEADER
-// ***********************************************************************
-// 
-//       Ifpack: Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2002) Sandia Corporation
-// 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-// 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//  
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
-// ***********************************************************************
-//@HEADER
+//---------------------------------------------------------------------------//
+/*
+  Copyright (c) 2012, Stuart R. Slattery
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are
+  met:
+
+  *: Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer.
+
+  *: Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in the
+  documentation and/or other materials provided with the distribution.
+
+  *: Neither the name of the University of Wisconsin - Madison nor the
+  names of its contributors may be used to endorse or promote products
+  derived from this software without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+  HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+//---------------------------------------------------------------------------//
+/*!
+ * \file Thyra_MCLSPreconditionerFactory_impl.hpp
+ * \author Stuart R. Slattery
+ * \brief Thyra Preconditioner factory for MCLS.
+ */
+//---------------------------------------------------------------------------//
 
 #include <MCLS_Preconditioner.hpp>
 #include <MCLS_TpetraPointJacobiPreconditioner.hpp>
@@ -34,6 +45,7 @@
 #include <MCLS_EpetraBlockJacobiPreconditioner.hpp>
 #include <MCLS_EpetraILUTPreconditioner.hpp>
 #include <MCLS_EpetraParaSailsPreconditioner.hpp>
+#include <MCLS_EpetraPSILUTPreconditioner.hpp>
 
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_implicit_cast.hpp"
@@ -83,6 +95,11 @@ const std::string MCLSPreconditionerFactory<Scalar>::ILUT_name =
 template<class Scalar>
 const std::string MCLSPreconditionerFactory<Scalar>::ParaSails_name = 
     "ParaSails";
+
+template<class Scalar>
+const std::string MCLSPreconditionerFactory<Scalar>::PSILUT_name = 
+    "PSILUT";
+
 
 // Constructors/initializers/accessors
 
@@ -286,6 +303,43 @@ void MCLSPreconditionerFactory<Scalar>::initializePrec(
             // Initialize.
             defaultPrec->initializeLeft( thyra_lop );
 	}
+
+        // PSILUT.
+	else if ( d_prec_type == PREC_TYPE_PSILUT )
+	{
+            // Setup.
+	    Teuchos::ParameterList &precTypesPL = 
+		d_plist->sublist(PrecTypes_name);
+	    Teuchos::ParameterList &psilutPL = 
+		precTypesPL.sublist(PSILUT_name);
+	    Teuchos::RCP<Teuchos::ParameterList> prec_plist = 
+		Teuchos::rcp( &psilutPL, false );
+            
+            // Build.
+	    mcls_prec = Teuchos::rcp( 
+		new MCLS::EpetraPSILUTPreconditioner(prec_plist) );
+            mcls_prec->setOperator( getEpetraRowMatrix(*fwdOpSrc) );
+            mcls_prec->buildPreconditioner();
+
+            // Left
+            Teuchos::RCP<EpetraLinearOp> epetra_lop = 
+                Teuchos::rcp( new EpetraLinearOp() );
+            epetra_lop->initialize( 
+                Teuchos::rcp_const_cast<Epetra_RowMatrix>(
+                    mcls_prec->getLeftPreconditioner()) );
+            Teuchos::RCP<const LinearOpBase<Scalar> > thyra_lop = epetra_lop;
+
+            // Right
+            Teuchos::RCP<EpetraLinearOp> epetra_rop = 
+                Teuchos::rcp( new EpetraLinearOp() );
+            epetra_rop->initialize( 
+                Teuchos::rcp_const_cast<Epetra_RowMatrix>(
+                    mcls_prec->getRightPreconditioner()) );
+            Teuchos::RCP<const LinearOpBase<Scalar> > thyra_rop = epetra_rop;
+
+            // Initialize.
+            defaultPrec->initializeLeftRight( thyra_lop, thyra_rop );
+	}
     }
     else if ( isTpetraCompatible<int,int>(*fwdOpSrc) )
     {
@@ -450,7 +504,8 @@ MCLSPreconditionerFactory<Scalar>::getValidParameters() const
 		"Point Jacobi",
 		"Block Jacobi",
                 "ILUT",
-                "ParaSails"
+                "ParaSails",
+                "PSILUT"
 		),
 	    tuple<std::string>(
 		"Point Jacobi preconditioning - Left scales the linear operator"
@@ -464,13 +519,17 @@ MCLSPreconditionerFactory<Scalar>::getValidParameters() const
                 "preconditioning for the linear operator",
 
                 "ParaSails parallel sparse approximate inverse - Left"
-                "preconditioning for the linear operator"
+                "preconditioning for the linear operator",
+
+                "Incomplete LU factorization with threshold improved with"
+                "sparse approximate inverse preconditioning"
 		),
 	    tuple<EMCLSPrecType>(
 		PREC_TYPE_POINT_JACOBI,
 		PREC_TYPE_BLOCK_JACOBI,
                 PREC_TYPE_ILUT,
-                PREC_TYPE_PARASAILS
+                PREC_TYPE_PARASAILS,
+                PREC_TYPE_PSILUT
 		),
 	    &*validParamList
 	    );
@@ -498,6 +557,11 @@ MCLSPreconditionerFactory<Scalar>::getValidParameters() const
 	{
 	    MCLS::EpetraParaSailsPreconditioner prec(Teuchos::parameterList());
 	    precTypesSL.sublist(ParaSails_name).setParameters(
+		*(prec.getValidParameters()) );
+	}
+	{
+	    MCLS::EpetraPSILUTPreconditioner prec(Teuchos::parameterList());
+	    precTypesSL.sublist(PSILUT_name).setParameters(
 		*(prec.getValidParameters()) );
 	}
     }
