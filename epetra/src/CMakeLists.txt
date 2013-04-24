@@ -23,6 +23,7 @@ APPEND_SET(HEADERS
   MCLS_EpetraMatrixAlgorithms.hpp
   MCLS_EpetraParaSailsPreconditioner.hpp
   MCLS_EpetraPointJacobiPreconditioner.hpp
+  MCLS_EpetraPSILUTPreconditioner.hpp
   MCLS_EpetraRowMatrixAdapter.hpp
   MCLS_EpetraVectorAdapter.hpp
   MCLS_EpetraVectorExport.hpp
@@ -33,6 +34,7 @@ APPEND_SET(SOURCES
   MCLS_EpetraILUTPreconditioner.cpp
   MCLS_EpetraParaSailsPreconditioner.cpp
   MCLS_EpetraPointJacobiPreconditioner.cpp
+  MCLS_EpetraPSILUTPreconditioner.cpp
   )
 
 #

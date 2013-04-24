@@ -77,9 +77,9 @@ Teuchos::RCP<const Teuchos::ParameterList>
 EpetraParaSailsPreconditioner::getValidParameters() const
 {
     Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::parameterList();
-    d_plist->set<double>("ParaSails: Threshold", 0.0);
-    d_plist->set<int>("ParaSails: Number of Levels", 0.0);
-    d_plist->set<double>("ParaSails: Filter", 0.0);
+    plist->set<double>("ParaSails: Threshold", 0.0);
+    plist->set<int>("ParaSails: Number of Levels", 0.0);
+    plist->set<double>("ParaSails: Filter", 0.0);
     return plist;
 }
 
