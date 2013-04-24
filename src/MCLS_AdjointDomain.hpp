@@ -163,7 +163,8 @@ class AdjointDomain
     // Add matrix data to the local domain.
     void addMatrixToDomain( const Teuchos::RCP<const Matrix>& A,
                             const Teuchos::RCP<const Vector>& recovered_weights,
-                            std::set<Ordinal>& tally_states );
+                            std::set<Ordinal>& tally_states,
+                            const double weight_cap );
 
     // Build boundary data.
     void buildBoundary( const Teuchos::RCP<const Matrix>& A,
@@ -216,6 +217,7 @@ inline void AdjointDomain<Vector,Matrix>::processTransition(
     MCLS_REQUIRE( TRANSITION == history.event() );
     MCLS_REQUIRE( isLocalState(history.state()) );
 
+    // Get the current state.
     typename MapType::const_iterator index = 
 	d_row_indexer->find( history.state() );
     MCLS_CHECK( index != d_row_indexer->end() );
