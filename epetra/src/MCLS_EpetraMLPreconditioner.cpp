@@ -38,10 +38,12 @@
  */
 //---------------------------------------------------------------------------//
 
+#include <algorithm>
+
 #include "MCLS_EpetraMLPreconditioner.hpp"
 #include <MCLS_DBC.hpp>
 
-#include <Teuchos_Array.hpp>
+#include <Teuchos_ArrayRCP.hpp>
 
 #include <Epetra_Vector.h>
 #include <Epetra_RowMatrixTransposer.h>
@@ -116,7 +118,9 @@ void EpetraMLPreconditioner::buildPreconditioner()
     MCLS_REQUIRE( d_A->Filled() );
 
     // Build the ML preconditioner.
-    ML_Epetra::MultiLevelPreconditioner ml( *d_A, *d_plist );
+    std::cout << "MCLS ML: Building ML Preconditioner" << std::endl;
+    ML_Epetra::MultiLevelPreconditioner ml( *d_A, 
+                                            d_plist->sublist("ML Settings") );
 
     // Extract the preconditioner.
     Teuchos::RCP<Epetra_CrsMatrix> ml_extract = Teuchos::rcp(
@@ -125,10 +129,16 @@ void EpetraMLPreconditioner::buildPreconditioner()
     int num_rows = d_A->NumMyRows();
     Epetra_Vector basis( d_A->RowMatrixRowMap() );
     Epetra_Vector extract_row( d_A->RowMatrixRowMap() );
-    Teuchos::Array<double> values;
-    Teuchos::Array<int> indices;
+    Teuchos::ArrayRCP<double> values( num_rows );
+    Teuchos::ArrayRCP<double>::iterator value_iterator;
+    Teuchos::ArrayRCP<int> indices( num_rows );
+    Teuchos::ArrayRCP<int>::iterator index_iterator;
+    int values_size = 0;
+    int indices_size = 0;
+    int col_counter = 0;
 
     // Invert the matrix row-by-row.
+    std::cout << "MCLS ML: Extracting ML Preconditioner" << std::endl;
     int error = 0;
     for ( int i = 0; i < num_rows; ++i )
     {
@@ -140,31 +150,54 @@ void EpetraMLPreconditioner::buildPreconditioner()
         error = ml.ApplyInverse( basis, extract_row );
         MCLS_CHECK( 0 == error );
 
-        // Get the non-zero elements of the row.
-        for ( int j = 0; j < num_rows; ++j )
-        {
-            if ( extract_row[j] != 0.0 )
-            {
-                values.push_back( extract_row[j] );
-                indices.push_back( d_A->RowMatrixRowMap().GID(j) );
-            }           
-        }
-
-        // Populate the row in the ml_extract matrix.
-        error = ml_extract->InsertGlobalValues( 
-            d_A->RowMatrixRowMap().GID(i),
-            values.size(),
-            values.getRawPtr(),
-            indices.getRawPtr() );
+        // Get a view of the extracted row.
+        error = extract_row.ExtractCopy( values.getRawPtr() );
         MCLS_CHECK( 0 == error );
 
-        values.clear();
-        indices.clear();
+        // Filter any zero values
+        col_counter = 0;
+        for ( value_iterator = values.begin(),
+              index_iterator = indices.begin();
+              value_iterator != values.end();
+              ++value_iterator, ++index_iterator )
+        {
+            if ( 0.0 == *value_iterator )
+            {
+                *index_iterator = -1;
+            }
+            else
+            {
+                *index_iterator = d_A->RowMatrixColMap().GID( col_counter );
+            }
+            ++col_counter;
+        }
+        value_iterator = 
+            std::remove( values.begin(), values.end(), 0.0 );
+        index_iterator = 
+            std::remove( indices.begin(), indices.end(), -1 );
+
+        // Check for degeneracy and consistency.
+        values_size = std::distance( values.begin(), value_iterator );
+        MCLS_REMEMBER( indices_size = std::distance(indices.begin(), index_iterator) );
+        MCLS_CHECK( values_size > 0 );
+        MCLS_CHECK( values_size == indices_size );
+
+        // Populate the row in the preconditioner matrix.
+        error = ml_extract->InsertGlobalValues( d_A->RowMatrixRowMap().GID(i),
+                                                values_size,
+                                                values.getRawPtr(),
+                                                indices.getRawPtr() );
+        MCLS_CHECK( 0 == error );
     }
     error = ml_extract->FillComplete();
     MCLS_CHECK( 0 == error );
 
+    // Cleanup.
+    values.clear();
+    indices.clear();
+
     // Compute the tranpose as we really extracted columns above.
+    std::cout << "MCLS ML: Transposing ML Preconditioner" << std::endl;
     Epetra_RowMatrixTransposer transposer( ml_extract.getRawPtr() );
     Epetra_CrsMatrix* transpose_matrix;
     error = transposer.CreateTranspose( true, transpose_matrix );
@@ -172,6 +205,7 @@ void EpetraMLPreconditioner::buildPreconditioner()
     MCLS_ENSURE( transpose_matrix->Filled() );
     d_preconditioner = Teuchos::RCP<Epetra_CrsMatrix>( transpose_matrix );
     MCLS_ENSURE( Teuchos::nonnull(d_preconditioner) );
+    std::cout << "MCLS ML: Done" << std::endl;
 }
 
 //---------------------------------------------------------------------------//
