@@ -54,7 +54,8 @@ enum EMCLSPrecType {
     PREC_TYPE_BLOCK_JACOBI,
     PREC_TYPE_ILUT,
     PREC_TYPE_PARASAILS,
-    PREC_TYPE_PSILUT
+    PREC_TYPE_PSILUT,
+    PREC_TYPE_ML
 };
 
 inline std::istream& operator>>(
@@ -93,6 +94,8 @@ class MCLSPreconditionerFactory : public PreconditionerFactoryBase<Scalar> {
     static const std::string  ParaSails_name;
     /** \brief . */
     static const std::string  PSILUT_name;
+    /** \brief . */
+    static const std::string  ML_name;
 
     /** @name Constructors/initializers/accessors */
     //@{

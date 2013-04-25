@@ -44,6 +44,7 @@
 #include <Teuchos_Array.hpp>
 
 #include <Epetra_Vector.h>
+#include <Epetra_RowMatrixTransposer.h>
 
 #include <Ifpack_ILUT.h>
 

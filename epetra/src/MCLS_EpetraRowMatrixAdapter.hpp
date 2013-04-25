@@ -45,7 +45,7 @@
 
 #include <MCLS_DBC.hpp>
 #include <MCLS_MatrixTraits.hpp>
-#include <MCLS_EpetraHelpers.hpp>
+#include "MCLS_EpetraHelpers.hpp"
 
 #include <Teuchos_as.hpp>
 #include <Teuchos_ArrayView.hpp>

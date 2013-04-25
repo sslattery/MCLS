@@ -46,6 +46,7 @@
 #include <MCLS_EpetraILUTPreconditioner.hpp>
 #include <MCLS_EpetraParaSailsPreconditioner.hpp>
 #include <MCLS_EpetraPSILUTPreconditioner.hpp>
+#include <MCLS_EpetraMLPreconditioner.hpp>
 
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_implicit_cast.hpp"
@@ -100,6 +101,9 @@ template<class Scalar>
 const std::string MCLSPreconditionerFactory<Scalar>::PSILUT_name = 
     "PSILUT";
 
+template<class Scalar>
+const std::string MCLSPreconditionerFactory<Scalar>::ML_name = 
+    "ML";
 
 // Constructors/initializers/accessors
 
@@ -340,6 +344,35 @@ void MCLSPreconditionerFactory<Scalar>::initializePrec(
             // Initialize.
             defaultPrec->initializeLeftRight( thyra_lop, thyra_rop );
 	}
+
+        // ML.
+	else if ( d_prec_type == PREC_TYPE_ML )
+	{
+            // Setup.
+	    Teuchos::ParameterList &precTypesPL = 
+		d_plist->sublist(PrecTypes_name);
+	    Teuchos::ParameterList &mlPL = 
+		precTypesPL.sublist(ML_name);
+	    Teuchos::RCP<Teuchos::ParameterList> prec_plist = 
+		Teuchos::rcp( &mlPL, false );
+            
+            // Build.
+	    mcls_prec = Teuchos::rcp( 
+		new MCLS::EpetraMLPreconditioner(prec_plist) );
+            mcls_prec->setOperator( getEpetraRowMatrix(*fwdOpSrc) );
+            mcls_prec->buildPreconditioner();
+
+            // Left.
+            Teuchos::RCP<EpetraLinearOp> epetra_lop = 
+                Teuchos::rcp( new EpetraLinearOp() );
+            epetra_lop->initialize( 
+                Teuchos::rcp_const_cast<Epetra_RowMatrix>(
+                    mcls_prec->getLeftPreconditioner()) );
+            Teuchos::RCP<const LinearOpBase<Scalar> > thyra_lop = epetra_lop;
+
+            // Initialize.
+            defaultPrec->initializeLeft( thyra_lop );
+	}
     }
     else if ( isTpetraCompatible<int,int>(*fwdOpSrc) )
     {
@@ -505,7 +538,8 @@ MCLSPreconditionerFactory<Scalar>::getValidParameters() const
 		"Block Jacobi",
                 "ILUT",
                 "ParaSails",
-                "PSILUT"
+                "PSILUT",
+                "ML"
 		),
 	    tuple<std::string>(
 		"Point Jacobi preconditioning - Left scales the linear operator"
@@ -522,14 +556,17 @@ MCLSPreconditionerFactory<Scalar>::getValidParameters() const
                 "preconditioning for the linear operator",
 
                 "Incomplete LU factorization with threshold improved with"
-                "sparse approximate inverse preconditioning"
+                "sparse approximate inverse preconditioning",
+
+                "Algebraic mutligrid preconditioing"
 		),
 	    tuple<EMCLSPrecType>(
 		PREC_TYPE_POINT_JACOBI,
 		PREC_TYPE_BLOCK_JACOBI,
                 PREC_TYPE_ILUT,
                 PREC_TYPE_PARASAILS,
-                PREC_TYPE_PSILUT
+                PREC_TYPE_PSILUT,
+                PREC_TYPE_ML
 		),
 	    &*validParamList
 	    );
@@ -562,6 +599,11 @@ MCLSPreconditionerFactory<Scalar>::getValidParameters() const
 	{
 	    MCLS::EpetraPSILUTPreconditioner prec(Teuchos::parameterList());
 	    precTypesSL.sublist(PSILUT_name).setParameters(
+		*(prec.getValidParameters()) );
+	}
+	{
+	    MCLS::EpetraMLPreconditioner prec(Teuchos::parameterList());
+	    precTypesSL.sublist(ML_name).setParameters(
 		*(prec.getValidParameters()) );
 	}
     }

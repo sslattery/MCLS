@@ -80,7 +80,6 @@ class EpetraILUTPreconditioner : public Preconditioner<Epetra_RowMatrix>
     // Get the current parameters being used for this preconditioner.
     Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const;
 
-
     // Set the parameters for the preconditioner. The preconditioner will
     // modify this list with default parameters that are not defined.
     void setParameters( const Teuchos::RCP<Teuchos::ParameterList>& params );
