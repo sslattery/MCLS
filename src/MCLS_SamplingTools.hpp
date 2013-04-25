@@ -69,7 +69,7 @@ class SamplingTools
 		       const double& random )
     {
 	MCLS_REQUIRE( cdf.size() > 0 );
-	MCLS_REQUIRE( std::abs( cdf[cdf.size()-1] - 1.0 ) < 1.0e-6 );
+	MCLS_REQUIRE( std::abs( cdf[cdf.size()-1] - 1.0 ) < 1.0e-8 );
 	MCLS_REQUIRE( random >= 0.0 && random <= 1.0 );
 
 	Teuchos::ArrayView<const double>::iterator bin_iterator =

@@ -60,6 +60,7 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_OrdinalTraits.hpp>
 
 #include <boost/tr1/unordered_map.hpp>
 
@@ -163,7 +164,8 @@ class AdjointDomain
     // Add matrix data to the local domain.
     void addMatrixToDomain( const Teuchos::RCP<const Matrix>& A,
                             const Teuchos::RCP<const Vector>& recovered_weights,
-                            std::set<Ordinal>& tally_states );
+                            std::set<Ordinal>& tally_states,
+                            const double abs_probability );
 
     // Build boundary data.
     void buildBoundary( const Teuchos::RCP<const Matrix>& A,
@@ -227,10 +229,19 @@ inline void AdjointDomain<Vector,Matrix>::processTransition(
                                           history.rng().random() );
     history.setState( (*d_columns[index->second])[new_state] );
 
-    // Update the history weight with the transition weight.
-    history.multiplyWeight( d_weights[index->second] *
-                            d_h[index->second][new_state] /
-                            std::abs(d_h[index->second][new_state]) );
+    // Update the history weight with the transition weight. An absorption
+    // event contributes a weight of zero, triggering the weight cutoff
+    // termination.
+    if ( Teuchos::OrdinalTraits<Ordinal>::invalid() == history.state() )
+    {
+        history.multiplyWeight( 0.0 );
+    }
+    else
+    {
+        history.multiplyWeight( d_weights[index->second] *
+                                d_h[index->second][new_state] /
+                                std::abs(d_h[index->second][new_state]) );
+    }
 }
 
 //---------------------------------------------------------------------------//

@@ -51,7 +51,6 @@
 
 #include <Teuchos_as.hpp>
 #include <Teuchos_Array.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
 
 #include <Tpetra_Distributor.hpp>
 
@@ -77,6 +76,14 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     {
         d_estimator = plist.get<int>("Estimator Type");
     }
+
+    // Get the absorption probability. Default to 0.0.
+    double abs_probability = 0.0;
+    if ( plist.isParameter("Absorption Probability") )
+    {
+        abs_probability = plist.get<double>("Absorption Probability");
+    }
+    MCLS_CHECK( 0.0 <= abs_probability && abs_probability < 1.0 );
 
     // Get the amount of overlap.
     int num_overlap = plist.get<int>( "Overlap Size" );
@@ -161,11 +168,12 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
         d_h = Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( num_rows );
 
         // Build the local CDFs and weights.
-        addMatrixToDomain( reduced_H, recovered_weights, tally_states );
+        addMatrixToDomain( reduced_H, recovered_weights, 
+                           tally_states, abs_probability );
         if ( num_overlap > 0 )
         {
             addMatrixToDomain( reduced_H_overlap, recovered_weights_overlap, 
-                               tally_states );
+                               tally_states, abs_probability );
         }
 
         // Get the boundary states and their owning process ranks.
@@ -769,7 +777,8 @@ template<class Vector, class Matrix>
 void AdjointDomain<Vector,Matrix>::addMatrixToDomain( 
     const Teuchos::RCP<const Matrix>& A,
     const Teuchos::RCP<const Vector>& recovered_weights,
-    std::set<Ordinal>& tally_states )
+    std::set<Ordinal>& tally_states,
+    const double abs_probability )
 {
     MCLS_REQUIRE( !A.is_null() );
 
@@ -781,6 +790,7 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
     int max_entries = MT::getGlobalMaxNumRowEntries( *A );
     std::size_t num_entries = 0;
     Teuchos::Array<double>::iterator cdf_iterator;
+    double pdf_norm = 1.0 - abs_probability;
 
     for ( Ordinal i = 0; i < local_num_rows; ++i )
     {
@@ -824,7 +834,7 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
 
 	// The final value in the non-normalized CDF is the weight for this
 	// row. This is the absolute value row sum of the iteration matrix.
-	d_weights[i+offset] = d_cdfs[i+offset].back();
+	d_weights[i+offset] = d_cdfs[i+offset].back() / pdf_norm;
 	MCLS_CHECK( d_weights[i+offset] > 0.0 );
 
 	// Normalize the CDF for the row.
@@ -835,10 +845,15 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
 	    *cdf_iterator /= d_weights[i+offset];
 	    MCLS_CHECK( *cdf_iterator >= 0.0 );
 	}
-	MCLS_CHECK( std::abs(1.0 - d_cdfs[i+offset].back()) < 1.0e-8 );
+	MCLS_CHECK( d_cdfs[i+offset].back() <= 1.0 );
+
+        // Add the absorbing state.
+        d_cdfs[i+offset].push_back( 1.0 );
+        d_columns[i+offset]->push_back( 
+            Teuchos::OrdinalTraits<Ordinal>::invalid() );
 
         // Recover the weight.
-        d_weights[i+offset] += rweights_view[i];
+        d_weights[i+offset] += rweights_view[i] / pdf_norm;
 
         // If we're using the collision estimator, add the global row as a
         // local tally state.
@@ -847,12 +862,12 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
             tally_states.insert( global_row );
         }
         // Else if we're using the expected value estimator add the columns from
-        // this row as local tally states.
+        // this row as local tally states. Do not insert the absorbing state.
         else if ( EXPECTED_VALUE == d_estimator )
         {
             typename Teuchos::Array<Ordinal>::const_iterator col_it;
             for ( col_it = d_columns[i+offset]->begin();
-                  col_it != d_columns[i+offset]->end();
+                  col_it != d_columns[i+offset]->end()-1;
                   ++col_it )
             {
                 tally_states.insert( *col_it );
