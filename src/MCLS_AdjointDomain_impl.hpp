@@ -160,21 +160,12 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
         d_weights = Teuchos::ArrayRCP<double>( num_rows );
         d_h = Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( num_rows );
 
-        // Get the weight_cap.
-        double weight_cap = std::numeric_limits<double>::max();
-        if ( plist.isParameter("Weight Cap") )
-        {
-            weight_cap = plist.get<double>("Weight Cap");
-        }
-        MCLS_CHECK( 0.0 < weight_cap );
-
         // Build the local CDFs and weights.
-        addMatrixToDomain( reduced_H, recovered_weights, 
-                           tally_states, weight_cap );
+        addMatrixToDomain( reduced_H, recovered_weights, tally_states );
         if ( num_overlap > 0 )
         {
             addMatrixToDomain( reduced_H_overlap, recovered_weights_overlap, 
-                               tally_states, weight_cap );
+                               tally_states );
         }
 
         // Get the boundary states and their owning process ranks.
@@ -778,8 +769,7 @@ template<class Vector, class Matrix>
 void AdjointDomain<Vector,Matrix>::addMatrixToDomain( 
     const Teuchos::RCP<const Matrix>& A,
     const Teuchos::RCP<const Vector>& recovered_weights,
-    std::set<Ordinal>& tally_states,
-    const double weight_cap )
+    std::set<Ordinal>& tally_states )
 {
     MCLS_REQUIRE( !A.is_null() );
 
@@ -849,12 +839,6 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
 
         // Recover the weight.
         d_weights[i+offset] += rweights_view[i];
-
-        // Apply the weight cap.
-        if (d_weights[i+offset] > weight_cap) 
-        {
-            d_weights[i+offset] = weight_cap;
-        }
 
         // If we're using the collision estimator, add the global row as a
         // local tally state.
