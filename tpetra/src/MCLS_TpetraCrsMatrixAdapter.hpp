@@ -359,6 +359,18 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
     }
 
     /*!
+     * \brief Matrix-Matrix Add B = a*A + b*B.
+     */
+    static void add( const Teuchos::RCP<const matrix_type>& A, 
+                     bool transpose_A,
+                     double scalar_A,
+                     const Teuchos::RCP<matrix_type>& B,
+                     double scalar_B )
+    { 
+        // Currently not implemented.
+    }
+
+    /*!
      * \brief Get a copy of the transpose of a matrix.
      */
     static Teuchos::RCP<matrix_type> copyTranspose( const matrix_type& matrix )

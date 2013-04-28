@@ -44,6 +44,8 @@
 #include <MCLS_DBC.hpp>
 
 #include <Teuchos_ArrayRCP.hpp>
+#include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_Time.hpp>
 
 #include <Epetra_Vector.h>
 #include <Epetra_RowMatrixTransposer.h>
@@ -119,6 +121,9 @@ void EpetraMLPreconditioner::buildPreconditioner()
 
     // Build the ML preconditioner.
     std::cout << "MCLS ML: Building ML Preconditioner" << std::endl;
+    Teuchos::Time timer("");
+    timer.start(true);
+
     ML_Epetra::MultiLevelPreconditioner ml( *d_A, 
                                             d_plist->sublist("ML Settings") );
 
@@ -126,6 +131,7 @@ void EpetraMLPreconditioner::buildPreconditioner()
     Teuchos::RCP<Epetra_CrsMatrix> ml_extract = Teuchos::rcp(
         new Epetra_CrsMatrix(Copy, d_A->RowMatrixRowMap(), 0) );
 
+    int fill_value = d_plist->get<int>("Fill Level");
     int num_rows = d_A->NumMyRows();
     Epetra_Vector basis( d_A->RowMatrixRowMap() );
     Epetra_Vector extract_row( d_A->RowMatrixRowMap() );
@@ -133,6 +139,8 @@ void EpetraMLPreconditioner::buildPreconditioner()
     Teuchos::ArrayRCP<double>::iterator value_iterator;
     Teuchos::ArrayRCP<int> indices( num_rows );
     Teuchos::ArrayRCP<int>::iterator index_iterator;
+    Teuchos::ArrayRCP<double> sorted_values( num_rows );
+    Teuchos::ArrayRCP<double>::iterator sorted_values_it;
     int values_size = 0;
     int indices_size = 0;
     int col_counter = 0;
@@ -154,27 +162,70 @@ void EpetraMLPreconditioner::buildPreconditioner()
         error = extract_row.ExtractCopy( values.getRawPtr() );
         MCLS_CHECK( 0 == error );
 
-        // Filter any zero values
-        col_counter = 0;
-        for ( value_iterator = values.begin(),
-              index_iterator = indices.begin();
-              value_iterator != values.end();
-              ++value_iterator, ++index_iterator )
+        // Apply the fill level and filter tolerance.
+        if ( Teuchos::as<int>(num_rows) > fill_value )
         {
-            if ( 0.0 == *value_iterator )
+            // Get the fill value cutoff.
+            std::copy( values.begin(), values.end(), sorted_values.begin() );
+            for( sorted_values_it = sorted_values.begin();
+                 sorted_values_it != sorted_values.end();
+                 ++sorted_values_it )
             {
-                *index_iterator = -1;
+                *sorted_values_it = std::abs( *sorted_values_it );
             }
-            else
+            std::nth_element( sorted_values.begin(), 
+                              sorted_values.end()-fill_value,
+                              sorted_values.end() );
+
+            // Filter any values below the fill value cutoff or that are zero.
+            col_counter = 0;
+            for ( value_iterator = values.begin(),
+                  index_iterator = indices.begin();
+                  value_iterator != values.end();
+                  ++value_iterator, ++index_iterator )
             {
-                *index_iterator = d_A->RowMatrixColMap().GID( col_counter );
+                if ( std::abs(*value_iterator) <
+                     *(sorted_values.end()-fill_value) || 
+                     0.0 == *value_iterator  )
+                {
+                    *value_iterator = 0.0;
+                    *index_iterator = -1;
+                }
+                else
+                {
+                    *index_iterator = d_A->RowMatrixColMap().GID( col_counter );
+                }
+                ++col_counter;
             }
-            ++col_counter;
+            value_iterator = 
+                std::remove( values.begin(), values.end(), 0.0 );
+            index_iterator = 
+                std::remove( indices.begin(), indices.end(), -1 );
         }
-        value_iterator = 
-            std::remove( values.begin(), values.end(), 0.0 );
-        index_iterator = 
-            std::remove( indices.begin(), indices.end(), -1 );
+        else
+        {
+            // Filter any zero values
+            col_counter = 0;
+            for ( value_iterator = values.begin(),
+                  index_iterator = indices.begin();
+                  value_iterator != values.end();
+                  ++value_iterator, ++index_iterator )
+            {
+                if ( 0.0 == *value_iterator )
+                {
+                    *index_iterator = -1;
+                }
+                else
+                {
+                    *index_iterator = d_A->RowMatrixColMap().GID( col_counter );
+                }
+                ++col_counter;
+            }
+            value_iterator = 
+                std::remove( values.begin(), values.end(), 0.0 );
+            index_iterator = 
+                std::remove( indices.begin(), indices.end(), -1 );
+        }
 
         // Check for degeneracy and consistency.
         values_size = std::distance( values.begin(), value_iterator );
@@ -205,7 +256,10 @@ void EpetraMLPreconditioner::buildPreconditioner()
     MCLS_ENSURE( transpose_matrix->Filled() );
     d_preconditioner = Teuchos::RCP<Epetra_CrsMatrix>( transpose_matrix );
     MCLS_ENSURE( Teuchos::nonnull(d_preconditioner) );
-    std::cout << "MCLS ML: Done" << std::endl;
+
+    timer.stop();
+    std::cout << "MCLS ML: Complete in " << timer.totalElapsedTime() 
+              << " seconds." << std::endl;
 }
 
 //---------------------------------------------------------------------------//

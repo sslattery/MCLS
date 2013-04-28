@@ -354,6 +354,16 @@ class MatrixTraits
     { UndefinedMatrixTraits<Vector,Matrix>::notDefined(); }
 
     /*!
+     * \brief Matrix-Matrix Add B = a*A + b*B.
+     */
+    static void add( const Teuchos::RCP<const Matrix>& A, 
+                     bool transpose_A,
+                     double scalar_A,
+                     const Teuchos::RCP<Matrix>& B,
+                     double scalar_B )
+    { UndefinedMatrixTraits<Vector,Matrix>::notDefined(); }
+
+    /*!
      * \brief Get a copy of the transpose of a matrix.
      */
     static Teuchos::RCP<Matrix> copyTranspose( const Matrix& matrix )

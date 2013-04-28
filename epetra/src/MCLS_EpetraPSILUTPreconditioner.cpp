@@ -43,6 +43,8 @@
 #include <MCLS_DBC.hpp>
 
 #include <Teuchos_Array.hpp>
+#include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_Time.hpp>
 
 #include <Epetra_Vector.h>
 
@@ -131,7 +133,9 @@ void EpetraPSILUTPreconditioner::buildPreconditioner()
     MCLS_REQUIRE( Teuchos::nonnull(d_A) );
     MCLS_REQUIRE( d_A->Filled() );
 
-    std::cout << "MCLS: PSILUT Generating ILUT Factorization" << std::endl;
+    std::cout << "MCLS PSILUT: Generating ILUT Factorization" << std::endl;
+    Teuchos::Time timer("");
+    timer.start(true);
 
     // Build the Ifpack ILUT preconditioner.
     Teuchos::RCP<Epetra_CrsMatrix> l_inv;
@@ -147,6 +151,7 @@ void EpetraPSILUTPreconditioner::buildPreconditioner()
         MCLS_CHECK( ifpack.IsComputed() );
 
         // Invert L and U.
+        std::cout << "MCLS PSILUT: Inverting ILUT Factorization" << std::endl;
         l_inv = computeTriInverse( ifpack.L(), d_A->RowMatrixRowMap(), false );
         d_u_inv = computeTriInverse( ifpack.U(), d_A->RowMatrixRowMap(), true );
 
@@ -154,7 +159,7 @@ void EpetraPSILUTPreconditioner::buildPreconditioner()
         MCLS_CHECK( Teuchos::nonnull(d_u_inv) );
     }
 
-    std::cout << "MCLS: PSILUT Building Composite Operator" << std::endl;
+    std::cout << "MCLS PSILUT: Building Composite Operator" << std::endl;
 
     // Build the composite ILUT preconditioned operator.
     Teuchos::RCP<Epetra_RowMatrix> composite;
@@ -165,19 +170,21 @@ void EpetraPSILUTPreconditioner::buildPreconditioner()
         MT::multiply( l_inv, temp, composite, false );
     }
 
-    std::cout << "MCLS: PSILUT Computing SPAINV Preconditioner" << std::endl;
+    std::cout << "MCLS PSILUT: Computing SPAINV Preconditioner" << std::endl;
 
     // Build the sparse approximate inverse preconditioner.
     Teuchos::RCP<Epetra_CrsMatrix> spainv = computeSparseInverse( composite );
     composite = Teuchos::null;
 
-    std::cout << "MCLS: PSILUT Building Composite Left Preconditioner" << std::endl;
+    std::cout << "MCLS PSILUT: Building Composite Left Preconditioner" << std::endl;
 
     // Build the composite left preconditioner.
     d_m_inv = MT::clone( *spainv );
     MT::multiply( spainv, l_inv, d_m_inv, false );
 
-    std::cout << "MCLS: PSILUT Complete" << std::endl;
+    timer.stop();
+    std::cout << "MCLS PSILUT: Complete in " << timer.totalElapsedTime() 
+              << " seconds." << std::endl;
 
     MCLS_ENSURE( Teuchos::nonnull(d_m_inv) );
 }

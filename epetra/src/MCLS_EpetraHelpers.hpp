@@ -127,6 +127,16 @@ class EpetraMatrixHelpers
 			  const Teuchos::RCP<matrix_type>& C,
                           bool use_transpose )
     { UndefinedEpetraHelpers<Matrix>::notDefined(); }
+
+    /*!
+     * \brief Matrix-Matrix Add B = a*A + b*B.
+     */
+    static void add( const Teuchos::RCP<const matrix_type>& A, 
+                     bool transpose_A,
+                     double scalar_A,
+                     const Teuchos::RCP<matrix_type>& B,
+                     double scalar_B )
+    { UndefinedEpetraHelpers<Matrix>::notDefined(); }
 };
 
 //---------------------------------------------------------------------------//
@@ -305,8 +315,39 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
 		new Epetra_CrsMatrix(Copy, A->RowMatrixRowMap(), 0) );
 	}
 
-	EpetraExt::MatrixMatrix::Multiply( 
+	int error = EpetraExt::MatrixMatrix::Multiply( 
 	    *A_crs, use_transpose, *B_crs, use_transpose, *C_crs );
+        MCLS_CHECK( error == 0 );
+    }
+
+    /*!
+     * \brief Matrix-Matrix Add B = a*A + b*B.
+     */
+    static void add( const Teuchos::RCP<const matrix_type>& A, 
+                     bool transpose_A,
+                     double scalar_A,
+                     const Teuchos::RCP<matrix_type>& B,
+                     double scalar_B )
+    {
+	Teuchos::RCP<const Epetra_CrsMatrix> A_crs =
+	    Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>( A );
+
+	Teuchos::RCP<Epetra_CrsMatrix> B_crs =
+	    Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>( B );
+
+	if ( Teuchos::is_null(A_crs) )
+	{
+	    A_crs = createCrsMatrix( A );
+	}
+
+	if ( Teuchos::is_null(B_crs) )
+	{
+	    B_crs = createCrsMatrix( B );
+	}
+
+	int error = EpetraExt::MatrixMatrix::Add( 
+	    *A_crs, transpose_A, scalar_A, *B_crs, scalar_B);
+        MCLS_CHECK( 0 == error );
     }
 
     /*!

@@ -223,6 +223,46 @@ LinearProblem<Vector,Matrix>::getTransposeCompositeOperator() const
 
 //---------------------------------------------------------------------------//
 /*!
+ * \brief Get the symmetric part of the composite linear operator.
+ */
+template<class Vector, class Matrix>
+Teuchos::RCP<const Matrix> 
+LinearProblem<Vector,Matrix>::getCompositeOperatorSymmetricPart() const
+{
+    const bool left_prec = Teuchos::nonnull( d_PL );
+    const bool right_prec = Teuchos::nonnull( d_PR );
+
+    Teuchos::RCP<Matrix> composite;
+
+    if ( left_prec && right_prec )
+    {
+        Teuchos::RCP<Matrix> temp = MT::clone( *d_A );
+	MT::multiply( d_A, d_PR, temp, false );
+        composite = MT::clone( *d_PL );
+	MT::multiply( d_PL, temp, composite, false );
+    }
+    else if ( left_prec )
+    {
+        composite = MT::clone( *d_PL );
+	MT::multiply( d_PL, d_A, composite, false );
+    }
+    else if ( right_prec )
+    {
+        composite = MT::clone( *d_A );
+	MT::multiply( d_A, d_PR, composite, false );
+    }
+    else
+    {
+	composite = Teuchos::rcp_const_cast<Matrix>( d_A );
+    }
+
+    MT::add( composite, true, 0.5, composite, 0.5 );
+
+    return composite;
+}
+
+//---------------------------------------------------------------------------//
+/*!
  * \brief Update the solution vector with the provided update vector.
  */
 template<class Vector, class Matrix>

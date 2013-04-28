@@ -397,7 +397,20 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
 			  const Teuchos::RCP<matrix_type>& C,
                           bool use_transpose )
     { 
-	EpetraMatrixHelpers<matrix_type>::multiply( A, B, C, use_transpose);
+	EpetraMatrixHelpers<matrix_type>::multiply( A, B, C, use_transpose );
+    }
+
+    /*!
+     * \brief Matrix-Matrix Add B = a*A + b*B.
+     */
+    static void add( const Teuchos::RCP<const matrix_type>& A, 
+                     bool transpose_A,
+                     double scalar_A,
+                     const Teuchos::RCP<matrix_type>& B,
+                     double scalar_B )
+    { 
+	EpetraMatrixHelpers<matrix_type>::add( A, transpose_A, scalar_A,
+                                               B, scalar_B );
     }
 
     /*!

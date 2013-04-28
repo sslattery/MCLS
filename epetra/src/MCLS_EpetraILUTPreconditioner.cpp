@@ -42,9 +42,10 @@
 #include <MCLS_DBC.hpp>
 
 #include <Teuchos_Array.hpp>
+#include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_Time.hpp>
 
 #include <Epetra_Vector.h>
-#include <Epetra_RowMatrixTransposer.h>
 
 #include <Ifpack_ILUT.h>
 
@@ -120,6 +121,10 @@ void EpetraILUTPreconditioner::buildPreconditioner()
     MCLS_REQUIRE( Teuchos::nonnull(d_A) );
     MCLS_REQUIRE( d_A->Filled() );
 
+    std::cout << "MCLS ILUT: Generating ILUT Factorization" << std::endl;
+    Teuchos::Time timer("");
+    timer.start(true);
+
     // Build the Ifpack ILUT preconditioner.
     Ifpack_ILUT ifpack( d_A.getRawPtr() );
     int error = ifpack.SetParameters( *d_plist );
@@ -132,8 +137,13 @@ void EpetraILUTPreconditioner::buildPreconditioner()
     MCLS_CHECK( ifpack.IsComputed() );
 
     // Invert L and U.
+    std::cout << "MCLS ILUT: Inverting ILUT Factorization" << std::endl;
     d_l_inv = computeTriInverse( ifpack.L(), d_A->RowMatrixRowMap(), false );
     d_u_inv = computeTriInverse( ifpack.U(), d_A->RowMatrixRowMap(), true );
+
+    timer.stop();
+    std::cout << "MCLS ILUT: Complete in " << timer.totalElapsedTime() 
+              << " seconds." << std::endl;
 
     MCLS_ENSURE( Teuchos::nonnull(d_l_inv) );
     MCLS_ENSURE( Teuchos::nonnull(d_u_inv) );
