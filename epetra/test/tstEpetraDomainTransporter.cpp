@@ -191,7 +191,7 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff )
 
 		TEST_EQUALITY( history.state(), i+1 );
 		TEST_EQUALITY( history.weight(), weight / 2 );
-		TEST_EQUALITY( history.event(), MCLS::CUTOFF );
+		TEST_EQUALITY( history.event(), MCLS::Event::CUTOFF );
 		TEST_ASSERT( !history.alive() );
 	    }
 	}
@@ -206,7 +206,7 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff )
 
 		TEST_EQUALITY( history.state(), i+1 );
 		TEST_EQUALITY( history.weight(), weight / 2 );
-		TEST_EQUALITY( history.event(), MCLS::CUTOFF );
+		TEST_EQUALITY( history.event(), MCLS::Event::CUTOFF );
 		TEST_ASSERT( !history.alive() );
 	    }
 	}
@@ -305,7 +305,7 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff2 )
 
 		TEST_EQUALITY( history.state(), i+2 );
 		TEST_EQUALITY( history.weight(), weight / 4 );
-		TEST_EQUALITY( history.event(), MCLS::CUTOFF );
+		TEST_EQUALITY( history.event(), MCLS::Event::CUTOFF );
 		TEST_ASSERT( !history.alive() );
 	    }
 	}
@@ -320,7 +320,7 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff2 )
 
 		TEST_EQUALITY( history.state(), i+2 );
 		TEST_EQUALITY( history.weight(), weight / 4 );
-		TEST_EQUALITY( history.event(), MCLS::CUTOFF );
+		TEST_EQUALITY( history.event(), MCLS::Event::CUTOFF );
 		TEST_ASSERT( !history.alive() );
 	    }
 	}
@@ -446,7 +446,7 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Boundary )
 		    history.setRNG( rng );
 		    transporter.transport( history );
 
-		    TEST_EQUALITY( history.event(), MCLS::BOUNDARY );
+		    TEST_EQUALITY( history.event(), MCLS::Event::BOUNDARY );
 		    TEST_ASSERT( !history.alive() );
 		}
 	    }
@@ -459,7 +459,7 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Boundary )
 		    history.setRNG( rng );
 		    transporter.transport( history );
 
-		    TEST_EQUALITY( history.event(), MCLS::BOUNDARY );
+		    TEST_EQUALITY( history.event(), MCLS::Event::BOUNDARY );
 		    TEST_ASSERT( !history.alive() );
 		}
 	    }

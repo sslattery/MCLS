@@ -97,7 +97,7 @@ class TallyTraits
     }
 
     /*!
-     * \brief Post-process a history after it has been killed.
+     * \brief Post-process a history after it has been killed permanently.
      */
     static inline void postProcessHistory( Tally& tally,
 					   const history_type& history )
@@ -182,6 +182,15 @@ class TallyTraits
     static Teuchos::Array<ordinal_type> tallyRows( const Tally& tally )
     {
 	UndefinedTallyTraits<Tally>::notDefined(); 
+    }
+
+    /*!
+     * \brief Get the estimator type used by this tally.
+     */
+    static int estimatorType( const Tally& tally )
+    {
+	UndefinedTallyTraits<Tally>::notDefined();
+	return -1;
     }
 };
 

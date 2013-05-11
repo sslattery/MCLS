@@ -129,7 +129,7 @@ Teuchos::RCP<MCLS::History<int> > makeHistory(
     Teuchos::RCP<MCLS::History<int> > history = Teuchos::rcp(
 	new MCLS::History<int>( state, weight ) );
     history->setRNG( control.rng(streamid) );
-    history->setEvent( MCLS::BOUNDARY );
+    history->setEvent( MCLS::Event::BOUNDARY );
     return history;
 }
 

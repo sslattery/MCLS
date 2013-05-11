@@ -689,7 +689,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Transition )
 	    {
 		HistoryType history( i, weight );
 		history.live();
-		history.setEvent( MCLS::TRANSITION );
+		history.setEvent( MCLS::Event::TRANSITION );
 		history.setRNG( rng );
 		domain.processTransition( history );
 
@@ -703,7 +703,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Transition )
 	    {
 		HistoryType history( i, weight );
 		history.live();
-		history.setEvent( MCLS::TRANSITION );
+		history.setEvent( MCLS::Event::TRANSITION );
 		history.setRNG( rng );
 		domain.processTransition( history );
 
@@ -767,7 +767,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Diagonal )
 	{
 	    HistoryType history( i, weight );
 	    history.live();
-	    history.setEvent( MCLS::TRANSITION );
+	    history.setEvent( MCLS::Event::TRANSITION );
 	    history.setRNG( rng );
 	    domain.processTransition( history );
 

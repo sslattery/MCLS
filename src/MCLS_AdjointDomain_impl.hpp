@@ -77,11 +77,11 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     {
 	if ( "Collision" == plist.get<std::string>("Estimator Type") )
 	{
-	    d_estimator == Estimator::COLLISION;
+	    d_estimator = Estimator::COLLISION;
 	}
 	else if ( "Expected Value" == plist.get<std::string>("Estimator Type") )
 	{
-	    d_estimator == Estimator::EXPECTED_VALUE;
+	    d_estimator = Estimator::EXPECTED_VALUE;
 	}
     }
 

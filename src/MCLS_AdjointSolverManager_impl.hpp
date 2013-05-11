@@ -234,17 +234,13 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
     MCLS_REQUIRE( !d_msod_manager.is_null() );
     MCLS_REQUIRE( !d_mc_solver.is_null() );
 
-    // Get the estimator type.
-    int estimator = COLLISION;
-    if ( d_plist->isParameter("Estimator Type") )
-    {
-        estimator = d_plist->get<int>("Estimator Type");
-    }
-
     // Get the domain tally.
     Teuchos::RCP<TallyType> tally = 
 	d_msod_manager->localDomain()->domainTally();
     MCLS_CHECK( Teuchos::nonnull(tally) );
+
+    // Get the estimator type.
+    int estimator = TT::estimatorType( *tally );
 
     // Set the primary set's base vector to the LHS of the linear problem. 
     if ( d_primary_set )
@@ -280,7 +276,7 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
     {
         // If we used the expected value estimator we have to add the RHS into
         // the solution.
-        if ( EXPECTED_VALUE == estimator )
+        if ( Estimator::EXPECTED_VALUE == estimator )
         {
             // Get the Neumann relaxation parameter.
             double omega = 1.0;

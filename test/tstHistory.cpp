@@ -96,7 +96,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( History, history, Ordinal )
     TEST_EQUALITY( h_1.weight(), Teuchos::ScalarTraits<double>::one() );
     TEST_EQUALITY( h_1.state(), Teuchos::OrdinalTraits<Ordinal>::zero() );
     TEST_ASSERT( !h_1.alive() );
-    TEST_EQUALITY( h_1.event(), MCLS::NO_EVENT );
+    TEST_EQUALITY( h_1.event(), MCLS::Event::NO_EVENT );
 
     h_1.live();
     TEST_ASSERT( h_1.alive() );
@@ -104,11 +104,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( History, history, Ordinal )
     h_1.kill();
     TEST_ASSERT( !h_1.alive() );
 
-    h_1.setEvent( MCLS::CUTOFF );
-    TEST_EQUALITY( h_1.event(), Teuchos::as<int>(MCLS::CUTOFF) );
+    h_1.setEvent( MCLS::Event::CUTOFF );
+    TEST_EQUALITY( h_1.event(), Teuchos::as<int>(MCLS::Event::CUTOFF) );
 
-    h_1.setEvent( MCLS::BOUNDARY );
-    TEST_EQUALITY( h_1.event(), Teuchos::as<int>(MCLS::BOUNDARY) );
+    h_1.setEvent( MCLS::Event::BOUNDARY );
+    TEST_EQUALITY( h_1.event(), Teuchos::as<int>(MCLS::Event::BOUNDARY) );
 
     h_1.setState( 3 );
     TEST_EQUALITY( h_1.state(), 3 );
@@ -131,7 +131,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( History, history, Ordinal )
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
     TEST_ASSERT( !h_2.alive() );
-    TEST_EQUALITY( h_2.event(), MCLS::NO_EVENT );
+    TEST_EQUALITY( h_2.event(), MCLS::Event::NO_EVENT );
 }
 
 UNIT_TEST_INSTANTIATION( History, history )
@@ -163,7 +163,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( History, pack_unpack, Ordinal )
     MCLS::History<Ordinal> h_1( 5, 6 );
     h_1.setRNG( rng );
     h_1.live();
-    h_1.setEvent( MCLS::BOUNDARY );
+    h_1.setEvent( MCLS::Event::BOUNDARY );
     Teuchos::Array<char> packed_history = h_1.pack();
     TEST_EQUALITY( Teuchos::as<std::size_t>( packed_history.size() ), 
 		   byte_size );
@@ -172,7 +172,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( History, pack_unpack, Ordinal )
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
     TEST_ASSERT( h_2.alive() );
-    TEST_EQUALITY( h_2.event(), MCLS::BOUNDARY );
+    TEST_EQUALITY( h_2.event(), MCLS::Event::BOUNDARY );
 
     MCLS::RNGControl::RNG rng_2 = h_2.rng();
     for (int i = 0; i < 40; i++)
@@ -234,7 +234,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( History, broadcast, Ordinal )
 	MCLS::History<Ordinal> h_1( 5, 6 );
 	h_1.setRNG( rng );
 	h_1.live();
-	h_1.setEvent( MCLS::BOUNDARY );
+	h_1.setEvent( MCLS::Event::BOUNDARY );
 	packed_history = h_1.pack();
     }
 
@@ -244,7 +244,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( History, broadcast, Ordinal )
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
     TEST_ASSERT( h_2.alive() );
-    TEST_EQUALITY( h_2.event(), MCLS::BOUNDARY );
+    TEST_EQUALITY( h_2.event(), MCLS::Event::BOUNDARY );
 
     MCLS::RNGControl::RNG rng_2 = h_2.rng();
     for (int i = 0; i < 40; i++)

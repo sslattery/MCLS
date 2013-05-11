@@ -120,6 +120,9 @@ class AdjointTally
     // Get the global tally rows in the tally decomposition.
     Teuchos::Array<Ordinal> tallyRows() const;
 
+    //! Get the estimator type for this tally.
+    int estimatorType() const { return d_estimator; }
+
     // Set the iteration matrix with the tally.
     void setIterationMatrix( 
         const Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >& h,
@@ -267,12 +270,12 @@ class TallyTraits<AdjointTally<Vector> >
     }
 
     /*!
-     * \brief Post-process a history after it has been killed.
+     * \brief Post-process a history after it has been killed permanently.
      */
     static inline void postProcessHistory( tally_type& tally,
 					   const history_type& history )
     { 
-	// We don't do any post processing for the adjoint tally.
+	// We don't do any post-processing for the adjoint tally.
     }
 
     /*!
@@ -352,6 +355,14 @@ class TallyTraits<AdjointTally<Vector> >
     tallyRows( const tally_type& tally )
     {
 	return tally.tallyRows();
+    }
+
+    /*!
+     * \brief Get the estimator type used by this tally.
+     */
+    static int estimatorType( const tally_type& tally )
+    {
+	return tally.estimatorType();
     }
 };
 
