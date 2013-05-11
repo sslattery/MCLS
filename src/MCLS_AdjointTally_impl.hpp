@@ -65,7 +65,8 @@ AdjointTally<Vector>::AdjointTally( const Teuchos::RCP<Vector>& x,
     MCLS_ENSURE( Teuchos::nonnull(d_x) );
     MCLS_ENSURE( Teuchos::nonnull(d_x_tally) );
     MCLS_ENSURE( Teuchos::nonnull(d_export) );
-    MCLS_ENSURE( COLLISION == estimator || EXPECTED_VALUE == estimator );
+    MCLS_ENSURE( Estimator::COLLISION == estimator || 
+		 Estimator::EXPECTED_VALUE == estimator );
 }
 
 //---------------------------------------------------------------------------//
@@ -228,7 +229,7 @@ void AdjointTally<Vector>::setIterationMatrix(
     const Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > >& columns,
     const Teuchos::RCP<MapType>& row_indexer )
 {
-    MCLS_REQUIRE( EXPECTED_VALUE == d_estimator );
+    MCLS_REQUIRE( Estimator::EXPECTED_VALUE == d_estimator );
     MCLS_REQUIRE( Teuchos::nonnull(h) );
     MCLS_REQUIRE( Teuchos::nonnull(columns) );
     MCLS_REQUIRE( Teuchos::nonnull(row_indexer) );

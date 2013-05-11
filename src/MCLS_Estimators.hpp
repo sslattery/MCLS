@@ -46,11 +46,16 @@
 namespace MCLS
 {
 
+namespace Estimator
+{
+
 //! Monte Carlo estimators.
 enum Estimator {
     COLLISION = 0,
     EXPECTED_VALUE = 1
 };
+
+} // end namespace Estimator
 
 } // end namespace MCLS
 

@@ -170,19 +170,20 @@ inline void AdjointTally<Vector>::tallyHistory( const HistoryType& history )
     MCLS_REQUIRE( history.alive() );
     MCLS_REQUIRE( Teuchos::nonnull(d_x_tally) );
 
-    if ( COLLISION == d_estimator )
+    if ( Estimator::COLLISION == d_estimator )
     {
         collisionEstimatorTally( history );
     }
 
-    else if ( EXPECTED_VALUE == d_estimator )
+    else if ( Estimator::EXPECTED_VALUE == d_estimator )
     {
         expectedValueEstimatorTally( history );
     }
 
     else
     {
-	MCLS_INSIST( COLLISION == d_estimator || EXPECTED_VALUE == d_estimator,
+	MCLS_INSIST( Estimator::COLLISION == d_estimator || 
+		     Estimator::EXPECTED_VALUE == d_estimator,
                      "Estimator type not supported!" );
     }
 }
@@ -260,9 +261,18 @@ class TallyTraits<AdjointTally<Vector> >
      * \brief Add a history's contribution to the tally.
      */
     static inline void tallyHistory( tally_type& tally, 
-				     const history_type& history )
+				     history_type& history )
     { 
 	tally.tallyHistory( history );
+    }
+
+    /*!
+     * \brief Post-process a history after it has been killed.
+     */
+    static inline void postProcessHistory( tally_type& tally,
+					   const history_type& history )
+    { 
+	// We don't do any post processing for the adjoint tally.
     }
 
     /*!

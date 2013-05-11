@@ -371,8 +371,7 @@ UniformAdjointSource<Domain>::getHistory()
 template<class Domain>
 void UniformAdjointSource<Domain>::makeRNG()
 {
-    GlobalRNG::d_rng = d_rng_control->rng( 
-	d_rng_stream + d_global_rank );
+    GlobalRNG::d_rng = d_rng_control->rng( d_rng_stream + d_global_rank );
     d_rng_stream += d_global_size;
 
     MCLS_ENSURE( GlobalRNG::d_rng.assigned() );

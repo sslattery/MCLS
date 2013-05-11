@@ -43,6 +43,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <string>
 
 #include "MCLS_Serializer.hpp"
 #include "MCLS_Preconditioner.hpp"
@@ -71,10 +72,17 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     MCLS_REQUIRE( !x.is_null() );
 
     // Get the estimator type. User the collision estimator as the default.
-    d_estimator = COLLISION;
+    d_estimator = Estimator::COLLISION;
     if ( plist.isParameter("Estimator Type") )
     {
-        d_estimator = plist.get<int>("Estimator Type");
+	if ( "Collision" == plist.get<std::string>("Estimator Type") )
+	{
+	    d_estimator == Estimator::COLLISION;
+	}
+	else if ( "Expected Value" == plist.get<std::string>("Estimator Type") )
+	{
+	    d_estimator == Estimator::EXPECTED_VALUE;
+	}
     }
 
     // Get the absorption probability. Default to 0.0.
@@ -206,7 +214,7 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 
     // If we are using the expected value estimator, provide the iteration
     // matrix to the tally. 
-    if ( EXPECTED_VALUE == d_estimator )
+    if ( Estimator::EXPECTED_VALUE == d_estimator )
     {
         d_tally->setIterationMatrix( d_h, d_columns, d_row_indexer );
     }
@@ -412,7 +420,7 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 
     // Set the iteration matrix data with the tally if using the expected
     // value estimator.
-    if ( EXPECTED_VALUE == d_estimator )
+    if ( Estimator::EXPECTED_VALUE == d_estimator )
     {
         d_tally->setIterationMatrix( d_h, d_columns, d_row_indexer );
     }
@@ -857,13 +865,13 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
 
         // If we're using the collision estimator, add the global row as a
         // local tally state.
-        if ( COLLISION == d_estimator )
+        if ( Estimator::COLLISION == d_estimator )
         {
             tally_states.insert( global_row );
         }
         // Else if we're using the expected value estimator add the columns from
         // this row as local tally states. Do not insert the absorbing state.
-        else if ( EXPECTED_VALUE == d_estimator )
+        else if ( Estimator::EXPECTED_VALUE == d_estimator )
         {
             typename Teuchos::Array<Ordinal>::const_iterator col_it;
             for ( col_it = d_columns[i+offset]->begin();
@@ -875,8 +883,8 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
         }
         else
         {
-            MCLS_INSIST( COLLISION == d_estimator || 
-                         EXPECTED_VALUE == d_estimator,
+            MCLS_INSIST( Estimator::COLLISION == d_estimator || 
+                         Estimator::EXPECTED_VALUE == d_estimator,
                          "Unsupported estimator type" );
         }
     }

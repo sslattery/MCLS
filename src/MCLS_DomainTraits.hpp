@@ -119,7 +119,7 @@ class DomainTraits
 
     /*!
      * \brief Process a history through a transition in the local domain to a
-     * new state
+     * new state.
      */
     static inline void processTransition( 
 	const Domain& domain, history_type& history )

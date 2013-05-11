@@ -111,7 +111,7 @@ DomainCommunicator<Domain>::communicate(
     const Teuchos::RCP<HistoryType>& history )
 {
     MCLS_REQUIRE( !history.is_null() );
-    MCLS_REQUIRE( history->event() == BOUNDARY );
+    MCLS_REQUIRE( Event::BOUNDARY == history->event() );
     MCLS_REQUIRE( !history->alive() );
 
     // Initialize result status.

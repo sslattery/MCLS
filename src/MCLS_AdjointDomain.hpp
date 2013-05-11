@@ -215,7 +215,7 @@ inline void AdjointDomain<Vector,Matrix>::processTransition(
     HistoryType& history ) const
 {
     MCLS_REQUIRE( history.alive() );
-    MCLS_REQUIRE( TRANSITION == history.event() );
+    MCLS_REQUIRE( Event::TRANSITION == history.event() );
     MCLS_REQUIRE( isLocalState(history.state()) );
 
     // Get the current state.

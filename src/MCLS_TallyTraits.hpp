@@ -71,7 +71,7 @@ struct UndefinedTallyTraits
  * \class TallyTraits
  * \brief Traits for Monte Carlo transport tallys.
  *
- * TallyTraits defines an interface for parallel distributed tallys.
+ * TallyTraits defines an interface for parallel distributed tallies.
  */
 template<class Tally>
 class TallyTraits
@@ -91,10 +91,18 @@ class TallyTraits
      * \brief Add a history's contribution to the tally.
      */
     static inline void tallyHistory( Tally& tally, 
-				     const history_type& history )
+				     history_type& history )
     { 
 	UndefinedTallyTraits<Tally>::notDefined(); 
-	return Teuchos::Array<char>(0);
+    }
+
+    /*!
+     * \brief Post-process a history after it has been killed.
+     */
+    static inline void postProcessHistory( Tally& tally,
+					   const history_type& history )
+    { 
+	UndefinedTallyTraits<Tally>::notDefined(); 
     }
 
     /*!

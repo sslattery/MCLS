@@ -43,8 +43,8 @@
 
 #include <limits>
 
-#include <MCLS_DBC.hpp>
-#include <MCLS_Events.hpp>
+#include "MCLS_DBC.hpp"
+#include "MCLS_Events.hpp"
 
 namespace MCLS
 {
@@ -78,14 +78,14 @@ void DomainTransporter<Domain>::transport( HistoryType& history )
     MCLS_REQUIRE( d_weight_cutoff > 0.0 );
 
     // Set the history to transition.
-    history.setEvent( TRANSITION );
+    history.setEvent( Event::TRANSITION );
 
     // While the history is alive inside of this domain, transport it. If the
     // history leaves this domain, it is not alive with respect to this
     // domain. 
     while ( history.alive() )
     {
-	MCLS_CHECK( history.event() == TRANSITION );
+	MCLS_CHECK( Event::TRANSITION == history.event() );
 	MCLS_CHECK( history.weightAbs() >= d_weight_cutoff );
 	MCLS_CHECK( history.weightAbs() < std::numeric_limits<double>::max() );
 	MCLS_CHECK( DT::isLocalState(*d_domain, history.state()) );
@@ -96,23 +96,25 @@ void DomainTransporter<Domain>::transport( HistoryType& history )
 	// Transition the history one step.
 	DT::processTransition( *d_domain, history );
 
-	// If the history's weight is less than the cutoff, kill it.
+	// If the history's weight is less than the cutoff, kill it and post
+	// process.
 	if ( history.weightAbs() < d_weight_cutoff )
 	{
-	    history.setEvent( CUTOFF );
+	    history.setEvent( Event::CUTOFF );
 	    history.kill();
+	    TT::postProcessHistory( *d_tally, history );
 	}
 
 	// If the history has left the domain, kill it.
 	else if ( !DT::isLocalState(*d_domain,history.state()) )
 	{
-	    history.setEvent( BOUNDARY );
+	    history.setEvent( Event::BOUNDARY );
 	    history.kill();
 	}
     }
 
     MCLS_ENSURE( !history.alive() );
-    MCLS_ENSURE( history.event() != TRANSITION );
+    MCLS_ENSURE( Event::TRANSITION != history.event() );
 }
 
 //---------------------------------------------------------------------------//

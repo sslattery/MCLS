@@ -153,8 +153,7 @@ void SourceTransporter<Source>::transport()
     // Transport all histories through the global domain until completion.
     while ( !(*d_complete) )
     {
-	// Transport the source histories and histories that have been
-	// received from other domains.
+	// Transport the source histories.
 	if ( !ST::empty(*d_source) )
 	{
 	    transportSourceHistory( bank );
@@ -297,7 +296,7 @@ void SourceTransporter<Source>::localHistoryTransport(
     ++d_num_run;
 
     // Communicate the history if it left the local domain.
-    if ( history->event() == BOUNDARY )
+    if ( Event::BOUNDARY == history->event() )
     {
 	d_domain_communicator.communicate( history );
     }
@@ -305,7 +304,7 @@ void SourceTransporter<Source>::localHistoryTransport(
     // Otherwise the history was killed by the weight cutoff.
     else
     {
-	MCLS_CHECK( history->event() == CUTOFF );
+	MCLS_CHECK( Event::CUTOFF == history->event() );
 	++(*d_num_done);
 	++d_num_done_local;
     }
