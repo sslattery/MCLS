@@ -74,6 +74,7 @@ class ForwardHistory
     //! Default constructor.
     ForwardHistory()
 	: d_state( Teuchos::OrdinalTraits<Ordinal>::zero() )
+	, d_starting_state( Teuchos::OrdinalTraits<Ordinal>::zero() )
 	, d_weight( Teuchos::ScalarTraits<double>::one() )
 	, d_alive( false )
 	, d_event( 0 )
@@ -83,6 +84,7 @@ class ForwardHistory
     //! State constructor.
     ForwardHistory( Ordinal state, double weight )
 	: d_state( state )
+	, d_starting_state( state )
 	, d_weight( weight )
 	, d_alive( false )
 	, d_event( 0 )
@@ -106,6 +108,14 @@ class ForwardHistory
     //! Get the history state.
     inline Ordinal state() const 
     { return d_state; }
+
+    //! Set the history starting state.
+    inline void setStartingState( const Ordinal state )
+    { d_starting_state = state; }
+
+    //! Get the history starting state.
+    inline Ordinal startingState() const 
+    { return d_starting_state; }
 
     //! Set the history weight.
     inline void setWeight( const double weight )
@@ -156,7 +166,10 @@ class ForwardHistory
     { return d_event; }
 
     //! Add to the history tally.
-    void addToTally( const double value ) { d_history_tally += value; }
+    void addToHistoryTally( const double value ) { d_history_tally += value; }
+
+    //! Get the history tally.
+    double historyTally() const { return d_history_tally; }
 
   public:
 
@@ -168,8 +181,11 @@ class ForwardHistory
 
   private:
 
-    //  history state.
+    // Current history state.
     Ordinal d_state;
+
+    // History starting state.
+    Ordinal d_starting_state;
 
     // ForwardHistory weight.
     double d_weight;

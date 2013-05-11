@@ -69,7 +69,8 @@ ForwardHistory<Ordinal>::ForwardHistory( const Teuchos::ArrayView<char>& buffer 
     Deserializer ds;
     ds.setBuffer( d_packed_bytes - d_packed_rng, &buffer[d_packed_rng] );
     int balive;
-    ds >> d_state >> d_weight >> balive >> d_event >> d_history_tally;
+    ds >> d_state >> d_starting_state >> d_weight >> balive 
+       >> d_event >> d_history_tally;
     d_alive = static_cast<bool>(balive);
 
     MCLS_ENSURE( ds.getPtr() == ds.end() );
@@ -97,8 +98,8 @@ Teuchos::Array<char> ForwardHistory<Ordinal>::pack() const
 
     Serializer s;
     s.setBuffer( d_packed_bytes - d_packed_rng, &buffer[d_packed_rng] );
-    s << d_state << d_weight << static_cast<int>(d_alive) << d_event
-      << d_history_tally;
+    s << d_state << d_starting_state << d_weight << static_cast<int>(d_alive)
+      << d_event << d_history_tally;
 
     MCLS_ENSURE( s.getPtr() == s.end() );
     return buffer;
@@ -121,7 +122,7 @@ template<class Ordinal>
 void ForwardHistory<Ordinal>::setByteSize( std::size_t size_rng_state )
 {
     d_packed_rng = size_rng_state;
-    d_packed_bytes = d_packed_rng + sizeof(Ordinal) + 2*sizeof(double)
+    d_packed_bytes = d_packed_rng + 2*sizeof(Ordinal) + 2*sizeof(double)
 		     + 2*sizeof(int);
 }
 
