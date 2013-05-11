@@ -32,14 +32,14 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_History_impl.hpp
+ * \file MCLS_AdjointHistory_impl.hpp
  * \author Stuart R. Slattery
- * \brief History class declaration.
+ * \brief AdjointHistory class declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_HISTORY_IMPL_HPP
-#define MCLS_HISTORY_IMPL_HPP
+#ifndef MCLS_ADJOINTHISTORY_IMPL_HPP
+#define MCLS_ADJOINTHISTORY_IMPL_HPP
 
 #include <algorithm>
 
@@ -55,7 +55,7 @@ namespace MCLS
  * \brief Deserializer constructor.
  */
 template<class Ordinal>
-History<Ordinal>::History( const Teuchos::ArrayView<char>& buffer )
+AdjointHistory<Ordinal>::AdjointHistory( const Teuchos::ArrayView<char>& buffer )
 {
     MCLS_REQUIRE( Teuchos::as<std::size_t>(buffer.size()) == d_packed_bytes );
 
@@ -80,7 +80,7 @@ History<Ordinal>::History( const Teuchos::ArrayView<char>& buffer )
  * \brief Pack the history into a buffer.
  */
 template<class Ordinal>
-Teuchos::Array<char> History<Ordinal>::pack() const
+Teuchos::Array<char> AdjointHistory<Ordinal>::pack() const
 {
     MCLS_REQUIRE( d_packed_bytes );
     MCLS_REQUIRE( d_packed_bytes - d_packed_rng > 0 );
@@ -107,17 +107,17 @@ Teuchos::Array<char> History<Ordinal>::pack() const
 // Static members.
 //---------------------------------------------------------------------------//
 template<class Ordinal>
-std::size_t History<Ordinal>::d_packed_bytes = 0;
+std::size_t AdjointHistory<Ordinal>::d_packed_bytes = 0;
 
 template<class Ordinal>
-std::size_t History<Ordinal>::d_packed_rng = 0;
+std::size_t AdjointHistory<Ordinal>::d_packed_rng = 0;
 
 //---------------------------------------------------------------------------//
 /*!
  * \brief Set the byte size of the packed history state.
  */
 template<class Ordinal>
-void History<Ordinal>::setByteSize( std::size_t size_rng_state )
+void AdjointHistory<Ordinal>::setByteSize( std::size_t size_rng_state )
 {
     d_packed_rng = size_rng_state;
     d_packed_bytes = d_packed_rng + sizeof(Ordinal) + sizeof(double)
@@ -129,7 +129,7 @@ void History<Ordinal>::setByteSize( std::size_t size_rng_state )
  * \brief Get the number of bytes in the packed history state.
  */
 template<class Ordinal>
-std::size_t History<Ordinal>::getPackedBytes()
+std::size_t AdjointHistory<Ordinal>::getPackedBytes()
 {
     MCLS_REQUIRE( d_packed_bytes );
     return d_packed_bytes;
@@ -141,9 +141,9 @@ std::size_t History<Ordinal>::getPackedBytes()
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_HISTORY_IMPL_HPP
+#endif // end MCLS_ADJOINTHISTORY_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_History_impl.hpp
+// end MCLS_AdjointHistory_impl.hpp
 //---------------------------------------------------------------------------//
 

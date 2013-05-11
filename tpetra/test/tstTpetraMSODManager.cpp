@@ -53,7 +53,7 @@
 #include <MCLS_AdjointDomain.hpp>
 #include <MCLS_VectorTraits.hpp>
 #include <MCLS_TpetraAdapter.hpp>
-#include <MCLS_History.hpp>
+#include <MCLS_AdjointHistory.hpp>
 #include <MCLS_AdjointTally.hpp>
 #include <MCLS_Events.hpp>
 #include <MCLS_RNGControl.hpp>
@@ -90,7 +90,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MSODManager, two_by_two, LO, GO, Scalar )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<GO> HistoryType;
+    typedef MCLS::AdjointHistory<GO> HistoryType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::UniformAdjointSource<DomainType> SourceType;
     typedef typename DomainType::TallyType TallyType;

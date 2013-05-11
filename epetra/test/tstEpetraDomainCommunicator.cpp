@@ -53,7 +53,7 @@
 #include <MCLS_AdjointDomain.hpp>
 #include <MCLS_VectorTraits.hpp>
 #include <MCLS_EpetraAdapter.hpp>
-#include <MCLS_History.hpp>
+#include <MCLS_AdjointHistory.hpp>
 #include <MCLS_AdjointTally.hpp>
 #include <MCLS_Events.hpp>
 #include <MCLS_RNGControl.hpp>
@@ -123,11 +123,11 @@ MCLS::RNGControl control( 2394723 );
 //---------------------------------------------------------------------------//
 // Helper functions.
 //---------------------------------------------------------------------------//
-Teuchos::RCP<MCLS::History<int> > makeHistory( 
+Teuchos::RCP<MCLS::AdjointHistory<int> > makeHistory( 
     int state, double weight, int streamid )
 {
-    Teuchos::RCP<MCLS::History<int> > history = Teuchos::rcp(
-	new MCLS::History<int>( state, weight ) );
+    Teuchos::RCP<MCLS::AdjointHistory<int> > history = Teuchos::rcp(
+	new MCLS::AdjointHistory<int>( state, weight ) );
     history->setRNG( control.rng(streamid) );
     history->setEvent( MCLS::Event::BOUNDARY );
     return history;
@@ -143,7 +143,7 @@ TEUCHOS_UNIT_TEST( DomainCommunicator, Typedefs )
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
-    typedef MCLS::History<int> HistoryType;
+    typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
@@ -167,7 +167,7 @@ TEUCHOS_UNIT_TEST( DomainCommunicator, Communicate )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<int> HistoryType;
+    typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 

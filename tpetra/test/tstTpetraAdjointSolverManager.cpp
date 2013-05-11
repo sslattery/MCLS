@@ -85,7 +85,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointSolverManager, one_by_one, LO, GO, Sca
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<GO> HistoryType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::UniformAdjointSource<DomainType> SourceType;
 
@@ -220,7 +219,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointSolverManager, two_by_two, LO, GO, Sca
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<GO> HistoryType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::UniformAdjointSource<DomainType> SourceType;
 
@@ -458,7 +456,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointSolverManager, one_by_one_prec, LO, GO
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<GO> HistoryType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::UniformAdjointSource<DomainType> SourceType;
 
@@ -608,7 +605,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointSolverManager, two_by_two_prec, LO, GO
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<GO> HistoryType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::UniformAdjointSource<DomainType> SourceType;
 

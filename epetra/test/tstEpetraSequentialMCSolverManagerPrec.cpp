@@ -102,7 +102,6 @@ TEUCHOS_UNIT_TEST( SequentialMCSolverManager, one_by_one_prec )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<int> HistoryType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::UniformAdjointSource<DomainType> SourceType;
 
@@ -267,7 +266,6 @@ TEUCHOS_UNIT_TEST( SequentialMCSolverManager, two_by_two_prec )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<int> HistoryType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::UniformAdjointSource<DomainType> SourceType;
 

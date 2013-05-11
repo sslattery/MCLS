@@ -32,14 +32,14 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_History.hpp
+ * \file MCLS_AdjointHistory.hpp
  * \author Stuart R. Slattery
- * \brief History class declaration.
+ * \brief Adjoint history class declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_HISTORY_HPP
-#define MCLS_HISTORY_HPP
+#ifndef MCLS_ADJOINTHISTORY_HPP
+#define MCLS_ADJOINTHISTORY_HPP
 
 #include <cmath>
 
@@ -55,11 +55,12 @@ namespace MCLS
 //---------------------------------------------------------------------------//
 /*!
  * \class History
- * \brief Encapsulation of a random walk history's state.
+ * \brief Encapsulation of a random walk history's state for adjoint
+ * calculations.
  */
 //---------------------------------------------------------------------------//
 template<class Ordinal>
-class History
+class AdjointHistory
 {
   public:
 
@@ -70,7 +71,7 @@ class History
     //@}
 
     //! Default constructor.
-    History()
+    AdjointHistory()
 	: d_state( Teuchos::OrdinalTraits<Ordinal>::zero() )
 	, d_weight( Teuchos::ScalarTraits<double>::one() )
 	, d_alive( false )
@@ -78,7 +79,7 @@ class History
     { /* ... */ }
 
     //! State constructor.
-    History( Ordinal state, double weight )
+    AdjointHistory( Ordinal state, double weight )
 	: d_state( state )
 	, d_weight( weight )
 	, d_alive( false )
@@ -86,10 +87,10 @@ class History
     { /* ... */ }
 
     // Deserializer constructor.
-    explicit History( const Teuchos::ArrayView<char>& buffer );
+    explicit AdjointHistory( const Teuchos::ArrayView<char>& buffer );
 
     // Destructor.
-    ~History()
+    ~AdjointHistory()
     { /* ... */ }
 
     // Pack the history into a buffer.
@@ -164,7 +165,7 @@ class History
     //  history state.
     Ordinal d_state;
 
-    // History weight.
+    // AdjointHistory weight.
     double d_weight;
 
     // Random number generator (reference counted).
@@ -193,13 +194,13 @@ class History
 // Template includes.
 //---------------------------------------------------------------------------//
 
-#include "MCLS_History_impl.hpp"
+#include "MCLS_AdjointHistory_impl.hpp"
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_HISTORY_HPP
+#endif // end MCLS_ADJOINTHISTORY_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_History.hpp
+// end MCLS_AdjointHistory.hpp
 //---------------------------------------------------------------------------//
 

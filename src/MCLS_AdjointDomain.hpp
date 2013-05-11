@@ -46,7 +46,6 @@
 
 #include "MCLS_DBC.hpp"
 #include "MCLS_DomainTraits.hpp"
-#include "MCLS_History.hpp"
 #include "MCLS_AdjointTally.hpp"
 #include "MCLS_SamplingTools.hpp"
 #include "MCLS_Events.hpp"

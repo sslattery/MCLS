@@ -46,7 +46,7 @@
 #include <stdexcept>
 
 #include <MCLS_config.hpp>
-#include <MCLS_History.hpp>
+#include <MCLS_AdjointHistory.hpp>
 #include <MCLS_HistoryBuffer.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
@@ -84,7 +84,7 @@ Teuchos::RCP<const Teuchos::Comm<Ordinal> > getDefaultComm()
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( HistoryBuffer, sizes, Ordinal )
 {
-    typedef MCLS::History<Ordinal> HT;
+    typedef MCLS::AdjointHistory<Ordinal> HT;
 
     MCLS::HistoryBuffer<HT> buffer_1;
     TEST_EQUALITY( buffer_1.allocatedSize(), 0 );
@@ -129,7 +129,7 @@ UNIT_TEST_INSTANTIATION( HistoryBuffer, sizes )
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( HistoryBuffer, buffering, Ordinal )
 {
-    typedef MCLS::History<Ordinal> HT;
+    typedef MCLS::AdjointHistory<Ordinal> HT;
     HT::setByteSize( 0 );
 
     int num_history = 4;

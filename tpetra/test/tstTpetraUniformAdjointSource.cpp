@@ -52,7 +52,7 @@
 #include <MCLS_AdjointDomain.hpp>
 #include <MCLS_VectorTraits.hpp>
 #include <MCLS_TpetraAdapter.hpp>
-#include <MCLS_History.hpp>
+#include <MCLS_AdjointHistory.hpp>
 #include <MCLS_AdjointTally.hpp>
 #include <MCLS_Events.hpp>
 #include <MCLS_RNGControl.hpp>
@@ -90,7 +90,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformAdjointSource, Typedefs, LO, GO, Scala
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
-    typedef MCLS::History<GO> HistoryType;
+    typedef MCLS::AdjointHistory<GO> HistoryType;
 
     typedef MCLS::UniformAdjointSource<DomainType> SourceType;
     typedef typename SourceType::HistoryType history_type;
@@ -113,7 +113,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformAdjointSource, nh_not_set, LO, GO, Sca
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<GO> HistoryType;
+    typedef MCLS::AdjointHistory<GO> HistoryType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -207,7 +207,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformAdjointSource, PackUnpack, LO, GO, Sca
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<GO> HistoryType;
+    typedef MCLS::AdjointHistory<GO> HistoryType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -307,7 +307,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformAdjointSource, nh_set, LO, GO, Scalar 
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<GO> HistoryType;
+    typedef MCLS::AdjointHistory<GO> HistoryType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -402,7 +402,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformAdjointSource, nh_set_pu, LO, GO, Scal
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<GO> HistoryType;
+    typedef MCLS::AdjointHistory<GO> HistoryType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 

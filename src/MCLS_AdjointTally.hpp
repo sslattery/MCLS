@@ -42,7 +42,7 @@
 #define MCLS_ADJOINTTALLY_HPP
 
 #include "MCLS_DBC.hpp"
-#include "MCLS_History.hpp"
+#include "MCLS_AdjointHistory.hpp"
 #include "MCLS_VectorExport.hpp"
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_TallyTraits.hpp"
@@ -73,7 +73,7 @@ class AdjointTally
     typedef VectorTraits<Vector>                                VT;
     typedef typename VT::global_ordinal_type                    Ordinal;
     typedef typename VT::scalar_type                            Scalar;
-    typedef History<Ordinal>                                    HistoryType;
+    typedef AdjointHistory<Ordinal>                             HistoryType;
     typedef Teuchos::Comm<int>                                  Comm;
     typedef typename std::tr1::unordered_map<Ordinal,int>       MapType;
     //@}

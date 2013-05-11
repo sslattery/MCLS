@@ -32,9 +32,9 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file   tstHistory.cpp
+ * \file   tstAdjointHistory.cpp
  * \author Stuart Slattery
- * \brief  History class unit tests.
+ * \brief  AdjointHistory class unit tests.
  */
 //---------------------------------------------------------------------------//
 
@@ -46,7 +46,7 @@
 
 #include <MCLS_config.hpp>
 #include <MCLS_RNGControl.hpp>
-#include <MCLS_History.hpp>
+#include <MCLS_AdjointHistory.hpp>
 #include <MCLS_Events.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
@@ -88,11 +88,11 @@ int seed = 2394723;
 //---------------------------------------------------------------------------//
 // Tests.
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( History, history, Ordinal )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( AdjointHistory, history, Ordinal )
 {
     MCLS::RNGControl control( seed );
 
-    MCLS::History<Ordinal> h_1;
+    MCLS::AdjointHistory<Ordinal> h_1;
     TEST_EQUALITY( h_1.weight(), Teuchos::ScalarTraits<double>::one() );
     TEST_EQUALITY( h_1.state(), Teuchos::OrdinalTraits<Ordinal>::zero() );
     TEST_ASSERT( !h_1.alive() );
@@ -127,17 +127,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( History, history, Ordinal )
     h_1.setRNG( rng );
     TEST_EQUALITY( h_1.rng().getIndex(), 4 );
 
-    MCLS::History<Ordinal> h_2( 5, 6 );
+    MCLS::AdjointHistory<Ordinal> h_2( 5, 6 );
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
     TEST_ASSERT( !h_2.alive() );
     TEST_EQUALITY( h_2.event(), MCLS::Event::NO_EVENT );
 }
 
-UNIT_TEST_INSTANTIATION( History, history )
+UNIT_TEST_INSTANTIATION( AdjointHistory, history )
 
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( History, pack_unpack, Ordinal )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( AdjointHistory, pack_unpack, Ordinal )
 {
     MCLS::RNGControl control( seed );
     MCLS::RNGControl::RNG ranr = control.rng( 4 );
@@ -155,12 +155,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( History, pack_unpack, Ordinal )
 
     std::size_t byte_size = 
 	control.getSize() + sizeof(Ordinal) + sizeof(double) + 2*sizeof(int);
-    MCLS::History<Ordinal>::setByteSize( control.getSize() );
+    MCLS::AdjointHistory<Ordinal>::setByteSize( control.getSize() );
     std::size_t packed_bytes =
-	MCLS::History<Ordinal>::getPackedBytes();
+	MCLS::AdjointHistory<Ordinal>::getPackedBytes();
     TEST_EQUALITY( packed_bytes, byte_size );
 
-    MCLS::History<Ordinal> h_1( 5, 6 );
+    MCLS::AdjointHistory<Ordinal> h_1( 5, 6 );
     h_1.setRNG( rng );
     h_1.live();
     h_1.setEvent( MCLS::Event::BOUNDARY );
@@ -168,7 +168,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( History, pack_unpack, Ordinal )
     TEST_EQUALITY( Teuchos::as<std::size_t>( packed_history.size() ), 
 		   byte_size );
 
-    MCLS::History<Ordinal> h_2( packed_history );
+    MCLS::AdjointHistory<Ordinal> h_2( packed_history );
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
     TEST_ASSERT( h_2.alive() );
@@ -181,30 +181,30 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( History, pack_unpack, Ordinal )
     }
 }
 
-UNIT_TEST_INSTANTIATION( History, pack_unpack )
+UNIT_TEST_INSTANTIATION( AdjointHistory, pack_unpack )
 
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( History, pack_unpack_no_rng, Ordinal )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( AdjointHistory, pack_unpack_no_rng, Ordinal )
 {
     std::size_t byte_size = sizeof(Ordinal) + sizeof(double) + 2*sizeof(int);
-    MCLS::History<Ordinal>::setByteSize( 0 );
+    MCLS::AdjointHistory<Ordinal>::setByteSize( 0 );
 
-    MCLS::History<Ordinal> h_1( 5, 6 );
+    MCLS::AdjointHistory<Ordinal> h_1( 5, 6 );
     h_1.live();
     Teuchos::Array<char> packed_history = h_1.pack();
     TEST_EQUALITY( Teuchos::as<std::size_t>( packed_history.size() ), 
 		   byte_size );
 
-    MCLS::History<Ordinal> h_2( packed_history );
+    MCLS::AdjointHistory<Ordinal> h_2( packed_history );
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
     TEST_ASSERT( h_2.alive() );
 }
 
-UNIT_TEST_INSTANTIATION( History, pack_unpack_no_rng )
+UNIT_TEST_INSTANTIATION( AdjointHistory, pack_unpack_no_rng )
 
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( History, broadcast, Ordinal )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( AdjointHistory, broadcast, Ordinal )
 {
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -218,9 +218,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( History, broadcast, Ordinal )
 	ref[i] = ranr.random();
     }
 
-    MCLS::History<Ordinal>::setByteSize( control.getSize() );
+    MCLS::AdjointHistory<Ordinal>::setByteSize( control.getSize() );
     std::size_t packed_bytes =
-	MCLS::History<Ordinal>::getPackedBytes();
+	MCLS::AdjointHistory<Ordinal>::getPackedBytes();
     Teuchos::Array<char> packed_history( packed_bytes );
 
     if ( comm_rank == 0 )
@@ -231,7 +231,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( History, broadcast, Ordinal )
 	    rng.random();
 	}
 
-	MCLS::History<Ordinal> h_1( 5, 6 );
+	MCLS::AdjointHistory<Ordinal> h_1( 5, 6 );
 	h_1.setRNG( rng );
 	h_1.live();
 	h_1.setEvent( MCLS::Event::BOUNDARY );
@@ -240,7 +240,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( History, broadcast, Ordinal )
 
     Teuchos::broadcast( *comm, 0, packed_history() );
 
-    MCLS::History<Ordinal> h_2( packed_history );
+    MCLS::AdjointHistory<Ordinal> h_2( packed_history );
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
     TEST_ASSERT( h_2.alive() );
@@ -253,8 +253,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( History, broadcast, Ordinal )
     }
 }
 
-UNIT_TEST_INSTANTIATION( History, broadcast )
+UNIT_TEST_INSTANTIATION( AdjointHistory, broadcast )
 
 //---------------------------------------------------------------------------//
-// end tstHistory.cpp
+// end tstAdjointHistory.cpp
 //---------------------------------------------------------------------------//

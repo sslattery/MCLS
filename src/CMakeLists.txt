@@ -24,6 +24,8 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_SET(HEADERS
   MCLS_AdjointDomain.hpp
   MCLS_AdjointDomain_impl.hpp
+  MCLS_AdjointHistory.hpp
+  MCLS_AdjointHistory_impl.hpp
   MCLS_AdjointSolverManager.hpp
   MCLS_AdjointSolverManager_impl.hpp
   MCLS_AdjointTally.hpp
@@ -40,8 +42,6 @@ APPEND_SET(HEADERS
   MCLS_Estimators.hpp
   MCLS_Events.hpp
   MCLS_GlobalRNG.hpp
-  MCLS_History.hpp
-  MCLS_History_impl.hpp
   MCLS_HistoryBuffer.hpp
   MCLS_HistoryBuffer_impl.hpp
   MCLS_LinearProblem.hpp

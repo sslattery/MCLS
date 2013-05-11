@@ -50,7 +50,7 @@
 #include <MCLS_AdjointDomain.hpp>
 #include <MCLS_VectorTraits.hpp>
 #include <MCLS_EpetraAdapter.hpp>
-#include <MCLS_History.hpp>
+#include <MCLS_AdjointHistory.hpp>
 #include <MCLS_AdjointTally.hpp>
 #include <MCLS_Events.hpp>
 #include <MCLS_RNGControl.hpp>
@@ -105,7 +105,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Typedefs )
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
-    typedef MCLS::History<int> HistoryType;
+    typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
     typedef DomainType::HistoryType history_type;
     typedef DomainType::TallyType tally_type;
@@ -125,7 +125,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, NoOverlap )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<int> HistoryType;
+    typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -239,7 +239,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, PackUnpack )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<int> HistoryType;
+    typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -360,7 +360,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, SomeOverlap )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<int> HistoryType;
+    typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -495,7 +495,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, SomeOverlapPackUnpack )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<int> HistoryType;
+    typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -637,7 +637,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Transition )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<int> HistoryType;
+    typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -721,7 +721,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Diagonal )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<int> HistoryType;
+    typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 

@@ -50,7 +50,7 @@
 #include <MCLS_AdjointTally.hpp>
 #include <MCLS_VectorTraits.hpp>
 #include <MCLS_TpetraAdapter.hpp>
-#include <MCLS_History.hpp>
+#include <MCLS_AdjointHistory.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -81,7 +81,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, Typedefs, LO, GO, Scalar )
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef MCLS::AdjointTally<VectorType> TallyType;
-    typedef MCLS::History<GO> HistoryType;
+    typedef MCLS::AdjointHistory<GO> HistoryType;
     typedef typename TallyType::HistoryType history_type;
 
     TEST_EQUALITY_CONST( 
@@ -96,7 +96,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, TallyHistory, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef MCLS::History<GO> HistoryType;
+    typedef MCLS::AdjointHistory<GO> HistoryType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -231,7 +231,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, SetCombine, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef MCLS::History<GO> HistoryType;
+    typedef MCLS::AdjointHistory<GO> HistoryType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -342,7 +342,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, BlockCombine, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef MCLS::History<GO> HistoryType;
+    typedef MCLS::AdjointHistory<GO> HistoryType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -504,7 +504,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, Normalize, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef MCLS::History<GO> HistoryType;
+    typedef MCLS::AdjointHistory<GO> HistoryType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();

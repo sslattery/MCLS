@@ -52,7 +52,7 @@
 #include <MCLS_AdjointDomain.hpp>
 #include <MCLS_VectorTraits.hpp>
 #include <MCLS_EpetraAdapter.hpp>
-#include <MCLS_History.hpp>
+#include <MCLS_AdjointHistory.hpp>
 #include <MCLS_AdjointTally.hpp>
 #include <MCLS_Events.hpp>
 #include <MCLS_RNGControl.hpp>
@@ -106,7 +106,7 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, Typedefs )
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
-    typedef MCLS::History<int> HistoryType;
+    typedef MCLS::AdjointHistory<int> HistoryType;
 
     typedef MCLS::UniformAdjointSource<DomainType> SourceType;
     typedef SourceType::HistoryType history_type;
@@ -127,7 +127,7 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_not_set )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<int> HistoryType;
+    typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -223,7 +223,7 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, PackUnpack )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<int> HistoryType;
+    typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -326,7 +326,7 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_set_pu )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<int> HistoryType;
+    typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -431,7 +431,7 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_set )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<int> HistoryType;
+    typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 

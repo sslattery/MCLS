@@ -53,7 +53,7 @@
 #include <MCLS_AdjointDomain.hpp>
 #include <MCLS_VectorTraits.hpp>
 #include <MCLS_EpetraAdapter.hpp>
-#include <MCLS_History.hpp>
+#include <MCLS_AdjointHistory.hpp>
 #include <MCLS_Events.hpp>
 #include <MCLS_RNGControl.hpp>
 
@@ -107,7 +107,7 @@ TEUCHOS_UNIT_TEST( SourceTransporter, Typedefs )
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
-    typedef MCLS::History<int> HistoryType;
+    typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::UniformAdjointSource<DomainType> SourceType;
     typedef std::stack<Teuchos::RCP<HistoryType> > BankType;
 
@@ -134,7 +134,7 @@ TEUCHOS_UNIT_TEST( SourceTransporter, transport )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::History<int> HistoryType;
+    typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::UniformAdjointSource<DomainType> SourceType;
 
