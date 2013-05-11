@@ -44,6 +44,7 @@
 #include <cmath>
 
 #include "MCLS_RNGControl.hpp"
+#include "MCLS_HistoryTraits.hpp"
 
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
@@ -145,7 +146,7 @@ class AdjointHistory
     { return d_alive; }
 
     //! Set the event flag.
-    void setEvent( int event )
+    void setEvent( const int event )
     { d_event = event; }
 
     //! Get the last event.
@@ -184,6 +185,161 @@ class AdjointHistory
 
     // Packed size of the RNG in bytes.
     static std::size_t d_packed_rng;
+};
+
+//---------------------------------------------------------------------------//
+// HistoryTraits Implementation.
+//---------------------------------------------------------------------------//
+template<class Ordinal>
+class HistoryTraits<AdjointHistory<Ordinal> >
+{
+  public:
+
+    //@{
+    //! Typedefs.
+    typedef AdjointHistory<Ordinal>                      history_type;
+    typedef typename history_type::ordinal_type          ordinal_type;
+    typedef typename history_type::RNG                   rng_type;
+    //@}
+
+    /*!
+     * \brief Create a history from a buffer.
+     */
+    static Teuchos::RCP<history_type> 
+    createFromBuffer( const Teuchos::Array<char>& buffer )
+    { 
+	return Teuchos::rcp( new history_type(buffer) );
+    }
+
+    /*!
+     * \brief Pack the history into a buffer.
+     */
+    static Teuchos::Array<char> pack( const history_type& history )
+    {
+	return history.pack();
+    }
+
+    /*!
+     * \brief Set the state of a history
+     */
+    static inline void setState( history_type& history, 
+				 const ordinal_type state )
+    {
+	history.setState( state );
+    }
+
+    /*! 
+     * \brief get the state of a history.
+     */
+    static inline ordinal_type state( const history_type& history )
+    {
+	return history.state();
+    }
+
+    /*!
+     * \brief Set the history weight.
+     */
+    static inline void setWeight( history_type& history, const double weight )
+    {
+	history.setWeight( weight );
+    }
+
+    /*! 
+     * \brief Add to the history weight.
+     */
+    static inline void addWeight( history_type& history, const double weight )
+    {
+	history.addWeight( weight );
+    }
+
+    /*! 
+     * \brief Multiply the history weight.
+     */
+    static inline void multiplyWeight( history_type& history, 
+				       const double weight )
+    {
+	history.multiplyWeight( weight );
+    }
+
+    /*!
+     * \brief Get the history weight.
+     */
+    static inline double weight( const history_type& history )
+    {
+	return history.weight();
+    }
+
+    /*!
+     * \brief Get the absolute value of the history weight.
+     */
+    static inline double weightAbs( const history_type& history )
+    {
+	return history.weightAbs();
+    }
+
+    /*!
+     * \brief Set a new random number generator with the history.
+     */
+    static void setRNG( history_type& history, const rng_type& rng )
+    {
+	history.setRNG( rng );
+    }
+
+    /*!
+     * \brief Kill the history.
+     */
+    static void kill( history_type& history )
+    {
+	history.kill();
+    }
+
+    /*!
+     * \brief Set the history alive
+     */
+    static void live( history_type& history )
+    {
+	history.live();
+    }
+
+    /*!
+     * \brief Get the history live/dead status.
+     */
+    static bool alive( const history_type& history )
+    {
+	return history.alive();
+    }
+
+    /*!
+     * \brief Set the event flag.
+     */
+    static void setEvent( history_type& history, const int event )
+    {
+	history.setEvent( event );
+    }
+
+    /*!
+     * \brief Get the last event.
+     */
+    static int event( const history_type& history )
+    {
+	return history.event();
+    }
+
+    /*!
+     * \brief Set the byte size of the packed history state.
+     */
+    static void setByteSize( std::size_t size_rng_state )
+    {
+	history_type::setByteSize( size_rng_state );
+    }
+
+    /*!
+     * \brief Get the number of bytes in the packed history state.
+     */
+    static std::size_t getPackedBytes()
+    {
+	return history_type::getPackedBytes();
+    }
 };
 
 //---------------------------------------------------------------------------//

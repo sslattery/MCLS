@@ -69,7 +69,7 @@ struct UndefinedTallyTraits
 //---------------------------------------------------------------------------//
 /*!
  * \class TallyTraits
- * \brief Traits for Monte Carlo transport tallys.
+ * \brief Traits for Monte Carlo transport tallies.
  *
  * TallyTraits defines an interface for parallel distributed tallies.
  */

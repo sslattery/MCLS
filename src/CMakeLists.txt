@@ -44,6 +44,7 @@ APPEND_SET(HEADERS
   MCLS_GlobalRNG.hpp
   MCLS_HistoryBuffer.hpp
   MCLS_HistoryBuffer_impl.hpp
+  MCLS_HistoryTraits.hpp
   MCLS_LinearProblem.hpp
   MCLS_LinearProblem_impl.hpp
   MCLS_MatrixAlgorithms.hpp
