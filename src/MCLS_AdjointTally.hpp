@@ -325,39 +325,6 @@ class TallyTraits<AdjointTally<Vector> >
     }
 
     /*!
-     * \brief Get the number of global rows in the base decompostion.
-     */
-    static ordinal_type numBaseRows( const tally_type& tally )
-    {
-	return tally.numBaseRows();
-    }
-
-    /*!
-     * \brief Get the number of global rows in the tally decompostion.
-     */
-    static ordinal_type numTallyRows( const tally_type& tally )
-    {
-	return tally.numTallyRows();
-    }
-
-    /*!
-     * \brief Get the global tally rows in the base decompostion.
-     */
-    static Teuchos::Array<ordinal_type> baseRows( const tally_type& tally )
-    {
-	return tally.baseRows();
-    }
-
-    /*!
-     * \brief Get the global tally rows in the tally decompostion.
-     */
-    static Teuchos::Array<ordinal_type> 
-    tallyRows( const tally_type& tally )
-    {
-	return tally.tallyRows();
-    }
-
-    /*!
      * \brief Get the estimator type used by this tally.
      */
     static int estimatorType( const tally_type& tally )

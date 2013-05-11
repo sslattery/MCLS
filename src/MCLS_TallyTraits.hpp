@@ -153,38 +153,6 @@ class TallyTraits
     }
 
     /*!
-     * \brief Get the number of global rows in the base decompostion.
-     */
-    static ordinal_type numBaseRows( const Tally& tally )
-    {
-	UndefinedTallyTraits<Tally>::notDefined(); 
-    }
-
-    /*!
-     * \brief Get the number of global rows in the tally decompostion.
-     */
-    static ordinal_type numTallyRows( const Tally& tally )
-    {
-	UndefinedTallyTraits<Tally>::notDefined(); 
-    }
-
-    /*!
-     * \brief Get the global tally rows in the base decompostion.
-     */
-    static Teuchos::Array<ordinal_type> baseRows( const Tally& tally )
-    {
-	UndefinedTallyTraits<Tally>::notDefined(); 
-    }
-
-    /*!
-     * \brief Get the global tally rows in the tally decompostion.
-     */
-    static Teuchos::Array<ordinal_type> tallyRows( const Tally& tally )
-    {
-	UndefinedTallyTraits<Tally>::notDefined(); 
-    }
-
-    /*!
      * \brief Get the estimator type used by this tally.
      */
     static int estimatorType( const Tally& tally )
