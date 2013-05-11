@@ -77,6 +77,7 @@ class SourceTransporter
     typedef typename ST::domain_type                  Domain;
     typedef DomainTraits<Domain>                      DT;
     typedef typename DT::history_type                 HistoryType;
+    typedef HistoryTraits<HistoryType>                HT;
     typedef typename DT::bank_type                    BankType;
     typedef DomainTransporter<Domain>                 DomainTransporterType;
     typedef DomainCommunicator<Domain>                DomainCommunicatorType;

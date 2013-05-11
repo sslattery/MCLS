@@ -32,14 +32,14 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_AdjointHistory.hpp
+ * \file MCLS_ForwardHistory.hpp
  * \author Stuart R. Slattery
- * \brief Adjoint history class declaration.
+ * \brief Forward history class declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_ADJOINTHISTORY_HPP
-#define MCLS_ADJOINTHISTORY_HPP
+#ifndef MCLS_FORWARDHISTORY_HPP
+#define MCLS_FORWARDHISTORY_HPP
 
 #include <cmath>
 
@@ -56,12 +56,12 @@ namespace MCLS
 //---------------------------------------------------------------------------//
 /*!
  * \class History
- * \brief Encapsulation of a random walk history's state for adjoint
+ * \brief Encapsulation of a random walk history's state for forward
  * calculations.
  */
 //---------------------------------------------------------------------------//
 template<class Ordinal>
-class AdjointHistory
+class ForwardHistory
 {
   public:
 
@@ -72,26 +72,28 @@ class AdjointHistory
     //@}
 
     //! Default constructor.
-    AdjointHistory()
+    ForwardHistory()
 	: d_state( Teuchos::OrdinalTraits<Ordinal>::zero() )
 	, d_weight( Teuchos::ScalarTraits<double>::one() )
 	, d_alive( false )
 	, d_event( 0 )
+	, d_history_tally( 0.0 )
     { /* ... */ }
 
     //! State constructor.
-    AdjointHistory( Ordinal state, double weight )
+    ForwardHistory( Ordinal state, double weight )
 	: d_state( state )
 	, d_weight( weight )
 	, d_alive( false )
 	, d_event( 0 )
+	, d_history_tally( 0.0 )
     { /* ... */ }
 
     // Deserializer constructor.
-    explicit AdjointHistory( const Teuchos::ArrayView<char>& buffer );
+    explicit ForwardHistory( const Teuchos::ArrayView<char>& buffer );
 
     // Destructor.
-    ~AdjointHistory()
+    ~ForwardHistory()
     { /* ... */ }
 
     // Pack the history into a buffer.
@@ -153,6 +155,9 @@ class AdjointHistory
     int event() const
     { return d_event; }
 
+    //! Add to the history tally.
+    void addToTally( const double value ) { d_history_tally += value; }
+
   public:
 
     // Set the byte size of the packed history state.
@@ -166,7 +171,7 @@ class AdjointHistory
     //  history state.
     Ordinal d_state;
 
-    // AdjointHistory weight.
+    // ForwardHistory weight.
     double d_weight;
 
     // Random number generator (reference counted).
@@ -178,6 +183,9 @@ class AdjointHistory
     // Latest history event.
     int d_event;
 
+    // Forward tally sum for this history.
+    double d_history_tally;
+    
   private:
 
     // Packed size of history in bytes.
@@ -191,13 +199,13 @@ class AdjointHistory
 // HistoryTraits Implementation.
 //---------------------------------------------------------------------------//
 template<class Ordinal>
-class HistoryTraits<AdjointHistory<Ordinal> >
+class HistoryTraits<ForwardHistory<Ordinal> >
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef AdjointHistory<Ordinal>                      history_type;
+    typedef ForwardHistory<Ordinal>                      history_type;
     typedef typename history_type::ordinal_type          ordinal_type;
     typedef typename history_type::RNG                   rng_type;
     //@}
@@ -358,13 +366,13 @@ class HistoryTraits<AdjointHistory<Ordinal> >
 // Template includes.
 //---------------------------------------------------------------------------//
 
-#include "MCLS_AdjointHistory_impl.hpp"
+#include "MCLS_ForwardHistory_impl.hpp"
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_ADJOINTHISTORY_HPP
+#endif // end MCLS_FORWARDHISTORY_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_AdjointHistory.hpp
+// end MCLS_ForwardHistory.hpp
 //---------------------------------------------------------------------------//
 

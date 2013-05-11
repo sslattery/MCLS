@@ -44,6 +44,7 @@
 #include "MCLS_SourceTraits.hpp"
 #include "MCLS_DomainTraits.hpp"
 #include "MCLS_TallyTraits.hpp"
+#include "MCLS_HistoryTraits.hpp"
 #include "MCLS_RNGControl.hpp"
 #include "MCLS_SourceTransporter.hpp"
 
@@ -76,6 +77,7 @@ class MCSolver
     typedef typename DT::tally_type                     TallyType;
     typedef TallyTraits<TallyType>                      TT;
     typedef typename TT::history_type                   HistoryType;
+    typedef HistoryTraits<HistoryType>                  HT;
     typedef SourceTransporter<Source>                   TransporterType;
     typedef Teuchos::Comm<int>                          Comm;
     //@}

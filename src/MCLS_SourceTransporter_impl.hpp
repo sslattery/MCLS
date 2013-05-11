@@ -216,7 +216,7 @@ void SourceTransporter<Source>::transportSourceHistory( BankType& bank )
     // Get a history from the source.
     Teuchos::RCP<HistoryType> history = ST::getHistory( *d_source );
     MCLS_CHECK( !history.is_null() );
-    MCLS_CHECK( history->alive() );
+    MCLS_CHECK( HT::alive(*history) );
 
     // Add to the source history count.
     ++d_num_src;
@@ -255,14 +255,14 @@ void SourceTransporter<Source>::transportBankHistory( BankType& bank )
 
     // If the history doesn't have a random number state, supply it with the
     // global RNG.
-    if ( !history->rng().assigned() )
+    if ( !HT::rng(*history).assigned() )
     {
 	MCLS_CHECK( GlobalRNG::d_rng.assigned() );
-	history->setRNG( GlobalRNG::d_rng );
+	HT::setRNG( *history, GlobalRNG::d_rng );
     }
 
     // Set the history alive for transport.
-    history->live();
+    HT::live( *history );
 
     // Transport the history through the local domain and communicate it if
     // needed. 
@@ -285,18 +285,18 @@ void SourceTransporter<Source>::localHistoryTransport(
     BankType& bank )
 {
     MCLS_REQUIRE( !history.is_null() );
-    MCLS_REQUIRE( history->alive() );
-    MCLS_REQUIRE( history->rng().assigned() );
+    MCLS_REQUIRE( HT::alive(*history) );
+    MCLS_REQUIRE( HT::rng(*history).assigned() );
 
     // Do local transport.
     d_domain_transporter.transport( *history );
-    MCLS_CHECK( !history->alive() );
+    MCLS_CHECK( !HT::alive(*history) );
 
     // Update the run count.
     ++d_num_run;
 
     // Communicate the history if it left the local domain.
-    if ( Event::BOUNDARY == history->event() )
+    if ( Event::BOUNDARY == HT::event(*history) )
     {
 	d_domain_communicator.communicate( history );
     }
@@ -304,7 +304,7 @@ void SourceTransporter<Source>::localHistoryTransport(
     // Otherwise the history was killed by the weight cutoff.
     else
     {
-	MCLS_CHECK( Event::CUTOFF == history->event() );
+	MCLS_CHECK( Event::CUTOFF == HT::event(*history) );
 	++(*d_num_done);
 	++d_num_done_local;
     }

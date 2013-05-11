@@ -43,6 +43,8 @@
 
 #include <stack>
 
+#include "MCLS_HistoryTraits.hpp"
+
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
 
@@ -55,16 +57,17 @@ namespace MCLS
  * of this class and subsequent inheritance structure.
  */
 //---------------------------------------------------------------------------//
-template<class HT>
+template<class History>
 class HistoryBuffer
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef HT                                  history_type;
-    typedef std::stack<Teuchos::RCP<HT> >       BankType;
-    typedef Teuchos::Array<char>                Buffer;
+    typedef History                                  history_type;
+    typedef HistoryTraits<History>                   HT;
+    typedef std::stack<Teuchos::RCP<History> >       BankType;
+    typedef Teuchos::Array<char>                     Buffer;
     //@}
 
     //! Default constructor.
@@ -90,7 +93,7 @@ class HistoryBuffer
     void deallocate();
 
     // Write a history into the buffer.
-    void bufferHistory( const HT& history );
+    void bufferHistory( const History& history );
 
     // Add the histories in the buffer to a bank.
     void addToBank( BankType& bank );

@@ -79,14 +79,14 @@ MCSolver<Source>::MCSolver( const Teuchos::RCP<const Comm>& set_comm,
     // the global RNG.
     if ( d_plist->get<bool>("Reproducible MC Mode") )
     {
-	HistoryType::setByteSize( d_rng_control->getSize() );
+	HT::setByteSize( d_rng_control->getSize() );
     }
     else
     {
-	HistoryType::setByteSize( 0 );
+	HT::setByteSize( 0 );
     }
 
-    MCLS_ENSURE( HistoryType::getPackedBytes() > 0 );
+    MCLS_ENSURE( HT::getPackedBytes() > 0 );
     MCLS_ENSURE( !d_rng_control.is_null() );
 }
 

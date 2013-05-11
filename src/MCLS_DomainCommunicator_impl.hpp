@@ -71,8 +71,8 @@ DomainCommunicator<Domain>::DomainCommunicator(
     MCLS_REQUIRE( d_num_send_neighbors >= 0 );
     MCLS_REQUIRE( d_num_receive_neighbors >= 0 );
 
-    MCLS_INSIST( HistoryType::getPackedBytes(), "Packed history size not set." );
-    HistoryBufferType::setSizePackedHistory( HistoryType::getPackedBytes() );
+    MCLS_INSIST( HT::getPackedBytes(), "Packed history size not set." );
+    HistoryBufferType::setSizePackedHistory( HT::getPackedBytes() );
 
     // Get the max number of histories that will be stored in each buffer.
     if ( plist.isParameter("MC Buffer Size") )
@@ -111,15 +111,15 @@ DomainCommunicator<Domain>::communicate(
     const Teuchos::RCP<HistoryType>& history )
 {
     MCLS_REQUIRE( !history.is_null() );
-    MCLS_REQUIRE( Event::BOUNDARY == history->event() );
-    MCLS_REQUIRE( !history->alive() );
+    MCLS_REQUIRE( Event::BOUNDARY == HT::event(*history) );
+    MCLS_REQUIRE( !HT::alive(*history) );
 
     // Initialize result status.
     d_result.sent = false;
     d_result.destination = 0;
 
     // Add the history to the appropriate buffer.
-    int neighbor_id = DT::owningNeighbor( *d_domain, history->state() );
+    int neighbor_id = DT::owningNeighbor( *d_domain, HT::state(*history) );
     d_sends[neighbor_id].bufferHistory( *history );
 
     // Update the result destination.

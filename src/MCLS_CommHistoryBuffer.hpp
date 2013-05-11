@@ -56,17 +56,17 @@ namespace MCLS
  * for the design of this class and subsequent inheritance structure.
  */
 //---------------------------------------------------------------------------//
-template<class HT>
-class CommHistoryBuffer : public HistoryBuffer<HT>
+template<class History>
+class CommHistoryBuffer : public HistoryBuffer<History>
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef HistoryBuffer<HT>                      Base;
-    typedef typename Base::history_type            history_type;
-    typedef Teuchos::CommRequest<int>              Request;
-    typedef Teuchos::Comm<int>                     Comm;
+    typedef HistoryBuffer<History>                      Base;
+    typedef typename Base::history_type                 history_type;
+    typedef Teuchos::CommRequest<int>                   Request;
+    typedef Teuchos::Comm<int>                          Comm;
     //@}
 
   public:
@@ -154,16 +154,16 @@ class CommHistoryBuffer : public HistoryBuffer<HT>
  * the design of this class and subsequent inheritance structure.
  */
 //---------------------------------------------------------------------------//
-template<class HT>
-class ReceiveHistoryBuffer : public CommHistoryBuffer<HT>
+template<class History>
+class ReceiveHistoryBuffer : public CommHistoryBuffer<History>
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef HistoryBuffer<HT>                      Root;
-    typedef CommHistoryBuffer<HT>                  Base;
-    typedef typename Base::Comm                    Comm;
+    typedef HistoryBuffer<History>                      Root;
+    typedef CommHistoryBuffer<History>                  Base;
+    typedef typename Base::Comm                         Comm;
     //@}
 
   public:
@@ -212,16 +212,16 @@ class ReceiveHistoryBuffer : public CommHistoryBuffer<HT>
  * design of this class and subsequent inheritance structure.
  */
 //---------------------------------------------------------------------------//
-template<class HT>
-class SendHistoryBuffer : public CommHistoryBuffer<HT>
+template<class History>
+class SendHistoryBuffer : public CommHistoryBuffer<History>
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef HistoryBuffer<HT>                      Root;
-    typedef CommHistoryBuffer<HT>                  Base;
-    typedef typename Base::Comm                    Comm;
+    typedef HistoryBuffer<History>                      Root;
+    typedef CommHistoryBuffer<History>                  Base;
+    typedef typename Base::Comm                         Comm;
     //@}
 
   public:

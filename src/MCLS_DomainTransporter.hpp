@@ -43,6 +43,7 @@
 
 #include <MCLS_DomainTraits.hpp>
 #include <MCLS_TallyTraits.hpp>
+#include <MCLS_HistoryTraits.hpp>
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -67,6 +68,7 @@ class DomainTransporter
     typedef Domain                                    domain_type;
     typedef DomainTraits<Domain>                      DT;
     typedef typename DT::history_type                 HistoryType;
+    typedef HistoryTraits<HistoryType>                HT;
     typedef typename DT::bank_type                    BankType;
     typedef typename DT::tally_type                   TallyType;
     typedef TallyTraits<TallyType>                    TT;

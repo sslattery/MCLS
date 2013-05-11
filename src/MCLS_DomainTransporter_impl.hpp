@@ -71,24 +71,24 @@ DomainTransporter<Domain>::DomainTransporter(
 template<class Domain>
 void DomainTransporter<Domain>::transport( HistoryType& history )
 {
-    MCLS_REQUIRE( history.alive() );
-    MCLS_REQUIRE( history.rng().assigned() );
-    MCLS_REQUIRE( history.weightAbs() >= d_weight_cutoff );
-    MCLS_REQUIRE( DT::isLocalState(*d_domain, history.state()) );
+    MCLS_REQUIRE( HT::alive(history) );
+    MCLS_REQUIRE( HT::rng(history).assigned() );
+    MCLS_REQUIRE( HT::weightAbs(history) >= d_weight_cutoff );
+    MCLS_REQUIRE( DT::isLocalState(*d_domain, HT::state(history)) );
     MCLS_REQUIRE( d_weight_cutoff > 0.0 );
 
     // Set the history to transition.
-    history.setEvent( Event::TRANSITION );
+    HT::setEvent( history, Event::TRANSITION );
 
     // While the history is alive inside of this domain, transport it. If the
     // history leaves this domain, it is not alive with respect to this
     // domain. 
-    while ( history.alive() )
+    while ( HT::alive(history) )
     {
-	MCLS_CHECK( Event::TRANSITION == history.event() );
-	MCLS_CHECK( history.weightAbs() >= d_weight_cutoff );
-	MCLS_CHECK( history.weightAbs() < std::numeric_limits<double>::max() );
-	MCLS_CHECK( DT::isLocalState(*d_domain, history.state()) );
+	MCLS_CHECK( Event::TRANSITION == HT::event(history) );
+	MCLS_CHECK( HT::weightAbs(history) >= d_weight_cutoff );
+	MCLS_CHECK( HT::weightAbs(history) < std::numeric_limits<double>::max() );
+	MCLS_CHECK( DT::isLocalState(*d_domain, HT::state(history)) );
 
 	// Tally the history.
 	TT::tallyHistory( *d_tally, history );
@@ -98,23 +98,23 @@ void DomainTransporter<Domain>::transport( HistoryType& history )
 
 	// If the history's weight is less than the cutoff, kill it and post
 	// process.
-	if ( history.weightAbs() < d_weight_cutoff )
+	if ( HT::weightAbs(history) < d_weight_cutoff )
 	{
-	    history.setEvent( Event::CUTOFF );
-	    history.kill();
+	    HT::setEvent( history, Event::CUTOFF );
+	    HT::kill( history );
 	    TT::postProcessHistory( *d_tally, history );
 	}
 
 	// If the history has left the domain, kill it.
 	else if ( !DT::isLocalState(*d_domain,history.state()) )
 	{
-	    history.setEvent( Event::BOUNDARY );
-	    history.kill();
+	    HT::setEvent( history, Event::BOUNDARY );
+	    HT::kill( history );
 	}
     }
 
-    MCLS_ENSURE( !history.alive() );
-    MCLS_ENSURE( Event::TRANSITION != history.event() );
+    MCLS_ENSURE( !HT::alive(history) );
+    MCLS_ENSURE( Event::TRANSITION != HT::event(history) );
 }
 
 //---------------------------------------------------------------------------//

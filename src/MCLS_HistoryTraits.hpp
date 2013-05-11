@@ -45,6 +45,7 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
+#include <Teuchos_ArrayView.hpp>
 
 namespace MCLS
 {
@@ -88,7 +89,7 @@ class HistoryTraits
      * \brief Create a history from a buffer.
      */
     static Teuchos::RCP<history_type> 
-    createFromBuffer( const Teuchos::Array<char>& buffer )
+    createFromBuffer( const Teuchos::ArrayView<char>& buffer )
     { 
 	UndefinedHistoryTraits<History>::notDefined(); 
 	return Teuchos::null;
@@ -168,6 +169,14 @@ class HistoryTraits
      * \brief Set a new random number generator with the history.
      */
     static void setRNG( history_type& history, const rng_type& rng )
+    {
+	UndefinedHistoryTraits<History>::notDefined(); 
+    }
+
+    /*!
+     * \brief Get this history's random number generator.
+     */
+    static const rng_type& rng( const history_type& history )
     {
 	UndefinedHistoryTraits<History>::notDefined(); 
     }

@@ -54,8 +54,8 @@ namespace MCLS
 /*!
  * \brief Size constructor.
  */
-template<class HT>
-HistoryBuffer<HT>::HistoryBuffer( std::size_t size, int num_history )
+template<class History>
+HistoryBuffer<History>::HistoryBuffer( std::size_t size, int num_history )
     : d_number( 0 )
 {
     setSizePackedHistory( size );
@@ -69,8 +69,8 @@ HistoryBuffer<HT>::HistoryBuffer( std::size_t size, int num_history )
  * \brief Allocate the buffer for the byte size of the maximum number of
  * histories plus an additional integer for the actual number of the buffer.
  */
-template<class HT>
-void HistoryBuffer<HT>::allocate()
+template<class History>
+void HistoryBuffer<History>::allocate()
 {
     MCLS_REQUIRE( d_number == 0 );
     d_buffer.resize( 
@@ -82,8 +82,8 @@ void HistoryBuffer<HT>::allocate()
 /*!
  * \brief Deallocate the buffer.
  */
-template<class HT>
-void HistoryBuffer<HT>::deallocate()
+template<class History>
+void HistoryBuffer<History>::deallocate()
 {
     MCLS_REQUIRE( d_number == 0 );
     d_buffer.clear();
@@ -94,17 +94,17 @@ void HistoryBuffer<HT>::deallocate()
 /*!
  * \brief Write a history into the buffer.
  */
-template<class HT>
-void HistoryBuffer<HT>::bufferHistory( const HT& history )
+template<class History>
+void HistoryBuffer<History>::bufferHistory( const History& history )
 {
     MCLS_REQUIRE( d_size_packed_history > 0 );
     MCLS_REQUIRE( d_number < d_max_num_histories );
     MCLS_REQUIRE( d_number >= 0 );
     MCLS_REQUIRE( !d_buffer.empty() );
 
-    Buffer packed_history = history.pack();
+    Buffer packed_history = HT::pack( history );
     MCLS_CHECK( Teuchos::as<std::size_t>(packed_history.size()) == 
-	   d_size_packed_history );
+		d_size_packed_history );
 
     Buffer::iterator buffer_it = d_buffer.begin() + 
 				 d_size_packed_history*d_number;
@@ -118,14 +118,14 @@ void HistoryBuffer<HT>::bufferHistory( const HT& history )
 /*!
  * \brief Add the histories in the buffer to a bank.
  */
-template<class HT>
-void HistoryBuffer<HT>::addToBank( BankType& bank )
+template<class History>
+void HistoryBuffer<History>::addToBank( BankType& bank )
 {
     MCLS_REQUIRE( d_size_packed_history > 0 );
 
     Buffer::const_iterator buffer_it = d_buffer.begin();
     Buffer packed_history( d_size_packed_history );
-    Teuchos::RCP<HT> history;
+    Teuchos::RCP<History> history;
 
     MCLS_REMEMBER( std::size_t bank_size = bank.size() );
 
@@ -134,7 +134,7 @@ void HistoryBuffer<HT>::addToBank( BankType& bank )
 	std::copy( buffer_it, buffer_it + d_size_packed_history, 
 		   packed_history.begin() );
 
-	history = Teuchos::rcp( new HT(packed_history) );
+	history = HT::createFromBuffer( packed_history );
 	MCLS_CHECK( !history.is_null() );
 	bank.push( history );
 
@@ -156,8 +156,8 @@ void HistoryBuffer<HT>::addToBank( BankType& bank )
 /*!
  * \brief Add the number of histories to the end of the buffer.
  */
-template<class HT>
-void HistoryBuffer<HT>::writeNumToBuffer()
+template<class History>
+void HistoryBuffer<History>::writeNumToBuffer()
 {
     MCLS_REQUIRE( Teuchos::as<std::size_t>(d_buffer.size()) > sizeof(int) );
     Serializer s;
@@ -170,8 +170,8 @@ void HistoryBuffer<HT>::writeNumToBuffer()
 /*!
  * \brief Read the number of histories from the end of the buffer.
  */
-template<class HT>
-void HistoryBuffer<HT>::readNumFromBuffer()
+template<class History>
+void HistoryBuffer<History>::readNumFromBuffer()
 {
     Deserializer ds;
     ds.setBuffer( sizeof(int), &d_buffer[d_buffer.size() - sizeof(int)] );
@@ -185,19 +185,19 @@ void HistoryBuffer<HT>::readNumFromBuffer()
 //---------------------------------------------------------------------------//
 
 //! Default maximum number of history allowed in a buffer.
-template<class HT>
-int HistoryBuffer<HT>::d_max_num_histories = 1000;
+template<class History>
+int HistoryBuffer<History>::d_max_num_histories = 1000;
 
 //! Default size of a packed history.
-template<class HT>
-std::size_t HistoryBuffer<HT>::d_size_packed_history = 0;
+template<class History>
+std::size_t HistoryBuffer<History>::d_size_packed_history = 0;
 
 //---------------------------------------------------------------------------//
 /*!
  * \brief Set the maximum number of histories allowed in the buffer.
  */
-template<class HT>
-void HistoryBuffer<HT>::setMaxNumHistories( int num_history )
+template<class History>
+void HistoryBuffer<History>::setMaxNumHistories( int num_history )
 {
     MCLS_REQUIRE( num_history > 0 );
     MCLS_REQUIRE( d_size_packed_history > 0 );
@@ -208,8 +208,8 @@ void HistoryBuffer<HT>::setMaxNumHistories( int num_history )
 /*!
  * \brief Set the byte size of a packed history.
  */
-template<class HT>
-void HistoryBuffer<HT>::setSizePackedHistory( std::size_t size )
+template<class History>
+void HistoryBuffer<History>::setSizePackedHistory( std::size_t size )
 {
     MCLS_REQUIRE( size > 0 );
     d_size_packed_history = size;

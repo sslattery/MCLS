@@ -55,8 +55,8 @@ namespace MCLS
  * \brief Pure virtual destructor. Prevents direct instantiation of
  * CommHistoryBuffer.
  */
-template<class HT>
-CommHistoryBuffer<HT>::~CommHistoryBuffer()
+template<class History>
+CommHistoryBuffer<History>::~CommHistoryBuffer()
 { /* ... */ }
 
 //---------------------------------------------------------------------------//
@@ -65,8 +65,8 @@ CommHistoryBuffer<HT>::~CommHistoryBuffer()
 /*!
  * \brief Blocking receive.
  */
-template<class HT>
-void ReceiveHistoryBuffer<HT>::receive( int rank )
+template<class History>
+void ReceiveHistoryBuffer<History>::receive( int rank )
 {
     MCLS_REQUIRE( !Base::d_comm_blocking.is_null() );
     MCLS_REQUIRE( Root::isEmpty() );
@@ -84,8 +84,8 @@ void ReceiveHistoryBuffer<HT>::receive( int rank )
 /*!
  * \brief Post non-blocking receives.
  */
-template<class HT>
-void ReceiveHistoryBuffer<HT>::post( int rank )
+template<class History>
+void ReceiveHistoryBuffer<History>::post( int rank )
 {
     MCLS_REQUIRE( !Base::d_comm_nonblocking.is_null() );
     MCLS_REQUIRE( Root::isEmpty() );
@@ -101,8 +101,8 @@ void ReceiveHistoryBuffer<HT>::post( int rank )
 /*!
  * \brief Wait on a non-blocking receive to finish.
  */
-template<class HT>
-void ReceiveHistoryBuffer<HT>::wait()
+template<class History>
+void ReceiveHistoryBuffer<History>::wait()
 {
     MCLS_REQUIRE( !Base::d_comm_nonblocking.is_null() );
 
@@ -118,8 +118,8 @@ void ReceiveHistoryBuffer<HT>::wait()
 /*!
  * \brief Check to see if a non-blocking send has finished.
  */
-template<class HT>
-bool ReceiveHistoryBuffer<HT>::check()
+template<class History>
+bool ReceiveHistoryBuffer<History>::check()
 {
     MCLS_REQUIRE( !Base::d_comm_nonblocking.is_null() );
 
@@ -142,8 +142,8 @@ bool ReceiveHistoryBuffer<HT>::check()
 /*!
  * \brief Blocking send.
  */
-template<class HT>
-void SendHistoryBuffer<HT>::send( int rank )
+template<class History>
+void SendHistoryBuffer<History>::send( int rank )
 {
     MCLS_REQUIRE( !Base::d_comm_blocking.is_null() );
     MCLS_REQUIRE( Root::allocatedSize() > sizeof(int) );
@@ -162,8 +162,8 @@ void SendHistoryBuffer<HT>::send( int rank )
 /*!
  * \brief Post non-blocking send.
  */
-template<class HT>
-void SendHistoryBuffer<HT>::post( int rank )
+template<class History>
+void SendHistoryBuffer<History>::post( int rank )
 {
     MCLS_REQUIRE( !Base::d_comm_nonblocking.is_null() );
     MCLS_REQUIRE( Root::allocatedSize() > sizeof(int) );
@@ -179,8 +179,8 @@ void SendHistoryBuffer<HT>::post( int rank )
 /*!
  * \brief Wait on a non-blocking send to finish.
  */
-template<class HT>
-void SendHistoryBuffer<HT>::wait()
+template<class History>
+void SendHistoryBuffer<History>::wait()
 {
     MCLS_REQUIRE( !Base::d_comm_nonblocking.is_null() );
 
@@ -200,8 +200,8 @@ void SendHistoryBuffer<HT>::wait()
 /*!
  * \brief Check to see if a non-blocking send has finished.
  */
-template<class HT>
-bool SendHistoryBuffer<HT>::check()
+template<class History>
+bool SendHistoryBuffer<History>::check()
 {
     MCLS_REQUIRE( !Base::d_comm_nonblocking.is_null() );
 
