@@ -50,6 +50,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TpetraForwardTally_tests
+  SOURCES tstTpetraForwardTally.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 4	
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TpetraAdjointDomain_tests
   SOURCES tstTpetraAdjointDomain.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
