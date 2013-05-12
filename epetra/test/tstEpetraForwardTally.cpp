@@ -32,9 +32,9 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file tstTpetraAdjointTally.cpp
+ * \file tstEpetraForwardTally.cpp
  * \author Stuart R. Slattery
- * \brief Tpetra AdjointTally tests.
+ * \brief Epetra ForwardTally tests.
  */
 //---------------------------------------------------------------------------//
 
@@ -47,10 +47,11 @@
 #include <string>
 #include <cassert>
 
-#include <MCLS_AdjointTally.hpp>
+#include <MCLS_ForwardTally.hpp>
 #include <MCLS_VectorTraits.hpp>
-#include <MCLS_TpetraAdapter.hpp>
-#include <MCLS_AdjointHistory.hpp>
+#include <MCLS_EpetraAdapter.hpp>
+#include <MCLS_ForwardHistory.hpp>
+#include <MCLS_Events.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -61,152 +62,142 @@
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_TypeTraits.hpp>
 
-#include <Tpetra_Map.hpp>
-#include <Tpetra_Vector.hpp>
+#include <Epetra_Map.h>
+#include <Epetra_Vector.h>
+#include <Epetra_SerialComm.h>
+
+#ifdef HAVE_MPI
+#include <Epetra_MpiComm.h>
+#endif
 
 //---------------------------------------------------------------------------//
-// Instantiation macro. 
-// 
-// These types are those enabled by Tpetra under explicit instantiation.
+// Helper functions.
 //---------------------------------------------------------------------------//
-#define UNIT_TEST_INSTANTIATION( type, name )			           \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, double )   \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
+
+Teuchos::RCP<Epetra_Comm> getEpetraComm( 
+    const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
+{
+#ifdef HAVE_MPI
+    Teuchos::RCP< const Teuchos::MpiComm<int> > mpi_comm = 
+	Teuchos::rcp_dynamic_cast< const Teuchos::MpiComm<int> >( comm );
+    Teuchos::RCP< const Teuchos::OpaqueWrapper<MPI_Comm> > opaque_comm = 
+	mpi_comm->getRawMpiComm();
+    return Teuchos::rcp( new Epetra_MpiComm( (*opaque_comm)() ) );
+#else
+    return Teuchos::rcp( new Epetra_SerialComm() );
+#endif
+}
 
 //---------------------------------------------------------------------------//
 // Test templates
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, Typedefs, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST( ForwardTally, Typedefs )
 {
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef MCLS::AdjointTally<VectorType> TallyType;
-    typedef MCLS::AdjointHistory<GO> HistoryType;
-    typedef typename TallyType::HistoryType history_type;
+    typedef MCLS::ForwardTally<VectorType> TallyType;
+    typedef MCLS::ForwardHistory<int> HistoryType;
+    typedef TallyType::HistoryType history_type;
 
     TEST_EQUALITY_CONST( 
 	(Teuchos::TypeTraits::is_same<HistoryType, history_type>::value)
 	== true, true );
 }
 
-UNIT_TEST_INSTANTIATION( AdjointTally, Typedefs )
-
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, TallyHistory, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST( ForwardTally, TallyHistory )
 {
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef MCLS::AdjointHistory<GO> HistoryType;
+    typedef MCLS::ForwardHistory<int> HistoryType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
     int comm_size = comm->getSize();
     int comm_rank = comm->getRank();
 
     int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
-    Teuchos::RCP<const Tpetra::Map<LO,GO> > map_a = 
-	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
-    Teuchos::RCP<VectorType> A = Tpetra::createVector<Scalar,LO,GO>( map_a );
+    Teuchos::RCP<Epetra_Map> map_a = Teuchos::rcp(
+	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
+    Teuchos::RCP<VectorType> A = Teuchos::rcp( new Epetra_Vector( *map_a ) );
 
-    Teuchos::Array<GO> forward_rows( local_num_rows );
+    Teuchos::Array<int> forward_rows( local_num_rows );
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	forward_rows[i] = i + local_num_rows*comm_rank;
     }
-    Teuchos::Array<GO> inverse_rows( local_num_rows );
+    Teuchos::Array<int> inverse_rows( local_num_rows );
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	inverse_rows[i] = 
 	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
     }
-    Teuchos::Array<GO> tally_rows( forward_rows.size() + inverse_rows.size() );
+    Teuchos::Array<int> tally_rows( forward_rows.size() + inverse_rows.size() );
     std::sort( forward_rows.begin(), forward_rows.end() );
     std::sort( inverse_rows.begin(), inverse_rows.end() );
     std::merge( forward_rows.begin(), forward_rows.end(),
                 inverse_rows.begin(), inverse_rows.end(),
                 tally_rows.begin() );
-    typename Teuchos::Array<GO>::iterator unique_it = 
+    Teuchos::Array<int>::iterator unique_it = 
         std::unique( tally_rows.begin(), tally_rows.end() );
     tally_rows.resize( std::distance(tally_rows.begin(),unique_it) );
 
-    Teuchos::RCP<const Tpetra::Map<LO,GO> > map_b = 
-	Tpetra::createNonContigMap<LO,GO>( tally_rows(), comm );
-    Teuchos::RCP<VectorType> B = Tpetra::createVector<Scalar,LO,GO>( map_b );
+    Teuchos::RCP<Epetra_Map> map_b = Teuchos::rcp(
+		new Epetra_Map( -1, 
+				Teuchos::as<int>(tally_rows.size()),
+				tally_rows.getRawPtr(),
+				0,
+				*epetra_comm ) );
+    Teuchos::RCP<VectorType> B = Teuchos::rcp( new Epetra_Vector( *map_b ) );
 
-    MCLS::AdjointTally<VectorType> tally( A, B, 0 );
-    Scalar a_val = 2;
-    Scalar b_val = 3;
+    MCLS::ForwardTally<VectorType> tally( A, 0 );
+
+    double a_val = 2.0;
+    double b_val = 3.0;
+    VT::putScalar( *B, b_val );
+    tally.setSource( B );
     for ( int i = 0; i < local_num_rows; ++i )
     {
-	GO state = i + local_num_rows*comm_rank;
+	int state = i + local_num_rows*comm_rank;
 	HistoryType history( state, a_val );
 	history.live();
 	tally.tallyHistory( history );
+	TEST_EQUALITY( history.historyTally(), a_val*b_val );
+	history.kill();
+	history.setEvent( MCLS::Event::CUTOFF );
+	tally.postProcessHistory( history );
 
-	GO inverse_state = 
+	int inverse_state = 
 	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
 	history = HistoryType( inverse_state, b_val );
 	history.live();
 	tally.tallyHistory( history );
-    }
-    
-    Teuchos::ArrayRCP<const Scalar> A_view = VT::view( *A );
-    typename Teuchos::ArrayRCP<const Scalar>::const_iterator a_view_iterator;
-    for ( a_view_iterator = A_view.begin();
-	  a_view_iterator != A_view.end();
-	  ++a_view_iterator )
-    {
-        TEST_EQUALITY( *a_view_iterator, 0.0 );
+	TEST_EQUALITY( history.historyTally(), b_val*b_val );
+	history.kill();
+	history.setEvent( MCLS::Event::CUTOFF );
+	tally.postProcessHistory( history );
     }
 
     tally.combineSetTallies( comm );
 
+    Teuchos::ArrayRCP<const double> A_view = VT::view( *A );
+    Teuchos::ArrayRCP<const double>::const_iterator a_view_iterator;
     for ( a_view_iterator = A_view.begin();
 	  a_view_iterator != A_view.end();
 	  ++a_view_iterator )
     {
-        TEST_EQUALITY( *a_view_iterator, a_val + b_val );
-    }
-
-    Teuchos::ArrayRCP<const Scalar> B_view = VT::view( *B );
-    typename Teuchos::ArrayRCP<const Scalar>::const_iterator b_view_iterator;
-    for ( b_view_iterator = B_view.begin();
-	  b_view_iterator != B_view.end();
-	  ++b_view_iterator )
-    {
-        if ( comm_size == 1 )
-        {
-            TEST_EQUALITY( *b_view_iterator, a_val+b_val );
-        }
-        else
-        {
-            if ( std::distance(B_view.begin(),b_view_iterator) < 10 )
-            {
-                TEST_EQUALITY( *b_view_iterator, a_val );
-            }
-            else
-            {
-                TEST_EQUALITY( *b_view_iterator, b_val );
-            }
-        }
+        TEST_EQUALITY( *a_view_iterator, a_val*b_val+b_val*b_val );
     }
 
     TEST_EQUALITY( tally.numBaseRows(), VT::getLocalLength(*A) );
-    Teuchos::Array<GO> base_rows = tally.baseRows();
-    TEST_EQUALITY( Teuchos::as<GO>(base_rows.size()),
+    Teuchos::Array<int> base_rows = tally.baseRows();
+    TEST_EQUALITY( Teuchos::as<int>(base_rows.size()),
 		   tally.numBaseRows() );
     for ( int i = 0; i < base_rows.size(); ++i )
     {
 	TEST_EQUALITY( base_rows[i], VT::getGlobalRow(*A,i) )
-    }
-
-    TEST_EQUALITY( tally.numTallyRows(), VT::getLocalLength(*B) );
-    Teuchos::Array<GO> tally_states = tally.tallyRows();
-    TEST_EQUALITY( Teuchos::as<GO>(tally_states.size()), tally.numTallyRows() );
-    for ( int i = 0; i < tally_states.size(); ++i )
-    {
-	TEST_EQUALITY( tally_states[i], VT::getGlobalRow(*B,i) )
     }
 
     tally.zeroOut();
@@ -216,85 +207,91 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, TallyHistory, LO, GO, Scalar )
     {
 	TEST_EQUALITY( *a_view_iterator, 0.0 );
     }
-    for ( b_view_iterator = B_view.begin();
-	  b_view_iterator != B_view.end();
-	  ++b_view_iterator )
-    {
-	TEST_EQUALITY( *b_view_iterator, 0.0 );
-    }
 }
 
-UNIT_TEST_INSTANTIATION( AdjointTally, TallyHistory )
-
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, SetCombine, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST( ForwardTally, SetCombine )
 {
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef MCLS::AdjointHistory<GO> HistoryType;
+    typedef MCLS::ForwardHistory<int> HistoryType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
     int comm_size = comm->getSize();
     int comm_rank = comm->getRank();
 
     int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
-    Teuchos::RCP<const Tpetra::Map<LO,GO> > map_a = 
-	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
-    Teuchos::RCP<VectorType> A = Tpetra::createVector<Scalar,LO,GO>( map_a );
+    Teuchos::RCP<Epetra_Map> map_a = Teuchos::rcp(
+	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
+    Teuchos::RCP<VectorType> A = Teuchos::rcp( new Epetra_Vector( *map_a ) );
 
-    Teuchos::Array<GO> forward_rows( local_num_rows );
+    Teuchos::Array<int> forward_rows( local_num_rows );
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	forward_rows[i] = i + local_num_rows*comm_rank;
     }
-    Teuchos::Array<GO> inverse_rows( local_num_rows );
+    Teuchos::Array<int> inverse_rows( local_num_rows );
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	inverse_rows[i] = 
 	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
     }
-    Teuchos::Array<GO> tally_rows( forward_rows.size() + inverse_rows.size() );
+    Teuchos::Array<int> tally_rows( forward_rows.size() + inverse_rows.size() );
     std::sort( forward_rows.begin(), forward_rows.end() );
     std::sort( inverse_rows.begin(), inverse_rows.end() );
     std::merge( forward_rows.begin(), forward_rows.end(),
                 inverse_rows.begin(), inverse_rows.end(),
                 tally_rows.begin() );
-    typename Teuchos::Array<GO>::iterator unique_it = 
+    Teuchos::Array<int>::iterator unique_it = 
         std::unique( tally_rows.begin(), tally_rows.end() );
     tally_rows.resize( std::distance(tally_rows.begin(),unique_it) );
 
-    Teuchos::RCP<const Tpetra::Map<LO,GO> > map_b = 
-	Tpetra::createNonContigMap<LO,GO>( tally_rows(), comm );
-    Teuchos::RCP<VectorType> B = Tpetra::createVector<Scalar,LO,GO>( map_b );
+    Teuchos::RCP<Epetra_Map> map_b = Teuchos::rcp(
+		new Epetra_Map( -1, 
+				Teuchos::as<int>(tally_rows.size()),
+				tally_rows.getRawPtr(),
+				0,
+				*epetra_comm ) );
+    Teuchos::RCP<VectorType> B = Teuchos::rcp( new Epetra_Vector( *map_b ) );
 
-    MCLS::AdjointTally<VectorType> tally( A, B, 0 );
+    MCLS::ForwardTally<VectorType> tally( A, 0 );
 
     // Sub in a map-compatible base vector to ensure we can swap vectors and
     // still do the parallel export operation.
     Teuchos::RCP<VectorType> C = VT::clone(*A);
     tally.setBaseVector( C );
 
-    // Do the tallies.
-    Scalar a_val = 2;
-    Scalar b_val = 3;
+    double a_val = 2;
+    double b_val = 3;
+    VT::putScalar( *B, b_val );
+    tally.setSource( B );
     for ( int i = 0; i < local_num_rows; ++i )
     {
-	GO state = i + local_num_rows*comm_rank;
+	int state = i + local_num_rows*comm_rank;
 	HistoryType history( state, a_val );
 	history.live();
 	tally.tallyHistory( history );
+	TEST_EQUALITY( history.historyTally(), a_val*b_val );
+	history.kill();
+	history.setEvent( MCLS::Event::CUTOFF );
+	tally.postProcessHistory( history );
 
-	GO inverse_state = 
+	int inverse_state = 
 	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
 	history = HistoryType( inverse_state, b_val );
 	history.live();
 	tally.tallyHistory( history );
+	TEST_EQUALITY( history.historyTally(), b_val*b_val );
+	history.kill();
+	history.setEvent( MCLS::Event::CUTOFF );
+	tally.postProcessHistory( history );
     }
-    
-    Teuchos::ArrayRCP<const Scalar> C_view = VT::view( *C );
-    typename Teuchos::ArrayRCP<const Scalar>::const_iterator c_view_iterator;
+
+    Teuchos::ArrayRCP<const double> C_view = VT::view( *C );
+    Teuchos::ArrayRCP<const double>::const_iterator c_view_iterator;
     for ( c_view_iterator = C_view.begin();
 	  c_view_iterator != C_view.end();
 	  ++c_view_iterator )
@@ -308,41 +305,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, SetCombine, LO, GO, Scalar )
 	  c_view_iterator != C_view.end();
 	  ++c_view_iterator )
     {
-        TEST_EQUALITY( *c_view_iterator, a_val + b_val );
-    }
-
-    Teuchos::ArrayRCP<const Scalar> B_view = VT::view( *B );
-    typename Teuchos::ArrayRCP<const Scalar>::const_iterator b_view_iterator;
-    for ( b_view_iterator = B_view.begin();
-	  b_view_iterator != B_view.end();
-	  ++b_view_iterator )
-    {
-        if ( comm_size == 1 )
-        {
-            TEST_EQUALITY( *b_view_iterator, a_val+b_val );
-        }
-        else
-        {
-            if ( std::distance(B_view.begin(),b_view_iterator) < 10 )
-            {
-                TEST_EQUALITY( *b_view_iterator, a_val );
-            }
-            else
-            {
-                TEST_EQUALITY( *b_view_iterator, b_val );
-            }
-        }
+        TEST_EQUALITY( *c_view_iterator, a_val*b_val + b_val*b_val );
     }
 }
 
-UNIT_TEST_INSTANTIATION( AdjointTally, SetCombine )
-
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, BlockCombine, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST( ForwardTally, BlockCombine )
 {
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef MCLS::AdjointHistory<GO> HistoryType;
+    typedef MCLS::ForwardHistory<int> HistoryType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -369,6 +341,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, BlockCombine, LO, GO, Scalar )
 	int set_size = comm_set->getSize();
 	int set_rank = comm_set->getRank();
 
+	Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm_set );
+
 	// Build the block-constant communicator.
 	if ( comm_rank == 0 || comm_rank == 2 )
 	{
@@ -387,36 +361,40 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, BlockCombine, LO, GO, Scalar )
 	// Build the map.
 	int local_num_rows = 10;
 	int global_num_rows = local_num_rows*set_size;
-	Teuchos::RCP<const Tpetra::Map<LO,GO> > map_a = 
-	    Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm_set );
-	Teuchos::RCP<VectorType> A = Tpetra::createVector<Scalar,LO,GO>( map_a );
+	Teuchos::RCP<Epetra_Map> map_a = Teuchos::rcp(
+	    new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
+	Teuchos::RCP<VectorType> A = Teuchos::rcp( new Epetra_Vector( *map_a ) );
 
-        Teuchos::Array<GO> forward_rows( local_num_rows );
+        Teuchos::Array<int> forward_rows( local_num_rows );
         for ( int i = 0; i < local_num_rows; ++i )
         {
             forward_rows[i] = i + local_num_rows*set_rank;
         }
-        Teuchos::Array<GO> inverse_rows( local_num_rows );
+        Teuchos::Array<int> inverse_rows( local_num_rows );
         for ( int i = 0; i < local_num_rows; ++i )
         {
             inverse_rows[i] = 
                 (local_num_rows-1-i) + local_num_rows*(set_size-1-set_rank);
         }
-        Teuchos::Array<GO> tally_rows( forward_rows.size() + inverse_rows.size() );
+        Teuchos::Array<int> tally_rows( forward_rows.size() + inverse_rows.size() );
         std::sort( forward_rows.begin(), forward_rows.end() );
         std::sort( inverse_rows.begin(), inverse_rows.end() );
         std::merge( forward_rows.begin(), forward_rows.end(),
                     inverse_rows.begin(), inverse_rows.end(),
                     tally_rows.begin() );
-        typename Teuchos::Array<GO>::iterator unique_it = 
+        Teuchos::Array<int>::iterator unique_it = 
             std::unique( tally_rows.begin(), tally_rows.end() );
         tally_rows.resize( std::distance(tally_rows.begin(),unique_it) );
 
-        Teuchos::RCP<const Tpetra::Map<LO,GO> > map_b = 
-            Tpetra::createNonContigMap<LO,GO>( tally_rows(), comm_set );
-        Teuchos::RCP<VectorType> B = Tpetra::createVector<Scalar,LO,GO>( map_b );
+	Teuchos::RCP<Epetra_Map> map_b = Teuchos::rcp(
+	    new Epetra_Map( -1, 
+			    Teuchos::as<int>(tally_rows.size()),
+			    tally_rows.getRawPtr(),
+			    0,
+			    *epetra_comm ) );
+	Teuchos::RCP<VectorType> B = Teuchos::rcp( new Epetra_Vector( *map_b ) );
 
-        MCLS::AdjointTally<VectorType> tally( A, B, 0 );
+	MCLS::ForwardTally<VectorType> tally( A, 0 );
 
 	// Sub in a base vector over just set 0 after we have made the tally.
 	Teuchos::RCP<VectorType> C;
@@ -427,8 +405,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, BlockCombine, LO, GO, Scalar )
 	}
 	comm->barrier();
 
-	Scalar a_val = 2;
-	Scalar b_val = 3;
+	double a_val = 2;
+	double b_val = 3;
 	if ( block_rank == 1 )
 	{
 	    a_val = 4;
@@ -436,18 +414,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, BlockCombine, LO, GO, Scalar )
 	}
 	comm->barrier();
 
+	VT::putScalar( *B, b_val );
+	tally.setSource( B );
 	for ( int i = 0; i < local_num_rows; ++i )
 	{
-	    GO state = i + local_num_rows*set_rank;
+	    int state = i + local_num_rows*set_rank;
 	    HistoryType history( state, a_val );
 	    history.live();
 	    tally.tallyHistory( history );
+	    history.kill();
+	    history.setEvent( MCLS::Event::CUTOFF );
+	    tally.postProcessHistory( history );
 
-	    GO inverse_state = 
+	    int inverse_state = 
 		(local_num_rows-1-i) + local_num_rows*(set_size-1-set_rank);
-	    history = HistoryType( inverse_state, b_val );
+	    history = HistoryType( inverse_state, a_val );
 	    history.live();
 	    tally.tallyHistory( history );
+	    history.kill();
+	    history.setEvent( MCLS::Event::CUTOFF );
+	    tally.postProcessHistory( history );
 	}
 
 	tally.combineSetTallies( comm_set );
@@ -457,149 +443,117 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, BlockCombine, LO, GO, Scalar )
 	// tallied over different vectors.
 	if ( comm_rank < 2 )
 	{
-	    Teuchos::ArrayRCP<const Scalar> C_view = VT::view( *C );
-	    typename Teuchos::ArrayRCP<const Scalar>::const_iterator c_view_iterator;
+	    Teuchos::ArrayRCP<const double> C_view = VT::view( *C );
+	    Teuchos::ArrayRCP<const double>::const_iterator c_view_iterator;
 	    for ( c_view_iterator = C_view.begin();
 		  c_view_iterator != C_view.end();
 		  ++c_view_iterator )
 	    {
-		TEST_EQUALITY( *c_view_iterator, (2+3+4+6)/2.0 );
+		TEST_EQUALITY( *c_view_iterator, 2*3+4*6 );
 	    }
 	}
 	else
 	{
-	    Teuchos::ArrayRCP<const Scalar> A_view = VT::view( *A );
-	    typename Teuchos::ArrayRCP<const Scalar>::const_iterator a_view_iterator;
+	    Teuchos::ArrayRCP<const double> A_view = VT::view( *A );
+	    Teuchos::ArrayRCP<const double>::const_iterator a_view_iterator;
 	    for ( a_view_iterator = A_view.begin();
 		  a_view_iterator != A_view.end();
 		  ++a_view_iterator )
 	    {
-		TEST_EQUALITY( *a_view_iterator, 2+3+4+6 );
+		TEST_EQUALITY( *a_view_iterator, 2*3+4*6 );
 	    }
-	}
-
-	// The underlying tally vector shouldn't change.
-	Teuchos::ArrayRCP<const Scalar> B_view = VT::view( *B );
-	typename Teuchos::ArrayRCP<const Scalar>::const_iterator b_view_iterator;
-	for ( b_view_iterator = B_view.begin();
-	      b_view_iterator != B_view.end();
-	      ++b_view_iterator )
-	{
-            if ( std::distance(B_view.begin(),b_view_iterator) < 10 )
-            {
-                TEST_EQUALITY( *b_view_iterator, a_val );
-            }
-            else
-            {
-                TEST_EQUALITY( *b_view_iterator, b_val );
-            }
 	}
     }
 }
 
-UNIT_TEST_INSTANTIATION( AdjointTally, BlockCombine )
-
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, Normalize, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST( ForwardTally, Normalize )
 {
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef MCLS::AdjointHistory<GO> HistoryType;
+    typedef MCLS::ForwardHistory<int> HistoryType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
     int comm_size = comm->getSize();
     int comm_rank = comm->getRank();
 
     int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
-    Teuchos::RCP<const Tpetra::Map<LO,GO> > map_a = 
-	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
-    Teuchos::RCP<VectorType> A = Tpetra::createVector<Scalar,LO,GO>( map_a );
+    Teuchos::RCP<Epetra_Map> map_a = Teuchos::rcp(
+	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
+    Teuchos::RCP<VectorType> A = Teuchos::rcp( new Epetra_Vector( *map_a ) );
 
-    Teuchos::Array<GO> forward_rows( local_num_rows );
+    Teuchos::Array<int> forward_rows( local_num_rows );
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	forward_rows[i] = i + local_num_rows*comm_rank;
     }
-    Teuchos::Array<GO> inverse_rows( local_num_rows );
+    Teuchos::Array<int> inverse_rows( local_num_rows );
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	inverse_rows[i] = 
 	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
     }
-    Teuchos::Array<GO> tally_rows( forward_rows.size() + inverse_rows.size() );
+    Teuchos::Array<int> tally_rows( forward_rows.size() + inverse_rows.size() );
     std::sort( forward_rows.begin(), forward_rows.end() );
     std::sort( inverse_rows.begin(), inverse_rows.end() );
     std::merge( forward_rows.begin(), forward_rows.end(),
                 inverse_rows.begin(), inverse_rows.end(),
                 tally_rows.begin() );
-    typename Teuchos::Array<GO>::iterator unique_it =
+    Teuchos::Array<int>::iterator unique_it =
         std::unique( tally_rows.begin(), tally_rows.end() );
     tally_rows.resize( std::distance(tally_rows.begin(),unique_it) );
 
-    Teuchos::RCP<const Tpetra::Map<LO,GO> > map_b = 
-	Tpetra::createNonContigMap<LO,GO>( tally_rows(), comm );
-    Teuchos::RCP<VectorType> B = Tpetra::createVector<Scalar,LO,GO>( map_b );
+    Teuchos::RCP<Epetra_Map> map_b = Teuchos::rcp(
+		new Epetra_Map( -1, 
+				Teuchos::as<int>(tally_rows.size()),
+				tally_rows.getRawPtr(),
+				0,
+				*epetra_comm ) );
+    Teuchos::RCP<VectorType> B = Teuchos::rcp( new Epetra_Vector( *map_b ) );
 
-    MCLS::AdjointTally<VectorType> tally( A, B, 0 );
-
-    Scalar a_val = 2;
-    Scalar b_val = 3;
+    MCLS::ForwardTally<VectorType> tally( A, 0 );
+    double a_val = 2;
+    double b_val = 3;
+    VT::putScalar( *B, b_val );
+    tally.setSource( B );
     for ( int i = 0; i < local_num_rows; ++i )
     {
-	GO state = i + local_num_rows*comm_rank;
+	int state = i + local_num_rows*comm_rank;
 	HistoryType history( state, a_val );
 	history.live();
 	tally.tallyHistory( history );
+	history.kill();
+	history.setEvent( MCLS::Event::CUTOFF );
+	tally.postProcessHistory( history );
 
-	GO inverse_state = 
+	int inverse_state = 
 	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
 	history = HistoryType( inverse_state, b_val );
 	history.live();
 	tally.tallyHistory( history );
+	history.kill();
+	history.setEvent( MCLS::Event::CUTOFF );
+	tally.postProcessHistory( history );
     }
     
     tally.combineSetTallies( comm );
     int nh = 10;
     tally.normalize( nh );
 
-    Teuchos::ArrayRCP<const Scalar> A_view = VT::view( *A );
-    typename Teuchos::ArrayRCP<const Scalar>::const_iterator a_view_iterator;
+    Teuchos::ArrayRCP<const double> A_view = VT::view( *A );
+    Teuchos::ArrayRCP<const double>::const_iterator a_view_iterator;
     for ( a_view_iterator = A_view.begin();
 	  a_view_iterator != A_view.end();
 	  ++a_view_iterator )
     {
-        TEST_EQUALITY( *a_view_iterator, (a_val + b_val) / nh );
-    }
-
-    Teuchos::ArrayRCP<const Scalar> B_view = VT::view( *B );
-    typename Teuchos::ArrayRCP<const Scalar>::const_iterator b_view_iterator;
-    for ( b_view_iterator = B_view.begin();
-	  b_view_iterator != B_view.end();
-	  ++b_view_iterator )
-    {
-        if ( comm_size == 1 )
-        {
-            TEST_EQUALITY( *b_view_iterator, a_val+b_val );
-        }
-        else
-        {
-            if ( std::distance(B_view.begin(),b_view_iterator) < 10 )
-            {
-                TEST_EQUALITY( *b_view_iterator, a_val );
-            }
-            else
-            {
-                TEST_EQUALITY( *b_view_iterator, b_val );
-            }
-        }
+        TEST_EQUALITY( *a_view_iterator, (a_val*b_val+b_val*b_val) / nh );
     }
 }
 
-UNIT_TEST_INSTANTIATION( AdjointTally, Normalize )
-
 //---------------------------------------------------------------------------//
-// end tstTpetraAdjointTally.cpp
+// end tstEpetraForwardTally.cpp
 //---------------------------------------------------------------------------//
 

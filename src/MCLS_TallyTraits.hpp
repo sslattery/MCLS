@@ -109,7 +109,8 @@ class TallyTraits
      * \brief Combine the tallies together over a set. This is generally
      * combining the tally and base tallies.
      */
-    static void combineSetTallies( Tally& tally )
+    static void combineSetTallies( Tally& tally, 
+				   const Teuchos::RCP<const Comm>& set_comm )
     {
 	UndefinedTallyTraits<Tally>::notDefined(); 
     }

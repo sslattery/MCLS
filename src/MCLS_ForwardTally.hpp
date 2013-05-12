@@ -32,18 +32,17 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_AdjointTally.hpp
+ * \file MCLS_ForwardTally.hpp
  * \author Stuart R. Slattery
- * \brief AdjointTally declaration.
+ * \brief ForwardTally declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_ADJOINTTALLY_HPP
-#define MCLS_ADJOINTTALLY_HPP
+#ifndef MCLS_FORWARDTALLY_HPP
+#define MCLS_FORWARDTALLY_HPP
 
 #include "MCLS_DBC.hpp"
-#include "MCLS_AdjointHistory.hpp"
-#include "MCLS_VectorExport.hpp"
+#include "MCLS_ForwardHistory.hpp"
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_TallyTraits.hpp"
 #include "MCLS_Estimators.hpp"
@@ -58,12 +57,12 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 /*!
- * \class AdjointTally
- * \brief Monte Carlo tally for the linear system solution vector for adjoint
+ * \class ForwardTally
+ * \brief Monte Carlo tally for the linear system solution vector for forward
  * problems. 
  */
 template<class Vector>
-class AdjointTally
+class ForwardTally
 {
   public:
 
@@ -73,22 +72,27 @@ class AdjointTally
     typedef VectorTraits<Vector>                                VT;
     typedef typename VT::global_ordinal_type                    Ordinal;
     typedef typename VT::scalar_type                            Scalar;
-    typedef AdjointHistory<Ordinal>                             HistoryType;
+    typedef ForwardHistory<Ordinal>                             HistoryType;
     typedef Teuchos::Comm<int>                                  Comm;
     typedef typename std::tr1::unordered_map<Ordinal,int>       MapType;
     //@}
 
     // Constructor.
-    AdjointTally( const Teuchos::RCP<Vector>& x, 
-                  const Teuchos::RCP<Vector>& x_tally,
+    ForwardTally( const Teuchos::RCP<Vector>& x,
                   const int estimator );
 
     // Destructor.
-    ~AdjointTally()
+    ~ForwardTally()
     { /* ... */ }
 
+    // Assign the source vector to the tally.
+    void setSource( const Teuchos::RCP<Vector>& b );
+
     // Add a history's contribution to the tally.
-    inline void tallyHistory( const HistoryType& history );
+    inline void tallyHistory( HistoryType& history );
+
+    // Post-process a history if it is permanently killed in the local domain.
+    void postProcessHistory( const HistoryType& history );
 
     // Combine the overlap tally with the base decomposition tally in the set.
     void combineSetTallies( const Teuchos::RCP<const Comm>& set_comm );
@@ -111,54 +115,28 @@ class AdjointTally
     // Get the number global rows in the base decomposition.
     Ordinal numBaseRows() const;
 
-    // Get the number global rows in the tally decomposition.
-    Ordinal numTallyRows() const;
-
     // Get the global tally rows in the base decomposition.
     Teuchos::Array<Ordinal> baseRows() const;
 
-    // Get the global tally rows in the tally decomposition.
-    Teuchos::Array<Ordinal> tallyRows() const;
-
     //! Get the estimator type for this tally.
     int estimatorType() const { return d_estimator; }
-
-    // Set the iteration matrix with the tally.
-    void setIterationMatrix( 
-        const Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >& h,
-        const Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > >& columns,
-        const Teuchos::RCP<MapType>& row_indexer );
-
-  private:
-
-    // Collision estimator tally.
-    inline void collisionEstimatorTally( const HistoryType& history );
-
-    // Expected value estimator tally.
-    inline void expectedValueEstimatorTally( const HistoryType& history );
 
   private:
 
     // Solution vector in operator decomposition.
     Teuchos::RCP<Vector> d_x;
 
-    // Solution vector in tally decomposition.
-    Teuchos::RCP<Vector> d_x_tally;
-   
+    // Source vector in operator decomposition.
+    Teuchos::RCP<Vector> d_b;
+
+    // Tally states.
+    Teuchos::Array<Ordinal> d_tally_states;
+
+    // Tally values.
+    Teuchos::Array<Scalar> d_tally_values;
+
     // Monte Carlo estimator type.
     int d_estimator;
-
-    // Tally to base decomposition vector export.
-    Teuchos::RCP<VectorExport<Vector> > d_export;
-
-    // Local iteration matrix values.
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > d_h;
-
-    // Local iteration matrix global columns.
-    Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > > d_columns;
-
-    // Iteration matrix global-to-local row indexer.
-    Teuchos::RCP<MapType> d_row_indexer;
 };
 
 //---------------------------------------------------------------------------//
@@ -168,75 +146,16 @@ class AdjointTally
  * \brief Add a history's contribution to the tally.
  */
 template<class Vector>
-inline void AdjointTally<Vector>::tallyHistory( const HistoryType& history )
+inline void ForwardTally<Vector>::tallyHistory( HistoryType& history )
 {
     MCLS_REQUIRE( history.alive() );
-    MCLS_REQUIRE( Teuchos::nonnull(d_x_tally) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_b) );
+    MCLS_REQUIRE( VT::isGlobalRow(*d_b,history.state()) );
+    MCLS_REQUIRE( Estimator::COLLISION == d_estimator );
 
-    if ( Estimator::COLLISION == d_estimator )
-    {
-        collisionEstimatorTally( history );
-    }
-
-    else if ( Estimator::EXPECTED_VALUE == d_estimator )
-    {
-        expectedValueEstimatorTally( history );
-    }
-
-    else
-    {
-	MCLS_INSIST( Estimator::COLLISION == d_estimator || 
-		     Estimator::EXPECTED_VALUE == d_estimator,
-                     "Estimator type not supported!" );
-    }
-}
-
-//---------------------------------------------------------------------------//
-/*
- * \brief Collision estimator tally.
- */
-template<class Vector>
-inline void AdjointTally<Vector>::collisionEstimatorTally( 
-    const HistoryType& history )
-{
-    // The collision estimator tally sums the history's current weight into
-    // x(i) where the index i is the history's current state.
-    MCLS_REQUIRE( VT::isGlobalRow(*d_x_tally, history.state()) );
-    VT::sumIntoGlobalValue( *d_x_tally, history.state(), history.weight() );
-}
-
-//---------------------------------------------------------------------------//
-/*
- * \brief Expected value estimator tally.
- */
-template<class Vector>
-inline void AdjointTally<Vector>::expectedValueEstimatorTally( 
-    const HistoryType& history )
-{
-    MCLS_REQUIRE( Teuchos::nonnull(d_h) );
-    MCLS_REQUIRE( Teuchos::nonnull(d_columns) );
-    MCLS_REQUIRE( Teuchos::nonnull(d_row_indexer) );
-
-    // Get the local row.
-    typename MapType::const_iterator index = 
-	d_row_indexer->find( history.state() );
-    MCLS_CHECK( index != d_row_indexer->end() );
-
-    // The expected value estimator sums the history's weight multiplied by
-    // the absolute value of the transpose iteration matrix component
-    // h^T_(i,j) into each tally state x(j) where the index i is the history's
-    // current state. The last column is the absorbing state so ignore it.
-    typename Teuchos::Array<Ordinal>::const_iterator col_it;
-    Teuchos::ArrayRCP<double>::const_iterator val_it;
-    for ( col_it = d_columns[index->second]->begin(),
-          val_it = d_h[index->second].begin();
-          col_it != d_columns[index->second]->end()-1;
-          ++col_it, ++val_it )
-    {
-        MCLS_CHECK( VT::isGlobalRow(*d_x_tally, *col_it) );
-        VT::sumIntoGlobalValue( *d_x_tally, *col_it, 
-                                history.weight()*(*val_it) );
-    }
+    typename VT::local_ordinal_type local_state = 
+	VT::getLocalRow( *d_b, history.state() );
+    history.addToHistoryTally( history.weight() * VT::view(*d_b)[local_state] );
 }
 
 //---------------------------------------------------------------------------//
@@ -244,16 +163,16 @@ inline void AdjointTally<Vector>::expectedValueEstimatorTally(
 //---------------------------------------------------------------------------//
 /*!
  * \class TallyTraits
- * \brief Specialization for AdjointTally.
+ * \brief Specialization for ForwardTally.
  */
 template<class Vector>
-class TallyTraits<AdjointTally<Vector> >
+class TallyTraits<ForwardTally<Vector> >
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef AdjointTally<Vector>                       tally_type;
+    typedef ForwardTally<Vector>                       tally_type;
     typedef typename tally_type::vector_type           vector_type;
     typedef typename tally_type::Ordinal               ordinal_type;
     typedef typename tally_type::HistoryType           history_type;
@@ -272,17 +191,17 @@ class TallyTraits<AdjointTally<Vector> >
     /*!
      * \brief Post-process a history after it has been killed permanently.
      */
-    static void postProcessHistory( tally_type& tally,
-				    const history_type& history )
+    static inline void postProcessHistory( tally_type& tally,
+					   const history_type& history )
     { 
-	// We don't do any post-processing for the adjoint tally.
+	tally.postProcessHistory( history );
     }
 
     /*!
      * \brief Combine the tallies together over a set. This is generally
      * combining the overlap and base tallies.
      */
-    static void combineSetTallies( tally_type& tally, 
+    static void combineSetTallies( tally_type& tally,
 				   const Teuchos::RCP<const Comm>& set_comm )
     {
 	tally.combineSetTallies( set_comm );
@@ -342,13 +261,13 @@ class TallyTraits<AdjointTally<Vector> >
 // Template includes.
 //---------------------------------------------------------------------------//
 
-#include "MCLS_AdjointTally_impl.hpp"
+#include "MCLS_ForwardTally_impl.hpp"
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_ADJOINTTALLY_HPP
+#endif // end MCLS_FORWARDTALLY_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_AdjointTally.hpp
+// end MCLS_ForwardTally.hpp
 // ---------------------------------------------------------------------------//
 

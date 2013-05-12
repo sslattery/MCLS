@@ -32,9 +32,9 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file tstTpetraAdjointTally.cpp
+ * \file tstEpetraAdjointTally.cpp
  * \author Stuart R. Slattery
- * \brief Tpetra AdjointTally tests.
+ * \brief Epetra AdjointTally tests.
  */
 //---------------------------------------------------------------------------//
 
@@ -178,7 +178,7 @@ TEUCHOS_UNIT_TEST( AdjointTally, TallyHistory )
         TEST_EQUALITY( *a_view_iterator, 0.0 );
     }
 
-    tally.combineSetTallies();
+    tally.combineSetTallies( comm );
 
     for ( a_view_iterator = A_view.begin();
 	  a_view_iterator != A_view.end();
@@ -322,7 +322,7 @@ TEUCHOS_UNIT_TEST( AdjointTally, SetCombine )
         TEST_EQUALITY( *c_view_iterator, 0.0 );
     }
 
-    tally.combineSetTallies();
+    tally.combineSetTallies( comm );
 
     for ( c_view_iterator = C_view.begin();
 	  c_view_iterator != C_view.end();
@@ -474,7 +474,7 @@ TEUCHOS_UNIT_TEST( AdjointTally, BlockCombine )
 	    tally.tallyHistory( history );
 	}
 
-	tally.combineSetTallies();
+	tally.combineSetTallies( comm_set );
 	tally.combineBlockTallies( comm_block, 2 );
 
 	// The base tallies should be combined across the blocks. The sets
@@ -586,7 +586,7 @@ TEUCHOS_UNIT_TEST( AdjointTally, Normalize )
 	tally.tallyHistory( history );
     }
     
-    tally.combineSetTallies();
+    tally.combineSetTallies( comm );
     int nh = 10;
     tally.normalize( nh );
 

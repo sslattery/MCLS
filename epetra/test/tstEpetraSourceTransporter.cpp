@@ -218,7 +218,7 @@ TEUCHOS_UNIT_TEST( SourceTransporter, transport )
 
     // Do transport.
     source_transporter.transport();
-    domain->domainTally()->combineSetTallies();
+    domain->domainTally()->combineSetTallies( comm );
 
     // Check that we got a negative solution.
     Teuchos::ArrayRCP<const double> x_view = 

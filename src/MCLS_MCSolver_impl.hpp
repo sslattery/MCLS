@@ -118,7 +118,7 @@ void MCSolver<Source>::solve()
     d_set_comm->barrier();
 
     // Update the set tallies.
-    TT::combineSetTallies( *d_tally );
+    TT::combineSetTallies( *d_tally, d_set_comm );
 
     // Normalize the tally with the number of source histories in the set.
     TT::normalize( *d_tally, ST::numToTransportInSet(*d_source) );

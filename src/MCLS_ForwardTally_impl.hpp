@@ -32,14 +32,19 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_AdjointTally_impl.hpp
+ * \file MCLS_ForwardTally_impl.hpp
  * \author Stuart R. Slattery
- * \brief AdjointTally implementation.
+ * \brief ForwardTally implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_ADJOINTTALLY_IMPL_HPP
-#define MCLS_ADJOINTTALLY_IMPL_HPP
+#ifndef MCLS_FORWARDTALLY_IMPL_HPP
+#define MCLS_FORWARDTALLY_IMPL_HPP
+
+#include <algorithm>
+
+#include "MCLS_VectorExport.hpp"
+#include "MCLS_Events.hpp"
 
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
@@ -54,19 +59,58 @@ namespace MCLS
  * \brief Constructor.
  */
 template<class Vector>
-AdjointTally<Vector>::AdjointTally( const Teuchos::RCP<Vector>& x,
-                                    const Teuchos::RCP<Vector>& x_tally,
+ForwardTally<Vector>::ForwardTally( const Teuchos::RCP<Vector>& x,
                                     const int estimator )
     : d_x( x )
-    , d_x_tally( x_tally )
     , d_estimator( estimator )
 { 
-    d_export = Teuchos::rcp( new VectorExport<Vector>(d_x_tally, d_x) );
     MCLS_ENSURE( Teuchos::nonnull(d_x) );
-    MCLS_ENSURE( Teuchos::nonnull(d_x_tally) );
-    MCLS_ENSURE( Teuchos::nonnull(d_export) );
-    MCLS_ENSURE( Estimator::COLLISION == estimator || 
-		 Estimator::EXPECTED_VALUE == estimator );
+    MCLS_ENSURE( Estimator::COLLISION == estimator );
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Assign the source vector to the tally. This vector should contain
+ * both the base and overlap rows.
+ */
+template<class Vector>
+void ForwardTally<Vector>::setSource( const Teuchos::RCP<Vector>& b )
+{
+    MCLS_REQUIRE( Teuchos::nonnull(b) );
+    d_b = b;
+}
+
+//---------------------------------------------------------------------------//
+/*! 
+ * \brief Post-process a history if it is permanently killed in the local
+ * domain. 
+ */
+template<class Vector>
+void ForwardTally<Vector>::postProcessHistory( const HistoryType& history )
+{
+    MCLS_REQUIRE( !history.alive() );
+    MCLS_REQUIRE( Event::CUTOFF == history.event() );
+    MCLS_REQUIRE( d_tally_states.size() == d_tally_values.size() );
+
+    // If the history starting state has already been tallied, add the history
+    // tally sum to the local sum.
+    typename Teuchos::Array<Ordinal>::iterator state_it = 
+	std::find( d_tally_states.begin(), d_tally_states.end(), 
+		   history.startingState() );
+    if ( state_it != d_tally_states.end() )
+    {
+	d_tally_values[ std::distance(d_tally_states.begin(),state_it) ] +=
+	    history.historyTally();
+    }
+
+    // Otherwise add the history state to the local states and sum.
+    else
+    {
+	d_tally_states.push_back( history.startingState() );
+	d_tally_values.push_back( history.historyTally() );
+    }
+
+    MCLS_ENSURE( d_tally_states.size() == d_tally_values.size() );
 }
 
 //---------------------------------------------------------------------------//
@@ -75,10 +119,27 @@ AdjointTally<Vector>::AdjointTally( const Teuchos::RCP<Vector>& x,
  * the set.
  */
 template<class Vector>
-void AdjointTally<Vector>::combineSetTallies( 
+void ForwardTally<Vector>::combineSetTallies( 
     const Teuchos::RCP<const Comm>& set_comm )
 {
-    d_export->doExportAdd();
+    // Build a vector from the dead history states.
+    Teuchos::RCP<Vector> x_tally = 
+	VT::createFromRows( set_comm, d_tally_states() );
+
+    // Copy the tally data into the vector.
+    typename Teuchos::Array<Scalar>::const_iterator val_it;
+    typename Teuchos::Array<Ordinal>::const_iterator state_it;
+    for ( state_it = d_tally_states.begin(),
+	    val_it = d_tally_values.begin();
+	  state_it != d_tally_states.end();
+	  ++state_it, ++val_it )
+    {
+	VT::sumIntoGlobalValue( *x_tally, *state_it, *val_it );
+    }
+
+    // Export the local history vector to the base vector.
+    VectorExport<Vector> exporter( x_tally, d_x );
+    exporter.doExportAdd();
 }
 
 //---------------------------------------------------------------------------//
@@ -87,7 +148,7 @@ void AdjointTally<Vector>::combineSetTallies(
  * of sets.
  */
 template<class Vector>
-void AdjointTally<Vector>::combineBlockTallies(
+void ForwardTally<Vector>::combineBlockTallies(
     const Teuchos::RCP<const Comm>& block_comm, const int num_sets )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_x) );
@@ -115,7 +176,7 @@ void AdjointTally<Vector>::combineBlockTallies(
  * histories.
  */
 template<class Vector>
-void AdjointTally<Vector>::normalize( const int& nh )
+void ForwardTally<Vector>::normalize( const int& nh )
 {
     VT::scale( *d_x, 1.0 / Teuchos::as<double>(nh) );
 }
@@ -125,25 +186,23 @@ void AdjointTally<Vector>::normalize( const int& nh )
  * \brief Set the base tally vector.
  */
 template<class Vector>
-void AdjointTally<Vector>::setBaseVector( const Teuchos::RCP<Vector>& x_base )
+void ForwardTally<Vector>::setBaseVector( const Teuchos::RCP<Vector>& x_base )
 {
     MCLS_REQUIRE( Teuchos::nonnull(x_base) );
-    MCLS_REQUIRE( Teuchos::nonnull(d_x_tally) );
     d_x = x_base;
-    d_export = Teuchos::rcp( new VectorExport<Vector>(d_x_tally, d_x) );
 }
 
 //---------------------------------------------------------------------------//
 /*
- * \brief Zero out operator decomposition and overlap decomposition tallies.
+ * \brief Zero out tally data.
  */
 template<class Vector>
-void AdjointTally<Vector>::zeroOut()
+void ForwardTally<Vector>::zeroOut()
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_x) );
-    MCLS_REQUIRE( Teuchos::nonnull(d_x_tally) );
     VT::putScalar( *d_x, Teuchos::ScalarTraits<Scalar>::zero() );
-    VT::putScalar( *d_x_tally, Teuchos::ScalarTraits<Scalar>::zero() );
+    d_tally_states.clear();
+    d_tally_values.clear();
 }
 
 //---------------------------------------------------------------------------//
@@ -151,8 +210,8 @@ void AdjointTally<Vector>::zeroOut()
  * \brief Get the number global rows in the base decomposition.
  */
 template<class Vector>
-typename AdjointTally<Vector>::Ordinal 
-AdjointTally<Vector>::numBaseRows() const
+typename ForwardTally<Vector>::Ordinal 
+ForwardTally<Vector>::numBaseRows() const
 {
     MCLS_CHECK( Teuchos::nonnull(d_x) );
     return VT::getLocalLength( *d_x );
@@ -160,23 +219,11 @@ AdjointTally<Vector>::numBaseRows() const
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Get the number global rows in the tally decomposition.
- */
-template<class Vector>
-typename AdjointTally<Vector>::Ordinal 
-AdjointTally<Vector>::numTallyRows() const
-{
-    MCLS_CHECK( Teuchos::nonnull(d_x_tally) );
-    return VT::getLocalLength( *d_x_tally );
-}
-
-//---------------------------------------------------------------------------//
-/*!
  * \brief Get the global rows in the base decomposition.
  */
 template<class Vector>
-Teuchos::Array<typename AdjointTally<Vector>::Ordinal>
-AdjointTally<Vector>::baseRows() const
+Teuchos::Array<typename ForwardTally<Vector>::Ordinal>
+ForwardTally<Vector>::baseRows() const
 {
     MCLS_CHECK( Teuchos::nonnull(d_x) );
 
@@ -196,58 +243,14 @@ AdjointTally<Vector>::baseRows() const
 }
 
 //---------------------------------------------------------------------------//
-/*!
- * \brief Get the global rows in the tally decomposition.
- */
-template<class Vector>
-Teuchos::Array<typename AdjointTally<Vector>::Ordinal>
-AdjointTally<Vector>::tallyRows() const
-{
-    MCLS_CHECK( Teuchos::nonnull(d_x_tally) );
-
-    Teuchos::Array<Ordinal> tally_rows( VT::getLocalLength(*d_x_tally) );
-    typename Teuchos::Array<Ordinal>::iterator row_it;
-    typename VT::local_ordinal_type local_row = 
-	Teuchos::OrdinalTraits<typename VT::local_ordinal_type>::zero();
-    for ( row_it = tally_rows.begin();
-	  row_it != tally_rows.end();
-	  ++row_it )
-    {
-	*row_it = VT::getGlobalRow( *d_x_tally, local_row );
-	++local_row;
-    }
-
-    return tally_rows;
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Set the iteration matrix with the tally
- */
-template<class Vector>
-void AdjointTally<Vector>::setIterationMatrix( 
-    const Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >& h,
-    const Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > >& columns,
-    const Teuchos::RCP<MapType>& row_indexer )
-{
-    MCLS_REQUIRE( Estimator::EXPECTED_VALUE == d_estimator );
-    MCLS_REQUIRE( Teuchos::nonnull(h) );
-    MCLS_REQUIRE( Teuchos::nonnull(columns) );
-    MCLS_REQUIRE( Teuchos::nonnull(row_indexer) );
-    d_h = h;
-    d_columns = columns;
-    d_row_indexer = row_indexer;
-}
-
-//---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_ADJOINTTALLY_IMPL_HPP
+#endif // end MCLS_FORWARDTALLY_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_AdjointTally_impl.hpp
+// end MCLS_ForwardTally_impl.hpp
 // ---------------------------------------------------------------------------//
 

@@ -213,7 +213,7 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff )
     }
 
     // Check the tally.
-    domain->domainTally()->combineSetTallies();
+    domain->domainTally()->combineSetTallies( comm );
     Teuchos::ArrayRCP<const double> x_view = 
         VT::view( *x );
     double x_val = weight;
@@ -327,7 +327,7 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff2 )
     }
 
     // Check the tally.
-    domain->domainTally()->combineSetTallies();
+    domain->domainTally()->combineSetTallies( comm );
     Teuchos::ArrayRCP<const double> x_view = 
         VT::view( *x );
     double x_val = weight;

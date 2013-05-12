@@ -43,6 +43,8 @@ APPEND_SET(HEADERS
   MCLS_Events.hpp
   MCLS_ForwardHistory.hpp
   MCLS_ForwardHistory_impl.hpp
+  MCLS_ForwardTally.hpp
+  MCLS_ForwardTally_impl.hpp
   MCLS_GlobalRNG.hpp
   MCLS_HistoryBuffer.hpp
   MCLS_HistoryBuffer_impl.hpp
