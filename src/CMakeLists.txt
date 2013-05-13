@@ -76,6 +76,8 @@ APPEND_SET(HEADERS
   MCLS_TallyTraits.hpp
   MCLS_UniformAdjointSource.hpp
   MCLS_UniformAdjointSource_impl.hpp
+  MCLS_UniformForwardSource.hpp
+  MCLS_UniformForwardSource_impl.hpp
   MCLS_VectorExport.hpp
   MCLS_VectorTraits.hpp
   ) 
