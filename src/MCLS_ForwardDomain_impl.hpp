@@ -32,14 +32,14 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_AdjointDomain_impl.hpp
+ * \file MCLS_ForwardDomain_impl.hpp
  * \author Stuart R. Slattery
- * \brief AdjointDomain implementation.
+ * \brief ForwardDomain implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_ADJOINTDOMAIN_IMPL_HPP
-#define MCLS_ADJOINTDOMAIN_IMPL_HPP
+#ifndef MCLS_FORWARDDOMAIN_IMPL_HPP
+#define MCLS_FORWARDDOMAIN_IMPL_HPP
 
 #include <algorithm>
 #include <limits>
@@ -61,7 +61,7 @@ namespace MCLS
  * \brief Matrix constructor.
  */
 template<class Vector, class Matrix>
-AdjointDomain<Vector,Matrix>::AdjointDomain( 
+ForwardDomain<Vector,Matrix>::ForwardDomain( 
     const Teuchos::RCP<const Matrix>& A,
     const Teuchos::RCP<Vector>& x,
     const Teuchos::ParameterList& plist )
@@ -78,10 +78,6 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 	{
 	    d_estimator = Estimator::COLLISION;
 	}
-	else if ( "Expected Value" == plist.get<std::string>("Estimator Type") )
-	{
-	    d_estimator = Estimator::EXPECTED_VALUE;
-	}
     }
 
     // Get the absorption probability. Default to 0.0.
@@ -95,9 +91,6 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     // Get the amount of overlap.
     int num_overlap = plist.get<int>( "Overlap Size" );
     MCLS_REQUIRE( num_overlap >= 0 );
-
-    // Set of local tally states.
-    std::set<Ordinal> tally_states;
 
     // Build the reduced domain.
     Teuchos::RCP<Matrix> reduced_H;
@@ -175,12 +168,11 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
         d_h = Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( num_rows );
 
         // Build the local CDFs and weights.
-        addMatrixToDomain( reduced_H, recovered_weights, 
-                           tally_states, abs_probability );
+        addMatrixToDomain( reduced_H, recovered_weights, abs_probability );
         if ( num_overlap > 0 )
         {
             addMatrixToDomain( reduced_H_overlap, recovered_weights_overlap, 
-                               tally_states, abs_probability );
+                               abs_probability );
         }
 
         // Get the boundary states and their owning process ranks.
@@ -200,23 +192,8 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     distributor.createFromSends( d_send_ranks() );
     d_receive_ranks = distributor.getImagesFrom();
 
-    // Create the tally vector.
-    Teuchos::Array<Ordinal> local_tally_states( tally_states.size() );
-    std::copy( tally_states.begin(), tally_states.end(),
-               local_tally_states.begin() );
-    tally_states.clear();
-    Teuchos::RCP<Vector> x_tally =
-        VT::createFromRows( MT::getComm(*A), local_tally_states() );
-
     // Create the tally.
-    d_tally = Teuchos::rcp( new TallyType(x, x_tally, d_estimator) );
-
-    // If we are using the expected value estimator, provide the iteration
-    // matrix to the tally. 
-    if ( Estimator::EXPECTED_VALUE == d_estimator )
-    {
-        d_tally->setIterationMatrix( d_h, d_columns, d_row_indexer );
-    }
+    d_tally = Teuchos::rcp( new TallyType(x, d_estimator) );
 
     MCLS_ENSURE( !d_tally.is_null() );
 }
@@ -231,7 +208,7 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
  * reconstruct the tallies.
  */
 template<class Vector, class Matrix>
-AdjointDomain<Vector,Matrix>::AdjointDomain( 
+ForwardDomain<Vector,Matrix>::ForwardDomain( 
     const Teuchos::ArrayView<char>& buffer,
     const Teuchos::RCP<const Comm>& set_comm )
     : d_row_indexer( Teuchos::rcp(new MapType()) )
@@ -269,10 +246,6 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
     // Unpack the number of base rows in the tally.
     ds >> num_base;
     MCLS_CHECK( num_base > 0 );
-
-    // Unpack the number of tally rows in the tally.
-    ds >> num_tally;
-    MCLS_CHECK( num_tally > 0 );
 
     // Unpack the local row indexer by key-value pairs.
     Ordinal global_row = 0;
@@ -398,31 +371,10 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 	ds >> *base_it;
     }
 
-    // Unpack the tally tally rows.
-    Teuchos::Array<Ordinal> tally_rows( num_tally );
-    typename Teuchos::Array<Ordinal>::iterator tally_it;
-    for ( tally_it = tally_rows.begin();
-	  tally_it != tally_rows.end();
-	  ++tally_it )
-    {
-	ds >> *tally_it;
-    }
-
-    MCLS_CHECK( ds.end() == ds.getPtr() );
-
     // Create the tally.
     Teuchos::RCP<Vector> base_x = 
 	VT::createFromRows( set_comm, base_rows() );
-    Teuchos::RCP<Vector> tally_x = 
-	VT::createFromRows( set_comm, tally_rows() );
-    d_tally = Teuchos::rcp( new TallyType(base_x, tally_x, d_estimator) );
-
-    // Set the iteration matrix data with the tally if using the expected
-    // value estimator.
-    if ( Estimator::EXPECTED_VALUE == d_estimator )
-    {
-        d_tally->setIterationMatrix( d_h, d_columns, d_row_indexer );
-    }
+    d_tally = Teuchos::rcp( new TallyType(base_x, d_estimator) );
 
     MCLS_ENSURE( !d_tally.is_null() );
 }
@@ -432,7 +384,7 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
  * \brief Pack the domain into a buffer.
  */
 template<class Vector, class Matrix>
-Teuchos::Array<char> AdjointDomain<Vector,Matrix>::pack() const
+Teuchos::Array<char> ForwardDomain<Vector,Matrix>::pack() const
 {
     // Get the byte size of the buffer.
     std::size_t packed_bytes = getPackedBytes();
@@ -461,9 +413,6 @@ Teuchos::Array<char> AdjointDomain<Vector,Matrix>::pack() const
     // Pack in the number of base rows in the tally.
     s << Teuchos::as<Ordinal>(d_tally->numBaseRows());
 
-    // Pack in the number of tally rows in the tally.
-    s << Teuchos::as<Ordinal>(d_tally->numTallyRows());
-
     // Pack up the local row indexer by key-value pairs.
     typename MapType::const_iterator row_index_it;
     for ( row_index_it = d_row_indexer->begin();
@@ -573,16 +522,6 @@ Teuchos::Array<char> AdjointDomain<Vector,Matrix>::pack() const
 	s << *base_it;
     }
 
-    // Pack up the tally tally rows.
-    Teuchos::Array<Ordinal> tally_rows = d_tally->tallyRows();
-    typename Teuchos::Array<Ordinal>::const_iterator tally_it;
-    for ( tally_it = tally_rows.begin();
-	  tally_it != tally_rows.end();
-	  ++tally_it )
-    {
-	s << *tally_it;
-    }
-
     MCLS_ENSURE( s.end() == s.getPtr() );
 
     return buffer;
@@ -593,7 +532,7 @@ Teuchos::Array<char> AdjointDomain<Vector,Matrix>::pack() const
  * \brief Get the size of this object in packed bytes.
  */
 template<class Vector, class Matrix>
-std::size_t AdjointDomain<Vector,Matrix>::getPackedBytes() const
+std::size_t ForwardDomain<Vector,Matrix>::getPackedBytes() const
 {
     Serializer s;
     s.computeBufferSizeMode();
@@ -616,9 +555,6 @@ std::size_t AdjointDomain<Vector,Matrix>::getPackedBytes() const
     // Pack in the number of base rows in the tally.
     s << Teuchos::as<Ordinal>(d_tally->numBaseRows());
 
-    // Pack in the number of tally rows in the tally.
-    s << Teuchos::as<Ordinal>(d_tally->numTallyRows());
-
     // Pack up the local row indexer by key-value pairs.
     typename MapType::const_iterator row_index_it;
     for ( row_index_it = d_row_indexer->begin();
@@ -728,16 +664,6 @@ std::size_t AdjointDomain<Vector,Matrix>::getPackedBytes() const
 	s << *base_it;
     }
 
-    // Pack up the tally tally rows.
-    Teuchos::Array<Ordinal> tally_rows = d_tally->tallyRows();
-    typename Teuchos::Array<Ordinal>::const_iterator tally_it;
-    for ( tally_it = tally_rows.begin();
-	  tally_it != tally_rows.end();
-	  ++tally_it )
-    {
-	s << *tally_it;
-    }
-
     return s.size();
 }
 
@@ -746,7 +672,7 @@ std::size_t AdjointDomain<Vector,Matrix>::getPackedBytes() const
  * \brief Get the neighbor domain process rank from which we will receive.
  */
 template<class Vector, class Matrix>
-int AdjointDomain<Vector,Matrix>::receiveNeighborRank( int n ) const
+int ForwardDomain<Vector,Matrix>::receiveNeighborRank( int n ) const
 {
     MCLS_REQUIRE( n >= 0 && n < d_receive_ranks.size() );
     return d_receive_ranks[n];
@@ -757,7 +683,7 @@ int AdjointDomain<Vector,Matrix>::receiveNeighborRank( int n ) const
  * \brief Get the neighbor domain process rank to which we will send.
  */
 template<class Vector, class Matrix>
-int AdjointDomain<Vector,Matrix>::sendNeighborRank( int n ) const
+int ForwardDomain<Vector,Matrix>::sendNeighborRank( int n ) const
 {
     MCLS_REQUIRE( n >= 0 && n < d_send_ranks.size() );
     return d_send_ranks[n];
@@ -769,7 +695,7 @@ int AdjointDomain<Vector,Matrix>::sendNeighborRank( int n ) const
  * id).
  */
 template<class Vector, class Matrix>
-int AdjointDomain<Vector,Matrix>::owningNeighbor( const Ordinal& state ) const
+int ForwardDomain<Vector,Matrix>::owningNeighbor( const Ordinal& state ) const
 {
     typename MapType::const_iterator neighbor = d_bnd_to_neighbor.find( state );
     MCLS_REQUIRE( neighbor != d_bnd_to_neighbor.end() );
@@ -781,10 +707,9 @@ int AdjointDomain<Vector,Matrix>::owningNeighbor( const Ordinal& state ) const
  * \brief Add matrix data to the local domain.
  */
 template<class Vector, class Matrix>
-void AdjointDomain<Vector,Matrix>::addMatrixToDomain( 
+void ForwardDomain<Vector,Matrix>::addMatrixToDomain( 
     const Teuchos::RCP<const Matrix>& A,
     const Teuchos::RCP<const Vector>& recovered_weights,
-    std::set<Ordinal>& tally_states,
     const double abs_probability )
 {
     MCLS_REQUIRE( !A.is_null() );
@@ -861,31 +786,6 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
 
         // Recover the weight.
         d_weights[i+offset] += rweights_view[i] / pdf_norm;
-
-        // If we're using the collision estimator, add the global row as a
-        // local tally state.
-        if ( Estimator::COLLISION == d_estimator )
-        {
-            tally_states.insert( global_row );
-        }
-        // Else if we're using the expected value estimator add the columns from
-        // this row as local tally states. Do not insert the absorbing state.
-        else if ( Estimator::EXPECTED_VALUE == d_estimator )
-        {
-            typename Teuchos::Array<Ordinal>::const_iterator col_it;
-            for ( col_it = d_columns[i+offset]->begin();
-                  col_it != d_columns[i+offset]->end()-1;
-                  ++col_it )
-            {
-                tally_states.insert( *col_it );
-            }
-        }
-        else
-        {
-            MCLS_INSIST( Estimator::COLLISION == d_estimator || 
-                         Estimator::EXPECTED_VALUE == d_estimator,
-                         "Unsupported estimator type" );
-        }
     }
 }
 
@@ -894,7 +794,7 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
  * \brief Build boundary data.
  */
 template<class Vector, class Matrix>
-void AdjointDomain<Vector,Matrix>::buildBoundary( 
+void ForwardDomain<Vector,Matrix>::buildBoundary( 
     const Teuchos::RCP<const Matrix>& A,
     const Teuchos::RCP<const Matrix>& base_A )
 {
@@ -961,8 +861,8 @@ void AdjointDomain<Vector,Matrix>::buildBoundary(
 
 } // end namespace MCLS
 
-#endif // end MCLS_ADJOINTDOMAIN_IMPL_HPP
+#endif // end MCLS_FORWARDDOMAIN_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_AdjointDomain_impl.hpp
+// end MCLS_ForwardDomain_impl.hpp
 // ---------------------------------------------------------------------------//
