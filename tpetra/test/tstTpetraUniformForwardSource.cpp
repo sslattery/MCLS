@@ -143,7 +143,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformForwardSource, nh_not_set, LO, GO, Sca
     Teuchos::RCP<MatrixType> A_T = MT::copyTranspose(*A);
     Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *A );
     Teuchos::RCP<VectorType> b = MT::cloneVectorFromMatrixRows( *A );
-    VT::putScalar( *b, -1.0 );
+    VT::putScalar( *b, 1.0 );
 
     // Build the forward domain.
     Teuchos::ParameterList plist;
@@ -188,7 +188,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformForwardSource, nh_not_set, LO, GO, Sca
 
 	Teuchos::RCP<HistoryType> history = source.getHistory();
 
-	TEST_EQUALITY( history->weight(), -1.0 );
+	TEST_EQUALITY( history->weight(), 1.0 );
 	TEST_ASSERT( domain->isLocalState( history->state() ) );
 	TEST_ASSERT( history->alive() );
 	TEST_ASSERT( VT::isGlobalRow( *x, history->state() ) );
@@ -288,7 +288,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformForwardSource, PackUnpack, LO, GO, Sca
 
 	Teuchos::RCP<HistoryType> history = source.getHistory();
 
-	TEST_EQUALITY( history->weight(), -1.0 );
+	TEST_EQUALITY( history->weight(), 1.0 );
 	TEST_ASSERT( domain->isLocalState( history->state() ) );
 	TEST_ASSERT( history->alive() );
 	TEST_ASSERT( VT::isGlobalRow( *x, history->state() ) );
@@ -383,7 +383,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformForwardSource, nh_set, LO, GO, Scalar 
 
 	Teuchos::RCP<HistoryType> history = source.getHistory();
 
-	TEST_EQUALITY( history->weight(), -1.0 );
+	TEST_EQUALITY( history->weight(), 1.0 );
 	TEST_ASSERT( domain->isLocalState( history->state() ) );
 	TEST_ASSERT( history->alive() );
 	TEST_ASSERT( VT::isGlobalRow( *x, history->state() ) );
@@ -486,7 +486,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformForwardSource, nh_set_pu, LO, GO, Scal
 
 	Teuchos::RCP<HistoryType> history = source.getHistory();
 
-	TEST_EQUALITY( history->weight(), -1.0 );
+	TEST_EQUALITY( history->weight(), 1.0 );
 	TEST_ASSERT( domain->isLocalState( history->state() ) );
 	TEST_ASSERT( history->alive() );
 	TEST_ASSERT( VT::isGlobalRow( *x, history->state() ) );

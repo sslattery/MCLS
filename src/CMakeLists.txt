@@ -45,6 +45,8 @@ APPEND_SET(HEADERS
   MCLS_ForwardDomain_impl.hpp
   MCLS_ForwardHistory.hpp
   MCLS_ForwardHistory_impl.hpp
+  MCLS_ForwardSolverManager.hpp
+  MCLS_ForwardSolverManager_impl.hpp
   MCLS_ForwardTally.hpp
   MCLS_ForwardTally_impl.hpp
   MCLS_GlobalRNG.hpp

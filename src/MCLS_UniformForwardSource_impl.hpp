@@ -341,10 +341,9 @@ UniformForwardSource<Domain>::getHistory()
     MCLS_CHECK( DT::isLocalState(*d_domain,starting_state) );
 
     // Set the history state.
-    Ordinal weight_sign = 
-	local_source[local_state] / std::abs(local_source[local_state]);
-    history->setWeight( d_weight * weight_sign );
+    history->setWeight( d_weight );
     history->setState( starting_state );
+    history->setStartingState( starting_state );
     history->live();
 
     // Update count.

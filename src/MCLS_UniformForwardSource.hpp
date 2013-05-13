@@ -119,7 +119,7 @@ class UniformForwardSource
     double sourceWeight() const { return d_weight; }
 
     // Get the source vector.
-    Teuchos::ArrayRCP<VectorType> sourceVector() const { return d_b; }
+    Teuchos::RCP<VectorType> sourceVector() const { return d_b; }
     
     // Get a history from the source.
     Teuchos::RCP<HistoryType> getHistory();
