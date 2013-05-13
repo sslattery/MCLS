@@ -137,7 +137,7 @@ ForwardDomain<Vector,Matrix>::ForwardDomain(
 
     // Generate the Monte Carlo domain.
     {
-        // Generate the overlap for the transpose operator.
+        // Generate the overlap for the operator.
         Teuchos::RCP<Matrix> reduced_H_overlap;
         Teuchos::RCP<Vector> recovered_weights_overlap;
         if ( num_overlap > 0 )
@@ -665,6 +665,27 @@ std::size_t ForwardDomain<Vector,Matrix>::getPackedBytes() const
     }
 
     return s.size();
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Get the local states owned by this domain.
+ */
+template<class Vector, class Matrix>
+Teuchos::Array<typename ForwardDomain<Vector,Matrix>::Ordinal> 
+ForwardDomain<Vector,Matrix>::localStates() const
+{
+    Teuchos::Array<Ordinal> states( d_row_indexer->size() );
+    typename Teuchos::Array<Ordinal>::iterator state_it;
+    typename MapType::const_iterator map_it;
+    for ( map_it = d_row_indexer->begin(), state_it = states.begin();
+          map_it != d_row_indexer->end(); 
+          ++map_it, ++state_it )
+    {
+        *state_it = map_it->first;
+    }
+
+    return states;
 }
 
 //---------------------------------------------------------------------------//

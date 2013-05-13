@@ -41,6 +41,8 @@ APPEND_SET(HEADERS
   MCLS_DomainTransporter_impl.hpp
   MCLS_Estimators.hpp
   MCLS_Events.hpp
+  MCLS_ForwardDomain.hpp
+  MCLS_ForwardDomain_impl.hpp
   MCLS_ForwardHistory.hpp
   MCLS_ForwardHistory_impl.hpp
   MCLS_ForwardTally.hpp

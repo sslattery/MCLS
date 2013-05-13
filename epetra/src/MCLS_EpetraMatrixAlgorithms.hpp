@@ -229,6 +229,7 @@ class MatrixAlgorithms<Epetra_Vector,Epetra_RowMatrix>
         MCLS_CHECK( 0 == error );
         MCLS_CHECK( reduced_H_crs->Filled() );
         reduced_H = reduced_H_crs;
+        MCLS_CHECK( reduced_H->Filled() );
     }
 };
 

@@ -144,6 +144,9 @@ class ForwardDomain
     // Determine if a given state is on-process.
     inline bool isLocalState( const Ordinal& state ) const;
 
+    // Get the local states owned by this domain.
+    Teuchos::Array<Ordinal> localStates() const;
+
     //! Get the number of neighboring domains from which we will receive.
     int numReceiveNeighbors() const
     { return d_receive_ranks.size(); }
