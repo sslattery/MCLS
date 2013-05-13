@@ -91,6 +91,7 @@ class SolverFactory : public virtual Teuchos::Describable
     // Solver enum.
     enum MCLSSolverType {
 	ADJOINT_MC,
+        FORWARD_MC,
 	MCSA,
 	SEQUENTIAL_MC,
         RICHARDSON

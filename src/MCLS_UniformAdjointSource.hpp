@@ -38,8 +38,8 @@
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_UNIFORMSOURCE_HPP
-#define MCLS_UNIFORMSOURCE_HPP
+#ifndef MCLS_UNIFORMADJOINTSOURCE_HPP
+#define MCLS_UNIFORMADJOINTSOURCE_HPP
 
 #include "MCLS_SourceTraits.hpp"
 #include "MCLS_DomainTraits.hpp"

@@ -48,6 +48,7 @@
 #include <MCLS_MCSASolverManager.hpp>
 #include <MCLS_SequentialMCSolverManager.hpp>
 #include <MCLS_AdjointSolverManager.hpp>
+#include <MCLS_ForwardSolverManager.hpp>
 #include <MCLS_RichardsonSolverManager.hpp>
 #include <MCLS_MatrixTraits.hpp>
 
@@ -99,6 +100,10 @@ const std::string MCLSLinearOpWithSolveFactory<Scalar>::SequentialMC_name =
 template<class Scalar>
 const std::string MCLSLinearOpWithSolveFactory<Scalar>::AdjointMC_name = 
     "Adjoint MC";
+
+template<class Scalar>
+const std::string MCLSLinearOpWithSolveFactory<Scalar>::ForwardMC_name = 
+    "Forward MC";
 
 template<class Scalar>
 const std::string MCLSLinearOpWithSolveFactory<Scalar>::Richardson_name = 
@@ -449,6 +454,7 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 		"MCSA",
 		"Sequential MC",
 		"Adjoint MC",
+		"Forward MC",
                 "Richardson"
 		),
 	    tuple<std::string>(
@@ -464,6 +470,10 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 		"that performs single right-hand side solves on multiple "
 		"right-hand sides sequentially.",
 
+		"Forward Monte Carlo solver for nonsymmetric linear systems "
+		"that performs single right-hand side solves on multiple "
+		"right-hand sides sequentially.",
+
                 "Richardson iteration with relaxation that performs single"
                 "right-hand side solves on multiple right-hand sides sequentially."
 		),
@@ -471,6 +481,7 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 		SOLVER_TYPE_MCSA,
 		SOLVER_TYPE_SEQUENTIAL_MC,
 		SOLVER_TYPE_ADJOINT_MC,
+		SOLVER_TYPE_FORWARD_MC,
                 SOLVER_TYPE_RICHARDSON
 		),
 	    &*validParamList
@@ -517,6 +528,12 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 	    MCLS::AdjointSolverManager<Epetra_Vector,Epetra_RowMatrix> mgr(
 		Teuchos::DefaultComm<int>::getComm(), Teuchos::parameterList() );
 	    solverTypesSL.sublist(AdjointMC_name).setParameters(
+		*(mgr.getValidParameters()) );
+	}
+	{
+	    MCLS::ForwardSolverManager<Epetra_Vector,Epetra_RowMatrix> mgr(
+		Teuchos::DefaultComm<int>::getComm(), Teuchos::parameterList() );
+	    solverTypesSL.sublist(ForwardMC_name).setParameters(
 		*(mgr.getValidParameters()) );
 	}
 	{
@@ -906,6 +923,28 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 	    // Create the solver
 	    solver = 
 		rcp(new MCLS::AdjointSolverManager<Vector,Matrix>(
+			global_comm, solverPL) );
+	    iterativeSolver = Teuchos::rcp( 
+		new MCLS::SolverManagerAdapter<MultiVector,Matrix>(solver) );
+	    iterativeSolver->setProblem( lp );
+
+	    break;
+	}
+
+	case SOLVER_TYPE_FORWARD_MC: 
+	{
+	    // Set the PL
+	    if( d_plist.get() ) 
+	    {
+		Teuchos::ParameterList &solverTypesPL = 
+		    d_plist->sublist(SolverTypes_name);
+		Teuchos::ParameterList &forwardmcPL = 
+		    solverTypesPL.sublist(ForwardMC_name);
+		solverPL = Teuchos::rcp( &forwardmcPL, false );
+	    }
+	    // Create the solver
+	    solver = 
+		rcp(new MCLS::ForwardSolverManager<Vector,Matrix>(
 			global_comm, solverPL) );
 	    iterativeSolver = Teuchos::rcp( 
 		new MCLS::SolverManagerAdapter<MultiVector,Matrix>(solver) );

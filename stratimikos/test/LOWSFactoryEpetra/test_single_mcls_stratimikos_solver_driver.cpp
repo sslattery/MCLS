@@ -131,6 +131,17 @@ int main(int argc, char* argv[])
     mclsLOWSFPL_adjmc.set("Number of Sets",int(numSets));
     mclsLOWSFPL_adjmc.set("Set Number of Histories",int(numHistories));
 
+    Teuchos::ParameterList& mclsLOWSFPL_fwdmc =
+	mclsLOWSFPL_solver.sublist("Forward MC");
+    mclsLOWSFPL_fwdmc.set("Convergence Tolerance",double(maxResid));
+    mclsLOWSFPL_fwdmc.set("Weight Cutoff",double(weightCutoff));
+    mclsLOWSFPL_fwdmc.set("MC Check Frequency",int(mcCheckFrequency));
+    mclsLOWSFPL_fwdmc.set("MC Buffer Size",int(mcBufferSize));
+    mclsLOWSFPL_fwdmc.set("Reproducible MC Mode",bool(reproducibleMC));
+    mclsLOWSFPL_fwdmc.set("Overlap Size",int(overlapSize));
+    mclsLOWSFPL_fwdmc.set("Number of Sets",int(numSets));
+    mclsLOWSFPL_fwdmc.set("Set Number of Histories",int(numHistories));
+
     success
       = Thyra::test_single_mcls_stratimikos_solver(
 	  matrixFile,testTranspose,usePreconditioner,precType,blockSize,numRhs,numRandomVectors

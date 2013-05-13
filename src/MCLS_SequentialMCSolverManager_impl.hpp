@@ -45,6 +45,7 @@
 
 #include "MCLS_DBC.hpp"
 #include "MCLS_AdjointSolverManager.hpp"
+#include "MCLS_ForwardSolverManager.hpp"
 
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_Ptr.hpp>
@@ -406,11 +407,20 @@ void SequentialMCSolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
 
     // Create the Monte Carlo direct solver for the residual problem.
     bool use_adjoint = true;
+    bool use_forward = false;
     if ( d_plist->isParameter("MC Type") )
     {
         if ( d_plist->get<std::string>("MC Type") == "Adjoint" )
         {
             use_adjoint = true;
+        }
+        else if ( d_plist->get<std::string>("MC Type") == "Forward" )
+        {
+            use_forward = true;
+        }
+        else
+        {
+            MCLS_INSIST( use_forward || use_adjoint, "MC Type not supported" );
         }
     }
 
@@ -425,6 +435,22 @@ void SequentialMCSolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
 	d_block_comm = 
 	    Teuchos::rcp_dynamic_cast<AdjointSolverManager<Vector,Matrix> >(
 		d_mc_solver)->blockComm();
+    }
+    else if ( use_forward )
+    {
+	d_mc_solver = Teuchos::rcp( 
+	    new ForwardSolverManager<Vector,Matrix>(
+		d_residual_problem, d_global_comm, d_plist, true) );
+
+	// Get the block constant communicator.
+	MCLS_CHECK( Teuchos::nonnull(d_mc_solver) );
+	d_block_comm = 
+	    Teuchos::rcp_dynamic_cast<ForwardSolverManager<Vector,Matrix> >(
+		d_mc_solver)->blockComm();
+    }
+    else
+    {
+        MCLS_INSIST( use_forward || use_adjoint, "MC Type not supported" );
     }
 
     MCLS_ENSURE( Teuchos::nonnull(d_mc_solver) );
