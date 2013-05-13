@@ -94,17 +94,14 @@ class ForwardTally
     // Post-process a history if it is permanently killed in the local domain.
     void postProcessHistory( const HistoryType& history );
 
-    // Combine the overlap tally with the base decomposition tally in the set.
+    // Combine the overlap tally with the base decomposition tally in the set
+    // and normalize by the counted number of histories in each set.
     void combineSetTallies( const Teuchos::RCP<const Comm>& set_comm );
 
     // Combine the secondary tallies with the primary tally across a
     // block. Normalize the result with the number of sets.
     void combineBlockTallies( const Teuchos::RCP<const Comm>& block_comm,
                               const int num_sets );
-
-    // Normalize base decomposition tally with the number of specified
-    // histories.
-    void normalize( const int& nh );
 
     // Set the base tally vector.
     void setBaseVector( const Teuchos::RCP<Vector>& x_base );
@@ -134,6 +131,9 @@ class ForwardTally
 
     // Tally values.
     Teuchos::Array<Scalar> d_tally_values;
+
+    // Tally count.
+    Teuchos::Array<int> d_tally_count;
 
     // Monte Carlo estimator type.
     int d_estimator;
@@ -223,7 +223,7 @@ class TallyTraits<ForwardTally<Vector> >
      */
     static void normalize( tally_type& tally, const int nh )
     {
-	tally.normalize( nh );
+        // There is no explicit normalization for this tally.
     }
 
     /*!

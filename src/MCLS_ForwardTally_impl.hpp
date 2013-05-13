@@ -93,30 +93,35 @@ void ForwardTally<Vector>::postProcessHistory( const HistoryType& history )
     MCLS_REQUIRE( d_tally_states.size() == d_tally_values.size() );
 
     // If the history starting state has already been tallied, add the history
-    // tally sum to the local sum.
+    // tally sum to the local sum and increment the tally count for the
+    // starting state.
     typename Teuchos::Array<Ordinal>::iterator state_it = 
 	std::find( d_tally_states.begin(), d_tally_states.end(), 
 		   history.startingState() );
     if ( state_it != d_tally_states.end() )
     {
-	d_tally_values[ std::distance(d_tally_states.begin(),state_it) ] +=
-	    history.historyTally();
+        typename VT::local_ordinal_type local_tally_state = 
+            std::distance(d_tally_states.begin(),state_it);
+	d_tally_values[ local_tally_state ] += history.historyTally();
+        d_tally_count[ local_tally_state ] += 1;
     }
 
-    // Otherwise add the history state to the local states and sum.
+    // Otherwise add the history state to the local states, sum, and count.
     else
     {
 	d_tally_states.push_back( history.startingState() );
 	d_tally_values.push_back( history.historyTally() );
+        d_tally_count.push_back( 1 );
     }
 
     MCLS_ENSURE( d_tally_states.size() == d_tally_values.size() );
+    MCLS_ENSURE( d_tally_count.size() == d_tally_values.size() );
 }
 
 //---------------------------------------------------------------------------//
 /*!
  * \brief Combine the overlap tally with the operator decomposition tally in
- * the set.
+ * the set and normalize by the counted number of histories in each state.
  */
 template<class Vector>
 void ForwardTally<Vector>::combineSetTallies( 
@@ -138,8 +143,56 @@ void ForwardTally<Vector>::combineSetTallies(
     }
 
     // Export the local history vector to the base vector.
-    VectorExport<Vector> exporter( x_tally, d_x );
-    exporter.doExportAdd();
+    {
+        VectorExport<Vector> tally_exporter( x_tally, d_x );
+        tally_exporter.doExportAdd();
+    }
+
+    // Build a vector from the dead history states.
+    Teuchos::RCP<Vector> count_tally = 
+	VT::createFromRows( set_comm, d_tally_states() );
+ 
+    // Copy the tally counts into the vector.
+    typename Teuchos::Array<int>::const_iterator count_it;
+    for ( state_it = d_tally_states.begin(),
+	    count_it = d_tally_count.begin();
+	  state_it != d_tally_states.end();
+	  ++state_it, ++count_it )
+    {
+	VT::sumIntoGlobalValue( *count_tally, *state_it, 
+                                Teuchos::as<Scalar>(*count_it) );
+    }
+
+    // Build a vector from the base states.
+    Teuchos::RCP<Vector> count_base = VT::clone( *d_x );
+
+    // Export add the local history vector to the base vector.
+    {
+        VectorExport<Vector> count_exporter( count_tally, count_base );
+        count_exporter.doExportAdd();
+    }
+   
+    // Normalize each state in the local tally vector by the count.
+    Teuchos::ArrayRCP<const Scalar> count_view = VT::view( *count_base );
+    Teuchos::ArrayRCP<Scalar> x_view = VT::viewNonConst( *d_x );
+    typename Teuchos::ArrayRCP<const Scalar>::const_iterator norm_it;
+    typename Teuchos::ArrayRCP<Scalar>::iterator x_it;
+    for ( x_it = x_view.begin(), norm_it = count_view.begin();
+          x_it != x_view.end();
+          ++x_it, ++norm_it )
+    {
+        MCLS_CHECK( *norm_it >= 0.0 );
+
+        if ( *norm_it > 0.0 )
+        {
+            *x_it /= *norm_it;
+        }
+        else
+        {
+            MCLS_CHECK( 0.0 == *x_it );
+            *x_it = 0.0;
+        }
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -172,17 +225,6 @@ void ForwardTally<Vector>::combineBlockTallies(
 
 //---------------------------------------------------------------------------//
 /*
- * \brief Normalize base decomposition tally with the number of specified
- * histories.
- */
-template<class Vector>
-void ForwardTally<Vector>::normalize( const int& nh )
-{
-    VT::scale( *d_x, 1.0 / Teuchos::as<double>(nh) );
-}
-
-//---------------------------------------------------------------------------//
-/*
  * \brief Set the base tally vector.
  */
 template<class Vector>
@@ -203,6 +245,7 @@ void ForwardTally<Vector>::zeroOut()
     VT::putScalar( *d_x, Teuchos::ScalarTraits<Scalar>::zero() );
     d_tally_states.clear();
     d_tally_values.clear();
+    d_tally_count.clear();
 }
 
 //---------------------------------------------------------------------------//
