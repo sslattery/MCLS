@@ -61,6 +61,8 @@ APPEND_SET(HEADERS
   MCLS_MCSASolverManager_impl.hpp
   MCLS_MCSolver.hpp
   MCLS_MCSolver_impl.hpp
+  MCLS_MinimalResidualSolverManager.hpp
+  MCLS_MinimalResidualSolverManager_impl.hpp
   MCLS_MSODManager.hpp
   MCLS_MSODManager_impl.hpp
   MCLS_Preconditioner.hpp
