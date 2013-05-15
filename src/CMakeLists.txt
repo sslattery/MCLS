@@ -75,6 +75,8 @@ APPEND_SET(HEADERS
   MCLS_SourceTransporter.hpp
   MCLS_SourceTransporter_impl.hpp
   MCLS_SPRNG.hpp
+  MCLS_SteepestDescentSolverManager.hpp
+  MCLS_SteepestDescentSolverManager_impl.hpp
   MCLS_TallyTraits.hpp
   MCLS_UniformAdjointSource.hpp
   MCLS_UniformAdjointSource_impl.hpp

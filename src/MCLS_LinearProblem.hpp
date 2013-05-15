@@ -121,6 +121,7 @@ class LinearProblem
     //! Get the residual vector. This will be preconditioned if
     //! preconditioners are present.
     Teuchos::RCP<const Vector> getPrecResidual() const { return d_rp; }
+    Teuchos::RCP<Vector> getPrecResidual() { return d_rp; }
     
     //! Determine if the linear system is left preconditioned.
     bool isLeftPrec() const { return Teuchos::nonnull(d_PL); }

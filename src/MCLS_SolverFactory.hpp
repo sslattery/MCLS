@@ -94,7 +94,8 @@ class SolverFactory : public virtual Teuchos::Describable
         FORWARD_MC,
 	MCSA,
 	SEQUENTIAL_MC,
-        RICHARDSON
+        RICHARDSON,
+        STEEPEST_DESCENT
     };
 
     // String name to enum/integer map.

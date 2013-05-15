@@ -50,6 +50,7 @@
 #include <MCLS_AdjointSolverManager.hpp>
 #include <MCLS_ForwardSolverManager.hpp>
 #include <MCLS_RichardsonSolverManager.hpp>
+#include <MCLS_SteepestDescentSolverManager.hpp>
 #include <MCLS_MatrixTraits.hpp>
 
 #include "MCLS_LinearProblemAdapter.hpp"
@@ -108,6 +109,10 @@ const std::string MCLSLinearOpWithSolveFactory<Scalar>::ForwardMC_name =
 template<class Scalar>
 const std::string MCLSLinearOpWithSolveFactory<Scalar>::Richardson_name = 
     "Richardson";
+
+template<class Scalar>
+const std::string MCLSLinearOpWithSolveFactory<Scalar>::SteepestDescent_name = 
+    "Steepest Descent";
 
 template<class Scalar>
 const std::string MCLSLinearOpWithSolveFactory<Scalar>::ConvergenceTestFrequency_name 
@@ -455,7 +460,8 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 		"Sequential MC",
 		"Adjoint MC",
 		"Forward MC",
-                "Richardson"
+                "Richardson",
+                "Steepest Descent"
 		),
 	    tuple<std::string>(
 		"Monte Carlo Synthetic Acceleration solver for nonsymmetric linear "
@@ -475,14 +481,17 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 		"right-hand sides sequentially.",
 
                 "Richardson iteration with relaxation that performs single"
-                "right-hand side solves on multiple right-hand sides sequentially."
+                "right-hand side solves on multiple right-hand sides sequentially.",
+
+                "Steepest Descent one dimensional projection method for SPD systems"
 		),
 	    tuple<EMCLSSolverType>(
 		SOLVER_TYPE_MCSA,
 		SOLVER_TYPE_SEQUENTIAL_MC,
 		SOLVER_TYPE_ADJOINT_MC,
 		SOLVER_TYPE_FORWARD_MC,
-                SOLVER_TYPE_RICHARDSON
+                SOLVER_TYPE_RICHARDSON,
+                SOLVER_TYPE_STEEPEST_DESECENT
 		),
 	    &*validParamList
 	    );
@@ -540,6 +549,12 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 	    MCLS::RichardsonSolverManager<Epetra_Vector,Epetra_RowMatrix> mgr(
 		Teuchos::DefaultComm<int>::getComm(), Teuchos::parameterList() );
 	    solverTypesSL.sublist(Richardson_name).setParameters(
+		*(mgr.getValidParameters()) );
+	}
+	{
+	    MCLS::SteepestDescentSolverManager<Epetra_Vector,Epetra_RowMatrix> mgr(
+		Teuchos::DefaultComm<int>::getComm(), Teuchos::parameterList() );
+	    solverTypesSL.sublist(SteepestDescent_name).setParameters(
 		*(mgr.getValidParameters()) );
 	}
     }
@@ -967,6 +982,28 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 	    // Create the solver
 	    solver = 
 		rcp(new MCLS::RichardsonSolverManager<Vector,Matrix>(
+			global_comm, solverPL) );
+	    iterativeSolver = Teuchos::rcp( 
+		new MCLS::SolverManagerAdapter<MultiVector,Matrix>(solver) );
+	    iterativeSolver->setProblem( lp );
+
+	    break;
+	}
+
+	case SOLVER_TYPE_STEEPEST_DESCENT: 
+	{
+	    // Set the PL
+	    if( d_plist.get() ) 
+	    {
+		Teuchos::ParameterList &solverTypesPL = 
+		    d_plist->sublist(SolverTypes_name);
+		Teuchos::ParameterList &steepest_descentPL = 
+		    solverTypesPL.sublist(SteepestDescent_name);
+		solverPL = Teuchos::rcp( &steepest_descentPL, false );
+	    }
+	    // Create the solver
+	    solver = 
+		rcp(new MCLS::SteepestDescentSolverManager<Vector,Matrix>(
 			global_comm, solverPL) );
 	    iterativeSolver = Teuchos::rcp( 
 		new MCLS::SolverManagerAdapter<MultiVector,Matrix>(solver) );

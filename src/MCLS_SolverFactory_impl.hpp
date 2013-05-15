@@ -47,6 +47,7 @@
 #include "MCLS_MCSASolverManager.hpp"
 #include "MCLS_SequentialMCSolverManager.hpp"
 #include "MCLS_RichardsonSolverManager.hpp"
+#include "MCLS_SteepestDescentSolverManager.hpp"
 
 namespace MCLS
 {
@@ -64,6 +65,7 @@ SolverFactory<Vector,Matrix>::SolverFactory()
     d_name_map["MCSA"] = MCSA;
     d_name_map["Sequential MC"] = SEQUENTIAL_MC;
     d_name_map["Richardson"] = RICHARDSON;
+    d_name_map["Steepest Descent"] = STEEPEST_DESCENT;
 }
 
 //---------------------------------------------------------------------------//
@@ -114,6 +116,12 @@ SolverFactory<Vector,Matrix>::create(
 	case RICHARDSON:
 
 	    solver = Teuchos::rcp( new RichardsonSolverManager<Vector,Matrix>( 
+				       global_comm, solver_parameters ) );
+	    break;
+
+	case STEEPEST_DESCENT:
+
+	    solver = Teuchos::rcp( new SteepestDescentSolverManager<Vector,Matrix>( 
 				       global_comm, solver_parameters ) );
 	    break;
 

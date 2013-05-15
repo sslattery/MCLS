@@ -32,14 +32,14 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_RichardsonSolverManager.hpp
+ * \file MCLS_SteepestdescentSolverManager.hpp
  * \author Stuart R. Slattery
- * \brief Richardson solver manager declaration.
+ * \brief Steepest Descent solver manager declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_RICHARDSONSOLVERMANAGER_HPP
-#define MCLS_RICHARDSONSOLVERMANAGER_HPP
+#ifndef MCLS_STEEPESTDESCENTSOLVERMANAGER_HPP
+#define MCLS_STEEPESTDESCENTSOLVERMANAGER_HPP
 
 #include "MCLS_SolverManager.hpp"
 #include "MCLS_LinearProblem.hpp"
@@ -56,11 +56,12 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 /*!
- * \class RichardsonSolverManager
- * \brief Solver manager for Richardson iterations.
+ * \class SteepestDescentSolverManager
+ * \brief Solver manager for steepest descent one dimensional projection
+ * method for SPD problems.
  */
 template<class Vector, class Matrix>
-class RichardsonSolverManager : public SolverManager<Vector,Matrix>
+class SteepestDescentSolverManager : public SolverManager<Vector,Matrix>
 {
   public:
 
@@ -76,16 +77,16 @@ class RichardsonSolverManager : public SolverManager<Vector,Matrix>
     //@}
 
     // Comm constructor. setProblem() must be called before solve().
-    RichardsonSolverManager( const Teuchos::RCP<const Comm>& global_comm,
-                             const Teuchos::RCP<Teuchos::ParameterList>& plist );
+    SteepestDescentSolverManager( const Teuchos::RCP<const Comm>& global_comm,
+                                  const Teuchos::RCP<Teuchos::ParameterList>& plist );
 
     // Constructor.
-    RichardsonSolverManager( const Teuchos::RCP<LinearProblemType>& problem,
-                             const Teuchos::RCP<const Comm>& global_comm,
-                             const Teuchos::RCP<Teuchos::ParameterList>& plist );
+    SteepestDescentSolverManager( const Teuchos::RCP<LinearProblemType>& problem,
+                                  const Teuchos::RCP<const Comm>& global_comm,
+                                  const Teuchos::RCP<Teuchos::ParameterList>& plist );
 
     //! Destructor.
-    ~RichardsonSolverManager() { /* ... */ }
+    ~SteepestDescentSolverManager() { /* ... */ }
 
     //! Get the linear problem being solved by the manager.
     const LinearProblem<Vector,Matrix>& getProblem() const
@@ -147,13 +148,13 @@ class RichardsonSolverManager : public SolverManager<Vector,Matrix>
 // Template includes.
 //---------------------------------------------------------------------------//
 
-#include "MCLS_RichardsonSolverManager_impl.hpp"
+#include "MCLS_SteepestDescentSolverManager_impl.hpp"
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_RICHARDSONSOLVERMANAGER_HPP
+#endif // end MCLS_STEEPESTDESCENTSOLVERMANAGER_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_RichardsonSolverManager.hpp
+// end MCLS_SteepestDescentSolverManager.hpp
 //---------------------------------------------------------------------------//
 
