@@ -128,9 +128,7 @@ void RNSDIteration<Vector,Matrix>::doOneIteration()
     d_problem->apply( *d_v, *d_w );
 
     // Petrov-Galerkin condition.
-    Scalar v_norm = VT::norm2( *d_v );
-    Scalar w_norm = VT::norm2( *d_w );
-    Scalar alpha = (v_norm*v_norm) / (w_norm*w_norm);
+    Scalar alpha = VT::dot( *d_v, *d_v ) / VT::dot( *d_w, *d_w );
 
     // Fixed point update.
     VT::update( *d_problem->getLHS(), 

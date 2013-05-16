@@ -452,6 +452,7 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
         bool init_state = A.UseTranspose();
         int error = const_cast<matrix_type&>(A).SetUseTranspose( true );
         MCLS_CHECK( 0 == error );
+        MCLS_CHECK( A.UseTranspose() );
 	error = A.Apply( x, y );
         MCLS_CHECK( 0 == error );
         error = const_cast<matrix_type&>(A).SetUseTranspose( init_state );
