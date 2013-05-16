@@ -32,18 +32,19 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_RichardsonSolverManager.hpp
+ * \file MCLS_FixedPointSolverManager.hpp
  * \author Stuart R. Slattery
- * \brief Richardson solver manager declaration.
+ * \brief Fixed Point solver manager declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_RICHARDSONSOLVERMANAGER_HPP
-#define MCLS_RICHARDSONSOLVERMANAGER_HPP
+#ifndef MCLS_FIXEDPOINTSOLVERMANAGER_HPP
+#define MCLS_FIXEDPOINTSOLVERMANAGER_HPP
 
 #include "MCLS_SolverManager.hpp"
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
+#include "MCLS_FixedPointIteration.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -56,11 +57,11 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 /*!
- * \class RichardsonSolverManager
- * \brief Solver manager for Richardson iterations.
+ * \class FixedPointSolverManager
+ * \brief Solver manager for Fixed Point iterations.
  */
 template<class Vector, class Matrix>
-class RichardsonSolverManager : public SolverManager<Vector,Matrix>
+class FixedPointSolverManager : public SolverManager<Vector,Matrix>
 {
   public:
 
@@ -72,20 +73,21 @@ class RichardsonSolverManager : public SolverManager<Vector,Matrix>
     typedef typename VT::scalar_type                Scalar;
     typedef Matrix                                  matrix_type;
     typedef LinearProblem<Vector,Matrix>            LinearProblemType;
+    typedef FixedPointIteration<Vector,Matrix>      FixedPointType;
     typedef Teuchos::Comm<int>                      Comm;
     //@}
 
     // Comm constructor. setProblem() must be called before solve().
-    RichardsonSolverManager( const Teuchos::RCP<const Comm>& global_comm,
+    FixedPointSolverManager( const Teuchos::RCP<const Comm>& global_comm,
                              const Teuchos::RCP<Teuchos::ParameterList>& plist );
 
     // Constructor.
-    RichardsonSolverManager( const Teuchos::RCP<LinearProblemType>& problem,
+    FixedPointSolverManager( const Teuchos::RCP<LinearProblemType>& problem,
                              const Teuchos::RCP<const Comm>& global_comm,
                              const Teuchos::RCP<Teuchos::ParameterList>& plist );
 
     //! Destructor.
-    ~RichardsonSolverManager() { /* ... */ }
+    ~FixedPointSolverManager() { /* ... */ }
 
     //! Get the linear problem being solved by the manager.
     const LinearProblem<Vector,Matrix>& getProblem() const
@@ -132,6 +134,9 @@ class RichardsonSolverManager : public SolverManager<Vector,Matrix>
     // Parameters.
     Teuchos::RCP<Teuchos::ParameterList> d_plist;
 
+    // Fixed point iteration.
+    Teuchos::RCP<FixedPointType> d_fixed_point;
+
     // Number of iterations from last solve.
     int d_num_iters;
 
@@ -147,13 +152,13 @@ class RichardsonSolverManager : public SolverManager<Vector,Matrix>
 // Template includes.
 //---------------------------------------------------------------------------//
 
-#include "MCLS_RichardsonSolverManager_impl.hpp"
+#include "MCLS_FixedPointSolverManager_impl.hpp"
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_RICHARDSONSOLVERMANAGER_HPP
+#endif // end MCLS_FIXEDPOINTSOLVERMANAGER_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_RichardsonSolverManager.hpp
+// end MCLS_FixedPointSolverManager.hpp
 //---------------------------------------------------------------------------//
 

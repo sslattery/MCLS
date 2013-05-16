@@ -32,77 +32,93 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_FixedPointIteration.hpp
+ * \file MCLS_RichardsonIteration.hpp
  * \author Stuart R. Slattery
- * \brief Fixed point ieration base class.
+ * \brief Richardson iteration declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_FIXEDPOINTITERATION_HPP
-#define MCLS_FIXEDPOINTITERATION_HPP
+#ifndef MCLS_RICHARDSONITERATION_HPP
+#define MCLS_RICHARDSONITERATION_HPP
 
 #include <string>
 
+#include "MCLS_FixedPointIteration.hpp"
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Describable.hpp>
 #include <Teuchos_ParameterList.hpp>
-#include <Teuchos_ScalarTraits.hpp>
 
 namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class FixedPointIteration
- * \brief Linear solver base class.
+ * \class RichardsonIteration
+ * \brief Minimal residual one dimensional projection iteration for SPD
+ * problems.
  */
 template<class Vector, class Matrix>
-class FixedPointIteration : public virtual Teuchos::Describable
+class RichardsonIteration : public FixedPointIteration<Vector,Matrix>
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Vector                                  vector_type;
-    typedef VectorTraits<Vector>                    VT;
-    typedef typename VT::scalar_type                Scalar;
-    typedef Matrix                                  matrix_type;
+    typedef FixedPointIteration<Vector,Matrix>            Base;
+    typedef Vector                                        vector_type;
+    typedef VectorTraits<Vector>                          VT;
+    typedef typename VT::scalar_type                      Scalar;
+    typedef Matrix                                        matrix_type;
+    typedef LinearProblem<Vector,Matrix>                  LinearProblemType;
     //@}
 
-    //! Constructor.
-    FixedPointIteration() { /* ... */ }
+    // Default constructor. setProblem() must be called before solve().
+    RichardsonIteration( const Teuchos::RCP<Teuchos::ParameterList>& plist );
+
+    // Constructor.
+    RichardsonIteration( const Teuchos::RCP<LinearProblemType>& problem,
+                         const Teuchos::RCP<Teuchos::ParameterList>& plist );
 
     //! Destructor.
-    virtual ~FixedPointIteration() { /* ... */ }
+    ~RichardsonIteration() { /* ... */ }
 
-    //! Get the linear problem being solved by the iteration.
-    virtual const LinearProblem<Vector,Matrix>& getProblem() const = 0;
+    //! Get the linear problem being solved by the manager.
+    const LinearProblem<Vector,Matrix>& getProblem() const
+    { return *d_problem; }
 
-    //! Get the valid parameters for this iteration.
-    virtual Teuchos::RCP<const Teuchos::ParameterList> 
-    getValidParameters() const = 0;
+    // Get the valid parameters for this manager.
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
-    //! Get the current parameters being used for this iteration.
-    virtual Teuchos::RCP<const Teuchos::ParameterList> 
-    getCurrentParameters() const = 0;
+    //! Get the current parameters being used for this manager.
+    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const
+    { return d_plist; }
 
-    //! Set the linear problem with the iteration.
-    virtual void setProblem( 
-	const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem ) = 0;
+    // Set the linear problem with the manager.
+    void setProblem( 
+	const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem );
 
-    //! Set the parameters for the iteration. The iteration will modify this
-    //! list with default parameters that are not defined.
-    virtual void setParameters( 
-	const Teuchos::RCP<Teuchos::ParameterList>& params ) = 0;
+    // Set the parameters for the manager. The manager will modify this list
+    // with default parameters that are not defined.
+    void setParameters( const Teuchos::RCP<Teuchos::ParameterList>& params );
 
-    //! Do a single fixed point iteration. Must update the residual.
-    virtual void doOneIteration() = 0;
+    // Do a single fixed point iteration. Must update the residual.
+    void doOneIteration();
 
     //! Get the name of the fixed point iteration.
-    virtual std::string name() const = 0;
+    std::string name() const { return std::string("Richardson"); }
+
+  private:
+
+    // Linear problem
+    Teuchos::RCP<LinearProblemType> d_problem;
+
+    // Parameters.
+    Teuchos::RCP<Teuchos::ParameterList> d_plist;
+
+    // Relaxation parameter.
+    double d_omega;
 };
 
 //---------------------------------------------------------------------------//
@@ -110,10 +126,16 @@ class FixedPointIteration : public virtual Teuchos::Describable
 } // end namespace MCLS
 
 //---------------------------------------------------------------------------//
+// Template includes.
+//---------------------------------------------------------------------------//
 
-#endif // end MCLS_FIXEDPOINTITERATION_HPP
+#include "MCLS_RichardsonIteration_impl.hpp"
 
 //---------------------------------------------------------------------------//
-// end MCLS_FixedPointIteration.hpp
+
+#endif // end MCLS_RICHARDSONITERATION_HPP
+
+//---------------------------------------------------------------------------//
+// end MCLS_RichardsonIteration.hpp
 //---------------------------------------------------------------------------//
 

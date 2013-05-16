@@ -41,6 +41,11 @@ APPEND_SET(HEADERS
   MCLS_DomainTransporter_impl.hpp
   MCLS_Estimators.hpp
   MCLS_Events.hpp
+  MCLS_FixedPointIteration.hpp
+  MCLS_FixedPointIterationFactory.hpp
+  MCLS_FixedPointIterationFactory_impl.hpp
+  MCLS_FixedPointSolverManager.hpp
+  MCLS_FixedPointSolverManager_impl.hpp
   MCLS_ForwardDomain.hpp
   MCLS_ForwardDomain_impl.hpp
   MCLS_ForwardHistory.hpp
@@ -61,13 +66,13 @@ APPEND_SET(HEADERS
   MCLS_MCSASolverManager_impl.hpp
   MCLS_MCSolver.hpp
   MCLS_MCSolver_impl.hpp
-  MCLS_MinimalResidualSolverManager.hpp
-  MCLS_MinimalResidualSolverManager_impl.hpp
+  MCLS_MinimalResidualIteration.hpp
+  MCLS_MinimalResidualIteration_impl.hpp
   MCLS_MSODManager.hpp
   MCLS_MSODManager_impl.hpp
   MCLS_Preconditioner.hpp
-  MCLS_RichardsonSolverManager.hpp
-  MCLS_RichardsonSolverManager_impl.hpp
+  MCLS_RichardsonIteration.hpp
+  MCLS_RichardsonIteration_impl.hpp
   MCLS_RNGControl.hpp
   MCLS_SamplingTools.hpp
   MCLS_Serializer.hpp
@@ -77,8 +82,8 @@ APPEND_SET(HEADERS
   MCLS_SourceTransporter.hpp
   MCLS_SourceTransporter_impl.hpp
   MCLS_SPRNG.hpp
-  MCLS_SteepestDescentSolverManager.hpp
-  MCLS_SteepestDescentSolverManager_impl.hpp
+  MCLS_SteepestDescentIteration.hpp
+  MCLS_SteepestDescentIteration_impl.hpp
   MCLS_TallyTraits.hpp
   MCLS_UniformAdjointSource.hpp
   MCLS_UniformAdjointSource_impl.hpp

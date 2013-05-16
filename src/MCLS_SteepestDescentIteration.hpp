@@ -32,61 +32,56 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_MinimalResidualSolverManager.hpp
+ * \file MCLS_SteepestDescentIteration.hpp
  * \author Stuart R. Slattery
- * \brief Minimal Residual solver manager declaration.
+ * \brief Steepest Descent iteration declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_MINIMALRESIDUALSOLVERMANAGER_HPP
-#define MCLS_MINIMALRESIDUALSOLVERMANAGER_HPP
+#ifndef MCLS_STEEPESTDESCENTITERATION_HPP
+#define MCLS_STEEPESTDESCENTITERATION_HPP
 
-#include "MCLS_SolverManager.hpp"
+#include <string>
+
+#include "MCLS_FixedPointIteration.hpp"
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_as.hpp>
-#include <Teuchos_Comm.hpp>
 
 namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class MinimalResidualSolverManager
- * \brief Solver manager for minimal residual one dimensional projection
- * method for positive-definite problems.
+ * \class SteepestDescentIteration
+ * \brief Steepest descent one dimensional projection iteration for SPD
+ * problems.
  */
 template<class Vector, class Matrix>
-class MinimalResidualSolverManager : public SolverManager<Vector,Matrix>
+class SteepestDescentIteration : public FixedPointIteration<Vector,Matrix>
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef SolverManager<Vector,Matrix>            Base;
-    typedef Vector                                  vector_type;
-    typedef VectorTraits<Vector>                    VT;
-    typedef typename VT::scalar_type                Scalar;
-    typedef Matrix                                  matrix_type;
-    typedef LinearProblem<Vector,Matrix>            LinearProblemType;
-    typedef Teuchos::Comm<int>                      Comm;
+    typedef FixedPointIteration<Vector,Matrix>            Base;
+    typedef Vector                                        vector_type;
+    typedef VectorTraits<Vector>                          VT;
+    typedef typename VT::scalar_type                      Scalar;
+    typedef Matrix                                        matrix_type;
+    typedef LinearProblem<Vector,Matrix>                  LinearProblemType;
     //@}
 
-    // Comm constructor. setProblem() must be called before solve().
-    MinimalResidualSolverManager( const Teuchos::RCP<const Comm>& global_comm,
-                                  const Teuchos::RCP<Teuchos::ParameterList>& plist );
+    // Default constructor. setProblem() must be called before solve().
+    SteepestDescentIteration();
 
     // Constructor.
-    MinimalResidualSolverManager( const Teuchos::RCP<LinearProblemType>& problem,
-                                  const Teuchos::RCP<const Comm>& global_comm,
-                                  const Teuchos::RCP<Teuchos::ParameterList>& plist );
+    SteepestDescentIteration( const Teuchos::RCP<LinearProblemType>& problem );
 
     //! Destructor.
-    ~MinimalResidualSolverManager() { /* ... */ }
+    ~SteepestDescentIteration() { /* ... */ }
 
     //! Get the linear problem being solved by the manager.
     const LinearProblem<Vector,Matrix>& getProblem() const
@@ -97,14 +92,7 @@ class MinimalResidualSolverManager : public SolverManager<Vector,Matrix>
 
     //! Get the current parameters being used for this manager.
     Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const
-    { return d_plist; }
-
-    // Get the tolerance achieved on the last linear solve. This may be less
-    // or more than the set convergence tolerance.
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType achievedTol() const;
-
-    // Get the number of iterations from the last linear solve.
-    int getNumIters() const { return d_num_iters; };
+    { return Teuchos::parameterList(); }
 
     // Set the linear problem with the manager.
     void setProblem( 
@@ -114,30 +102,19 @@ class MinimalResidualSolverManager : public SolverManager<Vector,Matrix>
     // with default parameters that are not defined.
     void setParameters( const Teuchos::RCP<Teuchos::ParameterList>& params );
 
-    // Solve the linear problem. Return true if the solution converged. False
-    // if it did not.
-    bool solve();
+    // Do a single fixed point iteration. Must update the residual.
+    void doOneIteration();
 
-    //! Return if the last linear solve converged. 
-    bool getConvergedStatus() const 
-    { return Teuchos::as<bool>(d_converged_status); }
+    //! Get the name of the fixed point iteration.
+    std::string name() const { return std::string("Steepest Descent"); }
 
   private:
 
     // Linear problem
     Teuchos::RCP<LinearProblemType> d_problem;
 
-    // Global communicator.
-    Teuchos::RCP<const Comm> d_global_comm;
-
-    // Parameters.
-    Teuchos::RCP<Teuchos::ParameterList> d_plist;
-
-    // Number of iterations from last solve.
-    int d_num_iters;
-
-    // Converged status. True if last solve converged.
-    int d_converged_status;    
+    // Work vector.
+    Teuchos::RCP<Vector> d_p;
 };
 
 //---------------------------------------------------------------------------//
@@ -148,13 +125,13 @@ class MinimalResidualSolverManager : public SolverManager<Vector,Matrix>
 // Template includes.
 //---------------------------------------------------------------------------//
 
-#include "MCLS_MinimalResidualSolverManager_impl.hpp"
+#include "MCLS_SteepestDescentIteration_impl.hpp"
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_MINIMALRESIDUALSOLVERMANAGER_HPP
+#endif // end MCLS_STEEPESTDESCENTITERATION_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_MinimalResidualSolverManager.hpp
+// end MCLS_SteepestDescentIteration.hpp
 //---------------------------------------------------------------------------//
 

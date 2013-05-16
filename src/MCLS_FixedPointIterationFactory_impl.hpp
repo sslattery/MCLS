@@ -32,90 +32,91 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_SolverFactory.hpp
+ * \file MCLS_FixedPointIterationFactory_impl.hpp
  * \author Stuart R. Slattery
- * \brief Linear solver factory declaration.
+ * \brief Fixed point iteration factory implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_SOLVERFACTORY_HPP
-#define MCLS_SOLVERFACTORY_HPP
+#ifndef MCLS_FIXEDPOINTITERATIONFACTORY_IMPL_HPP
+#define MCLS_FIXEDPOINTITERATIONFACTORY_IMPL_HPP
 
-#include <string>
-
-#include "MCLS_SolverManager.hpp"
-
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_Describable.hpp>
-#include <Teuchos_Comm.hpp>
-
-#include <boost/tr1/unordered_map.hpp>
+#include "MCLS_DBC.hpp"
+#include "MCLS_RichardsonIteration.hpp"
+#include "MCLS_SteepestDescentIteration.hpp"
+#include "MCLS_MinimalResidualIteration.hpp"
 
 namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class SolverFactory
- * \brief Factory class for generating solver managers.
+ * \brief Constructor.
  */
 template<class Vector, class Matrix>
-class SolverFactory : public virtual Teuchos::Describable
+FixedPointIterationFactory<Vector,Matrix>::FixedPointIterationFactory()
 {
-  public:
+    // Create the sovler name-to-enum map.
+    d_name_map["Richardson"] = RICHARDSON;
+    d_name_map["Steepest Descent"] = STEEPEST_DESCENT;
+    d_name_map["Minimal Residual"] = MINIMAL_RESIDUAL;
+}
 
-    //@{
-    //! Typedefs.
-    typedef Vector                                    vector_type;
-    typedef Matrix                                    matrix_type;
-    typedef SolverManager<Vector,Matrix>              Solver;     
-    typedef Teuchos::Comm<int>                        Comm;
-    typedef std::tr1::unordered_map<std::string,int>  MapType;
-    //@}
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Creation method.
+ */
+template<class Vector, class Matrix>
+Teuchos::RCP<typename FixedPointIterationFactory<Vector,Matrix>::Iteration> 
+FixedPointIterationFactory<Vector,Matrix>::create( 
+    const std::string& iteration_name,
+    const Teuchos::RCP<Teuchos::ParameterList>& iteration_parameters )
+{
+    MCLS_REQUIRE( !iteration_parameters.is_null() );
 
-    //! Constructor.
-    SolverFactory();
+    Teuchos::RCP<Iteration> iteration;
 
-    //! Destructor.
-    ~SolverFactory() { /* ... */ }
+    MapType::const_iterator id = d_name_map.find( iteration_name );
+    MCLS_INSIST( id != d_name_map.end(), "Iteration type not supported!" );
 
-    // Creation method.
-    Teuchos::RCP<Solver> 
-    create( const std::string& solver_name,
-	    const Teuchos::RCP<const Comm>& global_comm,
-	    const Teuchos::RCP<Teuchos::ParameterList>& solver_parameters );
+    switch( id->second )
+    {
+	case RICHARDSON:
 
-  private:
+	    iteration = Teuchos::rcp( new RichardsonIteration<Vector,Matrix>(
+				       iteration_parameters ) );
+	    break;
 
-    // Solver enum.
-    enum MCLSSolverType {
-	ADJOINT_MC,
-        FORWARD_MC,
-	MCSA,
-	SEQUENTIAL_MC,
-        FIXED_POINT
-    };
+	case STEEPEST_DESCENT:
 
-    // String name to enum/integer map.
-    MapType d_name_map;
-};
+	    iteration = Teuchos::rcp( 
+                new SteepestDescentIteration<Vector,Matrix>() );
+	    break;
+
+	case MINIMAL_RESIDUAL:
+
+	    iteration = Teuchos::rcp( 
+                new MinimalResidualIteration<Vector,Matrix>() );
+	    break;
+
+	default:
+
+	    throw Assertion("Iteration type not supported!");
+	    break;
+    }
+
+    MCLS_ENSURE( !iteration.is_null() );
+
+    return iteration;
+}
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
-//---------------------------------------------------------------------------//
-// Template includes.
-//---------------------------------------------------------------------------//
-
-#include "MCLS_SolverFactory_impl.hpp"
+#endif // end MCLS_FIXEDPOINTITERATIONFACTORY_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-
-#endif // end MCLS_SOLVERFACTORY_HPP
-
-//---------------------------------------------------------------------------//
-// end MCLS_SolverFactory.hpp
+// end MCLS_FixedPointIterationFactory_impl.hpp
 // ---------------------------------------------------------------------------//
 

@@ -32,18 +32,19 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_RichardsonSolverManager_impl.hpp
+ * \file MCLS_FixedPointSolverManager_impl.hpp
  * \author Stuart R. Slattery
- * \brief Richardson solver manager implementation.
+ * \brief Fixed Point solver manager implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_RICHARDSONSOLVERMANAGER_IMPL_HPP
-#define MCLS_RICHARDSONSOLVERMANAGER_IMPL_HPP
+#ifndef MCLS_FIXEDPOINTSOLVERMANAGER_IMPL_HPP
+#define MCLS_FIXEDPOINTSOLVERMANAGER_IMPL_HPP
 
 #include <string>
 
 #include "MCLS_DBC.hpp"
+#include "MCLS_FixedPointIterationFactory.hpp"
 
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_Ptr.hpp>
@@ -56,7 +57,7 @@ namespace MCLS
  * \brief Comm constructor. setProblem() must be called before solve().
  */
 template<class Vector, class Matrix>
-RichardsonSolverManager<Vector,Matrix>::RichardsonSolverManager( 
+FixedPointSolverManager<Vector,Matrix>::FixedPointSolverManager( 
     const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
     : d_global_comm( global_comm )
@@ -71,7 +72,7 @@ RichardsonSolverManager<Vector,Matrix>::RichardsonSolverManager(
  * \brief Constructor.
  */
 template<class Vector, class Matrix>
-RichardsonSolverManager<Vector,Matrix>::RichardsonSolverManager( 
+FixedPointSolverManager<Vector,Matrix>::FixedPointSolverManager( 
     const Teuchos::RCP<LinearProblemType>& problem,
     const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
@@ -81,8 +82,21 @@ RichardsonSolverManager<Vector,Matrix>::RichardsonSolverManager(
     , d_num_iters( 0 )
     , d_converged_status( 0 )
 {
+    MCLS_REQUIRE( Teuchos::nonnull(d_problem) );
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
+
+    // Create the fixed point iteration. Default to Richardson.
+    std::string iteration_name = "Richardson";
+    if ( d_plist->isParameter("Fixed Point Type") )
+    {
+	iteration_name = d_plist->get<std::string>("Fixed Point Type");
+    }
+    FixedPointIterationFactory<Vector,Matrix> fp_factory;
+    d_fixed_point = 
+        fp_factory.create( iteration_name, d_plist );
+
+    d_fixed_point->setProblem( d_problem );   
 }
 
 //---------------------------------------------------------------------------//
@@ -91,14 +105,20 @@ RichardsonSolverManager<Vector,Matrix>::RichardsonSolverManager(
  */
 template<class Vector, class Matrix>
 Teuchos::RCP<const Teuchos::ParameterList> 
-RichardsonSolverManager<Vector,Matrix>::getValidParameters() const
+FixedPointSolverManager<Vector,Matrix>::getValidParameters() const
 {
+    // Create a parameter list with the fixed point parameters as a starting
+    // point. 
     Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::parameterList();
+    if ( Teuchos::nonnull(d_fixed_point) )
+    {
+	plist->setParameters( *d_fixed_point->getValidParameters() );
+    }
+
     plist->set<double>("Convergence Tolerance", 1.0);
     plist->set<int>("Maximum Iterations", 1000);
     plist->set<int>("Iteration Print Frequency", 10);
     plist->set<int>("Iteration Check Frequency", 1);
-    plist->set<double>("Richardson Relaxation", 1.0);
     return plist;
 }
 
@@ -109,8 +129,8 @@ RichardsonSolverManager<Vector,Matrix>::getValidParameters() const
  */
 template<class Vector, class Matrix>
 typename Teuchos::ScalarTraits<
-    typename RichardsonSolverManager<Vector,Matrix>::Scalar>::magnitudeType 
-RichardsonSolverManager<Vector,Matrix>::achievedTol() const
+    typename FixedPointSolverManager<Vector,Matrix>::Scalar>::magnitudeType 
+FixedPointSolverManager<Vector,Matrix>::achievedTol() const
 {
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType residual_norm = 
 	Teuchos::ScalarTraits<Scalar>::zero();
@@ -139,7 +159,7 @@ RichardsonSolverManager<Vector,Matrix>::achievedTol() const
  * \brief Set the linear problem with the manager.
  */
 template<class Vector, class Matrix>
-void RichardsonSolverManager<Vector,Matrix>::setProblem( 
+void FixedPointSolverManager<Vector,Matrix>::setProblem( 
     const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
@@ -147,6 +167,18 @@ void RichardsonSolverManager<Vector,Matrix>::setProblem(
 
     // Set the problem.
     d_problem = problem;
+
+    // Create the fixed point iteration. Default to Richardson.
+    std::string iteration_name = "Richardson";
+    if ( d_plist->isParameter("Fixed Point Type") )
+    {
+	iteration_name = d_plist->get<std::string>("Fixed Point Type");
+    }
+    FixedPointIterationFactory<Vector,Matrix> fp_factory;
+    d_fixed_point = 
+        fp_factory.create( iteration_name, d_plist );
+
+    d_fixed_point->setProblem( d_problem );
 }
 
 //---------------------------------------------------------------------------//
@@ -155,7 +187,7 @@ void RichardsonSolverManager<Vector,Matrix>::setProblem(
  * list with default parameters that are not defined.
  */
 template<class Vector, class Matrix>
-void RichardsonSolverManager<Vector,Matrix>::setParameters( 
+void FixedPointSolverManager<Vector,Matrix>::setParameters( 
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
     MCLS_REQUIRE( Teuchos::nonnull(params) );
@@ -168,7 +200,7 @@ void RichardsonSolverManager<Vector,Matrix>::setParameters(
  * converged. False if it did not.
  */
 template<class Vector, class Matrix>
-bool RichardsonSolverManager<Vector,Matrix>::solve()
+bool FixedPointSolverManager<Vector,Matrix>::solve()
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
@@ -200,11 +232,7 @@ bool RichardsonSolverManager<Vector,Matrix>::solve()
     d_converged_status = 0;
 
     // Iteration setup.
-    double omega = 1.0;
-    if ( d_plist->isParameter("Richardson Relaxation") )
-    {
-        omega = d_plist->get<double>("Richardson Relaxation");
-    }
+    d_fixed_point->setParameters( d_plist );
     int max_num_iters = 1000;
     if ( d_plist->isParameter("Maximum Iterations") )
     {
@@ -234,17 +262,11 @@ bool RichardsonSolverManager<Vector,Matrix>::solve()
 	// Update the iteration count.
 	++d_num_iters;
 
-	// Do a Richardson iteration and update the residual on the primary
-	// set. 
-        VT::update( *d_problem->getLHS(), 
-                    Teuchos::ScalarTraits<Scalar>::one(),
-                    *d_problem->getPrecResidual(), 
-                    omega );
-
-        d_problem->updatePrecResidual();
-        residual_norm = VT::normInf( *d_problem->getPrecResidual() );
+        // Do a fixed point iteration.
+        d_fixed_point->doOneIteration();
 
         // Check if we're done iterating.
+        residual_norm = VT::normInf( *d_problem->getPrecResidual() );
         if ( d_num_iters % check_freq == 0 )
         {
             do_iterations = (residual_norm > convergence_criteria) &&
@@ -254,7 +276,7 @@ bool RichardsonSolverManager<Vector,Matrix>::solve()
 	// Print iteration data.
 	if ( d_global_comm->getRank() == 0 && d_num_iters % print_freq == 0 )
 	{
-	    std::cout << "Richardson Iteration " << d_num_iters 
+	    std::cout << d_fixed_point->name() << " Iteration " << d_num_iters
 		      << ": Residual = " 
 		      << residual_norm/source_norm << std::endl;
 	}
@@ -288,9 +310,9 @@ bool RichardsonSolverManager<Vector,Matrix>::solve()
 
 } // end namespace MCLS
 
-#endif // end MCLS_RICHARDSONSOLVERMANAGER_IMPL_HPP
+#endif // end MCLS_FIXEDPOINTSOLVERMANAGER_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_RichardsonSolverManager_impl.hpp
+// end MCLS_FixedPointSolverManager_impl.hpp
 //---------------------------------------------------------------------------//
 

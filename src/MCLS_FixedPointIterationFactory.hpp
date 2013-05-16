@@ -32,77 +32,68 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_FixedPointIteration.hpp
+ * \file MCLS_FixedPointIterationFactory.hpp
  * \author Stuart R. Slattery
- * \brief Fixed point ieration base class.
+ * \brief Fixed point iteration factory declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_FIXEDPOINTITERATION_HPP
-#define MCLS_FIXEDPOINTITERATION_HPP
+#ifndef MCLS_FIXEDPOINTITERATIONFACTORY_HPP
+#define MCLS_FIXEDPOINTITERATIONFACTORY_HPP
 
 #include <string>
 
-#include "MCLS_LinearProblem.hpp"
-#include "MCLS_VectorTraits.hpp"
+#include "MCLS_FixedPointIteration.hpp"
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Describable.hpp>
 #include <Teuchos_ParameterList.hpp>
-#include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_Describable.hpp>
+
+#include <boost/tr1/unordered_map.hpp>
 
 namespace MCLS
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class FixedPointIteration
- * \brief Linear solver base class.
+ * \class SolverFactory
+ * \brief Factory class for generating solver managers.
  */
 template<class Vector, class Matrix>
-class FixedPointIteration : public virtual Teuchos::Describable
+class FixedPointIterationFactory : public virtual Teuchos::Describable
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Vector                                  vector_type;
-    typedef VectorTraits<Vector>                    VT;
-    typedef typename VT::scalar_type                Scalar;
-    typedef Matrix                                  matrix_type;
+    typedef Vector                                    vector_type;
+    typedef Matrix                                    matrix_type;
+    typedef FixedPointIteration<Vector,Matrix>        Iteration;
+    typedef std::tr1::unordered_map<std::string,int>  MapType;
     //@}
 
     //! Constructor.
-    FixedPointIteration() { /* ... */ }
+    FixedPointIterationFactory();
 
     //! Destructor.
-    virtual ~FixedPointIteration() { /* ... */ }
+    ~FixedPointIterationFactory() { /* ... */ }
 
-    //! Get the linear problem being solved by the iteration.
-    virtual const LinearProblem<Vector,Matrix>& getProblem() const = 0;
+    // Creation method.
+    Teuchos::RCP<Iteration> 
+    create( const std::string& iteration_name,
+	    const Teuchos::RCP<Teuchos::ParameterList>& iteration_parameters );
 
-    //! Get the valid parameters for this iteration.
-    virtual Teuchos::RCP<const Teuchos::ParameterList> 
-    getValidParameters() const = 0;
+  private:
 
-    //! Get the current parameters being used for this iteration.
-    virtual Teuchos::RCP<const Teuchos::ParameterList> 
-    getCurrentParameters() const = 0;
+    // Fixed point iteration enum.
+    enum MCLSIterationType {
+        RICHARDSON,
+        STEEPEST_DESCENT,
+        MINIMAL_RESIDUAL
+    };
 
-    //! Set the linear problem with the iteration.
-    virtual void setProblem( 
-	const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem ) = 0;
-
-    //! Set the parameters for the iteration. The iteration will modify this
-    //! list with default parameters that are not defined.
-    virtual void setParameters( 
-	const Teuchos::RCP<Teuchos::ParameterList>& params ) = 0;
-
-    //! Do a single fixed point iteration. Must update the residual.
-    virtual void doOneIteration() = 0;
-
-    //! Get the name of the fixed point iteration.
-    virtual std::string name() const = 0;
+    // String name to enum/integer map.
+    MapType d_name_map;
 };
 
 //---------------------------------------------------------------------------//
@@ -110,10 +101,16 @@ class FixedPointIteration : public virtual Teuchos::Describable
 } // end namespace MCLS
 
 //---------------------------------------------------------------------------//
+// Template includes.
+//---------------------------------------------------------------------------//
 
-#endif // end MCLS_FIXEDPOINTITERATION_HPP
+#include "MCLS_FixedPointIterationFactory_impl.hpp"
 
 //---------------------------------------------------------------------------//
-// end MCLS_FixedPointIteration.hpp
+
+#endif // end MCLS_FIXEDPOINTITERATIONFACTORY_HPP
+
 //---------------------------------------------------------------------------//
+// end MCLS_FixedPointIterationFactory.hpp
+// ---------------------------------------------------------------------------//
 

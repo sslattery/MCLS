@@ -57,8 +57,7 @@ enum EMCLSSolverType {
     SOLVER_TYPE_SEQUENTIAL_MC,
     SOLVER_TYPE_ADJOINT_MC,
     SOLVER_TYPE_FORWARD_MC,
-    SOLVER_TYPE_RICHARDSON,
-    SOLVER_TYPE_STEEPEST_DESCENT
+    SOLVER_TYPE_FIXED_POINT
 };
 
 inline std::istream& operator>>(
@@ -107,9 +106,7 @@ class MCLSLinearOpWithSolveFactory : public LinearOpWithSolveFactoryBase<Scalar>
     /** \brief . */
     static const std::string  ForwardMC_name;
     /** \brief . */
-    static const std::string  Richardson_name;
-    /** \brief . */
-    static const std::string  SteepestDescent_name;
+    static const std::string  FixedPoint_name;
     /** \brief . */
     static const std::string  ConvergenceTestFrequency_name;
 
