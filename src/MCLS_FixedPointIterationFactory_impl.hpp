@@ -45,6 +45,7 @@
 #include "MCLS_RichardsonIteration.hpp"
 #include "MCLS_SteepestDescentIteration.hpp"
 #include "MCLS_MinimalResidualIteration.hpp"
+#include "MCLS_RNSDIteration.hpp"
 
 namespace MCLS
 {
@@ -60,6 +61,7 @@ FixedPointIterationFactory<Vector,Matrix>::FixedPointIterationFactory()
     d_name_map["Richardson"] = RICHARDSON;
     d_name_map["Steepest Descent"] = STEEPEST_DESCENT;
     d_name_map["Minimal Residual"] = MINIMAL_RESIDUAL;
+    d_name_map["Residual Norm Steepest Descent"] = RNSD;
 }
 
 //---------------------------------------------------------------------------//
@@ -97,6 +99,12 @@ FixedPointIterationFactory<Vector,Matrix>::create(
 
 	    iteration = Teuchos::rcp( 
                 new MinimalResidualIteration<Vector,Matrix>() );
+	    break;
+
+	case RNSD:
+
+	    iteration = Teuchos::rcp( 
+                new RNSDIteration<Vector,Matrix>() );
 	    break;
 
 	default:

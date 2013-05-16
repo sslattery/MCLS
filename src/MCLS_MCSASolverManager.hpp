@@ -42,6 +42,7 @@
 #define MCLS_MCSASOLVERMANAGER_HPP
 
 #include "MCLS_SolverManager.hpp"
+#include "MCLS_FixedPointIteration.hpp"
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
 
@@ -72,6 +73,7 @@ class MCSASolverManager : public SolverManager<Vector,Matrix>
     typedef typename VT::scalar_type                Scalar;
     typedef Matrix                                  matrix_type;
     typedef LinearProblem<Vector,Matrix>            LinearProblemType;
+    typedef FixedPointIteration<Vector,Matrix>      FixedPointType;
     typedef Teuchos::Comm<int>                      Comm;
     //@}
 
@@ -148,6 +150,9 @@ class MCSASolverManager : public SolverManager<Vector,Matrix>
 
     // Monte Carlo solver manager.
     Teuchos::RCP<Base> d_mc_solver;
+
+    // Fixed point iteration.
+    Teuchos::RCP<FixedPointType> d_fixed_point;
 
     // Number of iterations from last solve.
     int d_num_iters;

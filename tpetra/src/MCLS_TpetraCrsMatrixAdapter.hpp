@@ -348,6 +348,17 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
     }
 
     /*!
+     * \brief Apply the transpose row matrix to a vector. (A^T)*x = y.
+     */
+    static void applyTranspose( const matrix_type& A, 
+                                const vector_type& x, 
+                                vector_type& y )
+    {
+        MCLS_REQUIRE( A.hasTransposeApply() );
+        A.apply( x, y, Teuchos::TRANS );
+    }
+
+    /*!
      * \brief Matrix-Matrix multiply C = A*B
      */
     static void multiply( const Teuchos::RCP<const matrix_type>& A, 

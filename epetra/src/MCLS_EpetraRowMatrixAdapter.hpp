@@ -443,6 +443,23 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
     }
 
     /*!
+     * \brief Apply the transpose row matrix to a vector. (A^T)*x = y.
+     */
+    static void applyTranspose(  const matrix_type& A, 
+                                 const vector_type& x, 
+                                 vector_type& y )
+    {
+        bool init_state = A.UseTranspose();
+        int error = const_cast<matrix_type&>(A).SetUseTranspose( true );
+        MCLS_CHECK( 0 == error );
+	error = A.Apply( x, y );
+        MCLS_CHECK( 0 == error );
+        error = const_cast<matrix_type&>(A).SetUseTranspose( init_state );
+        MCLS_CHECK( 0 == error );
+        MCLS_ENSURE( A.UseTranspose() == init_state );
+    }
+
+    /*!
      * \brief Get a copy of the transpose of a matrix.
      */
     static Teuchos::RCP<matrix_type> copyTranspose( const matrix_type& matrix )

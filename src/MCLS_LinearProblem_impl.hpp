@@ -323,6 +323,42 @@ void LinearProblem<Vector,Matrix>::apply( const Vector& x, Vector& y )
 
 //---------------------------------------------------------------------------//
 /*!
+ * \brief Apply the transpose composite linear operator to a vector.
+ */
+template<class Vector, class Matrix>
+void LinearProblem<Vector,Matrix>::applyTranspose( const Vector& x, Vector& y )
+{
+    const bool left_prec = Teuchos::nonnull( d_PL );
+    const bool right_prec = Teuchos::nonnull( d_PR );
+
+    Teuchos::RCP<Vector> temp = 
+	( left_prec || right_prec ) ? VT::clone(y) : Teuchos::null;
+
+    if ( !left_prec && !right_prec )
+    {
+	MT::applyTranspose( *d_A, x, y );
+    }
+
+    else if ( left_prec && right_prec )
+    {
+	MT::applyTranspose( *d_PL, x, y );
+	MT::applyTranspose( *d_A, y, *temp );
+	MT::applyTranspose( *d_PR, *temp, y );
+    }
+    else if ( left_prec )
+    {
+	MT::applyTranspose( *d_PL, x, *temp );
+	MT::applyTranspose( *d_A, *temp, y );
+    }
+    else
+    {
+	MT::applyTranspose( *d_A, x, *temp );
+	MT::applyTranspose( *d_PR, *temp, y );
+    }
+}
+
+//---------------------------------------------------------------------------//
+/*!
  * \brief Apply the base linear operator to a vector.
  */
 template<class Vector, class Matrix>

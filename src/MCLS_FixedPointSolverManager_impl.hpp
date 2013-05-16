@@ -95,7 +95,6 @@ FixedPointSolverManager<Vector,Matrix>::FixedPointSolverManager(
     FixedPointIterationFactory<Vector,Matrix> fp_factory;
     d_fixed_point = 
         fp_factory.create( iteration_name, d_plist );
-
     d_fixed_point->setProblem( d_problem );   
 }
 
@@ -119,6 +118,8 @@ FixedPointSolverManager<Vector,Matrix>::getValidParameters() const
     plist->set<int>("Maximum Iterations", 1000);
     plist->set<int>("Iteration Print Frequency", 10);
     plist->set<int>("Iteration Check Frequency", 1);
+    plist->set<std::string>("Fixed Point Type", "Richardson");
+
     return plist;
 }
 

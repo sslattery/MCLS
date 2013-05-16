@@ -345,6 +345,13 @@ class MatrixTraits
     { UndefinedMatrixTraits<Vector,Matrix>::notDefined(); }
 
     /*!
+     * \brief Apply the transpose row matrix to a vector. (A^T)*x = y.
+     */
+    static void applyTranspose( const Matrix& A, 
+                                const Vector& x, Vector& y )
+    { UndefinedMatrixTraits<Vector,Matrix>::notDefined(); }
+
+    /*!
      * \brief Matrix-Matrix multiply C = A*B.
      */
     static void multiply( const Teuchos::RCP<const Matrix>& A, 

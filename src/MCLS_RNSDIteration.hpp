@@ -32,14 +32,14 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_MinimalResidualIteration.hpp
+ * \file MCLS_RNSDIteration.hpp
  * \author Stuart R. Slattery
- * \brief Minimal Residual iteration declaration.
+ * \brief Residual norm steepest descent iteration declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_MINIMALRESIDUALITERATION_HPP
-#define MCLS_MINIMALRESIDUALITERATION_HPP
+#ifndef MCLS_RNSDITERATION_HPP
+#define MCLS_RNSDITERATION_HPP
 
 #include <string>
 
@@ -55,12 +55,12 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 /*!
- * \class MinimalResidualIteration
- * \brief Minimal residual one dimensional projection iteration for
- * positive-definite problems. 
+ * \class RNSDIteration
+ * \brief Residual norm steepest descent one dimensional projection iteration
+ * for non-singular problems. 
  */
 template<class Vector, class Matrix>
-class MinimalResidualIteration : public FixedPointIteration<Vector,Matrix>
+class RNSDIteration : public FixedPointIteration<Vector,Matrix>
 {
   public:
 
@@ -75,13 +75,13 @@ class MinimalResidualIteration : public FixedPointIteration<Vector,Matrix>
     //@}
 
     // Default constructor. setProblem() must be called before solve().
-    MinimalResidualIteration();
+    RNSDIteration();
 
     // Constructor.
-    MinimalResidualIteration( const Teuchos::RCP<LinearProblemType>& problem );
+    RNSDIteration( const Teuchos::RCP<LinearProblemType>& problem );
 
     //! Destructor.
-    ~MinimalResidualIteration() { /* ... */ }
+    ~RNSDIteration() { /* ... */ }
 
     //! Get the linear problem being solved by the manager.
     const LinearProblem<Vector,Matrix>& getProblem() const
@@ -106,15 +106,19 @@ class MinimalResidualIteration : public FixedPointIteration<Vector,Matrix>
     void doOneIteration();
 
     //! Get the name of the fixed point iteration.
-    std::string name() const { return std::string("Minimal Residual"); }
+    std::string name() const 
+    { return std::string("Residual Norm Steepest Descent"); }
 
   private:
 
     // Linear problem
     Teuchos::RCP<LinearProblemType> d_problem;
 
-    // Work vector.
-    Teuchos::RCP<Vector> d_p;
+    // Search subspace
+    Teuchos::RCP<Vector> d_v;
+
+    // Constraint subspace;
+    Teuchos::RCP<Vector> d_w;
 };
 
 //---------------------------------------------------------------------------//
@@ -125,13 +129,13 @@ class MinimalResidualIteration : public FixedPointIteration<Vector,Matrix>
 // Template includes.
 //---------------------------------------------------------------------------//
 
-#include "MCLS_MinimalResidualIteration_impl.hpp"
+#include "MCLS_RNSDIteration_impl.hpp"
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_MINIMALRESIDUALITERATION_HPP
+#endif // end MCLS_RNSDITERATION_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_MinimalResidualIteration.hpp
+// end MCLS_RNSDIteration.hpp
 //---------------------------------------------------------------------------//
 

@@ -32,14 +32,14 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_SteepestDescentIteration_impl.hpp
+ * \file MCLS_RNSDIteration_impl.hpp
  * \author Stuart R. Slattery
- * \brief Steepest Descent iteration implementation.
+ * \brief Residual Norm Steepest Descent iteration implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_STEEPESTDESCENTITERATION_IMPL_HPP
-#define MCLS_STEEPESTDESCENTITERATION_IMPL_HPP
+#ifndef MCLS_RNSDITERATION_IMPL_HPP
+#define MCLS_RNSDITERATION_IMPL_HPP
 
 #include "MCLS_DBC.hpp"
 
@@ -53,7 +53,7 @@ namespace MCLS
  * \brief Default constructor. setProblem() must be called before solve().
  */
 template<class Vector, class Matrix>
-SteepestDescentIteration<Vector,Matrix>::SteepestDescentIteration()
+RNSDIteration<Vector,Matrix>::RNSDIteration()
 { /* ... */ }
 
 //---------------------------------------------------------------------------//
@@ -61,13 +61,15 @@ SteepestDescentIteration<Vector,Matrix>::SteepestDescentIteration()
  * \brief Constructor.
  */
 template<class Vector, class Matrix>
-SteepestDescentIteration<Vector,Matrix>::SteepestDescentIteration( 
+RNSDIteration<Vector,Matrix>::RNSDIteration( 
     const Teuchos::RCP<LinearProblemType>& problem )
     : d_problem( problem )
-    , d_p( VT::clone(*problem->getPrecResidual()) )
+    , d_v( VT::clone(*problem->getPrecResidual()) )
+    , d_w( VT::clone(*problem->getPrecResidual()) )
 { 
     MCLS_ENSURE( Teuchos::nonnull(d_problem) );
-    MCLS_ENSURE( Teuchos::nonnull(d_p) );
+    MCLS_ENSURE( Teuchos::nonnull(d_v) );
+    MCLS_ENSURE( Teuchos::nonnull(d_w) );
 }
 
 //---------------------------------------------------------------------------//
@@ -76,7 +78,7 @@ SteepestDescentIteration<Vector,Matrix>::SteepestDescentIteration(
  */
 template<class Vector, class Matrix>
 Teuchos::RCP<const Teuchos::ParameterList> 
-SteepestDescentIteration<Vector,Matrix>::getValidParameters() const
+RNSDIteration<Vector,Matrix>::getValidParameters() const
 {
     Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::parameterList();
     return plist;
@@ -87,13 +89,15 @@ SteepestDescentIteration<Vector,Matrix>::getValidParameters() const
  * \brief Set the linear problem with the manager.
  */
 template<class Vector, class Matrix>
-void SteepestDescentIteration<Vector,Matrix>::setProblem( 
+void RNSDIteration<Vector,Matrix>::setProblem( 
     const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem )
 {
     MCLS_REQUIRE( Teuchos::nonnull(problem) );
     d_problem = problem;
-    d_p = VT::clone( *d_problem->getPrecResidual() );
-    MCLS_ENSURE( Teuchos::nonnull(d_p) );
+    d_v = VT::clone( *d_problem->getPrecResidual() );
+    d_w = VT::clone( *d_problem->getPrecResidual() );
+    MCLS_ENSURE( Teuchos::nonnull(d_v) );
+    MCLS_ENSURE( Teuchos::nonnull(d_w) );
 }
 
 //---------------------------------------------------------------------------//
@@ -102,7 +106,7 @@ void SteepestDescentIteration<Vector,Matrix>::setProblem(
  * list with default parameters that are not defined.
  */
 template<class Vector, class Matrix>
-void SteepestDescentIteration<Vector,Matrix>::setParameters( 
+void RNSDIteration<Vector,Matrix>::setParameters( 
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 { /* ... */ }
 
@@ -111,29 +115,33 @@ void SteepestDescentIteration<Vector,Matrix>::setParameters(
  * \brief Do a single fixed point iteration. Must update the residual.
  */
 template<class Vector, class Matrix>
-void SteepestDescentIteration<Vector,Matrix>::doOneIteration()
+void RNSDIteration<Vector,Matrix>::doOneIteration()
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_problem) );
-    MCLS_REQUIRE( Teuchos::nonnull(d_p) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_v) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_w) );
 
-    // Build p = A*r.
-    d_problem->apply( *d_problem->getPrecResidual(), *d_p );
+    // Build the search subspace.
+    d_problem->applyTranspose( *d_problem->getPrecResidual(), *d_v );
+
+    // Build the constraint subspace.
+    d_problem->apply( *d_v, *d_w );
 
     // Petrov-Galerkin condition.
-    Scalar alpha = VT::dot( *d_problem->getPrecResidual(), 
-                            *d_problem->getPrecResidual() ) /
-                   VT::dot( *d_p, *d_problem->getPrecResidual() );
+    Scalar v_norm = VT::norm2( *d_v );
+    Scalar w_norm = VT::norm2( *d_w );
+    Scalar alpha = (v_norm*v_norm) / (w_norm*w_norm);
 
     // Fixed point update.
     VT::update( *d_problem->getLHS(), 
                 Teuchos::ScalarTraits<Scalar>::one(),
-                *d_problem->getPrecResidual(),
+                *d_v,
                 alpha );
 
     // Residual update.
     VT::update( *d_problem->getPrecResidual(),
                 Teuchos::ScalarTraits<Scalar>::one(),
-                *d_p,
+                *d_w,
                 -alpha );
 }
 
@@ -141,9 +149,9 @@ void SteepestDescentIteration<Vector,Matrix>::doOneIteration()
 
 } // end namespace MCLS
 
-#endif // end MCLS_STEEPESTDESCENTITERATION_IMPL_HPP
+#endif // end MCLS_RNSDITERATION_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_SteepestDescentIteration_impl.hpp
+// end MCLS_RNSDIteration_impl.hpp
 //---------------------------------------------------------------------------//
 

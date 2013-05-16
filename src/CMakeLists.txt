@@ -71,6 +71,8 @@ APPEND_SET(HEADERS
   MCLS_MSODManager.hpp
   MCLS_MSODManager_impl.hpp
   MCLS_Preconditioner.hpp
+  MCLS_RNSDIteration.hpp
+  MCLS_RNSDIteration_impl.hpp
   MCLS_RichardsonIteration.hpp
   MCLS_RichardsonIteration_impl.hpp
   MCLS_RNGControl.hpp

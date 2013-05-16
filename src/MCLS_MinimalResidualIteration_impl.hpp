@@ -116,15 +116,13 @@ void MinimalResidualIteration<Vector,Matrix>::doOneIteration()
     MCLS_REQUIRE( Teuchos::nonnull(d_problem) );
     MCLS_REQUIRE( Teuchos::nonnull(d_p) );
 
-    Scalar alpha = 0.0;
-
     // Build p = A*r.
     d_problem->apply( *d_problem->getPrecResidual(), *d_p );
 
     // Petrov-Galerkin condition.
-    alpha = VT::dot( *d_problem->getPrecResidual(), 
-                     *d_problem->getPrecResidual() ) /
-            VT::dot( *d_p, *d_p );
+    Scalar alpha = VT::dot( *d_problem->getPrecResidual(), 
+                            *d_problem->getPrecResidual() ) /
+                   VT::dot( *d_p, *d_p );
 
     // Fixed point update.
     VT::update( *d_problem->getLHS(), 

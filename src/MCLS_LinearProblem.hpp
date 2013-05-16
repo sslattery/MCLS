@@ -135,6 +135,9 @@ class LinearProblem
     // Apply the composite linear operator to a vector.
     void apply( const Vector& x, Vector& y );
 
+    // Apply the transpose composite linear operator to a vector.
+    void applyTranspose( const Vector& x, Vector& y );
+
     // Apply the base linear operator to a vector.
     void applyOp( const Vector& x, Vector& y );
 

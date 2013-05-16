@@ -46,6 +46,7 @@
 #include "MCLS_DBC.hpp"
 #include "MCLS_AdjointSolverManager.hpp"
 #include "MCLS_ForwardSolverManager.hpp"
+#include "MCLS_FixedPointIterationFactory.hpp"
 
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_Ptr.hpp>
@@ -87,6 +88,21 @@ MCSASolverManager<Vector,Matrix>::MCSASolverManager(
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
+    // Build the fixed point solver on the primary set. Default to
+    // richardson.
+    if ( d_primary_set )
+    {
+        std::string iteration_name = "Richardson";
+        if ( d_plist->isParameter("Fixed Point Type") )
+        {
+            iteration_name = d_plist->get<std::string>("Fixed Point Type");
+        }
+        FixedPointIterationFactory<Vector,Matrix> fp_factory;
+        d_fixed_point = 
+            fp_factory.create( iteration_name, d_plist );
+        d_fixed_point->setProblem( d_problem );   
+    }
+
     buildResidualMonteCarloProblem();
 }
 
@@ -112,7 +128,7 @@ MCSASolverManager<Vector,Matrix>::getValidParameters() const
     plist->set<int>("Maximum Iterations", 1000);
     plist->set<int>("Iteration Print Frequency", 10);
     plist->set<int>("Iteration Check Frequency", 1);
-    plist->set<double>("Richardson Relaxation", 1.0);
+    plist->set<std::string>("Fixed Point Type", "Richardson");
 
     return plist;
 }
@@ -170,6 +186,21 @@ void MCSASolverManager<Vector,Matrix>::setProblem(
     // Set the problem.
     d_primary_set = Teuchos::nonnull(problem);
 
+    // Build the fixed point solver on the primary set. Default to
+    // richardson.
+    if ( d_primary_set )
+    {
+        std::string iteration_name = "Richardson";
+        if ( d_plist->isParameter("Fixed Point Type") )
+        {
+            iteration_name = d_plist->get<std::string>("Fixed Point Type");
+        }
+        FixedPointIterationFactory<Vector,Matrix> fp_factory;
+        d_fixed_point = 
+            fp_factory.create( iteration_name, d_plist );
+        d_fixed_point->setProblem( problem );   
+    }
+
     // Determine if the linear operator has changed. It is presumed the
     // preconditioners are bound to the linear operator and will therefore
     // change when the operator changes. The mechanism here for determining if
@@ -177,7 +208,7 @@ void MCSASolverManager<Vector,Matrix>::setProblem(
     // same. This may not be the best way to check.
     bool update_operator = true;
     if ( d_primary_set )
-    {
+    {        
         if ( Teuchos::nonnull(d_problem) )
         {
             if ( d_problem->getOperator().getRawPtr() == 
@@ -283,11 +314,7 @@ bool MCSASolverManager<Vector,Matrix>::solve()
     d_converged_status = 0;
 
     // Iteration setup.
-    double omega = 1.0;
-    if ( d_plist->isParameter("Richardson Relaxation") )
-    {
-        omega = d_plist->get<double>("Richardson Relaxation");
-    }
+    d_fixed_point->setParameters( d_plist );
     int max_num_iters = 1000;
     if ( d_plist->isParameter("Maximum Iterations") )
     {
@@ -322,16 +349,11 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	// Update the iteration count.
 	++d_num_iters;
 
-	// Do a Richardson iteration and update the residual on the primary
+	// Do a fixed iteration and update the residual on the primary
 	// set. 
 	if ( d_primary_set )
 	{
-	    VT::update( *d_problem->getLHS(), 
-			Teuchos::ScalarTraits<Scalar>::one(),
-			*d_problem->getPrecResidual(), 
-			omega );
-
-	    d_problem->updatePrecResidual();
+            d_fixed_point->doOneIteration();
 	}
 	d_global_comm->barrier();
 
@@ -369,8 +391,8 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	// Print iteration data.
 	if ( d_global_comm->getRank() == 0 && d_num_iters % print_freq == 0 )
 	{
-	    std::cout << "MCSA Iteration " << d_num_iters 
-		      << ": Residual = " 
+	    std::cout << "MCSA / " << d_fixed_point->name() << " Iteration " 
+                      << d_num_iters << ": Residual = " 
 		      << residual_norm/source_norm << std::endl;
 	}
 
