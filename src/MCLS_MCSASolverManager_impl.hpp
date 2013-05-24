@@ -389,7 +389,8 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	}
 
 	// Print iteration data.
-	if ( d_global_comm->getRank() == 0 && d_num_iters % print_freq == 0 )
+	if ( (d_global_comm->getRank() == 0 && d_num_iters % print_freq == 0) ||
+             (d_global_comm->getRank() == 0 && !do_iterations) )
 	{
 	    std::cout << "MCSA / " << d_fixed_point->name() << " Iteration " 
                       << d_num_iters << ": Residual = " 
