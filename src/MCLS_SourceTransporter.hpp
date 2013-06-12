@@ -113,7 +113,7 @@ class SourceTransporter
     void localHistoryTransport( const Teuchos::RCP<HistoryType>& history, 
 				BankType& bank );
 
-    // Post communications with the set master proc for end of cycle.
+    // Post communications in the binary tree.
     void postMasterCount();
 
     // Complete communications with the set master proc for end of cycle.
@@ -156,12 +156,12 @@ class SourceTransporter
     // Source.
     Teuchos::RCP<Source> d_source;
 
-    // Master-worker asynchornous communication request handles for number of
+    // Master-worker asynchronous communication request handles for number of
     // histories complete.
-    Teuchos::Array<Teuchos::RCP<Request> > d_num_done_handles;
+    std::pair<Teuchos::RCP<Request>,Teuchos::RCP<Request> > d_num_done_handles;
 
     // Master-worker reports for number of histories complete communications. 
-    Teuchos::Array<Teuchos::RCP<int> > d_num_done_report;
+    std::pair<Teuchos::RCP<int>,Teuchos::RCP<int> > d_num_done_report;
 
     // Request handle for completed work on worker nodes.
     Teuchos::RCP<Request> d_complete_handle;

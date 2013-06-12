@@ -65,8 +65,7 @@ SourceTransporter<Source>::SourceTransporter(
     , d_domain( domain )
     , d_domain_transporter( d_domain, plist )
     , d_domain_communicator( d_domain, d_comm, plist )
-    , d_num_done_handles( d_comm->getSize() - 1 )
-    , d_num_done_report( d_comm->getSize() - 1 )
+    , d_num_done_report( Teuchos::rcp(new int(0)), Teuchos::rcp(new int(0)) )
     , d_complete_report( Teuchos::rcp(new int(0)) )
     , d_num_done( Teuchos::rcp(new int(0)) )
     , d_complete( Teuchos::rcp(new int(0)) )
@@ -85,7 +84,7 @@ SourceTransporter<Source>::SourceTransporter(
     int my_rank = d_comm->getRank();
     int my_size = d_comm->getSize();
 
-    // Get the parent. MASTER has no parent.
+    // Get the parent process. MASTER has no parent.
     if ( my_rank != MASTER )
     {
 	if ( my_rank % 2 == 0 )
@@ -98,27 +97,18 @@ SourceTransporter<Source>::SourceTransporter(
 	}
     }
 	 
-    // Get the first child.
+    // Get the first child process.
     int child_1 = ( my_rank * 2 ) + 1;
     if ( child_1 < my_size )
     {
 	d_children.first = child_1;
     }
 
-    // Get the second child.
+    // Get the second child process.
     int child_2 = child_1 + 1;
     if ( child_2 < my_size )
     {
 	d_children.second = child_2;
-    }
-
-    // Create the history count reports.
-    Teuchos::Array<Teuchos::RCP<int> >::iterator report_it;
-    for ( report_it = d_num_done_report.begin();
-	  report_it != d_num_done_report.end();
-	  ++report_it )
-    {
-	*report_it = Teuchos::rcp( new int(0) );
     }
 
     // Set the check frequency. For every d_check_freq histories run, we will
@@ -221,6 +211,9 @@ void SourceTransporter<Source>::transport()
 
     // Barrier before continuing.
     d_comm->barrier();
+
+    // Complete the master processor communicator.
+    completeMasterCount();
 
     // End all communication.
     MCLS_CHECK( !d_domain_communicator.sendBufferSize() );
@@ -344,31 +337,32 @@ void SourceTransporter<Source>::localHistoryTransport(
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Post communications with the set master proc for end of cycle.
+ * \brief Post communications in the binary tree.
  */
 template<class Source>
 void SourceTransporter<Source>::postMasterCount()
 {
-    // MASTER will receive history count data from each worker node.
-    if ( d_comm->getRank() == MASTER )
+    // Post a receive from the first child for history count data.
+    if ( d_children.first != Teuchos::OrdinalTraits<int>::invalid() )
     {
-	MCLS_CHECK( d_num_done_handles.size() == d_comm->getSize() - 1 );
-	MCLS_CHECK( d_num_done_report.size() == d_comm->getSize() - 1 );
-
-	// Post an asynchronous receive for each worker.
-	for ( int n = 1; n < d_comm->getSize(); ++n )
-	{
-	    *(d_num_done_report[n-1]) = 0;
-	    d_num_done_handles[n-1] = Teuchos::ireceive<int,int>( 
-		*d_comm_num_done, d_num_done_report[n-1], n );
-	}
+	*d_num_done_report.first = 0;
+	d_num_done_handles.first = Teuchos::ireceive<int,int>(
+	    *d_comm_num_done, d_num_done_report.first, d_children.first );
     }
 
-    // The worker nodes post a receive from the master about completion.
-    else
+    // Post a receive from the second child for history count data.
+    if ( d_children.second != Teuchos::OrdinalTraits<int>::invalid() )
+    {
+	*d_num_done_report.second = 0;
+	d_num_done_handles.second = Teuchos::ireceive<int,int>(
+	    *d_comm_num_done, d_num_done_report.second, d_children.second );
+    }
+
+    // Post a receive from parent for transport completion.
+    if ( d_parent != Teuchos::OrdinalTraits<int>::invalid() )
     {
 	d_complete_handle = Teuchos::ireceive<int,int>( 
-	    *d_comm_complete, d_complete_report, MASTER );
+	    *d_comm_complete, d_complete_report, d_parent );
     }
 }
 
@@ -415,6 +409,13 @@ void SourceTransporter<Source>::completeMasterCount()
 template<class Source>
 void SourceTransporter<Source>::updateMasterCount()
 {
+    // Check for received reports of updated counts from first child and add
+    // to running total.
+    if ( d_children.first != Teuchos::OrdinalTraits<int>::invalid() )
+    {
+
+    }
+
     // MASTER checks for received reports of updated counts from work nodes
     // and adds them to the running total.
     if ( d_comm->getRank() == MASTER )
