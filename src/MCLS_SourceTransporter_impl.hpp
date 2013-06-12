@@ -212,7 +212,7 @@ void SourceTransporter<Source>::transport()
     // Barrier before continuing.
     d_comm->barrier();
 
-    // Complete the master processor communicator.
+    // Complete the master processor communication.
     completeMasterCount();
 
     // End all communication.
@@ -409,13 +409,6 @@ void SourceTransporter<Source>::completeMasterCount()
 template<class Source>
 void SourceTransporter<Source>::updateMasterCount()
 {
-    // Check for received reports of updated counts from first child and add
-    // to running total.
-    if ( d_children.first != Teuchos::OrdinalTraits<int>::invalid() )
-    {
-
-    }
-
     // MASTER checks for received reports of updated counts from work nodes
     // and adds them to the running total.
     if ( d_comm->getRank() == MASTER )
