@@ -190,6 +190,9 @@ void SourceTransporter<Source>::transport()
     // Barrier before continuing.
     d_comm->barrier();
 
+    // Complete the communication with the master.
+    completeMasterCount();
+
     // End all communication.
     MCLS_CHECK( !d_domain_communicator.sendBufferSize() );
     MCLS_CHECK( bank.empty() );
