@@ -114,13 +114,20 @@ class SourceTransporter
 				BankType& bank );
 
     // Post communications in the binary tree.
-    void postMasterCount();
+    void postTreeCount();
 
-    // Complete communications with the set master proc for end of cycle.
-    void completeMasterCount();
+    // Complete outstanding communications in the binary tree at the end of a
+    // cycle.
+    void completeTreeCount();
 
-    // Update the master count of completed histories.
-    void updateMasterCount();
+    // Update the binary tree count of completed histories.
+    void updateTreeCount();
+
+    // Send the global finished message to the children.
+    void sendCompleteToChildren();
+
+    // Control the termination of a stage.
+    void controlTermination();
 
   private:
 
@@ -175,12 +182,6 @@ class SourceTransporter
     // Total number of histories completed in set.
     Teuchos::RCP<int> d_num_done;
     
-    // Total number of histories completed locally.
-    int d_num_done_local;
-
-    // Total number of histories completed from source.
-    int d_num_src;
-
     // Number of histories complete in the local domain.
     int d_num_run;
 

@@ -62,6 +62,9 @@ SourceTransporter<Source>::SourceTransporter(
     const Teuchos::RCP<Domain>& domain, 
     const Teuchos::ParameterList& plist )
     : d_comm( comm )
+    , d_parent( Teuchos::OrdinalTraits<int>::invalid() )
+    , d_children( Teuchos::OrdinalTraits<int>::invalid(),
+                  Teuchos::OrdinalTraits<int>::invalid() )
     , d_domain( domain )
     , d_domain_transporter( d_domain, plist )
     , d_domain_communicator( d_domain, d_comm, plist )
@@ -155,8 +158,6 @@ void SourceTransporter<Source>::transport()
     // Initialize.
     *d_complete = 0;
     *d_num_done = 0;
-    d_num_done_local = 0;
-    d_num_src = 0;
     d_num_run = 0;
 
     // Get the number of histories in the set from the source.
@@ -169,8 +170,8 @@ void SourceTransporter<Source>::transport()
     // Everyone posts receives for history buffers to get started.
     d_domain_communicator.post();
 
-    // Post asynchronous communcations with MASTER for bookeeping.
-    postMasterCount();
+    // Post asynchronous communcations in the binary tree for history counts.
+    postTreeCount();
 
     // Transport all histories through the global domain until completion.
     while ( !(*d_complete) )
@@ -201,21 +202,24 @@ void SourceTransporter<Source>::transport()
 	    continue;
 	}
 
-	// If everything looks like it is finished locally, report to MASTER
-	// to check if transport is done.
-	else
+	// If everything looks like it is finished locally, report through
+        // the tree to check if transport is done.
+        else
 	{
-	    updateMasterCount();
+	    controlTermination();
 	}
     }
+
+    // Forward the completion message onto the children.
+    sendCompleteToChildren();
 
     // Barrier before continuing.
     d_comm->barrier();
 
-    // Complete the master processor communication.
-    completeMasterCount();
+    // Complete the binary tree outstanding communication.
+    completeTreeCount();
 
-    // End all communication.
+    // End all communication and free all buffers.
     MCLS_CHECK( !d_domain_communicator.sendBufferSize() );
     MCLS_CHECK( bank.empty() );
     d_domain_communicator.end();
@@ -243,15 +247,12 @@ void SourceTransporter<Source>::transportSourceHistory( BankType& bank )
     MCLS_CHECK( !history.is_null() );
     MCLS_CHECK( HT::alive(*history) );
 
-    // Add to the source history count.
-    ++d_num_src;
-
     // Transport the history through the local domain and communicate it if
     // needed. 
     localHistoryTransport( history, bank );
 
     // Check for incoming histories on the check frequency. Transport those
-    // that we do get.
+    // that we do get and then update the tree count.
     if ( d_num_run % d_check_freq == 0 )
     {
 	if ( d_domain_communicator.checkAndPost(bank) )
@@ -261,6 +262,8 @@ void SourceTransporter<Source>::transportSourceHistory( BankType& bank )
 		transportBankHistory( bank );
 	    }
 	}
+
+        updateTreeCount();
     }
 }
 
@@ -293,10 +296,12 @@ void SourceTransporter<Source>::transportBankHistory( BankType& bank )
     // needed. 
     localHistoryTransport( history, bank );
 
-    // Check for incoming histories. Do not transport these.
+    // Check for incoming histories. Do not transport these. Also update the
+    // tree count.
     if ( d_num_run % d_check_freq == 0 )
     {
 	d_domain_communicator.checkAndPost(bank);
+        updateTreeCount();
     }    
 }
 
@@ -331,7 +336,6 @@ void SourceTransporter<Source>::localHistoryTransport(
     {
 	MCLS_CHECK( Event::CUTOFF == HT::event(*history) );
 	++(*d_num_done);
-	++d_num_done_local;
     }
 }
 
@@ -340,7 +344,7 @@ void SourceTransporter<Source>::localHistoryTransport(
  * \brief Post communications in the binary tree.
  */
 template<class Source>
-void SourceTransporter<Source>::postMasterCount()
+void SourceTransporter<Source>::postTreeCount()
 {
     // Post a receive from the first child for history count data.
     if ( d_children.first != Teuchos::OrdinalTraits<int>::invalid() )
@@ -368,33 +372,37 @@ void SourceTransporter<Source>::postMasterCount()
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Complete communications with the set master proc for end of cycle by
- * completing all outstanding requests.
+ * \brief Complete outstanding communications in the binary tree at the end of
+ * a cycle.
  */
 template<class Source>
-void SourceTransporter<Source>::completeMasterCount()
+void SourceTransporter<Source>::completeTreeCount()
 {
-    // MASTER will wait for each worker node to report their completed number
-    // of histories.
+    // Parent will wait for first child node to clear communication.
     Teuchos::Ptr<Teuchos::RCP<Request> > request_ptr;
-    if ( d_comm->getRank() == MASTER )
+    if ( d_children.first != Teuchos::OrdinalTraits<int>::invalid() )
     {
-	for ( int n = 1; n < d_comm->getSize(); ++n )
-	{
-	    request_ptr = 
-		Teuchos::Ptr<Teuchos::RCP<Request> >(&d_num_done_handles[n-1]);
-	    Teuchos::wait( *d_comm_num_done, request_ptr );
-	    MCLS_CHECK( d_num_done_handles[n-1].is_null() );
-	}
+        request_ptr = 
+            Teuchos::Ptr<Teuchos::RCP<Request> >(&d_num_done_handles.first);
+        Teuchos::wait( *d_comm_num_done, request_ptr );
+        MCLS_CHECK( d_num_done_handles.first.is_null() );
     }
 
-    // Worker nodes send the finish message to the master.
-    else
+    // Parent will wait for second child node to clear communication.
+    if ( d_children.second != Teuchos::OrdinalTraits<int>::invalid() )
+    {
+        request_ptr = 
+            Teuchos::Ptr<Teuchos::RCP<Request> >(&d_num_done_handles.second);
+        Teuchos::wait( *d_comm_num_done, request_ptr );
+        MCLS_CHECK( d_num_done_handles.second.is_null() );
+    }
+
+    // Children nodes send the finish message to the parent.
+    if ( d_parent != Teuchos::OrdinalTraits<int>::invalid() )
     {
 	Teuchos::RCP<int> clear = Teuchos::rcp( new int(1) );
 	Teuchos::RCP<Request> finish = Teuchos::isend<int,int>(
-	    *d_comm_num_done, clear, MASTER );
-
+	    *d_comm_num_done, clear, d_parent );
 	request_ptr = 
 	    Teuchos::Ptr<Teuchos::RCP<Request> >(&finish);
 	Teuchos::wait( *d_comm_num_done, request_ptr );
@@ -404,79 +412,121 @@ void SourceTransporter<Source>::completeMasterCount()
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Update the master count of completed histories.
+ * \brief Update the binary tree count of completed histories.
  */
 template<class Source>
-void SourceTransporter<Source>::updateMasterCount()
+void SourceTransporter<Source>::updateTreeCount()
 {
-    // MASTER checks for received reports of updated counts from work nodes
-    // and adds them to the running total.
-    if ( d_comm->getRank() == MASTER )
+    // Check for received reports of updated counts from first child.
+    if ( d_children.first != Teuchos::OrdinalTraits<int>::invalid() )
     {
-	// Check if we are done with transport.
-	if ( *d_num_done == d_nh ) *d_complete = 1;
+        // Receive completed reports and repost.
+        if ( CommTools::isRequestComplete(d_num_done_handles.first) )
+        {
+            MCLS_CHECK( *(d_num_done_report.first) > 0 );
+            d_num_done_handles.first = Teuchos::null;
 
-	// Check on work node reports.
-	int n = 0;
-	while( !(*d_complete) && ++n < d_comm->getSize() )
-	{
-	    // Receive completed reports and repost.
-	    if ( CommTools::isRequestComplete(d_num_done_handles[n-1]) )
-	    {
-		MCLS_CHECK( *(d_num_done_report[n-1]) > 0 );
-		d_num_done_handles[n-1] = Teuchos::null;
+            // Add to the running total.
+            *d_num_done += *(d_num_done_report.first);
+            MCLS_CHECK( *d_num_done <= d_nh );
 
-		// Add to the running total.
-		*d_num_done += *(d_num_done_report[n-1]);
-		MCLS_CHECK( *d_num_done <= d_nh );
-
-		// Repost.
-		d_num_done_handles[n-1] = Teuchos::ireceive<int,int>(
-		    *d_comm_num_done, d_num_done_report[n-1], n );
-
-		// See if we are done.
-		if ( *d_num_done == d_nh ) *d_complete = 1;
-	    }
-	}
-	
-	// If we finished after this update, send out the completion message.
-	if ( *d_complete )
-	{
-	    for ( int n = 1; n < d_comm->getSize(); ++n )
-	    {
-		Teuchos::RCP<Request> complete = Teuchos::isend<int,int>(
-		    *d_comm_complete, d_complete, n );
-		Teuchos::Ptr<Teuchos::RCP<Request> > request_ptr(&complete);
-		Teuchos::wait( *d_comm_complete, request_ptr );
-		MCLS_CHECK( complete.is_null() );
-	    }
-	}
+            // Repost.
+            d_num_done_handles.first = Teuchos::ireceive<int,int>(
+                *d_comm_num_done, d_num_done_report.first, d_children.first );
+        }
     }
 
-    // Worker nodes send their completed totals to the MASTER and then check
-    // to see if a message has arrived indicating that transport has been
-    // completed. 
+    // Check for received reports of updated counts from second child.
+    if ( d_children.second != Teuchos::OrdinalTraits<int>::invalid() )
+    {
+        // Receive completed reports and repost.
+        if ( CommTools::isRequestComplete(d_num_done_handles.second) )
+        {
+            MCLS_CHECK( *(d_num_done_report.second) > 0 );
+            d_num_done_handles.second = Teuchos::null;
+
+            // Add to the running total.
+            *d_num_done += *(d_num_done_report.second);
+            MCLS_CHECK( *d_num_done <= d_nh );
+
+            // Repost.
+            d_num_done_handles.second = Teuchos::ireceive<int,int>(
+                *d_comm_num_done, d_num_done_report.second, d_children.second );
+        }
+    }
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Send the global finished message to the children.
+ */
+template<class Source>
+void SourceTransporter<Source>::sendCompleteToChildren()
+{
+    // Child 1
+    if ( d_children.first != Teuchos::OrdinalTraits<int>::invalid() )
+    {
+        Teuchos::RCP<Request> complete = Teuchos::isend<int,int>(
+            *d_comm_complete, d_complete, d_children.first );
+        Teuchos::Ptr<Teuchos::RCP<Request> > request_ptr(&complete);
+        Teuchos::wait( *d_comm_complete, request_ptr );
+        MCLS_CHECK( complete.is_null() );
+    }
+
+    // Child 2
+    if ( d_children.second != Teuchos::OrdinalTraits<int>::invalid() )
+    {
+        Teuchos::RCP<Request> complete = Teuchos::isend<int,int>(
+            *d_comm_complete, d_complete, d_children.second );
+        Teuchos::Ptr<Teuchos::RCP<Request> > request_ptr(&complete);
+        Teuchos::wait( *d_comm_complete, request_ptr );
+        MCLS_CHECK( complete.is_null() );
+    }
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Control the termination of a stage.
+ */
+template<class Source>
+void SourceTransporter<Source>::controlTermination()
+{
+    // Update the history count from the children.
+    updateTreeCount();
+
+    // MASTER checks for completion.
+    if ( d_comm->getRank() == MASTER ) 
+    {
+        if ( *d_num_done == d_nh )
+        {
+            *d_complete = 1;
+        }
+    }
+
+    // Other nodes send the number of histories completed to parent and check
+    // to see if a message has arrived from the parent indicating that
+    // transport has been completed.
     else
     {
-	// Only report if we've done work.
-	if ( *d_num_done > 0 )
-	{
-	    Teuchos::RCP<Request> report = Teuchos::isend<int,int>(
-		*d_comm_num_done, d_num_done, MASTER );
-	    Teuchos::Ptr<Teuchos::RCP<Request> > request_ptr(&report);
-	    Teuchos::wait( *d_comm_num_done, request_ptr );
-	    MCLS_CHECK( report.is_null() );
+        // Send completed number of histories to parent.
+        if ( *d_num_done > 0 )
+        {
+            Teuchos::RCP<Request> report = Teuchos::isend<int,int>(
+                *d_comm_num_done, d_num_done, d_parent );
+            Teuchos::Ptr<Teuchos::RCP<Request> > request_ptr(&report);
+            Teuchos::wait( *d_comm_num_done, request_ptr );
+            MCLS_CHECK( report.is_null() );
 
-	    *d_num_done = 0;
-	}
+            *d_num_done = 0;
+        } 
 
-	// Check for completion status from master.
-	if ( CommTools::isRequestComplete(d_complete_handle) )
-	{
-	    MCLS_CHECK( *d_complete_report ==  1 );
-	    d_complete_handle = Teuchos::null;
-	    *d_complete = 1;
-	}
+        // Check for completion status from parent.
+        if ( CommTools::isRequestComplete(d_complete_handle) )
+        {
+            MCLS_CHECK( *d_complete_report ==  1 );
+            d_complete_handle = Teuchos::null;
+            *d_complete = 1;
+        }
     }
 }
 
