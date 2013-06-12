@@ -48,6 +48,7 @@
 
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_Ptr.hpp>
+#include <Teuchos_OrdinalTraits.hpp>
 
 namespace MCLS
 {
@@ -61,6 +62,7 @@ SourceTransporter<Source>::SourceTransporter(
     const Teuchos::RCP<Domain>& domain, 
     const Teuchos::ParameterList& plist )
     : d_comm( comm )
+    , d_comm_tree( d_comm )
     , d_domain( domain )
     , d_domain_transporter( d_domain, plist )
     , d_domain_communicator( d_domain, d_comm, plist )

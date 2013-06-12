@@ -33,6 +33,7 @@ APPEND_SET(HEADERS
   MCLS_CommHistoryBuffer.hpp
   MCLS_CommHistoryBuffer_impl.hpp
   MCLS_CommTools.hpp
+  MCLS_CommTree.hpp
   MCLS_DBC.hpp
   MCLS_DomainCommunicator.hpp
   MCLS_DomainCommunicator_impl.hpp
@@ -96,6 +97,7 @@ APPEND_SET(HEADERS
   ) 
 
 APPEND_SET(SOURCES
+  MCLS_CommTree.cpp
   MCLS_DBC.cpp
   MCLS_GlobalRNG.cpp
   MCLS_RNGControl.cpp
