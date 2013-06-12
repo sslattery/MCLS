@@ -45,7 +45,6 @@
 #include "MCLS_DomainTraits.hpp"
 #include "MCLS_DomainTransporter.hpp"
 #include "MCLS_DomainCommunicator.hpp"
-#include "MCLS_CommTree.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
@@ -133,8 +132,11 @@ class SourceTransporter
     // Parallel communicator for this set.
     Teuchos::RCP<const Comm> d_comm;
 
-    // Binary communication tree.
-    CommTree d_comm_tree;
+    // Parent process.
+    int d_parent;
+
+    // Child processes.
+    std::pair<int,int> d_children;
 
     // Local domain.
     Teuchos::RCP<Domain> d_domain;

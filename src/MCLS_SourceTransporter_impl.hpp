@@ -62,7 +62,6 @@ SourceTransporter<Source>::SourceTransporter(
     const Teuchos::RCP<Domain>& domain, 
     const Teuchos::ParameterList& plist )
     : d_comm( comm )
-    , d_comm_tree( d_comm )
     , d_domain( domain )
     , d_domain_transporter( d_domain, plist )
     , d_domain_communicator( d_domain, d_comm, plist )
@@ -81,6 +80,37 @@ SourceTransporter<Source>::SourceTransporter(
     // bookeeping operations.
     d_comm_num_done = d_comm->duplicate();
     d_comm_complete = d_comm->duplicate();
+
+    // Get the comm parameters.
+    int my_rank = d_comm->getRank();
+    int my_size = d_comm->getSize();
+
+    // Get the parent. MASTER has no parent.
+    if ( my_rank != MASTER )
+    {
+	if ( my_rank % 2 == 0 )
+	{
+	    d_parent = ( my_rank / 2 ) - 1;
+	}
+	else
+	{
+	    d_parent = ( my_rank - 1 ) / 2;
+	}
+    }
+	 
+    // Get the first child.
+    int child_1 = ( my_rank * 2 ) + 1;
+    if ( child_1 < my_size )
+    {
+	d_children.first = child_1;
+    }
+
+    // Get the second child.
+    int child_2 = child_1 + 1;
+    if ( child_2 < my_size )
+    {
+	d_children.second = child_2;
+    }
 
     // Create the history count reports.
     Teuchos::Array<Teuchos::RCP<int> >::iterator report_it;
