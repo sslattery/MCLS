@@ -113,6 +113,9 @@ class SourceTransporter
     void localHistoryTransport( const Teuchos::RCP<HistoryType>& history, 
 				BankType& bank );
 
+    // Process incoming messages.
+    void processMessages( BankType& bank );
+
     // Post communications in the binary tree.
     void postTreeCount();
 

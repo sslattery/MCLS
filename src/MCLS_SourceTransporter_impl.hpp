@@ -182,36 +182,27 @@ void SourceTransporter<Source>::transport()
 	    transportSourceHistory( bank );
 	}
 
-	// If the source is empty, transport the rest of the histories in the
-	// bank and histories that have been received from other domains.
+	// If the source is empty, transport the bank histories.
 	else if ( !bank.empty() )
 	{
 	    transportBankHistory( bank );
 	}
 
-	// If we're out of source and bank histories, send all buffers that
-	// aren't empty.
-	else if ( d_domain_communicator.send() > 0 )
+	// If we're out of source and bank histories or have hit the check
+	// frequency, process incoming messages.
+	if ( (ST::empty(*d_source) && bank.empty()) ||  
+             d_num_run % d_check_freq == 0 )
 	{
-	    continue;
-	}
-
-	// See if we've received any histories.
-	else if ( d_domain_communicator.checkAndPost(bank) > 0 )
-	{
-	    continue;
+            processMessages( bank );
 	}
 
 	// If everything looks like it is finished locally, report through
         // the tree to check if transport is done.
-        else
+        if ( ST::empty(*d_source) && bank.empty() )
 	{
 	    controlTermination();
 	}
     }
-
-    // Forward the completion message onto the children.
-    sendCompleteToChildren();
 
     // Barrier before continuing.
     d_comm->barrier();
@@ -250,21 +241,6 @@ void SourceTransporter<Source>::transportSourceHistory( BankType& bank )
     // Transport the history through the local domain and communicate it if
     // needed. 
     localHistoryTransport( history, bank );
-
-    // Check for incoming histories on the check frequency. Transport those
-    // that we do get and then update the tree count.
-    if ( d_num_run % d_check_freq == 0 )
-    {
-	if ( d_domain_communicator.checkAndPost(bank) )
-	{
-	    while ( !bank.empty() )
-	    {
-		transportBankHistory( bank );
-	    }
-	}
-
-        updateTreeCount();
-    }
 }
 
 //---------------------------------------------------------------------------//
@@ -295,14 +271,6 @@ void SourceTransporter<Source>::transportBankHistory( BankType& bank )
     // Transport the history through the local domain and communicate it if
     // needed. 
     localHistoryTransport( history, bank );
-
-    // Check for incoming histories. Do not transport these. Also update the
-    // tree count.
-    if ( d_num_run % d_check_freq == 0 )
-    {
-	d_domain_communicator.checkAndPost(bank);
-        updateTreeCount();
-    }    
 }
 
 //---------------------------------------------------------------------------//
@@ -337,6 +305,20 @@ void SourceTransporter<Source>::localHistoryTransport(
 	MCLS_CHECK( Event::CUTOFF == HT::event(*history) );
 	++(*d_num_done);
     }
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Process incoming messages.
+ */
+template<class Source>
+void SourceTransporter<Source>::processMessages( BankType& bank )
+{
+    // Check for incoming histories.
+    d_domain_communicator.checkAndPost(bank);
+
+    // Add to the history completed tally 
+    updateTreeCount();
 }
 
 //---------------------------------------------------------------------------//
@@ -491,6 +473,9 @@ void SourceTransporter<Source>::sendCompleteToChildren()
 template<class Source>
 void SourceTransporter<Source>::controlTermination()
 {
+    // Send any partially full buffers.
+    d_domain_communicator.send();
+
     // Update the history count from the children.
     updateTreeCount();
 
@@ -527,6 +512,12 @@ void SourceTransporter<Source>::controlTermination()
             d_complete_handle = Teuchos::null;
             *d_complete = 1;
         }
+    }
+
+    // Send completetion message to children.
+    if ( *d_complete )
+    {
+        sendCompleteToChildren();
     }
 }
 
