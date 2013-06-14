@@ -360,8 +360,21 @@ void SourceTransporter<Source>::postTreeCount()
 template<class Source>
 void SourceTransporter<Source>::completeTreeCount()
 {
-    // Parent will wait for first child node to clear communication.
     Teuchos::Ptr<Teuchos::RCP<Request> > request_ptr;
+
+    // Children nodes send the finish message to the parent.
+    if ( d_parent != Teuchos::OrdinalTraits<int>::invalid() )
+    {
+	Teuchos::RCP<int> clear = Teuchos::rcp( new int(1) );
+	Teuchos::RCP<Request> finish = Teuchos::isend<int,int>(
+	    *d_comm_num_done, clear, d_parent );
+	request_ptr = 
+	    Teuchos::Ptr<Teuchos::RCP<Request> >(&finish);
+	Teuchos::wait( *d_comm_num_done, request_ptr );
+	MCLS_CHECK( finish.is_null() );
+    }
+
+    // Parent will wait for first child node to clear communication.
     if ( d_children.first != Teuchos::OrdinalTraits<int>::invalid() )
     {
         request_ptr = 
@@ -377,18 +390,6 @@ void SourceTransporter<Source>::completeTreeCount()
             Teuchos::Ptr<Teuchos::RCP<Request> >(&d_num_done_handles.second);
         Teuchos::wait( *d_comm_num_done, request_ptr );
         MCLS_CHECK( d_num_done_handles.second.is_null() );
-    }
-
-    // Children nodes send the finish message to the parent.
-    if ( d_parent != Teuchos::OrdinalTraits<int>::invalid() )
-    {
-	Teuchos::RCP<int> clear = Teuchos::rcp( new int(1) );
-	Teuchos::RCP<Request> finish = Teuchos::isend<int,int>(
-	    *d_comm_num_done, clear, d_parent );
-	request_ptr = 
-	    Teuchos::Ptr<Teuchos::RCP<Request> >(&finish);
-	Teuchos::wait( *d_comm_num_done, request_ptr );
-	MCLS_CHECK( finish.is_null() );
     }
 }
 
@@ -485,6 +486,7 @@ void SourceTransporter<Source>::controlTermination()
         if ( *d_num_done == d_nh )
         {
             *d_complete = 1;
+            sendCompleteToChildren();
         }
     }
 
@@ -501,7 +503,6 @@ void SourceTransporter<Source>::controlTermination()
             Teuchos::Ptr<Teuchos::RCP<Request> > request_ptr(&report);
             Teuchos::wait( *d_comm_num_done, request_ptr );
             MCLS_CHECK( report.is_null() );
-
             *d_num_done = 0;
         } 
 
@@ -511,13 +512,8 @@ void SourceTransporter<Source>::controlTermination()
             MCLS_CHECK( *d_complete_report ==  1 );
             d_complete_handle = Teuchos::null;
             *d_complete = 1;
+            sendCompleteToChildren();
         }
-    }
-
-    // Send completetion message to children.
-    if ( *d_complete )
-    {
-        sendCompleteToChildren();
     }
 }
 
