@@ -180,20 +180,23 @@ void SourceTransporter<Source>::transport()
 	if ( !ST::empty(*d_source) )
 	{
 	    transportSourceHistory( bank );
+	    ++d_num_run;
 	}
 
 	// If the source is empty, transport the bank histories.
 	else if ( !bank.empty() )
 	{
 	    transportBankHistory( bank );
+	    ++d_num_run;
 	}
 
 	// If we're out of source and bank histories or have hit the check
 	// frequency, process incoming messages.
 	if ( (ST::empty(*d_source) && bank.empty()) ||  
-             d_num_run % d_check_freq == 0 )
+             d_num_run == d_check_freq )
 	{
             processMessages( bank );
+	    d_num_run = 0;
 	}
 
 	// If everything looks like it is finished locally, report through
@@ -289,9 +292,6 @@ void SourceTransporter<Source>::localHistoryTransport(
     // Do local transport.
     d_domain_transporter.transport( *history );
     MCLS_CHECK( !HT::alive(*history) );
-
-    // Update the run count.
-    ++d_num_run;
 
     // Communicate the history if it left the local domain.
     if ( Event::BOUNDARY == HT::event(*history) )
