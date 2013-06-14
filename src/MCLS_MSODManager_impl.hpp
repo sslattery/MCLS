@@ -46,6 +46,7 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_Ptr.hpp>
+#include <Teuchos_as.hpp>
 
 namespace MCLS
 {
@@ -97,17 +98,29 @@ MSODManager<Source>::MSODManager( const bool primary_set,
                      "Primary set must exist on procs [0,(set_size-1)] only!" );
     }
 
+    // Compute the set id.
+    d_set_id = std::floor( Teuchos::as<double>(d_global_comm->getRank()) /
+                           Teuchos::as<double>(d_set_size) );
+    MCLS_CHECK( d_set_id >=0 && d_set_id < d_num_sets );
+
+    // Compute the block id.
+    d_block_id = d_global_comm->getRank() - d_num_blocks*d_set_id;
+    MCLS_CHECK( d_block_id >=0 && d_block_id < d_num_blocks );
+
     // Barrier before proceeding.
     d_global_comm->barrier();
 
-    // Generate the set-constant communicators and the set ids.
-    buildSetComms();
+    // Generate the set-constant communicators.
+    d_set_comm = d_global_comm->split( d_set_id, d_block_id );
 
-    // Generate the block-constant communicators and the block ids.
-    buildBlockComms();
+    // Generate the block-constant communicators.
+    d_block_comm = d_global_comm->split( d_block_id, d_set_id );
 
     // Barrier before proceeding.
     d_global_comm->barrier();
+
+    MCLS_ENSURE( Teuchos::nonnull(d_set_comm) );
+    MCLS_ENSURE( Teuchos::nonnull(d_block_comm) );
 }
 
 //---------------------------------------------------------------------------//
@@ -159,70 +172,6 @@ void MSODManager<Source>::setSource(
     }
 
     broadcastSource( rng_control );
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Build the set-constant commumnicators.
- */
-template<class Source>
-void MSODManager<Source>::buildSetComms()
-{
-    MCLS_REQUIRE( d_set_size > 0 );
-    MCLS_REQUIRE( d_num_sets > 0 );
-
-    Teuchos::Array<int> subcomm_ranks( d_set_size );
-    Teuchos::RCP<const Comm> set_comm;
-    for ( int i = 0; i < d_num_sets; ++i )
-    {
-	for ( int n = i*d_set_size; n < (i+1)*d_set_size; ++n )
-	{
-	    subcomm_ranks[n - i*d_set_size] = n;
-	}
-
-	set_comm = d_global_comm->createSubcommunicator( subcomm_ranks() );
-
-	if ( !set_comm.is_null() )
-	{
-	    d_set_comm = set_comm;
-	    d_set_id = i;
-	}
-    }
-
-    MCLS_ENSURE( !d_set_comm.is_null() );
-    MCLS_ENSURE( d_set_id >= 0 );
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Build the block-constant commumnicators.
- */
-template<class Source>
-void MSODManager<Source>::buildBlockComms()
-{
-    MCLS_REQUIRE( d_block_size > 0 );
-    MCLS_REQUIRE( d_num_blocks > 0 );
-
-    Teuchos::Array<int> subcomm_ranks( d_block_size );
-    Teuchos::RCP<const Comm> block_comm;
-    for ( int i = 0; i < d_num_blocks; ++i )
-    {
-	for ( int n = 0; n < d_block_size; ++n )
-	{
-	    subcomm_ranks[n] = n*d_set_size + i;
-	}
-
-	block_comm = d_global_comm->createSubcommunicator( subcomm_ranks() );
-
-	if ( !block_comm.is_null() )
-	{
-	    d_block_comm = block_comm;
-	    d_block_id = i;
-	}
-    }
-
-    MCLS_ENSURE( !d_block_comm.is_null() );
-    MCLS_ENSURE( d_block_id >= 0 );
 }
 
 //---------------------------------------------------------------------------//
