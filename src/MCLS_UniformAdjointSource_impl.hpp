@@ -304,9 +304,6 @@ void UniformAdjointSource<Domain>::buildSource()
     // Set counters.
     d_nh_left = d_nh_domain;
     d_nh_emitted = 0;
-
-    // Barrier before continuing.
-    d_set_comm->barrier();
 }
 
 //---------------------------------------------------------------------------//
