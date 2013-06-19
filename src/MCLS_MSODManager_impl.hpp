@@ -125,19 +125,11 @@ template<class Source>
 void MSODManager<Source>::setDomain(
     const Teuchos::RCP<Domain>& primary_domain )
 {
-    if ( d_set_id == 0 )
-    {
-	MCLS_INSIST( !primary_domain.is_null(),
-                     "Primary domain must exist on set 0!" );
+    MCLS_CHECK( d_set_id 
+                ? Teuchos::is_null(primary_domain)
+                : Teuchos::nonnull(primary_domain) );
 
-	d_local_domain = primary_domain;
-    }
-    else
-    {
-	MCLS_INSIST( primary_domain.is_null(),
-                     "Primary domain must exist on set 0 only!" );
-    }
-
+    d_local_domain = primary_domain;
     broadcastDomain();
 }
 
@@ -152,19 +144,11 @@ void MSODManager<Source>::setSource(
 {
     MCLS_REQUIRE( !rng_control.is_null() );
 
-    if ( d_set_id == 0 )
-    {
-	MCLS_INSIST( !primary_source.is_null(),
-                     "Primary source must exist on set 0!" );
+    MCLS_CHECK( d_set_id 
+                ? Teuchos::is_null(primary_source)
+                : Teuchos::nonnull(primary_source) );
 
-	d_local_source = primary_source;
-    }
-    else
-    {
-	MCLS_INSIST( primary_source.is_null(),
-                     "Primary source must exist on set 0 only!" );
-    }
-
+    d_local_source = primary_source;
     broadcastSource( rng_control );
 }
 
@@ -192,12 +176,10 @@ void MSODManager<Source>::broadcastDomain()
     MCLS_CHECK( buffer_size > 0 );
 
     // Pack the primary domain.
-    Teuchos::Array<char> domain_buffer( buffer_size );
-    if ( d_set_id == 0 )
-    {
-	domain_buffer = DT::pack( *d_local_domain );
-	MCLS_CHECK( Teuchos::as<std::size_t>(domain_buffer.size()) == buffer_size );
-    }
+    Teuchos::Array<char> domain_buffer = d_set_id ? 
+                                         Teuchos::Array<char>( buffer_size ) : 
+                                         DT::pack( *d_local_domain );
+    MCLS_CHECK( Teuchos::as<std::size_t>(domain_buffer.size()) == buffer_size );
 
     // Broadcast the domain across the blocks.
     Teuchos::broadcast<int,char>( *d_block_comm, 0, domain_buffer() );
@@ -238,12 +220,10 @@ void MSODManager<Source>::broadcastSource(
     MCLS_CHECK( buffer_size > 0 );
 
     // Pack the primary source.
-    Teuchos::Array<char> source_buffer( buffer_size );
-    if ( d_set_id == 0 )
-    {
-	source_buffer = ST::pack( *d_local_source );
-	MCLS_CHECK( Teuchos::as<std::size_t>(source_buffer.size()) == buffer_size );
-    }
+    Teuchos::Array<char> source_buffer = d_set_id ? 
+                                         Teuchos::Array<char>( buffer_size ) : 
+                                         ST::pack( *d_local_source );
+    MCLS_CHECK( Teuchos::as<std::size_t>(source_buffer.size()) == buffer_size );
 
     // Broadcast the source across the blocks.
     Teuchos::broadcast<int,char>( *d_block_comm, 0, source_buffer() );
