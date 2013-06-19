@@ -107,17 +107,11 @@ MSODManager<Source>::MSODManager( const bool primary_set,
     d_block_id = d_global_comm->getRank() - d_num_blocks*d_set_id;
     MCLS_CHECK( d_block_id >=0 && d_block_id < d_num_blocks );
 
-    // Barrier before proceeding.
-    d_global_comm->barrier();
-
     // Generate the set-constant communicators.
     d_set_comm = d_global_comm->split( d_set_id, d_block_id );
 
     // Generate the block-constant communicators.
     d_block_comm = d_global_comm->split( d_block_id, d_set_id );
-
-    // Barrier before proceeding.
-    d_global_comm->barrier();
 
     MCLS_ENSURE( Teuchos::nonnull(d_set_comm) );
     MCLS_ENSURE( Teuchos::nonnull(d_block_comm) );
@@ -185,14 +179,12 @@ void MSODManager<Source>::broadcastDomain()
     MCLS_REQUIRE( !d_block_comm.is_null() );
     MCLS_REQUIRE( d_set_id >= 0 );
 
+    // Check the local domain.
+    MCLS_CHECK( d_set_id ? true : Teuchos::nonnull(d_local_domain) );
+
     // Get the byte size of the domain from the primary set.
-    std::size_t buffer_size = 0;
-    if ( d_set_id == 0 )
-    {
-	MCLS_CHECK( !d_local_domain.is_null() );
-	buffer_size = DT::getPackedBytes( *d_local_domain );
-    }
-    d_block_comm->barrier();
+    std::size_t buffer_size = 
+	d_set_id ? 0 : DT::getPackedBytes( *d_local_domain );
 
     // Broadcast the buffer size across the blocks.
     Teuchos::broadcast<int,std::size_t>( 
@@ -203,11 +195,9 @@ void MSODManager<Source>::broadcastDomain()
     Teuchos::Array<char> domain_buffer( buffer_size );
     if ( d_set_id == 0 )
     {
-	MCLS_CHECK( !d_local_domain.is_null() );
 	domain_buffer = DT::pack( *d_local_domain );
 	MCLS_CHECK( Teuchos::as<std::size_t>(domain_buffer.size()) == buffer_size );
     }
-    d_block_comm->barrier();
 
     // Broadcast the domain across the blocks.
     Teuchos::broadcast<int,char>( *d_block_comm, 0, domain_buffer() );
@@ -235,14 +225,12 @@ void MSODManager<Source>::broadcastSource(
     MCLS_REQUIRE( !d_local_domain.is_null() );
     MCLS_REQUIRE( d_set_id >= 0 ); 
 
+    // Check the local source.
+    MCLS_CHECK( d_set_id ? true : Teuchos::nonnull(d_local_source) );
+
     // Get the byte size of the source from the primary set.
-    std::size_t buffer_size = 0;
-    if ( d_set_id == 0 )
-    {
-	MCLS_CHECK( !d_local_source.is_null() );
-	buffer_size = ST::getPackedBytes( *d_local_source );
-    }
-    d_block_comm->barrier();
+    std::size_t buffer_size = 
+	d_set_id ? 0 : ST::getPackedBytes( *d_local_source );
 
     // Broadcast the buffer size across the blocks.
     Teuchos::broadcast<int,std::size_t>( 
@@ -253,11 +241,9 @@ void MSODManager<Source>::broadcastSource(
     Teuchos::Array<char> source_buffer( buffer_size );
     if ( d_set_id == 0 )
     {
-	MCLS_CHECK( !d_local_source.is_null() );
 	source_buffer = ST::pack( *d_local_source );
 	MCLS_CHECK( Teuchos::as<std::size_t>(source_buffer.size()) == buffer_size );
     }
-    d_block_comm->barrier();
 
     // Broadcast the source across the blocks.
     Teuchos::broadcast<int,char>( *d_block_comm, 0, source_buffer() );
