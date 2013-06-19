@@ -108,14 +108,8 @@ void MCSolver<Source>::solve()
     // Assign the source to the transporter.
     d_transporter->assignSource( d_source, d_relative_weight_cutoff );
 
-    // Barrier before solve.
-    d_set_comm->barrier();
-
     // Transport the source to solve the problem.
     d_transporter->transport();
-
-    // Barrier after solve.
-    d_set_comm->barrier();
 
     // Update the set tallies.
     TT::combineSetTallies( *d_tally, d_set_comm );
