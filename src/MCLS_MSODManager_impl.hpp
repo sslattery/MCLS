@@ -46,6 +46,7 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_Ptr.hpp>
+#include <Teuchos_as.hpp>
 
 namespace MCLS
 {
@@ -97,17 +98,23 @@ MSODManager<Source>::MSODManager( const bool primary_set,
                      "Primary set must exist on procs [0,(set_size-1)] only!" );
     }
 
-    // Barrier before proceeding.
-    d_global_comm->barrier();
+    // Compute the set id.
+    d_set_id = std::floor( Teuchos::as<double>(d_global_comm->getRank()) /
+                           Teuchos::as<double>(d_set_size) );
+    MCLS_CHECK( d_set_id >=0 && d_set_id < d_num_sets );
 
-    // Generate the set-constant communicators and the set ids.
-    buildSetComms();
+    // Compute the block id.
+    d_block_id = d_global_comm->getRank() - d_num_blocks*d_set_id;
+    MCLS_CHECK( d_block_id >=0 && d_block_id < d_num_blocks );
 
-    // Generate the block-constant communicators and the block ids.
-    buildBlockComms();
+    // Generate the set-constant communicators.
+    d_set_comm = d_global_comm->split( d_set_id, d_block_id );
 
-    // Barrier before proceeding.
-    d_global_comm->barrier();
+    // Generate the block-constant communicators.
+    d_block_comm = d_global_comm->split( d_block_id, d_set_id );
+
+    MCLS_ENSURE( Teuchos::nonnull(d_set_comm) );
+    MCLS_ENSURE( Teuchos::nonnull(d_block_comm) );
 }
 
 //---------------------------------------------------------------------------//
@@ -118,19 +125,11 @@ template<class Source>
 void MSODManager<Source>::setDomain(
     const Teuchos::RCP<Domain>& primary_domain )
 {
-    if ( d_set_id == 0 )
-    {
-	MCLS_INSIST( !primary_domain.is_null(),
-                     "Primary domain must exist on set 0!" );
+    MCLS_CHECK( d_set_id 
+                ? Teuchos::is_null(primary_domain)
+                : Teuchos::nonnull(primary_domain) );
 
-	d_local_domain = primary_domain;
-    }
-    else
-    {
-	MCLS_INSIST( primary_domain.is_null(),
-                     "Primary domain must exist on set 0 only!" );
-    }
-
+    d_local_domain = primary_domain;
     broadcastDomain();
 }
 
@@ -145,84 +144,12 @@ void MSODManager<Source>::setSource(
 {
     MCLS_REQUIRE( !rng_control.is_null() );
 
-    if ( d_set_id == 0 )
-    {
-	MCLS_INSIST( !primary_source.is_null(),
-                     "Primary source must exist on set 0!" );
+    MCLS_CHECK( d_set_id 
+                ? Teuchos::is_null(primary_source)
+                : Teuchos::nonnull(primary_source) );
 
-	d_local_source = primary_source;
-    }
-    else
-    {
-	MCLS_INSIST( primary_source.is_null(),
-                     "Primary source must exist on set 0 only!" );
-    }
-
+    d_local_source = primary_source;
     broadcastSource( rng_control );
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Build the set-constant commumnicators.
- */
-template<class Source>
-void MSODManager<Source>::buildSetComms()
-{
-    MCLS_REQUIRE( d_set_size > 0 );
-    MCLS_REQUIRE( d_num_sets > 0 );
-
-    Teuchos::Array<int> subcomm_ranks( d_set_size );
-    Teuchos::RCP<const Comm> set_comm;
-    for ( int i = 0; i < d_num_sets; ++i )
-    {
-	for ( int n = i*d_set_size; n < (i+1)*d_set_size; ++n )
-	{
-	    subcomm_ranks[n - i*d_set_size] = n;
-	}
-
-	set_comm = d_global_comm->createSubcommunicator( subcomm_ranks() );
-
-	if ( !set_comm.is_null() )
-	{
-	    d_set_comm = set_comm;
-	    d_set_id = i;
-	}
-    }
-
-    MCLS_ENSURE( !d_set_comm.is_null() );
-    MCLS_ENSURE( d_set_id >= 0 );
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Build the block-constant commumnicators.
- */
-template<class Source>
-void MSODManager<Source>::buildBlockComms()
-{
-    MCLS_REQUIRE( d_block_size > 0 );
-    MCLS_REQUIRE( d_num_blocks > 0 );
-
-    Teuchos::Array<int> subcomm_ranks( d_block_size );
-    Teuchos::RCP<const Comm> block_comm;
-    for ( int i = 0; i < d_num_blocks; ++i )
-    {
-	for ( int n = 0; n < d_block_size; ++n )
-	{
-	    subcomm_ranks[n] = n*d_set_size + i;
-	}
-
-	block_comm = d_global_comm->createSubcommunicator( subcomm_ranks() );
-
-	if ( !block_comm.is_null() )
-	{
-	    d_block_comm = block_comm;
-	    d_block_id = i;
-	}
-    }
-
-    MCLS_ENSURE( !d_block_comm.is_null() );
-    MCLS_ENSURE( d_block_id >= 0 );
 }
 
 //---------------------------------------------------------------------------//
@@ -236,14 +163,12 @@ void MSODManager<Source>::broadcastDomain()
     MCLS_REQUIRE( !d_block_comm.is_null() );
     MCLS_REQUIRE( d_set_id >= 0 );
 
+    // Check the local domain.
+    MCLS_CHECK( d_set_id ? true : Teuchos::nonnull(d_local_domain) );
+
     // Get the byte size of the domain from the primary set.
-    std::size_t buffer_size = 0;
-    if ( d_set_id == 0 )
-    {
-	MCLS_CHECK( !d_local_domain.is_null() );
-	buffer_size = DT::getPackedBytes( *d_local_domain );
-    }
-    d_block_comm->barrier();
+    std::size_t buffer_size = 
+	d_set_id ? 0 : DT::getPackedBytes( *d_local_domain );
 
     // Broadcast the buffer size across the blocks.
     Teuchos::broadcast<int,std::size_t>( 
@@ -251,14 +176,10 @@ void MSODManager<Source>::broadcastDomain()
     MCLS_CHECK( buffer_size > 0 );
 
     // Pack the primary domain.
-    Teuchos::Array<char> domain_buffer( buffer_size );
-    if ( d_set_id == 0 )
-    {
-	MCLS_CHECK( !d_local_domain.is_null() );
-	domain_buffer = DT::pack( *d_local_domain );
-	MCLS_CHECK( Teuchos::as<std::size_t>(domain_buffer.size()) == buffer_size );
-    }
-    d_block_comm->barrier();
+    Teuchos::Array<char> domain_buffer = d_set_id ? 
+                                         Teuchos::Array<char>( buffer_size ) : 
+                                         DT::pack( *d_local_domain );
+    MCLS_CHECK( Teuchos::as<std::size_t>(domain_buffer.size()) == buffer_size );
 
     // Broadcast the domain across the blocks.
     Teuchos::broadcast<int,char>( *d_block_comm, 0, domain_buffer() );
@@ -286,14 +207,12 @@ void MSODManager<Source>::broadcastSource(
     MCLS_REQUIRE( !d_local_domain.is_null() );
     MCLS_REQUIRE( d_set_id >= 0 ); 
 
+    // Check the local source.
+    MCLS_CHECK( d_set_id ? true : Teuchos::nonnull(d_local_source) );
+
     // Get the byte size of the source from the primary set.
-    std::size_t buffer_size = 0;
-    if ( d_set_id == 0 )
-    {
-	MCLS_CHECK( !d_local_source.is_null() );
-	buffer_size = ST::getPackedBytes( *d_local_source );
-    }
-    d_block_comm->barrier();
+    std::size_t buffer_size = 
+	d_set_id ? 0 : ST::getPackedBytes( *d_local_source );
 
     // Broadcast the buffer size across the blocks.
     Teuchos::broadcast<int,std::size_t>( 
@@ -301,14 +220,10 @@ void MSODManager<Source>::broadcastSource(
     MCLS_CHECK( buffer_size > 0 );
 
     // Pack the primary source.
-    Teuchos::Array<char> source_buffer( buffer_size );
-    if ( d_set_id == 0 )
-    {
-	MCLS_CHECK( !d_local_source.is_null() );
-	source_buffer = ST::pack( *d_local_source );
-	MCLS_CHECK( Teuchos::as<std::size_t>(source_buffer.size()) == buffer_size );
-    }
-    d_block_comm->barrier();
+    Teuchos::Array<char> source_buffer = d_set_id ? 
+                                         Teuchos::Array<char>( buffer_size ) : 
+                                         ST::pack( *d_local_source );
+    MCLS_CHECK( Teuchos::as<std::size_t>(source_buffer.size()) == buffer_size );
 
     // Broadcast the source across the blocks.
     Teuchos::broadcast<int,char>( *d_block_comm, 0, source_buffer() );

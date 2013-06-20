@@ -113,14 +113,24 @@ class SourceTransporter
     void localHistoryTransport( const Teuchos::RCP<HistoryType>& history, 
 				BankType& bank );
 
-    // Post communications with the set master proc for end of cycle.
-    void postMasterCount();
+    // Process incoming messages.
+    void processMessages( BankType& bank );
 
-    // Complete communications with the set master proc for end of cycle.
-    void completeMasterCount();
+    // Post communications in the binary tree.
+    void postTreeCount();
 
-    // Update the master count of completed histories.
-    void updateMasterCount();
+    // Complete outstanding communications in the binary tree at the end of a
+    // cycle.
+    void completeTreeCount();
+
+    // Update the binary tree count of completed histories.
+    void updateTreeCount();
+
+    // Send the global finished message to the children.
+    void sendCompleteToChildren();
+
+    // Control the termination of a stage.
+    void controlTermination();
 
   private:
 
@@ -131,6 +141,12 @@ class SourceTransporter
 
     // Parallel communicator for this set.
     Teuchos::RCP<const Comm> d_comm;
+
+    // Parent process.
+    int d_parent;
+
+    // Child processes.
+    std::pair<int,int> d_children;
 
     // Local domain.
     Teuchos::RCP<Domain> d_domain;
@@ -150,12 +166,12 @@ class SourceTransporter
     // Source.
     Teuchos::RCP<Source> d_source;
 
-    // Master-worker asynchornous communication request handles for number of
+    // Master-worker asynchronous communication request handles for number of
     // histories complete.
-    Teuchos::Array<Teuchos::RCP<Request> > d_num_done_handles;
+    std::pair<Teuchos::RCP<Request>,Teuchos::RCP<Request> > d_num_done_handles;
 
     // Master-worker reports for number of histories complete communications. 
-    Teuchos::Array<Teuchos::RCP<int> > d_num_done_report;
+    std::pair<Teuchos::RCP<int>,Teuchos::RCP<int> > d_num_done_report;
 
     // Request handle for completed work on worker nodes.
     Teuchos::RCP<Request> d_complete_handle;
@@ -169,12 +185,6 @@ class SourceTransporter
     // Total number of histories completed in set.
     Teuchos::RCP<int> d_num_done;
     
-    // Total number of histories completed locally.
-    int d_num_done_local;
-
-    // Total number of histories completed from source.
-    int d_num_src;
-
     // Number of histories complete in the local domain.
     int d_num_run;
 

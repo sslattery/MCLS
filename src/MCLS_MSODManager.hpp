@@ -119,12 +119,6 @@ class MSODManager
 
   private:
 
-    // Build the set-constant communicators.
-    void buildSetComms();
-
-    // Build the block-constant communicators.
-    void buildBlockComms();
-
     // Build the global decomposition by broadcasting the primary domain. 
     void broadcastDomain();
 
