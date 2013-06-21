@@ -146,6 +146,15 @@ class DomainTraits
     }
 
     /*!
+     * \brief Determine if a given state is on the boundary.
+     */
+    static bool isBoundaryState( const Domain& domain, const ordinal_type state )
+    { 
+	UndefinedDomainTraits<Domain>::notDefined(); 
+	return false;
+    }
+
+    /*!
      * \brief Get the number of neighbors from which this domain will
      * receive. 
      */

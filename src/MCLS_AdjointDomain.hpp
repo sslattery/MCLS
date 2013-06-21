@@ -138,8 +138,11 @@ class AdjointDomain
     Teuchos::RCP<TallyType> domainTally() const
     { return d_tally; }
 
-    // Determine if a given state is on-process.
+    // Determine if a given state is in the local domain.
     inline bool isLocalState( const Ordinal& state ) const;
+
+    // Determine if a given state is on the boundary.
+    inline bool isBoundaryState( const Ordinal& state ) const;
 
     //! Get the number of neighboring domains from which we will receive.
     int numReceiveNeighbors() const
@@ -245,14 +248,24 @@ inline void AdjointDomain<Vector,Matrix>::processTransition(
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Determine if a given state is on-process.
+ * \brief Determine if a given state is in the local domain.
  */
 template<class Vector, class Matrix>
 inline bool AdjointDomain<Vector,Matrix>::isLocalState( 
     const Ordinal& state ) const
 {
-   typename MapType::const_iterator index = d_row_indexer->find( state );
-   return ( index != d_row_indexer->end() );
+   return ( d_row_indexer->end() != d_row_indexer->find(state) );
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Determine if a given state is on the boundary.
+ */
+template<class Vector, class Matrix>
+inline bool AdjointDomain<Vector,Matrix>::isBoundaryState( 
+    const Ordinal& state ) const
+{
+   return ( d_bnd_to_neighbor.end() != d_bnd_to_neighbor.find(state) );
 }
 
 //---------------------------------------------------------------------------//
@@ -330,6 +343,15 @@ class DomainTraits<AdjointDomain<Vector,Matrix> >
 			      const ordinal_type state )
     { 
 	return domain.isLocalState( state );
+    }
+
+    /*!
+     * \brief Determine if a given state is on the boundary.
+     */
+    static bool isBoundaryState( const domain_type& domain, 
+                                 const ordinal_type state )
+    { 
+	return domain.isBoundaryState( state );
     }
 
     /*!
