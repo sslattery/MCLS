@@ -309,12 +309,13 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	}
 	
 	convergence_criteria = tolerance * source_norm;
+
+        d_fixed_point->setParameters( d_plist );
     }
     d_global_comm->barrier();
     d_converged_status = 0;
 
     // Iteration setup.
-    d_fixed_point->setParameters( d_plist );
     int max_num_iters = 1000;
     if ( d_plist->isParameter("Maximum Iterations") )
     {

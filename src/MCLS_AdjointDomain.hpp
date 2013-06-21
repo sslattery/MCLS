@@ -234,15 +234,15 @@ inline void AdjointDomain<Vector,Matrix>::processTransition(
     // Update the history weight with the transition weight. An absorption
     // event contributes a weight of zero, triggering the weight cutoff
     // termination.
-    if ( Teuchos::OrdinalTraits<Ordinal>::invalid() == history.state() )
-    {
-        history.multiplyWeight( 0.0 );
-    }
-    else
+    if ( Teuchos::OrdinalTraits<Ordinal>::invalid() != history.state() )
     {
         history.multiplyWeight( d_weights[index->second] *
                                 d_h[index->second][new_state] /
                                 std::abs(d_h[index->second][new_state]) );
+    }
+    else
+    {
+        history.multiplyWeight( 0.0 );
     }
 }
 
