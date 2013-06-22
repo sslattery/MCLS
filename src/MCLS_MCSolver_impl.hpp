@@ -46,8 +46,6 @@
 #include "MCLS_DBC.hpp"
 
 #include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_TimeMonitor.hpp>
-#include <Teuchos_Time.hpp>
 
 namespace MCLS
 {
@@ -111,26 +109,10 @@ void MCSolver<Source>::solve()
     d_transporter->assignSource( d_source, d_relative_weight_cutoff );
 
     // Transport the source to solve the problem.
-    Teuchos::Time transport_timer("");
-    transport_timer.start(true);
     d_transporter->transport();
-    transport_timer.stop();
-    if ( d_set_comm->getRank() == 0 )
-    {
-        std::cout << "Source transport completed in " << transport_timer.totalElapsedTime() 
-                  << " seconds." << std::endl;
-    }
 
     // Update the set tallies.
-    Teuchos::Time export_timer("");
-    export_timer.start(true);
     TT::combineSetTallies( *d_tally, d_set_comm );
-    export_timer.stop();
-    if ( d_set_comm->getRank() == 0 )
-    {
-        std::cout << "Vector export completed in " << export_timer.totalElapsedTime() 
-                  << " seconds." << std::endl;
-    }
 
     // Normalize the tally with the number of source histories in the set.
     TT::normalize( *d_tally, ST::numToTransportInSet(*d_source) );
