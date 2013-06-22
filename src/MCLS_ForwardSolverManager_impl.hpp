@@ -245,7 +245,6 @@ bool ForwardSolverManager<Vector,Matrix>::solve()
     {
 	TT::setBaseVector( *tally, d_problem->getLHS() );
     }
-    d_global_comm->barrier();
 
     // Set the local domain with the solver.
     d_mc_solver->setDomain( d_msod_manager->localDomain() );
@@ -268,9 +267,6 @@ bool ForwardSolverManager<Vector,Matrix>::solve()
 
     // Solve the Monte Carlo problem over the set.
     d_mc_solver->solve();
-
-    // Barrier before proceeding.
-    d_global_comm->barrier();
 
     // Combine the tallies across the blocks and normalize the tallies by the
     // number of sets.

@@ -281,9 +281,6 @@ bool FixedPointSolverManager<Vector,Matrix>::solve()
 		      << ": Residual = " 
 		      << residual_norm/source_norm << std::endl;
 	}
-
-	// Barrier before proceeding.
-	d_global_comm->barrier();
     }
 
     // Recover the original solution if right preconditioned.

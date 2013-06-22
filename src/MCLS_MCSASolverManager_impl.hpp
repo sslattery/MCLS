@@ -356,7 +356,6 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	{
             d_fixed_point->doOneIteration();
 	}
-	d_global_comm->barrier();
 
 	// Solve the residual Monte Carlo problem.
 	d_mc_solver->solve();
@@ -380,7 +379,6 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 				(d_num_iters < max_num_iters);
 	    }
 	}
-	d_global_comm->barrier();
 
 	// Broadcast iteration status to the blocks.
 	if ( d_num_iters % check_freq == 0 )
