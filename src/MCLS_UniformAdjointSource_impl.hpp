@@ -150,30 +150,17 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
 	ds >> *row_it;
     }
 
-    // Unpack the local source data.
-    Teuchos::ArrayRCP<Scalar> source_data( local_size );
-    typename Teuchos::ArrayRCP<Scalar>::iterator data_it;
-    for ( data_it = source_data.begin(); 
-	  data_it != source_data.end(); 
-	  ++data_it )
-    {
-	ds >> *data_it;
-    }
-
-    MCLS_CHECK( ds.getPtr() == ds.end() );
-   
     // Build the source vector.
     d_b = VT::createFromRows( d_set_comm, global_rows() );
 
-    // Set the data in the source vector.
-    typename Teuchos::ArrayRCP<Scalar>::const_iterator const_data_it;
-    for ( const_data_it = source_data.begin(), row_it = global_rows.begin(); 
-	  const_data_it != source_data.end(); 
-	  ++const_data_it, ++row_it )
+    // Unpack the local source data.
+    Teuchos::ArrayRCP<Scalar> b_view = VT::viewNonConst( *d_b );
+    typename Teuchos::ArrayRCP<Scalar>::iterator data_it;
+    for ( data_it = b_view.begin(); data_it != b_view.end(); ++data_it )
     {
-	VT::replaceGlobalValue( *d_b, *row_it, *const_data_it );
+	ds >> *data_it;
     }
-    source_data.clear();
+    MCLS_CHECK( ds.getPtr() == ds.end() );
 
     // Set the weight.
     d_weight = VT::norm1( *d_b );
