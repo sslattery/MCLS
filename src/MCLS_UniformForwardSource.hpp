@@ -156,9 +156,6 @@ class UniformForwardSource
     // Source vector.
     Teuchos::RCP<VectorType> d_b;
 
-    // Local source vector view.
-    Teuchos::ArrayRCP<const Scalar> d_local_source;
-
     // Local domain.
     Teuchos::RCP<Domain> d_domain;
 
