@@ -255,16 +255,16 @@ void UniformForwardSource<Domain>::buildSource()
     makeRNG();
 
     // Get the local source components.
-    Teuchos::ArrayRCP<const Scalar> local_source = VT::view( *d_b );
-    MCLS_CHECK( local_source.size() > 0 );
+    d_local_source = VT::view( *d_b );
+    MCLS_CHECK( d_local_source.size() > 0 );
 
     // Build a non-normalized CDF from the local source data.
-    d_cdf = Teuchos::ArrayRCP<double>( local_source.size(), 
-				       std::abs(local_source[0]) );
+    d_cdf = Teuchos::ArrayRCP<double>( d_local_source.size(), 
+				       std::abs(d_local_source[0]) );
     typename Teuchos::ArrayRCP<const Scalar>::const_iterator src_it;
     Teuchos::ArrayRCP<double>::iterator cdf_it;
-    for ( src_it = local_source.begin()+1, cdf_it = d_cdf.begin()+1;
-	  src_it != local_source.end();
+    for ( src_it = d_local_source.begin()+1, cdf_it = d_cdf.begin()+1;
+	  src_it != d_local_source.end();
 	  ++src_it, ++cdf_it )
     {
 	*cdf_it = *(cdf_it-1) + std::abs(*src_it);
@@ -313,10 +313,6 @@ UniformForwardSource<Domain>::getHistory()
     {
 	return Teuchos::null;
     }
-
-    // Get the local source components.
-    Teuchos::ArrayRCP<const Scalar> local_source = VT::view( *d_b );
-    MCLS_CHECK( local_source.size() > 0 );
 
     // Generate the history.
     Teuchos::RCP<HistoryType> history = Teuchos::rcp( new HistoryType() );
