@@ -340,7 +340,9 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	d_problem->updatePrecResidual();
 	residual_norm = VT::normInf( *d_problem->getPrecResidual() );
     }
-    d_global_comm->barrier();
+
+    // Print initial iteration data.
+    printTopBanner();
 
     // Iterate.
     d_num_iters = 0;
@@ -391,8 +393,7 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	if ( (d_global_comm->getRank() == 0 && d_num_iters % print_freq == 0) ||
              (d_global_comm->getRank() == 0 && !do_iterations) )
 	{
-	    std::cout << "MCSA / " << d_fixed_point->name() << " Iteration " 
-                      << d_num_iters << ": Residual = " 
+	    std::cout << "Iteration " << d_num_iters << ": Residual = " 
 		      << residual_norm/source_norm << std::endl;
 	}
 
@@ -421,6 +422,9 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	    d_converged_status = 1;
 	}
     }
+
+    // Print final iteration data.
+    printBottomBanner();
     d_global_comm->barrier();
 
     // Broadcast convergence status to the blocks.
@@ -513,6 +517,39 @@ void MCSASolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
 
     MCLS_ENSURE( Teuchos::nonnull(d_mc_solver) );
     MCLS_ENSURE( Teuchos::nonnull(d_block_comm) );
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Print top banner for the iteration.
+ */
+template<class Vector, class Matrix>
+void MCSASolverManager<Vector,Matrix>::printTopBanner()
+{
+    if ( d_global_comm->getRank() == 0 )
+    {
+        std::cout << std::endl;
+        std::cout << "************************************" << std::endl;
+        std::cout << "MCLS: Monte Carlo Linear Solvers" << std::endl;
+        std::cout << "************************************" << std::endl;
+        std::cout << "MCSA / " << d_fixed_point->name() << std::endl;
+    }
+    d_global_comm->barrier();
+  
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Print bottom banner for the iteration.
+ */
+template<class Vector, class Matrix>
+void MCSASolverManager<Vector,Matrix>::printBottomBanner()
+{
+    if ( d_global_comm->getRank() == 0 )
+    {
+        std::cout << "************************************" << std::endl;
+        std::cout << std::endl;
+    } 
 }
 
 //---------------------------------------------------------------------------//
