@@ -165,6 +165,9 @@ class UniformAdjointSource
     // Source vector.
     Teuchos::RCP<VectorType> d_b;
 
+    // Local source vector view.
+    Teuchos::ArrayRCP<const Scalar> d_local_source;
+
     // Local domain.
     Teuchos::RCP<Domain> d_domain;
 
@@ -173,6 +176,11 @@ class UniformAdjointSource
 
     // Communicator for this set.
     Teuchos::RCP<const Comm> d_set_comm;
+
+    // Delayed stack of stratified source histories. First value of pair is
+    // the local state the history will be born in, second value is the number
+    // of histories left to create in that local state.
+    std::stack<std::pair<int,int> > d_history_stack;
 
     // Size of global communicator (all sets, all blocks).
     int d_global_size;
@@ -204,7 +212,7 @@ class UniformAdjointSource
     // Random/stratified sampling boolean.
     int d_random_sampling;
 
-    // Local source cdf.
+    // Local source cdf for random histories.
     Teuchos::ArrayRCP<double> d_cdf;
 };
 
