@@ -128,6 +128,12 @@ class MCSASolverManager : public SolverManager<Vector,Matrix>
     // Build the residual Monte Carlo problem from the input problem.
     void buildResidualMonteCarloProblem();
 
+    // Print top banner for the iteration.
+    void printTopBanner();
+
+    // Print bottom banner for the iteration.
+    void printBottomBanner();
+
   private:
 
     // Linear problem

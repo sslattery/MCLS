@@ -106,7 +106,7 @@ class MinimalResidualIteration : public FixedPointIteration<Vector,Matrix>
     void doOneIteration();
 
     //! Get the name of the fixed point iteration.
-    std::string name() const { return std::string("Minimal Residual"); }
+    std::string name() const { return std::string("MINRES"); }
 
   private:
 

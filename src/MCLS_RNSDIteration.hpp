@@ -107,7 +107,7 @@ class RNSDIteration : public FixedPointIteration<Vector,Matrix>
 
     //! Get the name of the fixed point iteration.
     std::string name() const 
-    { return std::string("Residual Norm Steepest Descent"); }
+    { return std::string("RNSD"); }
 
   private:
 

@@ -60,8 +60,8 @@ FixedPointIterationFactory<Vector,Matrix>::FixedPointIterationFactory()
     // Create the sovler name-to-enum map.
     d_name_map["Richardson"] = RICHARDSON;
     d_name_map["Steepest Descent"] = STEEPEST_DESCENT;
-    d_name_map["Minimal Residual"] = MINIMAL_RESIDUAL;
-    d_name_map["Residual Norm Steepest Descent"] = RNSD;
+    d_name_map["MINRES"] = MINRES;
+    d_name_map["RNSD"] = RNSD;
 }
 
 //---------------------------------------------------------------------------//
@@ -95,7 +95,7 @@ FixedPointIterationFactory<Vector,Matrix>::create(
                 new SteepestDescentIteration<Vector,Matrix>() );
 	    break;
 
-	case MINIMAL_RESIDUAL:
+	case MINRES:
 
 	    iteration = Teuchos::rcp( 
                 new MinimalResidualIteration<Vector,Matrix>() );

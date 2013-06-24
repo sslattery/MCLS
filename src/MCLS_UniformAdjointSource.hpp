@@ -150,6 +150,18 @@ class UniformAdjointSource
     // Make a globally unique random number generator for this proc.
     void makeRNG();
 
+    // Build a random source.
+    void buildRandomSource();
+    
+    // Build a stratified source.
+    void buildStratifiedSource();
+
+    // Sample the random source.
+    int sampleRandomSource( const double random );
+
+    // Sample the stratified source.
+    int sampleStratifiedSource();
+
   private:
 
     // Source vector.
@@ -198,6 +210,12 @@ class UniformAdjointSource
 
     // Number of histories emitted in the local domain.
     int d_nh_emitted;
+
+    // Random/stratified sampling boolean.
+    int d_random_sampling;
+
+    // Local source cdf.
+    Teuchos::ArrayRCP<double> d_cdf;
 };
 
 //---------------------------------------------------------------------------//

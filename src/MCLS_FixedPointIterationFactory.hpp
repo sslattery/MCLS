@@ -89,7 +89,7 @@ class FixedPointIterationFactory : public virtual Teuchos::Describable
     enum MCLSIterationType {
         RICHARDSON,
         STEEPEST_DESCENT,
-        MINIMAL_RESIDUAL,
+        MINRES,
         RNSD
     };
 
