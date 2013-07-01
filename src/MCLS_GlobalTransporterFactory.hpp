@@ -73,7 +73,7 @@ class GlobalTransporterFactory
     GlobalTransporterFactory() { /* ... */ }
 
     // Destructor.
-    virutal ~GlobalTransporterFactory() { /* ... */ }
+    ~GlobalTransporterFactory() { /* ... */ }
 
     // Creation method.
     static Teuchos::RCP<GlobalTransporter<Source> >

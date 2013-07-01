@@ -138,7 +138,6 @@ void SourceTransporter<Source>::assignSource(
 {
     MCLS_REQUIRE( !source.is_null() );
     d_source = source;
-
     d_domain_transporter.setCutoff( relative_weight_cutoff );
 }
 

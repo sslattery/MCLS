@@ -41,8 +41,6 @@
 #ifndef MCLS_GLOBALTRANSPORTER_HPP
 #define MCLS_GLOBALTRANSPORTER_HPP
 
-#include "MCLS_SourceTraits.hpp"
-
 #include <Teuchos_RCP.hpp>
 
 namespace MCLS
@@ -61,7 +59,6 @@ class GlobalTransporter
     //@{
     //! Typedefs.
     typedef Source                                    source_type;
-    typedef SourceTraits<Source>                      ST;
     //@}
 
     // Constructor.

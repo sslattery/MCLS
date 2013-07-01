@@ -61,12 +61,12 @@ GlobalTransporterFactory<Source>::create( const Teuchos::RCP<const Comm>& comm,
 {
     Teuchos::RCP<GlobalTransporter<Source> > transporter;
 
-    if ( "Global" == plist->get<std::string>("Transport Type") )
+    if ( "Global" == plist.get<std::string>("Transport Type") )
     {
         transporter = Teuchos::rcp( 
             new SourceTransporter<Source>(comm, domain, plist) );
     }
-    else if ( "Subdomain" == plist->get<std::string>("Transport Type") )
+    else if ( "Subdomain" == plist.get<std::string>("Transport Type") )
     {
         transporter = Teuchos::rcp( 
             new SubdomainTransporter<Source>(comm, domain, plist) );

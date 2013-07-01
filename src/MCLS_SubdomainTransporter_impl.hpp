@@ -38,8 +38,8 @@
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_SOURCETRANSPORTER_IMPL_HPP
-#define MCLS_SOURCETRANSPORTER_IMPL_HPP
+#ifndef MCLS_SUBDOMAINTRANSPORTER_IMPL_HPP
+#define MCLS_SUBDOMAINTRANSPORTER_IMPL_HPP
 
 #include "MCLS_DBC.hpp"
 #include "MCLS_CommTools.hpp"
@@ -80,22 +80,18 @@ void SubdomainTransporter<Source>::assignSource(
 {
     MCLS_REQUIRE( !source.is_null() );
     d_source = source;
-
     d_domain_transporter.setCutoff( relative_weight_cutoff );
 }
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Transport the source histories and all subsequent histories through
- * the domain to completion.
+ * \brief Transport the source histories through the local domain to
+ * completion.
  */
 template<class Source>
 void SubdomainTransporter<Source>::transport()
 {
     MCLS_REQUIRE( !d_source.is_null() );
-
-    // Barrier before transport.
-    d_comm->barrier();
 
     // Transport all source histories through the local domain until completion.
     while (  !ST::empty(*d_source) )
@@ -125,7 +121,7 @@ void SubdomainTransporter<Source>::transport()
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_SOURCETRANSPORTER_IMPL_HPP
+#endif // end MCLS_SUBDOMAINTRANSPORTER_IMPL_HPP
 
 //---------------------------------------------------------------------------//
 // end MCLS_SubdomainTransporter_impl.hpp
