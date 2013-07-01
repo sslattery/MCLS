@@ -41,6 +41,7 @@
 #ifndef MCLS_SOURCETRANSPORTER_HPP
 #define MCLS_SOURCETRANSPORTER_HPP
 
+#include "MCLS_GlobalTransporter.hpp"
 #include "MCLS_SourceTraits.hpp"
 #include "MCLS_DomainTraits.hpp"
 #include "MCLS_DomainTransporter.hpp"
@@ -56,17 +57,17 @@ namespace MCLS
 //---------------------------------------------------------------------------//
 /*!
  * \class SourceTransporter 
- * \brief General Monte Carlo transporter for domain decomposed problems.
+ * \brief Monte Carlo transporter for domain decomposed problems with
+ * domain-to-domain commication.
  *
  * This transporter will transport the histories provided by the source and
  * all subsequent histories through the global domain until completion. All
  * communication operations occur within a set. Multiple set problems will
- * create multiple instances of this class. This class is based on that
- * developed by Tom Evans.
+ * create multiple instances of this class.
  */
 //---------------------------------------------------------------------------//
 template<class Source>
-class SourceTransporter
+class SourceTransporter : public GlobalTransporter<Source>
 {
   public:
 
