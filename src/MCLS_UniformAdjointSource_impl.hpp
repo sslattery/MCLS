@@ -79,7 +79,7 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
     , d_weight( VT::norm1(*d_b) )
     , d_nh_left(0)
     , d_nh_emitted(0)
-    , d_random_sampling(0)
+    , d_random_sampling(1)
 {
     MCLS_REQUIRE( !d_b.is_null() );
     MCLS_REQUIRE( !d_domain.is_null() );
