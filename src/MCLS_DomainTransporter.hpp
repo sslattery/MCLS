@@ -98,6 +98,9 @@ class DomainTransporter
 
     // Weight cutoff.
     double d_weight_cutoff;
+
+    // Full-clip boolean
+    int d_full_clip;
 };
 
 //---------------------------------------------------------------------------//

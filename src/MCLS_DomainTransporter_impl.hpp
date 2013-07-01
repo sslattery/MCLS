@@ -59,9 +59,15 @@ DomainTransporter<Domain>::DomainTransporter(
     : d_domain( domain )
     , d_tally( DT::domainTally(*d_domain) )
     , d_weight_cutoff( 0.0 )
+    , d_full_clip( false )
 {
     MCLS_REQUIRE( !d_domain.is_null() );
     MCLS_REQUIRE( !d_tally.is_null() );
+
+    if ( plist.isParameter("Full Clip") )
+    {
+        d_full_clip = plist.get<int>("Full Clip");
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -108,8 +114,19 @@ void DomainTransporter<Domain>::transport( HistoryType& history )
 	// If the history has left the domain, kill it.
 	else if ( !DT::isLocalState(*d_domain,history.state()) )
 	{
-	    HT::setEvent( history, Event::BOUNDARY );
-	    HT::kill( history );
+            // A full-clip prevents domain-to-domain communication.
+            if ( d_full_clip )
+            {
+                HT::setEvent( history, Event::CUTOFF );
+                HT::kill( history );
+                TT::postProcessHistory( *d_tally, history );
+            }
+            // Otherwise signal a boundary event.
+            else
+            {
+                HT::setEvent( history, Event::BOUNDARY );
+                HT::kill( history );
+            }
 	}
     }
 
