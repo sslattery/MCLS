@@ -55,6 +55,9 @@ APPEND_SET(HEADERS
   MCLS_ForwardTally.hpp
   MCLS_ForwardTally_impl.hpp
   MCLS_GlobalRNG.hpp
+  MCLS_GlobalTransporter.hpp
+  MCLS_GlobalTransporterFactory.hpp
+  MCLS_GlobalTransporterFactory_impl.hpp
   MCLS_HistoryBuffer.hpp
   MCLS_HistoryBuffer_impl.hpp
   MCLS_HistoryTraits.hpp
@@ -86,6 +89,8 @@ APPEND_SET(HEADERS
   MCLS_SPRNG.hpp
   MCLS_SteepestDescentIteration.hpp
   MCLS_SteepestDescentIteration_impl.hpp
+  MCLS_SubdomainTransporter.hpp
+  MCLS_SubdomainTransporter_impl.hpp
   MCLS_TallyTraits.hpp
   MCLS_UniformAdjointSource.hpp
   MCLS_UniformAdjointSource_impl.hpp

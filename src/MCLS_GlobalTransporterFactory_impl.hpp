@@ -32,80 +32,58 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_GlobalTransporterFactory.hpp
+ * \file MCLS_GlobalTransporterFactory_impl.hpp
  * \author Stuart R. Slattery
- * \brief GlobalTransporterFactory class declaration.
+ * \brief GlobalTransporterFactory class implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_GLOBALTRANSPORTERFACTORY_HPP
-#define MCLS_GLOBALTRANSPORTERFACTORY_HPP
+#ifndef MCLS_GLOBALTRANSPORTERFACTORY_IMPL_HPP
+#define MCLS_GLOBALTRANSPORTERFACTORY_IMPL_HPP
 
-#include "MCLS_SourceTraits.hpp"
-#include "MCLS_DomainTraits.hpp"
-#include "MCLS_DomainTransporter.hpp"
-#include "MCLS_DomainCommunicator.hpp"
+#include <string>
 
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Comm.hpp>
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_Array.hpp>
+#include "MCLS_SourceTransporter.hpp"
+#include "MCLS_SubdomainTransporter.hpp"
 
 namespace MCLS
 {
 //---------------------------------------------------------------------------//
 /*!
- * \class GlobalTransporterFactory 
- * \brief General Monte Carlo transporter for domain decomposed problems.
+ * \brief Creation method.
  */
 //---------------------------------------------------------------------------//
 template<class Source>
-class GlobalTransporterFactory
+Teuchos::RCP<GlobalTransporter<Source> >
+GlobalTransporterFactory<Source>::create( const Teuchos::RCP<const Comm>& comm,
+        const Teuchos::RCP<Domain>& domain, 
+        const Teuchos::ParameterList& plist )
 {
-  public:
+    Teuchos::RCP<GlobalTransporter<Source> > transporter;
 
-    //@{
-    //! Typedefs.
-    typedef Source                                    source_type;
-    typedef SourceTraits<Source>                      ST;
-    typedef typename ST::domain_type                  Domain;
-    typedef DomainTraits<Domain>                      DT;
-    typedef typename DT::history_type                 HistoryType;
-    typedef HistoryTraits<HistoryType>                HT;
-    typedef typename DT::bank_type                    BankType;
-    typedef DomainTransporter<Domain>                 DomainTransporterType;
-    typedef DomainCommunicator<Domain>                DomainCommunicatorType;
-    typedef Teuchos::Comm<int>                        Comm;
-    typedef Teuchos::CommRequest<int>                 Request;
-    //@}
+    if ( "Global" == plist->get<std::string>("Transport Type") )
+    {
+        transporter = Teuchos::rcp( 
+            new SourceTransporter<Source>(comm, domain, plist) );
+    }
+    else if ( "Subdomain" == plist->get<std::string>("Transport Type") )
+    {
+        transporter = Teuchos::rcp( 
+            new SubdomainTransporter<Source>(comm, domain, plist) );
+    }
 
-    // Constructor.
-    GlobalTransporterFactory() { /* ... */ }
-
-    // Destructor.
-    virutal ~GlobalTransporterFactory() { /* ... */ }
-
-    // Creation method.
-    static create( const Teuchos::RCP<const Comm>& comm,
-                   const Teuchos::RCP<Domain>& domain, 
-                   const Teuchos::ParameterList& plist );
-};
+    return transporter;
+}
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
 //---------------------------------------------------------------------------//
-// Template includes.
-//---------------------------------------------------------------------------//
 
-#include "MCLS_GlobalTransporterFactory_impl.hpp"
+#endif // end MCLS_GLOBALTRANSPORTERFACTORY_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-
-#endif // end MCLS_GLOBALTRANSPORTERFACTORY_HPP
-
-//---------------------------------------------------------------------------//
-// end MCLS_GlobalTransporterFactory.hpp
+// end MCLS_GlobalTransporterFactory_impl.hpp
 //---------------------------------------------------------------------------//
 

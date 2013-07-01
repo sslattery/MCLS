@@ -44,6 +44,7 @@
 #include <string>
 
 #include "MCLS_DBC.hpp"
+#include "MCLS_GlobalTransporterFactory.hpp"
 
 #include <Teuchos_ScalarTraits.hpp>
 
@@ -134,8 +135,8 @@ void MCSolver<Source>::setDomain( const Teuchos::RCP<Domain>& domain )
     d_tally = DT::domainTally( *d_domain );
 
     // Generate the source transporter.
-    d_transporter = 
-	Teuchos::rcp( new TransporterType(d_set_comm, d_domain, *d_plist) );
+    d_transporter = GlobalTransporterFactory<Source>::create(
+        d_set_comm, d_domain, *d_plist );
 
     MCLS_ENSURE( !d_domain.is_null() );
     MCLS_ENSURE( !d_tally.is_null() );

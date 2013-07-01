@@ -32,98 +32,83 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_MCSolver.hpp
+ * \file MCLS_SubdomainTransporter.hpp
  * \author Stuart R. Slattery
- * \brief Monte Carlo solver declaration.
+ * \brief SubdomainTransporter class declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_MCSOLVER_HPP
-#define MCLS_MCSOLVER_HPP
+#ifndef MCLS_SUBDOMAINTRANSPORTER_HPP
+#define MCLS_SUBDOMAINTRANSPORTER_HPP
 
+#include "MCLS_GlobalTransporter.hpp"
 #include "MCLS_SourceTraits.hpp"
 #include "MCLS_DomainTraits.hpp"
-#include "MCLS_TallyTraits.hpp"
-#include "MCLS_HistoryTraits.hpp"
-#include "MCLS_RNGControl.hpp"
-#include "MCLS_GlobalTransporter.hpp"
+#include "MCLS_DomainTransporter.hpp"
+#include "MCLS_DomainCommunicator.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_Array.hpp>
 
 namespace MCLS
 {
-
 //---------------------------------------------------------------------------//
 /*!
- * \class MCSolver
- * \brief Monte Carlo Linear Solver for sets. 
+ * \class SubdomainTransporter 
+ * \brief Monte Carlo transporter for domain decomposed problems with only
+ * subdomain solutions.
  *
- * This class will generate a Monte Carlo solution over a single set. These
- * solutions should be collapsed over blocks externally.
+ * This transporter willtransport the histories provided by the source and all
+ * subsequent histories through the local domain until completion. No
+ * communication operations occur within a set. Multiple set problems will
+ * create multiple instances of this class.
  */
+//---------------------------------------------------------------------------//
 template<class Source>
-class MCSolver
+class SubdomainTransporter : public GlobalTransporter<Source>
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Source                                      source_type;
-    typedef SourceTraits<Source>                        ST;
-    typedef typename ST::domain_type                    Domain;
-    typedef DomainTraits<Domain>                        DT;
-    typedef typename DT::tally_type                     TallyType;
-    typedef TallyTraits<TallyType>                      TT;
-    typedef typename TT::history_type                   HistoryType;
-    typedef HistoryTraits<HistoryType>                  HT;
-    typedef GlobalTransporter<Source>                   TransporterType;
-    typedef Teuchos::Comm<int>                          Comm;
+    typedef Source                                    source_type;
+    typedef SourceTraits<Source>                      ST;
+    typedef typename ST::domain_type                  Domain;
+    typedef DomainTraits<Domain>                      DT;
+    typedef typename DT::history_type                 HistoryType;
+    typedef HistoryTraits<HistoryType>                HT;
+    typedef DomainTransporter<Domain>                 DomainTransporterType;
+    typedef Teuchos::Comm<int>                        Comm;
     //@}
 
     // Constructor.
-    MCSolver( const Teuchos::RCP<const Comm>& set_comm,
-	      const Teuchos::RCP<Teuchos::ParameterList>& plist,
-	      int seed = 433494437 );
+    SubdomainTransporter( const Teuchos::RCP<const Comm>& comm,
+                          const Teuchos::RCP<Domain>& domain, 
+                          const Teuchos::ParameterList& plist );
 
-    //! Destructor.
-    ~MCSolver() { /* ... */ }
+    // Destructor.
+    ~SubdomainTransporter() { /* ... */ }
 
-    // Solve the linear problem.
-    void solve();
+    // Assign the source.
+    void assignSource( const Teuchos::RCP<Source>& source, 
+		       const double relative_weight_cutoff );
 
-    // Set the domain.
-    void setDomain( const Teuchos::RCP<Domain>& domain );
-
-    // Set the source.
-    void setSource( const Teuchos::RCP<Source>& source );
-
-    //! Get the random number controller.
-    Teuchos::RCP<RNGControl> rngControl() const { return d_rng_control; }
+    // Transport the source histories and all subsequent histories through the
+    // domain to completion.
+    void transport();
 
   private:
 
-    // Set constant communicator.
-    Teuchos::RCP<const Comm> d_set_comm;
+    // Parallel communicator for this set.
+    Teuchos::RCP<const Comm> d_comm;
 
-    // Problem parameters.
-    Teuchos::RCP<Teuchos::ParameterList> d_plist;
-
-    // Relative weight cutoff.
-    double d_relative_weight_cutoff;
-
-    // Random number controller.
-    Teuchos::RCP<RNGControl> d_rng_control;
-
-    // Domain.
+    // Local domain.
     Teuchos::RCP<Domain> d_domain;
 
-    // Tally.
-    Teuchos::RCP<TallyType> d_tally;
-
-    // Source transporter.
-    Teuchos::RCP<TransporterType> d_transporter;
+    // Domain transporter.
+    DomainTransporterType d_domain_transporter;
 
     // Source.
     Teuchos::RCP<Source> d_source;
@@ -137,13 +122,13 @@ class MCSolver
 // Template includes.
 //---------------------------------------------------------------------------//
 
-#include "MCLS_MCSolver_impl.hpp"
+#include "MCLS_SubdomainTransporter_impl.hpp"
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_MCSOLVER_HPP
+#endif // end MCLS_SUBDOMAINTRANSPORTER_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_MCSolver.hpp
-// ---------------------------------------------------------------------------//
+// end MCLS_SubdomainTransporter.hpp
+//---------------------------------------------------------------------------//
 

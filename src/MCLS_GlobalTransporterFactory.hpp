@@ -41,15 +41,12 @@
 #ifndef MCLS_GLOBALTRANSPORTERFACTORY_HPP
 #define MCLS_GLOBALTRANSPORTERFACTORY_HPP
 
+#include "MCLS_GlobalTransporter.hpp"
 #include "MCLS_SourceTraits.hpp"
-#include "MCLS_DomainTraits.hpp"
-#include "MCLS_DomainTransporter.hpp"
-#include "MCLS_DomainCommunicator.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_ParameterList.hpp>
-#include <Teuchos_Array.hpp>
 
 namespace MCLS
 {
@@ -69,14 +66,7 @@ class GlobalTransporterFactory
     typedef Source                                    source_type;
     typedef SourceTraits<Source>                      ST;
     typedef typename ST::domain_type                  Domain;
-    typedef DomainTraits<Domain>                      DT;
-    typedef typename DT::history_type                 HistoryType;
-    typedef HistoryTraits<HistoryType>                HT;
-    typedef typename DT::bank_type                    BankType;
-    typedef DomainTransporter<Domain>                 DomainTransporterType;
-    typedef DomainCommunicator<Domain>                DomainCommunicatorType;
     typedef Teuchos::Comm<int>                        Comm;
-    typedef Teuchos::CommRequest<int>                 Request;
     //@}
 
     // Constructor.
@@ -86,9 +76,10 @@ class GlobalTransporterFactory
     virutal ~GlobalTransporterFactory() { /* ... */ }
 
     // Creation method.
-    static create( const Teuchos::RCP<const Comm>& comm,
-                   const Teuchos::RCP<Domain>& domain, 
-                   const Teuchos::ParameterList& plist );
+    static Teuchos::RCP<GlobalTransporter<Source> >
+    create( const Teuchos::RCP<const Comm>& comm,
+            const Teuchos::RCP<Domain>& domain, 
+            const Teuchos::ParameterList& plist );
 };
 
 //---------------------------------------------------------------------------//
