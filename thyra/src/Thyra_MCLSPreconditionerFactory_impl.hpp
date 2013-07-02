@@ -362,16 +362,16 @@ void MCLSPreconditionerFactory<Scalar>::initializePrec(
             mcls_prec->setOperator( getEpetraRowMatrix(*fwdOpSrc) );
             mcls_prec->buildPreconditioner();
 
-            // Left.
-            Teuchos::RCP<EpetraLinearOp> epetra_lop = 
+            // Right.
+            Teuchos::RCP<EpetraLinearOp> epetra_rop = 
                 Teuchos::rcp( new EpetraLinearOp() );
-            epetra_lop->initialize( 
+            epetra_rop->initialize( 
                 Teuchos::rcp_const_cast<Epetra_RowMatrix>(
-                    mcls_prec->getLeftPreconditioner()) );
-            Teuchos::RCP<const LinearOpBase<Scalar> > thyra_lop = epetra_lop;
+                    mcls_prec->getRightPreconditioner()) );
+            Teuchos::RCP<const LinearOpBase<Scalar> > thyra_rop = epetra_rop;
 
             // Initialize.
-            defaultPrec->initializeLeft( thyra_lop );
+            defaultPrec->initializeRight( thyra_rop );
 	}
     }
     else if ( isTpetraCompatible<int,int>(*fwdOpSrc) )
