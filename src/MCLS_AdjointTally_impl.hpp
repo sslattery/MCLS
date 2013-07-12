@@ -98,6 +98,11 @@ void AdjointTally<Vector>::combineBlockTallies(
 
     Teuchos::ArrayRCP<Scalar> copy_buffer( const_tally_view.size() );
 
+    // I believe this is the culprit of the poor multiple set scaling. We
+    // don't need to reduce and broadcast in the reduceAll operation, we just
+    // need to reduce to the root rank in the block
+    // communicator. Teuchos::Comm doesn't have this right now so I'll have to
+    // do it myself...
     Teuchos::reduceAll<int,Scalar>( *block_comm,
 				    Teuchos::REDUCE_SUM,
 				    Teuchos::as<int>( const_tally_view.size() ),
