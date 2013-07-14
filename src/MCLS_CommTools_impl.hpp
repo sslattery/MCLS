@@ -38,8 +38,8 @@
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_COMMTOOLS_HPP
-#define MCLS_COMMTOOLS_HPP
+#ifndef MCLS_COMMTOOLS_IMPL_HPP
+#define MCLS_COMMTOOLS_IMPL_HPP
 
 #include "MCLS_DBC.hpp"
 
@@ -57,7 +57,7 @@ namespace MCLS
 /*!
  * \brief Given a comm request, check to see if it has completed.
  */
-static bool 
+bool 
 CommTools::isRequestComplete( Teuchos::RCP<Teuchos::CommRequest<int> >& handle )
 {
     bool is_complete = false;
@@ -99,7 +99,8 @@ void CommTools::reduceSum<float>(
     const Teuchos::RCP<const Teuchos::MpiComm<int> > mpi_comm =
 	Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >( comm );
     MPI_Comm raw_mpi_comm = *( mpi_comm->getRawMpiComm() );
-    const int error = MPI_Reduce( const_cast<float*>(send_buffer),
+    const int error = MPI_Reduce( 
+        const_cast<float*>(send_buffer),
 	global_reducts,
 	count,
 	MPI_FLOAT,
@@ -108,7 +109,7 @@ void CommTools::reduceSum<float>(
 	raw_mpi_comm );
     MCLS_CHECK( MPI_SUCCESS == error );
 #else
-    global_reducts = const_cast<float*>(send_buffer);
+    std::copy( send_buffer, send_buffer+count, global_reducts );
 #endif
 }
 
@@ -130,7 +131,8 @@ void CommTools::reduceSum<double>(
     const Teuchos::RCP<const Teuchos::MpiComm<int> > mpi_comm =
 	Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >( comm );
     MPI_Comm raw_mpi_comm = *( mpi_comm->getRawMpiComm() );
-    const int error = MPI_Reduce( const_cast<double*>(send_buffer),
+    const int error = MPI_Reduce( 
+        const_cast<double*>(send_buffer),
 	global_reducts,
 	count,
 	MPI_DOUBLE,
@@ -139,7 +141,7 @@ void CommTools::reduceSum<double>(
 	raw_mpi_comm );
     MCLS_CHECK( MPI_SUCCESS == error );
 #else
-    global_reducts = const_cast<double*>(send_buffer);
+    std::copy( send_buffer, send_buffer+count, global_reducts );
 #endif
 }
 
@@ -149,7 +151,7 @@ void CommTools::reduceSum<double>(
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_COMMTOOLS_HPP
+#endif // end MCLS_COMMTOOLS_IMPL_HPP
 
 //---------------------------------------------------------------------------//
 // end MCLS_CommTools_impl.hpp

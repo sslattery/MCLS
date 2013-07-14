@@ -41,10 +41,11 @@
 #ifndef MCLS_ADJOINTTALLY_IMPL_HPP
 #define MCLS_ADJOINTTALLY_IMPL_HPP
 
+#include "MCLS_CommTools.hpp"
+
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ArrayRCP.hpp>
-#include <Teuchos_CommHelpers.hpp>
 
 namespace MCLS
 {
@@ -98,11 +99,11 @@ void AdjointTally<Vector>::combineBlockTallies(
 
     Teuchos::ArrayRCP<Scalar> copy_buffer( const_tally_view.size() );
 
-    CommHelpers::reduceSum<Scalar>( *block_comm,
-				    0,
-				    Teuchos::as<int>( const_tally_view.size() ),
-				    const_tally_view.getRawPtr(),
-				    copy_buffer.getRawPtr() );
+    CommTools::reduceSum<Scalar>( block_comm,
+                                  0,
+                                  Teuchos::as<int>( const_tally_view.size() ),
+                                  const_tally_view.getRawPtr(),
+                                  copy_buffer.getRawPtr() );
 
     Teuchos::ArrayRCP<Scalar> tally_view = VT::viewNonConst( *d_x );
     

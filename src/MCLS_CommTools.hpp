@@ -62,11 +62,11 @@ class CommTools
 
     // Do a reduce sum for a given buffer.
     template<class Scalar>
-    void reduceSum( const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-		    const int root,
-		    const int count,
-		    const Scalar send_buffer[],
-		    Scalar global_reducts[] );
+    static void reduceSum( const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                           const int root,
+                           const int count,
+                           const Scalar send_buffer[],
+                           Scalar global_reducts[] );
 };
 
 //---------------------------------------------------------------------------//
