@@ -50,6 +50,8 @@
 
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_Ptr.hpp>
+#include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_Time.hpp>
 
 namespace MCLS
 {
@@ -347,6 +349,8 @@ bool MCSASolverManager<Vector,Matrix>::solve()
     // Iterate.
     d_num_iters = 0;
     int do_iterations = 1;
+    Teuchos::Time timer("");
+    timer.start(true);
     while( do_iterations )
     {
 	// Update the iteration count.
@@ -402,6 +406,7 @@ bool MCSASolverManager<Vector,Matrix>::solve()
     }
 
     // Finalize.
+    timer.stop();
     if ( d_primary_set )
     {
         // Recover the original solution if right preconditioned.
@@ -424,6 +429,11 @@ bool MCSASolverManager<Vector,Matrix>::solve()
     }
 
     // Print final iteration data.
+    if ( d_global_comm->getRank() == 0 )
+    {
+        std::cout << "MCSA Solve: Complete in " << timer.totalElapsedTime() 
+                  << " seconds." << std::endl;
+    }
     printBottomBanner();
     d_global_comm->barrier();
 
