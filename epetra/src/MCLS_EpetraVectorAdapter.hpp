@@ -257,7 +257,8 @@ class VectorTraits<Epetra_Vector>
      */
     static void randomize( vector_type& vector )
     {
-        vector.random();
+        int error = vector.Random();
+        MCLS_CHECK( 0 == error );
     }
 
     /*!
