@@ -61,6 +61,7 @@
 #include <Epetra_Vector.h>
 #include <Epetra_RowMatrix.h>
 #include <Epetra_CrsMatrix.h>
+#include <Epetra_Operator.h>
 #include <Epetra_Map.h>
 #include <Epetra_Import.h>
 
@@ -89,6 +90,7 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
     typedef double                                        scalar_type;
     typedef int                                           local_ordinal_type;
     typedef int                                           global_ordinal_type;
+    typedef Epetra_Operator                               operator_type;
     //@}
 
     /*!

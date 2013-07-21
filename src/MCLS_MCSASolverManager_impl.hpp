@@ -46,6 +46,7 @@
 #include "MCLS_DBC.hpp"
 #include "MCLS_AdjointSolverManager.hpp"
 #include "MCLS_ForwardSolverManager.hpp"
+#include "MCLS_MaximalEntropySolverManager.hpp"
 #include "MCLS_FixedPointIterationFactory.hpp"
 
 #include <Teuchos_CommHelpers.hpp>
@@ -480,6 +481,7 @@ void MCSASolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
     // Create the Monte Carlo direct solver for the residual problem.
     bool use_adjoint = false;
     bool use_forward = false;
+    bool use_merw = false;
     if ( d_plist->isParameter("MC Type") )
     {
         if ( d_plist->get<std::string>("MC Type") == "Adjoint" )
@@ -490,9 +492,14 @@ void MCSASolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
         {
             use_forward = true;
         }
+        else if ( d_plist->get<std::string>("MC Type") == "Maximal Entropy" )
+        {
+            use_merw = true;
+        }
         else
         {
-            MCLS_INSIST( use_forward || use_adjoint, "MC Type not supported" );
+            MCLS_INSIST( use_forward || use_adjoint || use_merw, 
+                         "MC Type not supported" );
         }
     }
 
@@ -520,9 +527,22 @@ void MCSASolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
 	    Teuchos::rcp_dynamic_cast<ForwardSolverManager<Vector,Matrix> >(
 		d_mc_solver)->blockComm();
     }
+    else if ( use_merw )
+    {
+	d_mc_solver = Teuchos::rcp( 
+	    new MaximalEntropySolverManager<Vector,Matrix>(
+		d_residual_problem, d_global_comm, d_plist, true) );
+
+	// Get the block constant communicator.
+	MCLS_CHECK( Teuchos::nonnull(d_mc_solver) );
+	d_block_comm = 
+	    Teuchos::rcp_dynamic_cast<MaximalEntropySolverManager<Vector,Matrix> >(
+		d_mc_solver)->blockComm();
+    }
     else
     {
-        MCLS_INSIST( use_forward || use_adjoint, "MC Type not supported" );
+        MCLS_INSIST( use_forward || use_adjoint || use_merw, 
+                     "MC Type not supported" );
     }
 
     MCLS_ENSURE( Teuchos::nonnull(d_mc_solver) );

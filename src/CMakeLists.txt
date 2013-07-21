@@ -63,6 +63,10 @@ APPEND_SET(HEADERS
   MCLS_HistoryTraits.hpp
   MCLS_LinearProblem.hpp
   MCLS_LinearProblem_impl.hpp
+  MCLS_MaximalEntropyDomain.hpp
+  MCLS_MaximalEntropyDomain_impl.hpp
+  MCLS_MaximalEntropySolverManager.hpp
+  MCLS_MaximalEntropySolverManager_impl.hpp
   MCLS_MatrixAlgorithms.hpp
   MCLS_MatrixTraits.hpp
   MCLS_MCSASolverManager.hpp

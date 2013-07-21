@@ -68,10 +68,9 @@ struct UndefinedMatrixTraits
 //---------------------------------------------------------------------------//
 /*!
  * \class MatrixTraits
- * \brief Traits for matrices.
+ * \brief Traits for row matrices.
  *
- * MatrixTraits defines an interface for parallel distributed
- * matrices. (e.g. Tpetra::CrsMatrix or Epetra_VbrMatrix).
+ * MatrixTraits defines an interface for parallel distributed row matrices.
  */
 template<class Vector, class Matrix>
 class MatrixTraits
@@ -85,6 +84,7 @@ class MatrixTraits
     typedef typename Vector::scalar_type                 scalar_type;
     typedef typename Vector::local_ordinal_type          local_ordinal_type;
     typedef typename Vector::global_ordinal_type         global_ordinal_type;
+    typedef typename Matrix::operator_type               operator_type;
     //@}
 
     /*!

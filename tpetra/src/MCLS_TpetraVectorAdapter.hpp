@@ -48,7 +48,10 @@
 #include <Teuchos_as.hpp>
 
 #include <Tpetra_Vector.hpp>
+#include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Map.hpp>
+
+#include <AnasaziTpetraAdapter.hpp>
 
 namespace MCLS
 {
@@ -69,6 +72,7 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     typedef typename vector_type::scalar_type            scalar_type;
     typedef typename vector_type::local_ordinal_type     local_ordinal_type;
     typedef typename vector_type::global_ordinal_type    global_ordinal_type;
+    typedef typename Tpetra::MultiVector<Scalar,LO,GO>   multivector_type;
     typedef Teuchos::Comm<int>                           Comm;
     //@}
 
@@ -104,6 +108,16 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     static Teuchos::RCP<vector_type> deepCopy( const vector_type& vector )
     {
 	return Teuchos::rcp( new Tpetra::Vector<Scalar,LO,GO>( vector ) );
+    }
+
+    /*! 
+     * \brief Given a multivector, get a single non-const vector of a given
+     * id.
+     */
+    static Teuchos::RCP<vector_type> getVectorNonConst( 
+        multivector_type& multivector, const int id )
+    { 
+        return multivector.getVectorNonConst( id );
     }
 
     /*!
@@ -214,6 +228,14 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     static void putScalar( vector_type& vector, const scalar_type& value )
     { 
 	vector.putScalar( value );
+    }
+
+    /*!
+     * \brief Fill the vector with random values.
+     */
+    static void randomize( vector_type& vector )
+    {
+        vector.randomize();
     }
 
     /*!

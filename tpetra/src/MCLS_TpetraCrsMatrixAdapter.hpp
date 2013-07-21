@@ -54,6 +54,7 @@
 
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_Operator.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_Import.hpp>
 #include <Tpetra_RowMatrixTransposer.hpp>
@@ -81,6 +82,7 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
     typedef typename vector_type::scalar_type             scalar_type;
     typedef typename vector_type::local_ordinal_type      local_ordinal_type;
     typedef typename vector_type::global_ordinal_type     global_ordinal_type;
+    typedef typename Tpetra::Operator<Scalar,LO,GO>       operator_type;
     typedef TpetraMatrixHelpers<Scalar,LO,GO,matrix_type> TMH;
     //@}
 

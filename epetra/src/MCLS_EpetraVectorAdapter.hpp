@@ -49,6 +49,7 @@
 #include <Teuchos_OpaqueWrapper.hpp>
 
 #include <Epetra_Vector.h>
+#include <Epetra_MultiVector.h>
 #include <Epetra_Map.h>
 #include <Epetra_Comm.h>
 #include <Epetra_SerialComm.h>
@@ -57,6 +58,8 @@
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Epetra_MpiComm.h>
 #endif
+
+#include <AnasaziEpetraAdapter.hpp>
 
 namespace MCLS
 {
@@ -77,6 +80,7 @@ class VectorTraits<Epetra_Vector>
     typedef double                              scalar_type;
     typedef int                                 local_ordinal_type;
     typedef int                                 global_ordinal_type;
+    typedef Epetra_MultiVector                  multivector_type;
     typedef Teuchos::Comm<int>                  Comm;
     //@}
 
@@ -125,6 +129,16 @@ class VectorTraits<Epetra_Vector>
     static Teuchos::RCP<vector_type> deepCopy( const vector_type& vector )
     {
 	return Teuchos::rcp( new Epetra_Vector( vector ) );
+    }
+
+    /*! 
+     * \brief Given a multivector, get a single non-const vector of a given
+     * id.
+     */
+    static Teuchos::RCP<vector_type> getVectorNonConst( 
+        multivector_type& multivector, const int id )
+    { 
+        return Teuchos::rcp( multivector(id) );
     }
 
     /*!
@@ -236,6 +250,14 @@ class VectorTraits<Epetra_Vector>
     { 
 	int error = vector.PutScalar( value );
         MCLS_CHECK( 0 == error );
+    }
+
+    /*!
+     * \brief Fill the vector with random values.
+     */
+    static void randomize( vector_type& vector )
+    {
+        vector.random();
     }
 
     /*!

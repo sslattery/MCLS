@@ -84,6 +84,7 @@ class VectorTraits
     typedef typename Vector::scalar_type                scalar_type;
     typedef typename Vector::local_ordinal_type         local_ordinal_type;
     typedef typename Vector::global_ordinal_type        global_ordinal_type;
+    typedef typename Vector::multivector_type           multivector_type;
     typedef Teuchos::Comm<int>                          Comm;
     //@}
 
@@ -115,6 +116,17 @@ class VectorTraits
      * reference-counted pointer.
      */
     static Teuchos::RCP<Vector> deepCopy( const Vector& vector )
+    { 
+	UndefinedVectorTraits<Vector>::notDefined(); 
+	return Teuchos::null; 
+    }
+
+    /*! 
+     * \brief Given a multivector, get a single non-const vector of a given
+     * id.
+     */
+    static Teuchos::RCP<Vector> getVectorNonConst( 
+        multivector_type& multivector, const int id )
     { 
 	UndefinedVectorTraits<Vector>::notDefined(); 
 	return Teuchos::null; 
@@ -220,6 +232,12 @@ class VectorTraits
      * \brief Set all values in the vector to a given value.
      */
     static void putScalar( Vector& vector, const scalar_type& value )
+    { UndefinedVectorTraits<Vector>::notDefined(); }
+
+    /*!
+     * \brief Fill the vector with random values.
+     */
+    static void randomize( Vector& vector )
     { UndefinedVectorTraits<Vector>::notDefined(); }
 
     /*!
