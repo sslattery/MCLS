@@ -182,7 +182,7 @@ MaximalEntropyDomain<Vector,Matrix>::MaximalEntropyDomain(
         std::vector<Anasazi::Value<Scalar> > evals = sol.Evals;
         Teuchos::RCP<MV> evecs = sol.Evecs;
 
-        MCLS_CHECK( sol.numVecs > 0 );
+        MCLS_INSIST( sol.numVecs > 0, "No eigenvectors computed!" );
 
         lambda = std::pow( evals[0].realpart*evals[0].realpart +
                            evals[0].imagpart*evals[0].imagpart, 0.5 );
@@ -946,7 +946,16 @@ void MaximalEntropyDomain<Vector,Matrix>::addMatrixToDomain(
 	{
 	    *cdf_iterator = std::abs( *cdf_iterator ) + *(cdf_iterator-1);
 	}
-	MCLS_CHECK( d_cdfs[i+offset].back() <= 1.0 );
+
+        // Depending on how tightly the eigenvalue problem was converged, we
+        // may get a value here slightly larger than 1 for the CDF. Just set
+        // it to 1 here. We'll check to make sure that we're at least close to
+        // 1.
+        if ( d_cdfs[i+offset].back() > 1.0 )
+        {
+            MCLS_CHECK( std::abs(1.0 - d_cdfs[i+offset].back()) <= 1.0e-4 );
+            d_cdfs[i+offset].back() = 1.0;
+        }
 
         // Add the absorbing state.
         d_cdfs[i+offset].push_back( 1.0 );
