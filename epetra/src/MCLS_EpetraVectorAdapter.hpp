@@ -128,7 +128,7 @@ class VectorTraits<Epetra_Vector>
      */
     static Teuchos::RCP<vector_type> deepCopy( const vector_type& vector )
     {
-	return Teuchos::rcp( new Epetra_Vector( vector ) );
+	return Teuchos::rcp( new Epetra_Vector(vector) );
     }
 
     /*! 
@@ -138,7 +138,7 @@ class VectorTraits<Epetra_Vector>
     static Teuchos::RCP<vector_type> getVectorNonConst( 
         multivector_type& multivector, const int id )
     { 
-        return Teuchos::rcp( multivector(id) );
+        return Teuchos::rcp( new Epetra_Vector(*multivector(id)) );
     }
 
     /*!
