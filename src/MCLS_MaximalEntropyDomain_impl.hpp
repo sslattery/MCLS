@@ -157,6 +157,13 @@ MaximalEntropyDomain<Vector,Matrix>::MaximalEntropyDomain(
         typedef typename VT::multivector_type MV;
         typedef typename MT::operator_type OP;
 
+        int nev = 1;
+        if ( plist.isParameter("Number of Eigenvalues") )
+        {
+            nev = plist.get<int>("Number of Eigenvalues");
+        }
+        MCLS_CHECK( 0 < nev );
+
         Teuchos::ParameterList anasazi_params = 
             const_cast<Teuchos::ParameterList&>(plist).sublist("Anasazi",true);
         int verbosity = Anasazi::Errors + Anasazi::Warnings + 
@@ -171,7 +178,7 @@ MaximalEntropyDomain<Vector,Matrix>::MaximalEntropyDomain(
             Teuchos::rcp( new Anasazi::BasicEigenproblem<Scalar,MV,OP>(
                               Teuchos::rcp_implicit_cast<OP>(reduced_H), 
                               Teuchos::rcp_implicit_cast<MV>(work_vec) ) );
-        eigen_problem->setNEV( 1 );
+        eigen_problem->setNEV( nev );
         eigen_problem->setProblem();
 
         Anasazi::BlockKrylovSchurSolMgr<Scalar,MV,OP> solver_manager(
@@ -182,7 +189,7 @@ MaximalEntropyDomain<Vector,Matrix>::MaximalEntropyDomain(
         std::vector<Anasazi::Value<Scalar> > evals = sol.Evals;
         Teuchos::RCP<MV> evecs = sol.Evecs;
 
-        MCLS_INSIST( sol.numVecs > 0, "No eigenvectors computed!" );
+        MCLS_INSIST( sol.numVecs == nev, "Not enough eigenvectors computed!" );
 
         lambda = std::pow( evals[0].realpart*evals[0].realpart +
                            evals[0].imagpart*evals[0].imagpart, 0.5 );
