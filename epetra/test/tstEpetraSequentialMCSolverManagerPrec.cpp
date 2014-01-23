@@ -189,6 +189,7 @@ TEUCHOS_UNIT_TEST( SequentialMCSolverManager, one_by_one_prec )
     plist->set<int>("Overlap Size", 2);
     plist->set<int>("Number of Sets", 1);
     plist->set<int>("Set Number of Histories", 100 );
+    plist->set<std::string>("Transport Type", "Global" );
 
     // Create the linear problem.
     Teuchos::RCP<MCLS::LinearProblem<VectorType,MatrixType> > linear_problem =
@@ -390,6 +391,7 @@ TEUCHOS_UNIT_TEST( SequentialMCSolverManager, two_by_two_prec )
 	plist->set<int>("Overlap Size", 2);
 	plist->set<int>("Number of Sets", 2);
 	plist->set<int>("Set Number of Histories", 100 );
+	plist->set<std::string>("Transport Type", "Global" );
 
 	// Create the solver.
 	MCLS::SequentialMCSolverManager<VectorType,MatrixType> 

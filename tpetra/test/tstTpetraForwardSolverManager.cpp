@@ -148,7 +148,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardSolverManager, one_by_one, LO, GO, Sca
     plist->set<int>("Overlap Size", 2);
     plist->set<int>("Number of Sets", 1);
     plist->set<int>("Set Number of Histories", 1000 );
-
+    plist->set<std::string>("Transport Type", "Global" );
+	
     // Create the linear problem.
     Teuchos::RCP<MCLS::LinearProblem<VectorType,MatrixType> > linear_problem =
 	Teuchos::rcp( new MCLS::LinearProblem<VectorType,MatrixType>(
@@ -314,6 +315,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardSolverManager, two_by_two, LO, GO, Sca
 	plist->set<int>("Overlap Size", 2);
 	plist->set<int>("Number of Sets", 2);
 	plist->set<int>("Set Number of Histories", 1000 );
+	plist->set<std::string>("Transport Type", "Global" );
 
 	// Create the solver.
 	MCLS::ForwardSolverManager<VectorType,MatrixType> 
@@ -530,6 +532,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardSolverManager, one_by_one_prec, LO, GO
     plist->set<int>("Overlap Size", 2);
     plist->set<int>("Number of Sets", 1);
     plist->set<int>("Set Number of Histories", 1000 );
+    plist->set<std::string>("Transport Type", "Global" );
 
     // Create the linear problem.
     Teuchos::RCP<MCLS::LinearProblem<VectorType,MatrixType> > linear_problem =
@@ -715,6 +718,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardSolverManager, two_by_two_prec, LO, GO
 	plist->set<int>("Overlap Size", 2);
 	plist->set<int>("Number of Sets", 2);
 	plist->set<int>("Set Number of Histories", 1000 );
+	plist->set<std::string>("Transport Type", "Global" );
 
 	// Create the solver.
 	MCLS::ForwardSolverManager<VectorType,MatrixType> 

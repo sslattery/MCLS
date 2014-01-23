@@ -149,6 +149,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, one_by_one_adjoint, LO, GO
     plist->set<int>("Overlap Size", 2);
     plist->set<int>("Number of Sets", 1);
     plist->set<int>("Set Number of Histories", 100 );
+    plist->set<std::string>("Transport Type", "Global" );
 
     // Create the linear problem.
     Teuchos::RCP<MCLS::LinearProblem<VectorType,MatrixType> > linear_problem =
@@ -324,6 +325,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two_adjoint, LO, GO
 	plist->set<int>("Overlap Size", 2);
 	plist->set<int>("Number of Sets", 2);
 	plist->set<int>("Set Number of Histories", 100 );
+	plist->set<std::string>("Transport Type", "Global" );
 
 	// Create the solver.
 	MCLS::MCSASolverManager<VectorType,MatrixType> 
@@ -548,6 +550,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, one_by_one_prec_adjoint, L
     plist->set<int>("Overlap Size", 2);
     plist->set<int>("Number of Sets", 1);
     plist->set<int>("Set Number of Histories", 100 );
+    plist->set<std::string>("Transport Type", "Global" );
 
     // Create the linear problem.
     Teuchos::RCP<MCLS::LinearProblem<VectorType,MatrixType> > linear_problem =
@@ -742,6 +745,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two_prec_adjoint, L
 	plist->set<int>("Overlap Size", 2);
 	plist->set<int>("Number of Sets", 2);
 	plist->set<int>("Set Number of Histories", 100 );
+	plist->set<std::string>("Transport Type", "Global" );
 
 	// Create the solver.
 	MCLS::MCSASolverManager<VectorType,MatrixType> 
@@ -955,6 +959,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, one_by_one_forward, LO, GO
     plist->set<int>("Overlap Size", 2);
     plist->set<int>("Number of Sets", 1);
     plist->set<int>("Set Number of Histories", 100 );
+    plist->set<std::string>("Transport Type", "Global" );
 
     // Create the linear problem.
     Teuchos::RCP<MCLS::LinearProblem<VectorType,MatrixType> > linear_problem =
@@ -970,7 +975,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, one_by_one_forward, LO, GO
 
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), 8 );
+    TEST_EQUALITY( solver_manager.getNumIters(), 5 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
 
     // Check that we got a negative solution.
@@ -988,7 +993,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, one_by_one_forward, LO, GO
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), 8 );
+    TEST_EQUALITY( solver_manager.getNumIters(), 5 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -1002,7 +1007,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, one_by_one_forward, LO, GO
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), 8 );
+    TEST_EQUALITY( solver_manager.getNumIters(), 5 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -1016,7 +1021,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, one_by_one_forward, LO, GO
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), 8 );
+    TEST_EQUALITY( solver_manager.getNumIters(), 5 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -1130,6 +1135,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two_forward, LO, GO
 	plist->set<int>("Overlap Size", 2);
 	plist->set<int>("Number of Sets", 2);
 	plist->set<int>("Set Number of Histories", 100 );
+	plist->set<std::string>("Transport Type", "Global" );
 
 	// Create the solver.
 	MCLS::MCSASolverManager<VectorType,MatrixType> 
@@ -1140,7 +1146,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two_forward, LO, GO
 
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 10 );
+	TEST_EQUALITY( solver_manager.getNumIters(), 4 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
@@ -1178,7 +1184,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two_forward, LO, GO
 
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 10 );
+	TEST_EQUALITY( solver_manager.getNumIters(), 4 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
@@ -1210,7 +1216,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two_forward, LO, GO
 	converged_status = solver_manager.solve();
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 10 );
+	TEST_EQUALITY( solver_manager.getNumIters(), 4 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
@@ -1246,7 +1252,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two_forward, LO, GO
 	converged_status = solver_manager.solve();
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 10 );
+	TEST_EQUALITY( solver_manager.getNumIters(), 4 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
@@ -1354,6 +1360,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, one_by_one_prec_forward, L
     plist->set<int>("Overlap Size", 2);
     plist->set<int>("Number of Sets", 1);
     plist->set<int>("Set Number of Histories", 100 );
+    plist->set<std::string>("Transport Type", "Global" );
 
     // Create the linear problem.
     Teuchos::RCP<MCLS::LinearProblem<VectorType,MatrixType> > linear_problem =
@@ -1373,7 +1380,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, one_by_one_prec_forward, L
 
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), 8 );
+    TEST_EQUALITY( solver_manager.getNumIters(), 5 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
 
     // Check that we got a negative solution.
@@ -1391,7 +1398,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, one_by_one_prec_forward, L
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), 8 );
+    TEST_EQUALITY( solver_manager.getNumIters(), 5 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -1405,7 +1412,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, one_by_one_prec_forward, L
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), 8 );
+    TEST_EQUALITY( solver_manager.getNumIters(), 5 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -1419,7 +1426,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, one_by_one_prec_forward, L
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), 8 );
+    TEST_EQUALITY( solver_manager.getNumIters(), 5 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -1548,6 +1555,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two_prec_forward, L
 	plist->set<int>("Overlap Size", 2);
 	plist->set<int>("Number of Sets", 2);
 	plist->set<int>("Set Number of Histories", 100 );
+	plist->set<std::string>("Transport Type", "Global" );
 
 	// Create the solver.
 	MCLS::MCSASolverManager<VectorType,MatrixType> 
@@ -1558,7 +1566,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two_prec_forward, L
 
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 10 );
+	TEST_EQUALITY( solver_manager.getNumIters(), 4 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
@@ -1596,7 +1604,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two_prec_forward, L
 
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 10 );
+	TEST_EQUALITY( solver_manager.getNumIters(), 4 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
@@ -1628,7 +1636,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two_prec_forward, L
 	converged_status = solver_manager.solve();
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 10 );
+	TEST_EQUALITY( solver_manager.getNumIters(), 4 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
@@ -1664,7 +1672,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two_prec_forward, L
 	converged_status = solver_manager.solve();
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 10 );
+	TEST_EQUALITY( solver_manager.getNumIters(), 4 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );

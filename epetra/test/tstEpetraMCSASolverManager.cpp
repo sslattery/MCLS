@@ -174,6 +174,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_adjoint )
     plist->set<int>("Overlap Size", 2);
     plist->set<int>("Number of Sets", 1);
     plist->set<int>("Set Number of Histories", 100 );
+    plist->set<std::string>("Transport Type", "Global" );
 
     // Create the linear problem.
     Teuchos::RCP<MCLS::LinearProblem<VectorType,MatrixType> > linear_problem =
@@ -400,6 +401,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_adjoint )
 	plist->set<int>("Overlap Size", 2);
 	plist->set<int>("Number of Sets", 2);
 	plist->set<int>("Set Number of Histories", 100 );
+	plist->set<std::string>("Transport Type", "Global" );
 
 	// Create the solver.
 	MCLS::MCSASolverManager<VectorType,MatrixType> 
@@ -619,6 +621,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_forward )
     plist->set<int>("Overlap Size", 2);
     plist->set<int>("Number of Sets", 1);
     plist->set<int>("Set Number of Histories", 100 );
+    plist->set<std::string>("Transport Type", "Global" );
 
     // Create the linear problem.
     Teuchos::RCP<MCLS::LinearProblem<VectorType,MatrixType> > linear_problem =
@@ -644,7 +647,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_forward )
     }
     else if ( comm_size == 4 )
     {
-        TEST_EQUALITY( solver_manager.getNumIters(), 15 );
+        TEST_EQUALITY( solver_manager.getNumIters(), 7 );
     }
 
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
@@ -674,7 +677,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_forward )
     }
     else if ( comm_size == 4 )
     {
-        TEST_EQUALITY( solver_manager.getNumIters(), 15 );
+        TEST_EQUALITY( solver_manager.getNumIters(), 7 );
     }
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
@@ -699,7 +702,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_forward )
     }
     else if ( comm_size == 4 )
     {
-        TEST_EQUALITY( solver_manager.getNumIters(), 15 );
+        TEST_EQUALITY( solver_manager.getNumIters(), 7 );
     }
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
@@ -724,7 +727,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_forward )
     }
     else if ( comm_size == 4 )
     {
-        TEST_EQUALITY( solver_manager.getNumIters(), 15 );
+        TEST_EQUALITY( solver_manager.getNumIters(), 7 );
     }
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
@@ -845,6 +848,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_forward )
 	plist->set<int>("Overlap Size", 2);
 	plist->set<int>("Number of Sets", 2);
 	plist->set<int>("Set Number of Histories", 100 );
+	plist->set<std::string>("Transport Type", "Global" );
 
 	// Create the solver.
 	MCLS::MCSASolverManager<VectorType,MatrixType> 
@@ -855,7 +859,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_forward )
 
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 14 );
+	TEST_EQUALITY( solver_manager.getNumIters(), 6 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
@@ -893,7 +897,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_forward )
 
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 14 );
+	TEST_EQUALITY( solver_manager.getNumIters(), 6 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
@@ -925,7 +929,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_forward )
 	converged_status = solver_manager.solve();
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 14 );
+	TEST_EQUALITY( solver_manager.getNumIters(), 6 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
@@ -961,7 +965,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_forward )
 	converged_status = solver_manager.solve();
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 14 );
+	TEST_EQUALITY( solver_manager.getNumIters(), 6 );
 	if ( comm_rank < 2 )
 	{
 	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );

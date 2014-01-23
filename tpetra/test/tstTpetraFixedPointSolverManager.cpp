@@ -305,7 +305,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FixedPointSolverManager, one_by_one_prec, LO,
 
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), 10 );
+    TEST_EQUALITY( solver_manager.getNumIters(), 15 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
 
     // Check that we got a negative solution.
@@ -323,7 +323,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FixedPointSolverManager, one_by_one_prec, LO,
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), 10 );
+    TEST_EQUALITY( solver_manager.getNumIters(), 15 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -337,7 +337,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FixedPointSolverManager, one_by_one_prec, LO,
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), 10 );
+    TEST_EQUALITY( solver_manager.getNumIters(), 15 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -351,7 +351,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FixedPointSolverManager, one_by_one_prec, LO,
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_EQUALITY( solver_manager.getNumIters(), 10 );
+    TEST_EQUALITY( solver_manager.getNumIters(), 15 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {

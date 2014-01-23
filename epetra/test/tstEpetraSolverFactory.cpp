@@ -208,6 +208,7 @@ TEUCHOS_UNIT_TEST( SolverFactory, mcsa_two_by_two )
 	plist->set<int>("Overlap Size", 2);
 	plist->set<int>("Number of Sets", 2);
 	plist->set<int>("Set Number of Histories", 100 );
+	plist->set<std::string>("Transport Type", "Global" );
 
 	// Create the solver.
 	MCLS::SolverFactory<VectorType,MatrixType> factory;
@@ -463,6 +464,7 @@ TEUCHOS_UNIT_TEST( SolverFactory, smc_two_by_two )
 	plist->set<int>("Overlap Size", 2);
 	plist->set<int>("Number of Sets", 2);
 	plist->set<int>("Set Number of Histories", 100 );
+	plist->set<std::string>("Transport Type", "Global" );
 
 	// Create the solver.
 	MCLS::SolverFactory<VectorType,MatrixType> factory;
@@ -718,6 +720,7 @@ TEUCHOS_UNIT_TEST( SolverFactory, adjmc_two_by_two )
 	plist->set<int>("Overlap Size", 2);
 	plist->set<int>("Number of Sets", 2);
 	plist->set<int>("Set Number of Histories", 100 );
+	plist->set<std::string>("Transport Type", "Global" );
 
 	// Create the solver.
 	MCLS::SolverFactory<VectorType,MatrixType> factory;

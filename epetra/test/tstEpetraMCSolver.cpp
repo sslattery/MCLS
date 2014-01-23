@@ -172,6 +172,7 @@ TEUCHOS_UNIT_TEST( MCSolver, solve )
     plist->set<double>("Weight Cutoff", cutoff);
     plist->set<int>("MC Check Frequency", 10);
     plist->set<bool>("Reproducible MC Mode",true);
+    plist->set<std::string>("Transport Type", "Global" );
     MCLS::MCSolver<SourceType> solver( comm, plist );
 
     // Build the adjoint domain.
