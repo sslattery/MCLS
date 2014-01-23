@@ -1,0 +1,18 @@
+<ParameterList name="Poisson">
+  <Parameter name="Solver Type" type="string" value="Adjoint MC"/>
+  <Parameter name="MC Type" type="string" value="Adjoint"/>
+  <Parameter name="Fixed Point Type" type="string" value="Richardson"/>
+  <Parameter name="Transport Type" type="string" value="Global"/>
+  <Parameter name="Convergence Tolerance" type="double" value="1.0e-8"/>
+  <Parameter name="Max Number of Iterations" type="int" value="0"/>
+  <Parameter name="Weight Cutoff" type="double" value="1.0e-4"/>
+  <Parameter name="MC Check Frequency" type="int" value="1000"/>
+  <Parameter name="MC Buffer Size" type="int" value="1000"/>
+  <Parameter name="Iteration Print Frequency" type="int" value="1"/>
+  <Parameter name="Reproducible MC Mode" type="bool" value="true"/>
+  <Parameter name="Overlap Size" type="int" value="0"/>
+  <Parameter name="Number of Sets" type="int" value="1"/>
+  <Parameter name="Set Number of Histories" type="int" value="100"/>
+  <Parameter name="Problem Size" type="int" value="100"/>
+  <Parameter name="Wave Number" type="int" value="2"/>
+</ParameterList>
