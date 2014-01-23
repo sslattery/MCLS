@@ -225,6 +225,17 @@ void ForwardTally<Vector>::combineBlockTallies(
 
 //---------------------------------------------------------------------------//
 /*
+ * \brief Normalize base decomposition tally with the number of specified
+ * histories.
+ */
+template<class Vector>
+void ForwardTally<Vector>::normalize( const int& nh )
+{
+    VT::scale( *d_x, 1.0 );
+}
+
+//---------------------------------------------------------------------------//
+/*
  * \brief Set the base tally vector.
  */
 template<class Vector>

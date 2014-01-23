@@ -32,9 +32,9 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file tstEpetraRichardsonSolverManager.cpp
+ * \file tstEpetraFixedPointSolverManager.cpp
  * \author Stuart R. Slattery
- * \brief Preconditioned Epetra Richardson solver manager tests.
+ * \brief Preconditioned Epetra FixedPoint solver manager tests.
  */
 //---------------------------------------------------------------------------//
 
@@ -48,7 +48,7 @@
 #include <string>
 #include <cassert>
 
-#include <MCLS_RichardsonSolverManager.hpp>
+#include <MCLS_FixedPointSolverManager.hpp>
 #include <MCLS_LinearProblem.hpp>
 #include <MCLS_EpetraAdapter.hpp>
 
@@ -96,7 +96,7 @@ Teuchos::RCP<Epetra_Comm> getEpetraComm(
 //---------------------------------------------------------------------------//
 // Test templates
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST( RichardsonSolverManager, one_by_one )
+TEUCHOS_UNIT_TEST( FixedPointSolverManager, one_by_one )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
@@ -192,7 +192,7 @@ TEUCHOS_UNIT_TEST( RichardsonSolverManager, one_by_one )
     linear_problem->setRightPrec( I );
 
     // Create the solver.
-    MCLS::RichardsonSolverManager<VectorType,MatrixType> 
+    MCLS::FixedPointSolverManager<VectorType,MatrixType> 
 	solver_manager( linear_problem, comm, plist );
 
     // Solve the problem.
@@ -255,6 +255,6 @@ TEUCHOS_UNIT_TEST( RichardsonSolverManager, one_by_one )
 }
 
 //---------------------------------------------------------------------------//
-// end tstRichardsonRichardsonSolverManager.cpp
+// end tstFixedPointFixedPointSolverManager.cpp
 //---------------------------------------------------------------------------//
 

@@ -103,6 +103,10 @@ class ForwardTally
     void combineBlockTallies( const Teuchos::RCP<const Comm>& block_comm,
                               const int num_sets );
 
+    // Normalize base decomposition tally with the number of specified
+    // histories.
+    void normalize( const int& nh );
+
     // Set the base tally vector.
     void setBaseVector( const Teuchos::RCP<Vector>& x_base );
 
@@ -223,7 +227,7 @@ class TallyTraits<ForwardTally<Vector> >
      */
     static void normalize( tally_type& tally, const int nh )
     {
-        // There is no explicit normalization for this tally.
+	tally.normalize( nh );
     }
 
     /*!

@@ -32,7 +32,7 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file tstTpetraRichardsonSolverManager.cpp
+ * \file tstTpetraFixedPointSolverManager.cpp
  * \author Stuart R. Slattery
  * \brief Tpetra Monte Carlo synthetic acceleration solver manager tests.
  */
@@ -48,7 +48,7 @@
 #include <string>
 #include <cassert>
 
-#include <MCLS_RichardsonSolverManager.hpp>
+#include <MCLS_FixedPointSolverManager.hpp>
 #include <MCLS_LinearProblem.hpp>
 #include <MCLS_TpetraAdapter.hpp>
 
@@ -79,7 +79,7 @@
 //---------------------------------------------------------------------------//
 // Test templates
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( RichardsonSolverManager, one_by_one, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FixedPointSolverManager, one_by_one, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
@@ -148,7 +148,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( RichardsonSolverManager, one_by_one, LO, GO, 
 			  A, x, b ) );
 
     // Create the solver.
-    MCLS::RichardsonSolverManager<VectorType,MatrixType> 
+    MCLS::FixedPointSolverManager<VectorType,MatrixType> 
 	solver_manager( linear_problem, comm, plist );
 
     // Solve the problem.
@@ -210,10 +210,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( RichardsonSolverManager, one_by_one, LO, GO, 
     }
 }
 
-UNIT_TEST_INSTANTIATION( RichardsonSolverManager, one_by_one )
+UNIT_TEST_INSTANTIATION( FixedPointSolverManager, one_by_one )
 
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( RichardsonSolverManager, one_by_one_prec, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FixedPointSolverManager, one_by_one_prec, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
@@ -285,7 +285,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( RichardsonSolverManager, one_by_one_prec, LO,
     plist->set<int>("Iteration Print Frequency", 1);
     plist->set<double>("Convergence Tolerance", 1.0e-8);
     plist->set<int>("Maximum Iterations", 100);
-    plist->set<double>("Richardson Relaxation", 0.9);
+    plist->set<double>("FixedPoint Relaxation", 0.9);
 
     // Create the linear problem.
     Teuchos::RCP<MCLS::LinearProblem<VectorType,MatrixType> > linear_problem =
@@ -297,7 +297,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( RichardsonSolverManager, one_by_one_prec, LO,
     linear_problem->setRightPrec( I );
 
     // Create the solver.
-    MCLS::RichardsonSolverManager<VectorType,MatrixType> 
+    MCLS::FixedPointSolverManager<VectorType,MatrixType> 
 	solver_manager( linear_problem, comm, plist );
 
     // Solve the problem.
@@ -359,9 +359,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( RichardsonSolverManager, one_by_one_prec, LO,
     }
 }
 
-UNIT_TEST_INSTANTIATION( RichardsonSolverManager, one_by_one_prec )
+UNIT_TEST_INSTANTIATION( FixedPointSolverManager, one_by_one_prec )
 
 //---------------------------------------------------------------------------//
-// end tstTpetraRichardsonSolverManager.cpp
+// end tstTpetraFixedPointSolverManager.cpp
 //---------------------------------------------------------------------------//
 

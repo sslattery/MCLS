@@ -165,11 +165,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardTally, TallyHistory, LO, GO, Scalar )
 
     Teuchos::ArrayRCP<const Scalar> A_view = VT::view( *A );
     typename Teuchos::ArrayRCP<const Scalar>::const_iterator a_view_iterator;
+    int histories_per_state = 2;
     for ( a_view_iterator = A_view.begin();
 	  a_view_iterator != A_view.end();
 	  ++a_view_iterator )
     {
-        TEST_EQUALITY( *a_view_iterator, a_val*b_val+b_val*b_val );
+        TEST_EQUALITY( *a_view_iterator, 
+		       (a_val*b_val+b_val*b_val) / histories_per_state );
     }
 
     TEST_EQUALITY( tally.numBaseRows(), VT::getLocalLength(*A) );
@@ -280,11 +282,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardTally, SetCombine, LO, GO, Scalar )
 
     tally.combineSetTallies( comm );
 
+    int histories_per_state = 2;
     for ( c_view_iterator = C_view.begin();
 	  c_view_iterator != C_view.end();
 	  ++c_view_iterator )
     {
-        TEST_EQUALITY( *c_view_iterator, a_val*b_val + b_val*b_val );
+        TEST_EQUALITY( *c_view_iterator, 
+		       (a_val*b_val + b_val*b_val) / histories_per_state );
     }
 }
 
@@ -516,13 +520,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardTally, Normalize, LO, GO, Scalar )
     int nh = 10;
     tally.normalize( nh );
 
+    int histories_per_state = 2;
     Teuchos::ArrayRCP<const Scalar> A_view = VT::view( *A );
     typename Teuchos::ArrayRCP<const Scalar>::const_iterator a_view_iterator;
     for ( a_view_iterator = A_view.begin();
 	  a_view_iterator != A_view.end();
 	  ++a_view_iterator )
     {
-        TEST_EQUALITY( *a_view_iterator, (a_val*b_val+b_val*b_val) / nh );
+        TEST_EQUALITY( *a_view_iterator, 
+		       (a_val*b_val+b_val*b_val) / histories_per_state );
     }
 }
 

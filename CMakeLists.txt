@@ -40,8 +40,6 @@ TRIBITS_ADD_TEST_DIRECTORIES(test)
 
 ADD_SUBDIRECTORY(tpetra)
 
-TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
-
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Epetra)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EpetraExt)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
@@ -65,6 +63,8 @@ ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Stratimikos)
 IF (MCLS_ENABLE_Stratimikos)
   ADD_SUBDIRECTORY(stratimikos)
 ENDIF()
+
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 
 ##---------------------------------------------------------------------------##
 ## D) Do standard postprocessing

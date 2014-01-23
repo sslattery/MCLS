@@ -162,8 +162,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  TpetraRichardsonSolverManager_tests
-  SOURCES tstTpetraRichardsonSolverManager.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  TpetraFixedPointSolverManager_tests
+  SOURCES tstTpetraFixedPointSolverManager.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 4	
   STANDARD_PASS_OUTPUT
