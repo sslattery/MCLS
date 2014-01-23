@@ -163,7 +163,7 @@ UniformForwardSource<Domain>::UniformForwardSource(
     MCLS_CHECK( ds.getPtr() == ds.end() );
 
     // Set the weight.
-    d_weight = VT::norm1( *d_b );
+    d_weight = 1.0;
 
     // Set the total to the requested amount. This may change based on the
     // global stratified sampling.
@@ -304,7 +304,7 @@ template<class Domain>
 Teuchos::RCP<typename UniformForwardSource<Domain>::HistoryType> 
 UniformForwardSource<Domain>::getHistory()
 {
-    MCLS_REQUIRE( d_weight == 1.0 );
+    MCLS_REQUIRE( 1.0 == d_weight );
     MCLS_REQUIRE( GlobalRNG::d_rng.assigned() );
     MCLS_REQUIRE( d_nh_left >= 0 );
 
