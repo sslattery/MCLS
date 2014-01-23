@@ -422,13 +422,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardTally, BlockCombine, LO, GO, Scalar )
 	// tallied over different vectors.
 	if ( comm_rank < 2 )
 	{
+	    int histories_per_state = 2;
 	    Teuchos::ArrayRCP<const Scalar> C_view = VT::view( *C );
 	    typename Teuchos::ArrayRCP<const Scalar>::const_iterator c_view_iterator;
 	    for ( c_view_iterator = C_view.begin();
 		  c_view_iterator != C_view.end();
 		  ++c_view_iterator )
 	    {
-		TEST_EQUALITY( *c_view_iterator, 2*3+4*6 );
+		TEST_EQUALITY( *c_view_iterator, 
+			       (2*3+4*6) / histories_per_state );
 	    }
 	}
 	else
