@@ -182,13 +182,15 @@ TEUCHOS_UNIT_TEST( ForwardTally, TallyHistory )
 
     tally.combineSetTallies( comm );
 
+    int histories_per_state = 2;
     Teuchos::ArrayRCP<const double> A_view = VT::view( *A );
     Teuchos::ArrayRCP<const double>::const_iterator a_view_iterator;
     for ( a_view_iterator = A_view.begin();
 	  a_view_iterator != A_view.end();
 	  ++a_view_iterator )
     {
-        TEST_EQUALITY( *a_view_iterator, a_val*b_val+b_val*b_val );
+        TEST_EQUALITY( *a_view_iterator, 
+		       (a_val*b_val+b_val*b_val) / histories_per_state );
     }
 
     TEST_EQUALITY( tally.numBaseRows(), VT::getLocalLength(*A) );
@@ -290,6 +292,7 @@ TEUCHOS_UNIT_TEST( ForwardTally, SetCombine )
 	tally.postProcessHistory( history );
     }
 
+    int histories_per_state = 2;
     Teuchos::ArrayRCP<const double> C_view = VT::view( *C );
     Teuchos::ArrayRCP<const double>::const_iterator c_view_iterator;
     for ( c_view_iterator = C_view.begin();
@@ -305,7 +308,8 @@ TEUCHOS_UNIT_TEST( ForwardTally, SetCombine )
 	  c_view_iterator != C_view.end();
 	  ++c_view_iterator )
     {
-        TEST_EQUALITY( *c_view_iterator, a_val*b_val + b_val*b_val );
+        TEST_EQUALITY( *c_view_iterator, 
+		       (a_val*b_val + b_val*b_val) / histories_per_state );
     }
 }
 
@@ -443,13 +447,15 @@ TEUCHOS_UNIT_TEST( ForwardTally, BlockCombine )
 	// tallied over different vectors.
 	if ( comm_rank < 2 )
 	{
+	    int histories_per_state = 2;
 	    Teuchos::ArrayRCP<const double> C_view = VT::view( *C );
 	    Teuchos::ArrayRCP<const double>::const_iterator c_view_iterator;
 	    for ( c_view_iterator = C_view.begin();
 		  c_view_iterator != C_view.end();
 		  ++c_view_iterator )
 	    {
-		TEST_EQUALITY( *c_view_iterator, 2*3+4*6 );
+		TEST_EQUALITY( *c_view_iterator, 
+			       (2*3+4*6) / histories_per_state );
 	    }
 	}
 	else
@@ -543,13 +549,15 @@ TEUCHOS_UNIT_TEST( ForwardTally, Normalize )
     int nh = 10;
     tally.normalize( nh );
 
+    int histories_per_state = 2;
     Teuchos::ArrayRCP<const double> A_view = VT::view( *A );
     Teuchos::ArrayRCP<const double>::const_iterator a_view_iterator;
     for ( a_view_iterator = A_view.begin();
 	  a_view_iterator != A_view.end();
 	  ++a_view_iterator )
     {
-        TEST_EQUALITY( *a_view_iterator, (a_val*b_val+b_val*b_val) / nh );
+        TEST_EQUALITY( *a_view_iterator, 
+		       (a_val*b_val+b_val*b_val) / histories_per_state );
     }
 }
 
