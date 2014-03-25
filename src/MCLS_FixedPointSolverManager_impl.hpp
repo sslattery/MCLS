@@ -150,7 +150,11 @@ FixedPointSolverManager<Vector,Matrix>::achievedTol() const
         source_norm = VT::normInf( *d_problem->getRHS() );
     }
 
-    residual_norm /= source_norm;
+    // Heterogenous case.
+    if ( source_norm > 0.0 )
+    {
+	residual_norm /= source_norm;
+    }
 
     return residual_norm;
 }
@@ -228,6 +232,12 @@ bool FixedPointSolverManager<Vector,Matrix>::solve()
     {
         source_norm = VT::normInf( *d_problem->getRHS() );
     }
+
+    // Homogenous case.
+    if ( std::abs(source_norm) < 10.0 * Teuchos::ScalarTraits<double>::eps() )
+    {
+	source_norm = 1.0;
+    }
 	
     convergence_criteria = tolerance * source_norm;
     d_converged_status = 0;
@@ -268,6 +278,7 @@ bool FixedPointSolverManager<Vector,Matrix>::solve()
 
         // Check if we're done iterating.
         residual_norm = VT::normInf( *d_problem->getPrecResidual() );
+
         if ( d_num_iters % check_freq == 0 )
         {
             do_iterations = (residual_norm > convergence_criteria) &&

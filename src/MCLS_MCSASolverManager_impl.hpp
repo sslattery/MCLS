@@ -168,7 +168,11 @@ MCSASolverManager<Vector,Matrix>::achievedTol() const
 	    source_norm = VT::normInf( *d_problem->getRHS() );
 	}
 
-	residual_norm /= source_norm;
+	// Heterogenous case.
+	if ( source_norm > 0.0 )
+	{
+	    residual_norm /= source_norm;
+	}
     }
     d_global_comm->barrier();
 
@@ -311,6 +315,13 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	    source_norm = VT::normInf( *d_problem->getRHS() );
 	}
 	
+	// Homogenous case.
+	if ( std::abs(source_norm) < 
+	     10.0 * Teuchos::ScalarTraits<double>::eps() )
+	{
+	    source_norm = 1.0;
+	}
+
 	convergence_criteria = tolerance * source_norm;
 
         d_fixed_point->setParameters( d_plist );
@@ -333,6 +344,11 @@ bool MCSASolverManager<Vector,Matrix>::solve()
     if ( d_plist->isParameter("Iteration Check Frequency") )
     {
 	check_freq = d_plist->get<int>("Iteration Check Frequency");
+    }
+    int smooth_steps = 1;
+    if ( d_plist->isParameter("Smoother Steps") )
+    {
+	smooth_steps = d_plist->get<int>("Smoother Steps");
     }
 
     // Set the residual.
@@ -357,11 +373,13 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	// Update the iteration count.
 	++d_num_iters;
 
-	// Do a fixed iteration and update the residual on the primary
-	// set. 
+	// Perform smoothing and update the residual on the primary set.
 	if ( d_primary_set )
 	{
-            d_fixed_point->doOneIteration();
+	    for ( int l = 0; l < smooth_steps; ++l )
+	    {
+		d_fixed_point->doOneIteration();
+	    }
 	}
 
 	// Solve the residual Monte Carlo problem.
@@ -377,6 +395,7 @@ bool MCSASolverManager<Vector,Matrix>::solve()
                         Teuchos::ScalarTraits<Scalar>::one() );
 
 	    d_problem->updatePrecResidual();
+
 	    residual_norm = VT::normInf( *d_problem->getPrecResidual() );
 
 	    // Check if we're done iterating.
