@@ -185,7 +185,6 @@ int main( int argc, char * argv[] )
 	num_histories[n] =
 	    set_histories * std::pow( 2, -3.0*(num_levels-n-1)/2.0 );
     }
-    std::cout << num_histories << std::endl;
 
     // Create the grid hierarchy.
     Teuchos::Array<int> grid_sizes( num_levels, problem_size );
@@ -260,18 +259,19 @@ int main( int argc, char * argv[] )
 	factory.create( solver_type, comm, plist );
 
     // Solve the problem hierarchy.
+    std::cout << std::endl;
     Teuchos::Time timer("");
     timer.start(true);
     for ( int n = 0; n < num_levels; ++n )
     {
-	std::cout << "Solving Level " << n << std::endl;
+	std::cout << "Solving Level " << n << "..." << std::endl;
 	plist->set<int>("Set Number of Histories", num_histories[n] );
 	solver_manager->setParameters( plist );
 	solver_manager->setProblem( linear_problem[n] );
 	solver_manager->solve();
-	std::cout << std::endl;
     }
     timer.stop();
+    std::cout << std::endl;
 
     // Apply the multilevel tally.
     for ( int n = 0; n < num_levels - 1; ++n )
