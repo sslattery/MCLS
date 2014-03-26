@@ -113,8 +113,8 @@ Teuchos::RCP<Epetra_CrsMatrix> buildPoissonOperator(
 }
 
 //---------------------------------------------------------------------------//
-// Prolongation operator. 
-void applyProlongationOperator( const Teuchos::ArrayView<const double>& v_2h,
+// Prolongation operator. 2h -> h. 
+void applyProlongationOperator2( const Teuchos::ArrayView<const double>& v_2h,
 				Teuchos::ArrayView<double>& v_h )
 {
     assert( v_h.size() == 2 * v_2h.size() - 1 );
@@ -129,8 +129,8 @@ void applyProlongationOperator( const Teuchos::ArrayView<const double>& v_2h,
 }
 
 //---------------------------------------------------------------------------//
-// Restriction operator. 
-void applyRestrictionOperator( const Teuchos::ArrayView<const double>& v_h,
+// Restriction operator. h -> 2h.
+void applyRestrictionOperator2( const Teuchos::ArrayView<const double>& v_h,
 			       Teuchos::ArrayView<double>& v_2h )
 {
     assert( v_h.size() == 2 * v_2h.size() - 1 );
@@ -143,6 +143,76 @@ void applyRestrictionOperator( const Teuchos::ArrayView<const double>& v_h,
     }
 
     v_2h.back() = v_h.back();
+}
+
+//---------------------------------------------------------------------------//
+// Prolongation operator. 4h -> h. 
+void applyProlongationOperator4( const Teuchos::ArrayView<const double>& v_4h,
+				Teuchos::ArrayView<double>& v_h )
+{
+    assert( v_h.size() == 4*(v_4h.size()-1) + 1 );
+
+    for ( unsigned j = 0; j < v_4h.size() - 1; ++j )
+    {
+	v_h[4*j] = v_4h[j];
+	v_h[4*j+1] = 0.75*v_4h[j] + 0.25*v_4h[j+1];
+	v_h[4*j+2] = 0.5*v_4h[j] + 0.5*v_4h[j+1];
+	v_h[4*j+3] = 0.25*v_4h[j] + 0.75*v_4h[j+1];
+    }
+
+    v_h.back() = v_4h.back();
+}
+
+//---------------------------------------------------------------------------//
+// Restriction operator. h -> 4h.
+void applyRestrictionOperator4( const Teuchos::ArrayView<const double>& v_h,
+			       Teuchos::ArrayView<double>& v_4h )
+{
+    assert( v_h.size() == 4*(v_4h.size()-1) + 1 );
+
+    v_4h.front() = v_h.front();
+
+    for ( unsigned j = 1; j < v_4h.size() - 1; ++j )
+    {
+	v_4h[j] = 0.1 * ( v_h[4*j-2] + 2*v_h[4*j-1] + 4*v_h[4*j] +
+			    2*v_h[4*j+1] + v_h[4*j+2] );
+    }
+
+    v_4h.back() = v_h.back();
+}
+
+//---------------------------------------------------------------------------//
+// Prolongation operator.
+void applyProlongationOperator( const int M,
+				const Teuchos::ArrayView<const double>& v_Mh,
+				Teuchos::ArrayView<double>& v_h )
+{
+    if ( 2 == M )
+    {
+	applyProlongationOperator2( v_Mh, v_h );
+    }
+
+    else if ( 4 == M )
+    {
+	applyProlongationOperator4( v_Mh, v_h );
+    }
+}
+
+//---------------------------------------------------------------------------//
+// Restriction operator.
+void applyRestrictionOperator( const int M,
+			       const Teuchos::ArrayView<const double>& v_h,
+			       Teuchos::ArrayView<double>& v_Mh )
+{
+    if ( 2 == M )
+    {
+	applyRestrictionOperator2( v_h, v_Mh );
+    }
+
+    else if ( 4 == M )
+    {
+	applyRestrictionOperator4( v_h, v_Mh );
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -177,20 +247,21 @@ int main( int argc, char * argv[] )
     int problem_size = plist->get<int>("Problem Size");
     int num_levels = plist->get<int>("Number of Levels");
     int set_histories = plist->get<int>("Set Number of Histories");
+    int M = plist->get<int>("Grid Refinement");
 
     // Create the number of histories hierarchy.
     Teuchos::Array<int> num_histories( num_levels );
     for ( int n = 0; n < num_levels; ++n )
     {
 	num_histories[n] =
-	    set_histories * std::pow( 2, -3.0*(num_levels-n-1)/2.0 );
+	    set_histories * std::pow( M, -3.0*(num_levels-n-1)/2.0 );
     }
 
     // Create the grid hierarchy.
     Teuchos::Array<int> grid_sizes( num_levels, problem_size );
     for ( int n = 1; n < num_levels; ++n )
     {
-	grid_sizes[n] = (grid_sizes[n-1] + 1) / 2;
+	grid_sizes[n] = (grid_sizes[n-1] - 1) / M + 1;
     }
 
     // Create the poisson operator hierarchy.
@@ -220,10 +291,10 @@ int main( int argc, char * argv[] )
 	double* u_h_ptr;
 	u[i-1]->ExtractView( &u_h_ptr );
 	Teuchos::ArrayView<const double> u_h( u_h_ptr, grid_sizes[i-1] );
-	double* u_2h_ptr;
-	u[i]->ExtractView( &u_2h_ptr );
-	Teuchos::ArrayView<double> u_2h( u_2h_ptr, grid_sizes[i] );
-	applyRestrictionOperator( u_h, u_2h );
+	double* u_Mh_ptr;
+	u[i]->ExtractView( &u_Mh_ptr );
+	Teuchos::ArrayView<double> u_Mh( u_Mh_ptr, grid_sizes[i] );
+	applyRestrictionOperator( M, u_h, u_Mh );
     }
 
     // Build the correction vector hierarchy.
@@ -248,8 +319,9 @@ int main( int argc, char * argv[] )
 	linear_problem( num_levels );
     for ( int n = 0; n < num_levels; ++n )
     {
-	linear_problem[n] =Teuchos::rcp( new MCLS::LinearProblem<Vector,Matrix>(
-					     A[n], d[n], r[n] ) );
+	linear_problem[n] =
+	    Teuchos::rcp( new MCLS::LinearProblem<Vector,Matrix>(
+			      A[n], d[n], r[n] ) );
     }
 
     // Create the solver.
@@ -281,15 +353,15 @@ int main( int argc, char * argv[] )
 	d[n]->ExtractView( &d_h_ptr );
 	Teuchos::ArrayView<const double> d_h( d_h_ptr, grid_sizes[n] );
 
-	// Restrict the fine tally to the coarse grid.
-	Teuchos::Array<double> v_2h( grid_sizes[n+1], 0.0 );
-	Teuchos::ArrayView<double> v_2h_view = v_2h();
-	applyRestrictionOperator( d_h, v_2h_view );
+	// Restrict the tally to the coarse grid.
+	Teuchos::Array<double> v_Mh( grid_sizes[n+1], 0.0 );
+	Teuchos::ArrayView<double> v_Mh_view = v_Mh();
+	applyRestrictionOperator( M, d_h, v_Mh_view );
 
 	// Prolongate the tally back to the fine grid.
 	Teuchos::Array<double> v_h( grid_sizes[n], 0.0 );
 	Teuchos::ArrayView<double> v_h_view = v_h();
-	applyProlongationOperator( v_2h_view, v_h_view );
+	applyProlongationOperator( M, v_Mh_view, v_h_view );
 
 	// Subtract the coarse result from the fine result.
 	for ( int i = 0; i < grid_sizes[n]; ++i )
@@ -302,14 +374,14 @@ int main( int argc, char * argv[] )
     for ( int n = num_levels - 1; n > 0; --n )
     {
 	// Get a view of the tally for the coarse level.
-	double* d_2h_ptr;
-	d[n]->ExtractView( &d_2h_ptr );
-	Teuchos::ArrayView<const double> d_2h( d_2h_ptr, grid_sizes[n] );
+	double* d_Mh_ptr;
+	d[n]->ExtractView( &d_Mh_ptr );
+	Teuchos::ArrayView<const double> d_Mh( d_Mh_ptr, grid_sizes[n] );
 
 	// Prolongate the coarse level to the fine level.
 	Teuchos::Array<double> v_h( grid_sizes[n-1], 0.0 );
 	Teuchos::ArrayView<double> v_h_view = v_h();
-	applyProlongationOperator( d_2h, v_h_view );
+	applyProlongationOperator( M, d_Mh, v_h_view );
 
 	// Add the prolongated coarse result to the fine result.
 	for ( int i = 0; i < grid_sizes[n-1]; ++i )
@@ -332,7 +404,8 @@ int main( int argc, char * argv[] )
     {
 	total_histories += num_histories[n];
     }
-    std::cout << "Total number of histories: " <<  total_histories << std::endl;
+    std::cout << "Total number of histories: " 
+	      <<  total_histories << std::endl;
     double toc = timer.totalElapsedTime();
     std::cout << "Time: " << toc << std::endl;
     std::cout << "Time per History: " << toc / total_histories << std::endl;
@@ -345,14 +418,13 @@ int main( int argc, char * argv[] )
     {
         std::ofstream ofile;
         ofile.open( "solution.dat" );
-        for ( int i = 0; i < problem_size; ++i )
+        for ( int i = 0; i < grid_sizes[0]; ++i )
         {
             ofile << std::setprecision(8) << (*u[0])[i] << std::endl;
         }
         ofile.close();
     }
     comm->barrier();
-
 
     return 0;
 }
