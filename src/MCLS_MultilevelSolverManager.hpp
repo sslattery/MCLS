@@ -52,6 +52,8 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_Comm.hpp>
 
+#include <MLAPI_MultiLevelSA.h>
+
 namespace MCLS
 {
 
@@ -128,7 +130,7 @@ class MultilevelSolverManager : public SolverManager<Vector,Matrix>
     { return true; }
 
     //! Get the block-constant communicator for this set.
-    Teuchos::RCP<const Comm> blockComm() const { return d_msod_manager->blockComm(); }
+    Teuchos::RCP<const Comm> blockComm() const { return d_mc_solver->blockComm(); }
 
   private:
 

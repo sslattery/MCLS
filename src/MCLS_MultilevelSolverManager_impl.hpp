@@ -46,8 +46,6 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_Ptr.hpp>
 
-#include <Epetra_RowMatrix.hpp>
-
 #include <MLAPI_Space.h>
 #include <MLAPI_Operator.h>
 
@@ -67,12 +65,12 @@ MultilevelSolverManager<Vector,Matrix>::MultilevelSolverManager(
     : d_global_comm( global_comm )
     , d_plist( plist )
     , d_internal_solver( internal_solver )
-    , d_mc_solver( d_global_comm, d_plist, true )
 {
     MCLS_REQUIRE( !d_global_comm.is_null() );
     MCLS_REQUIRE( !d_plist.is_null() );
-
-    d_num_levels = plist->get<int>("max levels");
+    d_mc_solver = Teuchos::rcp(
+	new AdjointSolverManager<Vector,Matrix>( 
+	    d_global_comm, d_plist, true) );
 }
 
 //---------------------------------------------------------------------------//
@@ -90,12 +88,12 @@ MultilevelSolverManager<Vector,Matrix>::MultilevelSolverManager(
     , d_plist( plist )
     , d_internal_solver( internal_solver )
     , d_primary_set( !d_problem.is_null() )
-    , d_mc_solver( d_global_comm, d_plist, true )
 {
     MCLS_REQUIRE( !d_global_comm.is_null() );
     MCLS_REQUIRE( !d_plist.is_null() );
-
-    d_num_levels = plist->get<int>("max levels");
+    d_mc_solver = Teuchos::rcp(
+	new AdjointSolverManager<Vector,Matrix>( 
+	    d_global_comm, d_plist, true) );
 
     buildOperatorHierarchy();
 }
@@ -203,7 +201,6 @@ void MultilevelSolverManager<Vector,Matrix>::setParameters(
 {
     MCLS_REQUIRE( !params.is_null() );
     d_plist = params;
-    d_num_levels = plist->get<int>("max levels");
 }
 
 //---------------------------------------------------------------------------//
@@ -227,7 +224,7 @@ bool MultilevelSolverManager<Vector,Matrix>::solve()
 
     // Solve the linear problem at each of the levels.
     Teuchos::RCP<Teuchos::ParameterList> mc_plist =
-	Teuchos::rcp( new Teuchos::Parameterlist(*d_plist) );
+	Teuchos::rcp( new Teuchos::ParameterList(*d_plist) );
     Teuchos::RCP<LinearProblem<Vector,Matrix> > level_problem;
     for ( int l = 0; l < d_num_levels; ++l )
     {
@@ -236,10 +233,10 @@ bool MultilevelSolverManager<Vector,Matrix>::solve()
 	    // Create the level problem.
 	    level_problem = Teuchos::rcp( 
 		new LinearProblem<Vector,Matrix>(
-		    d_mlapi->A(l)->GetRCPRowMatrix(), d_x[l], d_b[l]) );
+		    d_mlapi->A(l).GetRCPRowMatrix(), d_x[l], d_b[l]) );
 	}
 	// Compute the number of histories at this level.
-	nh_l = 2.0 * std::pow( M, -3.0*(d_num_levels-l-1)/2.0 );
+	nh_l = nh * std::pow( 2.0, -3.0*(d_num_levels-l-1)/2.0 );
 	mc_plist->set<int>("Set Number of Histories", nh_l);
 
 	// Solve the Monte Carlo problem on this level.
@@ -249,23 +246,23 @@ bool MultilevelSolverManager<Vector,Matrix>::solve()
     }
 
     // Collapse the tallies to the fine grid.
-    Teuchos::RCP<Epetra_RowMatrix> P_l;
+    Teuchos::RCP<Matrix> P_l;
     Teuchos::RCP<Vector> work;
     for ( int l = d_num_levels - 1; l > 0; --l )
     {
 	if ( d_primary_set )
 	{
 	    // Create a work vector for this level.
-	    work = VT::clone( *x[l-1] );
+	    work = VT::clone( *d_x[l-1] );
 
 	    // Get the prolongation operator for this level.
-	    P_l = d_mlapi->P(l)->GetRCPRowMatrix();
+	    P_l = d_mlapi->P(l).GetRCPRowMatrix();
 
 	    // Apply the prolongation operator to the level tally.
-	    MT::apply( *P_l, *x[l], *work );
+	    MT::apply( *P_l, *d_x[l], *work );
 
 	    // Add the coarse level to the fine level.
-	    VT::update( *x[l-1], 1.0, *work, 1.0 );
+	    VT::update( *d_x[l-1], 1.0, *work, 1.0 );
 	}
     }
 
@@ -291,9 +288,10 @@ void MultilevelSolverManager<Vector,Matrix>::buildOperatorHierarchy()
 	    d_problem->getOperator()->OperatorDomainMap() );
 	MLAPI::Space range_space( 
 	    d_problem->getOperator()->OperatorRangeMap() );
-	MLAPI::Operator ml_operator( domain_space, range_space,
-				     d_problem->getOperator()->getRawPtr(),
-				     false );
+	Teuchos::RCP<Matrix> A = 
+	    Teuchos::rcp_const_cast<const Matrix>(d_problem->getOperator());
+	Matrix* A_ptr = A->getRawPtr();
+	MLAPI::Operator ml_operator( domain_space, range_space, A_ptr, false );
 
 	// Create the smoothed aggregation operator hierarchy.
 	d_mlapi = 
@@ -302,23 +300,23 @@ void MultilevelSolverManager<Vector,Matrix>::buildOperatorHierarchy()
 	MCLS_CHECK( d_mlapi->IsComputed() );
 
 	// Allocate the LHS and RHS vector hierarchy.
-	d_x.resize( num_levels );
+	d_x.resize( d_num_levels );
 	d_x[0] = d_problem->getLHS();
-	d_b.resize( num_levels );
+	d_b.resize( d_num_levels );
 	d_b[0] = d_problem->getRHS();
 	
 	// Build the hierarchy.
-	Teuchos::RCP<Epetra_RowMatrix> R_l;
+	Teuchos::RCP<Matrix> R_l;
 	for ( int l = 1; l < d_num_levels; ++l )
 	{
 	    // Get the restriction operator for this level.
-	    R_l = d_mlapi->R(l-1)->GetRCPRowMatrix();
+	    R_l = d_mlapi->R(l-1).GetRCPRowMatrix();
 
 	    // Create the LHS for this level.
-	    d_x[l] = Teuchos::rcp( new Epetra_Vector(R_l->OperatorRangeMap()) );
+	    d_x[l] = Teuchos::rcp( new Vector(R_l->OperatorRangeMap()) );
 	    
 	    // Create the RHS for this level.
-	    d_b[l] = Teuchos::rcp( new Epetra_Vector(R_l->OperatorRangeMap()) );
+	    d_b[l] = Teuchos::rcp( new Vector(R_l->OperatorRangeMap()) );
 	}
     }
 }
@@ -334,10 +332,10 @@ void MultilevelSolverManager<Vector,Matrix>::buildRHSHierarchy()
     MCLS_REQUIRE( !d_plist.is_null() );
 
     // Apply the restriction operator to successive levels.
-    Teuchos::RCP<Epetra_RowMatrix> R_l;
+    Teuchos::RCP<Matrix> R_l;
     for ( int l = 1; l < d_num_levels; ++l )
     {
-	R_l = d_mlapi->R(l-1)->GetRCPRowMatrix();
+	R_l = d_mlapi->R(l-1).GetRCPRowMatrix();
 	MT::apply( *R_l, *d_b[l-1], *d_b[l] );
     }
 }
