@@ -47,7 +47,9 @@
 #include <Teuchos_Ptr.hpp>
 
 #include <MLAPI_Space.h>
-#include <MLAPI_Operator.h>
+#include <ml_operator.h>
+
+#include <EpetraExt_RowMatrixOut.h>
 
 namespace MCLS
 {
@@ -223,42 +225,79 @@ bool MultilevelSolverManager<Vector,Matrix>::solve()
     int nh_l = 0;
 
     // Solve the linear problem at each of the levels.
+    if ( 0 == d_global_comm->getRank() )
+    {
+	std::cout << std::endl;
+	std::cout << d_num_levels << " Levels" << std::endl;
+	std::cout << "-------------" << std::endl;
+    }
+
     Teuchos::RCP<Teuchos::ParameterList> mc_plist =
 	Teuchos::rcp( new Teuchos::ParameterList(*d_plist) );
     Teuchos::RCP<LinearProblem<Vector,Matrix> > level_problem;
+    Teuchos::RCP<Vector> work;
+    Teuchos::RCP<Vector> work_2;
+    Teuchos::RCP<Matrix> P_l;
+    Teuchos::RCP<Matrix> R_l;
     for ( int l = 0; l < d_num_levels; ++l )
     {
+	// Create the level problem.
 	if ( d_primary_set )
 	{
-	    // Create the level problem.
 	    level_problem = Teuchos::rcp( 
 		new LinearProblem<Vector,Matrix>(
-		    d_mlapi->A(l).GetRCPRowMatrix(), d_x[l], d_b[l]) );
+		    d_A[l]->GetRCPRowMatrix(), d_x[l], d_b[l]) );
 	}
+
 	// Compute the number of histories at this level.
 	nh_l = nh * std::pow( 2.0, -3.0*(d_num_levels-l-1)/2.0 );
 	mc_plist->set<int>("Set Number of Histories", nh_l);
 
 	// Solve the Monte Carlo problem on this level.
+	if ( 0 == d_global_comm->getRank() )
+	{
+	    std::cout << "Solving level " << l
+		      << " with " << nh_l << " samples..." << std::endl;
+	}
 	d_mc_solver->setParameters( mc_plist );
 	d_mc_solver->setProblem( level_problem );
 	d_mc_solver->solve();
+
+	// Scale the solution by the inverse of the diagonal.
+	if ( d_primary_set && l > 0 )
+	{
+	    VT::elementWiseMultiply(
+		*d_x[l], 0.0, *d_diagonal_inv[l], *d_x[l], 1.0 );
+	}
+
+	// Apply the multilevel tally.
+	if ( d_primary_set && (l < d_num_levels - 1) )
+	{
+	    // Apply the restriction operator.
+	    R_l = d_mlapi->R(l).GetRCPRowMatrix();
+	    work = VT::clone( *d_x[l+1] );
+	    MT::apply( *R_l, *d_x[l], *work );
+	    
+	    // Apply the prolongation operator.
+	    P_l = d_mlapi->P(l).GetRCPRowMatrix();
+	    work_2 = VT::clone( *d_x[l] );
+	    MT::apply( *P_l, *work, *work_2 );
+
+	    // Update the level tally with the coarse tally.
+	    VT::update( *d_x[l], 1.0, *work_2, -1.0 );
+	}
     }
 
     // Collapse the tallies to the fine grid.
-    Teuchos::RCP<Matrix> P_l;
-    Teuchos::RCP<Vector> work;
     for ( int l = d_num_levels - 1; l > 0; --l )
     {
 	if ( d_primary_set )
 	{
-	    // Create a work vector for this level.
-	    work = VT::clone( *d_x[l-1] );
-
 	    // Get the prolongation operator for this level.
-	    P_l = d_mlapi->P(l).GetRCPRowMatrix();
+	    P_l = d_mlapi->P(l-1).GetRCPRowMatrix();
 
 	    // Apply the prolongation operator to the level tally.
+	    work = VT::clone( *d_x[l-1] );
 	    MT::apply( *P_l, *d_x[l], *work );
 
 	    // Add the coarse level to the fine level.
@@ -288,10 +327,10 @@ void MultilevelSolverManager<Vector,Matrix>::buildOperatorHierarchy()
 	    d_problem->getOperator()->OperatorDomainMap() );
 	MLAPI::Space range_space( 
 	    d_problem->getOperator()->OperatorRangeMap() );
-	Teuchos::RCP<Matrix> A = 
-	    Teuchos::rcp_const_cast<const Matrix>(d_problem->getOperator());
-	Matrix* A_ptr = A->getRawPtr();
-	MLAPI::Operator ml_operator( domain_space, range_space, A_ptr, false );
+	Teuchos::RCP<Matrix> A = Teuchos::rcp_const_cast<Matrix,const Matrix>(
+	    d_problem->getOperator() );
+	MLAPI::Operator ml_operator( domain_space, range_space, 
+				     A.getRawPtr(), false );
 
 	// Create the smoothed aggregation operator hierarchy.
 	d_mlapi = 
@@ -299,16 +338,41 @@ void MultilevelSolverManager<Vector,Matrix>::buildOperatorHierarchy()
 	d_num_levels = d_mlapi->GetMaxLevels();
 	MCLS_CHECK( d_mlapi->IsComputed() );
 
-	// Allocate the LHS and RHS vector hierarchy.
+	// Allocate the heirarchy.
+	d_A.resize( d_num_levels );
+	d_A[0] = Teuchos::RCP<MLAPI::Operator>(
+	    &const_cast<MLAPI::Operator&>(d_mlapi->A(0)), false );
+	d_diagonal_inv.resize( d_num_levels );
 	d_x.resize( d_num_levels );
 	d_x[0] = d_problem->getLHS();
 	d_b.resize( d_num_levels );
-	d_b[0] = d_problem->getRHS();
+	d_b[0] = 
+	    Teuchos::rcp_const_cast<Vector,const Vector>(d_problem->getRHS());
 	
 	// Build the hierarchy.
+	Teuchos::RCP<Matrix> A_l;
+	ML_Operator* A_mlop;
+	d_scaled_ops.resize( d_num_levels - 1 );
+	Teuchos::RCP<Vector> diagonal;
 	Teuchos::RCP<Matrix> R_l;
 	for ( int l = 1; l < d_num_levels; ++l )
 	{
+	    // Construct the inverse of the operator diagonal at this level.
+	    A_l = d_mlapi->A(l).GetRCPRowMatrix();
+	    diagonal = MT::cloneVectorFromMatrixRows( *A_l );
+	    d_diagonal_inv[l] = MT::cloneVectorFromMatrixRows( *A_l );
+	    MT::getLocalDiagCopy( *A_l, *diagonal );
+	    VT::reciprocal( *d_diagonal_inv[l], *diagonal );
+
+	    // Create the implicitly diagonally scaled operator at this level.
+	    A_mlop = d_mlapi->A(l).GetML_Operator();
+	    d_scaled_ops[l-1] = ML_Operator_ImplicitlyVScale( 
+		A_mlop, VT::viewNonConst(*d_diagonal_inv[l]).getRawPtr(), true );
+	    d_A[l] = Teuchos::rcp( 
+		new MLAPI::Operator(d_mlapi->A(l).GetOperatorDomainSpace(),
+				    d_mlapi->A(l).GetOperatorRangeSpace(),
+				    d_scaled_ops[l-1], false) );
+
 	    // Get the restriction operator for this level.
 	    R_l = d_mlapi->R(l-1).GetRCPRowMatrix();
 
@@ -331,12 +395,19 @@ void MultilevelSolverManager<Vector,Matrix>::buildRHSHierarchy()
     MCLS_REQUIRE( !d_global_comm.is_null() );
     MCLS_REQUIRE( !d_plist.is_null() );
 
-    // Apply the restriction operator to successive levels.
-    Teuchos::RCP<Matrix> R_l;
-    for ( int l = 1; l < d_num_levels; ++l )
+    if ( d_primary_set )
     {
-	R_l = d_mlapi->R(l-1).GetRCPRowMatrix();
-	MT::apply( *R_l, *d_b[l-1], *d_b[l] );
+	// Set the base vector.
+	d_b[0] = 
+	    Teuchos::rcp_const_cast<Vector,const Vector>(d_problem->getRHS());
+
+	// Apply the restriction operator to successive levels.
+	Teuchos::RCP<Matrix> R_l;
+	for ( int l = 1; l < d_num_levels; ++l )
+	{
+	    R_l = d_mlapi->R(l-1).GetRCPRowMatrix();
+	    MT::apply( *R_l, *d_b[l-1], *d_b[l] );
+	}
     }
 }
 

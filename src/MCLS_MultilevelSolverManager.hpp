@@ -53,6 +53,7 @@
 #include <Teuchos_Comm.hpp>
 
 #include <MLAPI_MultiLevelSA.h>
+#include <MLAPI_Operator.h>
 
 namespace MCLS
 {
@@ -162,6 +163,15 @@ class MultilevelSolverManager : public SolverManager<Vector,Matrix>
 
     // ML interface.
     Teuchos::RCP<MLAPI::MultiLevelSA> d_mlapi;
+
+    // Operator hierarchy local inverse diagonal copies.
+    Teuchos::Array<Teuchos::RCP<Vector> > d_diagonal_inv;
+
+    // Diagonally scaled ML_Operators.
+    Teuchos::Array<ML_Operator*> d_scaled_ops;
+
+    // Diagonally scaled MLAPI operator hierarchy.
+    Teuchos::Array<Teuchos::RCP<MLAPI::Operator> > d_A;
 
     // LHS hierarchy.
     Teuchos::Array<Teuchos::RCP<Vector> > d_x;
