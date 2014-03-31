@@ -158,7 +158,7 @@ int main( int argc, char * argv[] )
     for ( int i = 1; i < problem_size-1; ++i )
     {
 	(*u)[i] = std::sin( i*k_1*pi / (problem_size-1) ) +
-		     std::sin( i*k_2*pi / (problem_size-1) );
+		  std::sin( i*k_2*pi / (problem_size-1) );
     }
 
     // Build the correction vector .
@@ -212,7 +212,7 @@ int main( int argc, char * argv[] )
         ofile.open( "solution.dat" );
         for ( int i = 0; i < problem_size; ++i )
         {
-            ofile << std::setprecision(8) << (*u)[i] << std::endl;
+            ofile << std::setprecision(8) << (*d)[i] << std::endl;
         }
         ofile.close();
     }

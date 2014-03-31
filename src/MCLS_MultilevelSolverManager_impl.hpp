@@ -49,6 +49,9 @@
 #include <MLAPI_Space.h>
 #include <ml_operator.h>
 
+#include <EpetraExt_RowMatrixOut.h>
+#include <EpetraExt_VectorOut.h>
+
 namespace MCLS
 {
 
@@ -261,14 +264,14 @@ bool MultilevelSolverManager<Vector,Matrix>::solve()
 	d_mc_solver->setProblem( level_problem );
 	d_mc_solver->solve();
 
-	// Apply the multilevel tally.
+	// Apply the multilevel tally. Don't apply to the coarsest level.
 	if ( d_primary_set && (l < d_num_levels - 1) )
 	{
 	    // Apply the restriction operator.
 	    R_l = d_mlapi->R(l).GetRCPRowMatrix();
 	    work = VT::clone( *d_x[l+1] );
 	    MT::apply( *R_l, *d_x[l], *work );
-    
+
 	    // Apply the prolongation operator.
 	    P_l = d_mlapi->P(l).GetRCPRowMatrix();
 	    work_2 = VT::clone( *d_x[l] );
@@ -330,7 +333,7 @@ void MultilevelSolverManager<Vector,Matrix>::buildOperatorHierarchy()
 
 	// Allocate the heirarchy.
 	d_A.resize( d_num_levels );
-	d_diagonal.resize( d_num_levels );
+	Teuchos::RCP<Vector> diagonal;
 	d_diagonal_inv.resize( d_num_levels );
 	
 	// Build the operator hierarchy.
@@ -342,10 +345,10 @@ void MultilevelSolverManager<Vector,Matrix>::buildOperatorHierarchy()
 	{
 	    // Construct the inverse of the operator diagonal at this level.
 	    A_l = d_mlapi->A(l).GetRCPRowMatrix();
-	    d_diagonal[l] = MT::cloneVectorFromMatrixRows( *A_l );
+	    diagonal = MT::cloneVectorFromMatrixRows( *A_l );
 	    d_diagonal_inv[l] = MT::cloneVectorFromMatrixRows( *A_l );
-	    MT::getLocalDiagCopy( *A_l, *d_diagonal[l] );
-	    VT::reciprocal( *d_diagonal_inv[l], *d_diagonal[l] );
+	    MT::getLocalDiagCopy( *A_l, *diagonal );
+	    VT::reciprocal( *d_diagonal_inv[l], *diagonal );
 
 	    // Create the implicitly diagonally scaled operator at this level.
 	    A_mlop = d_mlapi->A(l).GetML_Operator();
@@ -387,23 +390,25 @@ void MultilevelSolverManager<Vector,Matrix>::buildRHSHierarchy()
 
     if ( d_primary_set )
     {
-	// Set the base vector and scale by the level diagonal.
-	d_b[0] = VT::clone( *d_problem->getRHS() );
-	Teuchos::RCP<Vector> work = 
+	// Set the base vector.
+	d_b[0] = 
 	    Teuchos::rcp_const_cast<Vector,const Vector>(d_problem->getRHS());
-	VT::elementWiseMultiply(
-	    *d_b[0], 0.0, *d_diagonal_inv[0], *work, 1.0 );
-
-	// Apply the restriction operator to successive levels and scale by
-	// the level diagonal.
+	
+	// Apply the restriction operator to successive levels. 
+	Teuchos::RCP<Vector> work;
 	Teuchos::RCP<Matrix> R_l;
 	for ( int l = 1; l < d_num_levels; ++l )
 	{
 	    R_l = d_mlapi->R(l-1).GetRCPRowMatrix();
-	    work = VT::clone( *d_b[l] );
-	    MT::apply( *R_l, *d_b[l-1], *work );
+	    MT::apply( *R_l, *d_b[l-1], *d_b[l] );
+	}
+
+	// Scale by the level diagonal.
+	for ( int l = 0; l < d_num_levels; ++l )
+	{
+	    work = VT::deepCopy( *d_b[l] );
 	    VT::elementWiseMultiply(
-	    	*d_b[l], 0.0, *d_diagonal_inv[l], *work, 1.0 );
+	     	*d_b[l], 0.0, *d_diagonal_inv[l], *work, 1.0 );
 	}
     }
 }
