@@ -164,6 +164,9 @@ class MultilevelSolverManager : public SolverManager<Vector,Matrix>
     // ML interface.
     Teuchos::RCP<MLAPI::MultiLevelSA> d_mlapi;
 
+    // Operator hierarchy local diagonal copies.
+    Teuchos::Array<Teuchos::RCP<Vector> > d_diagonal;
+
     // Operator hierarchy local inverse diagonal copies.
     Teuchos::Array<Teuchos::RCP<Vector> > d_diagonal_inv;
 
