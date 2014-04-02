@@ -139,7 +139,7 @@ void applyRestrictionOperator2( const Teuchos::ArrayView<const double>& v_h,
 
     for ( unsigned j = 1; j < v_2h.size() - 1; ++j )
     {
-	v_2h[j] = 0.25 * ( v_h[2*j-1] + 2.0 * v_h[2*j] + v_h[2*j+1] );
+	v_2h[j] = 0.25 * ( v_h[2*j-1] + 2 * v_h[2*j] + v_h[2*j+1] );
     }
 
     v_2h.back() = v_h.back();
@@ -271,147 +271,98 @@ int main( int argc, char * argv[] )
 	A[n] = buildPoissonOperator( grid_sizes[n], epetra_comm );
     }
     
-    // Create the solution vector hierarchy.
+    // Create a vector hierarchy.
+    int k_1 = plist->get<int>("Wave Number 1");
+    int k_2 = plist->get<int>("Wave Number 2");
+    double pi = std::acos(-1.0);
     Teuchos::Array<Teuchos::RCP<Epetra_Vector> > u(num_levels);
     for ( int n = 0; n < num_levels; ++n )
     {
 	u[n] = MT::cloneVectorFromMatrixRows( *A[n] );
-    }
-    int k_1 = plist->get<int>("Wave Number 1");
-    int k_2 = plist->get<int>("Wave Number 2");
-    VT::putScalar( *u[0], 0.0 );
-    double pi = std::acos(-1.0);
-    for ( int i = 1; i < problem_size-1; ++i )
-    {
-	(*u[0])[i] = std::sin( i*k_1*pi / (problem_size-1) ) +
-		     std::sin( i*k_2*pi / (problem_size-1) );
-    }
-    for ( int i = 1; i < num_levels; ++i )
-    {
-	double* u_h_ptr;
-	u[i-1]->ExtractView( &u_h_ptr );
-	Teuchos::ArrayView<const double> u_h( u_h_ptr, grid_sizes[i-1] );
-	double* u_Mh_ptr;
-	u[i]->ExtractView( &u_Mh_ptr );
-	Teuchos::ArrayView<double> u_Mh( u_Mh_ptr, grid_sizes[i] );
-	applyRestrictionOperator( M, u_h, u_Mh );
+	VT::putScalar( *u[n], 0.0 );
+	for ( int i = 1; i < grid_sizes[n]-1; ++i )
+	{
+	    (*u[n])[i] = std::sin( i*k_1*pi / (grid_sizes[n]-1) ) +
+			 std::sin( i*k_2*pi / (grid_sizes[n]-1) );
+	}
     }
 
-    // Build the correction vector hierarchy.
-    Teuchos::Array<Teuchos::RCP<Epetra_Vector> > d(num_levels);
-    for ( int n = 0; n < num_levels; ++n )
-    {
-	d[n] = MT::cloneVectorFromMatrixRows( *A[n] );
-	VT::putScalar( *d[n], 0.0 );
-    }
-
-    // Build the residual hierarchy.
-    Teuchos::Array<Teuchos::RCP<Epetra_Vector> > r(num_levels);
-    for ( int n = 0; n < num_levels; ++n )
-    {
-	r[n] = MT::cloneVectorFromMatrixRows( *A[n] );
-	MT::apply( *A[n], *u[n], *r[n] );
-	VT::scale( *r[n], -1.0 );
-    }
-
-    // Create the residual linear problem hierarchy.
-    Teuchos::Array<Teuchos::RCP<MCLS::LinearProblem<Vector,Matrix> > >
-	linear_problem( num_levels );
-    for ( int n = 0; n < num_levels; ++n )
-    {
-	linear_problem[n] =
-	    Teuchos::rcp( new MCLS::LinearProblem<Vector,Matrix>(
-			      A[n], d[n], r[n] ) );
-    }
-
-    // Create the solver.
-    std::string solver_type = plist->get<std::string>("Solver Type");
-    MCLS::SolverFactory<Vector,Matrix> factory;
-    Teuchos::RCP<MCLS::SolverManager<Vector,Matrix> > solver_manager =
-	factory.create( solver_type, comm, plist );
-
-    // Solve the problem hierarchy.
-    std::cout << std::endl;
-    Teuchos::Time timer("");
-    timer.start(true);
-    for ( int n = 0; n < num_levels; ++n )
-    {
-	std::cout << "Solving Level " << n << "..." << std::endl;
-	plist->set<int>("Set Number of Histories", num_histories[n] );
-	solver_manager->setParameters( plist );
-	solver_manager->setProblem( linear_problem[n] );
-	solver_manager->solve();
-    }
-    timer.stop();
-    std::cout << std::endl;
-
-    // Apply the multilevel tally.
+    // Check that R_0*A_0*P_0*x = A_1*x
     for ( int n = 0; n < num_levels - 1; ++n )
     {
-	// Get a view of the tally for this level.
-	double* d_h_ptr;
-	d[n]->ExtractView( &d_h_ptr );
-	Teuchos::ArrayView<const double> d_h( d_h_ptr, grid_sizes[n] );
-
-	// Restrict the tally to the coarse grid.
-	Teuchos::Array<double> v_Mh( grid_sizes[n+1], 0.0 );
-	Teuchos::ArrayView<double> v_Mh_view = v_Mh();
-	applyRestrictionOperator( M, d_h, v_Mh_view );
-
-	// Prolongate the tally back to the fine grid.
-	Teuchos::Array<double> v_h( grid_sizes[n], 0.0 );
-	Teuchos::ArrayView<double> v_h_view = v_h();
-	applyProlongationOperator( M, v_Mh_view, v_h_view );
-
-	// Subtract the coarse result from the fine result.
-	for ( int i = 0; i < grid_sizes[n]; ++i )
+	// Do R*A*P*x
+	Teuchos::Array<double> RAPx( grid_sizes[n+1], 0.0 );
 	{
-	    (*d[n])[i] -= v_h[i];
+	    // Get x.
+	    double* u_h_ptr;
+	    u[n+1]->ExtractView( &u_h_ptr );
+	    Teuchos::ArrayView<const double> u_h( u_h_ptr, grid_sizes[n+1] );
+
+	    // Apply P.
+	    Teuchos::RCP<Vector> work_1 = VT::clone( *u[n] );
+	    double* work_1_ptr;
+	    work_1->ExtractView( &work_1_ptr );
+	    Teuchos::ArrayView<double> work_1_view( work_1_ptr, grid_sizes[n] );
+	    applyProlongationOperator( M, u_h, work_1_view );
+
+	    // Apply A.
+	    Teuchos::RCP<Vector> work_2 = VT::clone( *u[n] );
+	    MT::apply( *A[n], *work_1, *work_2 );
+
+	    // Apply R.
+	    double* work_2_ptr;
+	    work_2->ExtractView( &work_2_ptr );
+	    Teuchos::ArrayView<const double> work_2_view( work_2_ptr, grid_sizes[n] );
+	    Teuchos::ArrayView<double> RAPx_view = RAPx();
+	    applyRestrictionOperator( M, work_2_view, RAPx_view );
 	}
-    }
 
-    // Collapse the tally hierarchy.
-    for ( int n = num_levels - 1; n > 0; --n )
-    {
-	// Get a view of the tally for the coarse level.
-	double* d_Mh_ptr;
-	d[n]->ExtractView( &d_Mh_ptr );
-	Teuchos::ArrayView<const double> d_Mh( d_Mh_ptr, grid_sizes[n] );
+	// Do A*x
+	Teuchos::RCP<Vector> Ax = VT::clone( *u[n+1] );
+	MT::apply( *A[n+1], *u[n+1], *Ax );
 
-	// Prolongate the coarse level to the fine level.
-	Teuchos::Array<double> v_h( grid_sizes[n-1], 0.0 );
-	Teuchos::ArrayView<double> v_h_view = v_h();
-	applyProlongationOperator( M, d_Mh, v_h_view );
-
-	// Add the prolongated coarse result to the fine result.
-	for ( int i = 0; i < grid_sizes[n-1]; ++i )
+	// Check the result.
+	std::cout << "R*A*P*x = A*x " << n << std::endl;
+	for ( int i = 0; i < grid_sizes[n+1]; ++i )
 	{
-	    (*d[n-1])[i] += v_h[i];
+	    std::cout << RAPx[i] << " " << (*Ax)[i] << " " 
+		      << (*Ax)[i] / RAPx[i] << std::endl;
 	}
+	std::cout << std::endl;
     }
 
-    // Apply the correction to the solution.
-    VT::update( *u[0], 1.0, *d[0], 1.0 );
-
-    // The point-wise error is the inf-norm of the top level solution.
-    double e_inf = VT::normInf( *u[0] );
-    std::cout << "Number of Levels: " << num_levels << std::endl;
-    std::cout << "||e||_inf: " << e_inf << std::endl;
-
-    // Compute the figure of merit -> error * work
-    int total_histories = 0;
-    for ( int n = 0; n < num_levels; ++n )
+    // Check that R_0*P_0*x = x
+    for ( int n = 0; n < num_levels - 1; ++n )
     {
-	total_histories += num_histories[n];
+	// Do R*P*x
+	Teuchos::Array<double> RPx( grid_sizes[n+1], 0.0 );
+	{
+	    // Get x.
+	    double* u_h_ptr;
+	    u[n+1]->ExtractView( &u_h_ptr );
+	    Teuchos::ArrayView<const double> u_h( u_h_ptr, grid_sizes[n+1] );
+
+	    // Apply P.
+	    Teuchos::RCP<Vector> work_1 = VT::clone( *u[n] );
+	    double* work_1_ptr;
+	    work_1->ExtractView( &work_1_ptr );
+	    Teuchos::ArrayView<double> work_1_view( work_1_ptr, grid_sizes[n] );
+	    applyProlongationOperator( M, u_h, work_1_view );
+
+	    // Apply R.
+	    Teuchos::ArrayView<double> RPx_view = RPx();
+	    applyRestrictionOperator( M, work_1_view, RPx_view );
+	}
+
+	// Check the result.
+	std::cout << "R*P*x = x " << n << std::endl;
+	for ( int i = 0; i < grid_sizes[n+1]; ++i )
+	{
+	    std::cout << RPx[i] << " " << (*u[n+1])[i] << " " 
+		      << (*u[n+1])[i] / RPx[i] << std::endl;
+	}
+	std::cout << std::endl;
     }
-    std::cout << "Total number of histories: " 
-	      <<  total_histories << std::endl;
-    double toc = timer.totalElapsedTime();
-    std::cout << "Time: " << toc << std::endl;
-    std::cout << "Time per History: " << toc / total_histories << std::endl;
-    double fom = 1.0 / (e_inf * e_inf * toc);
-    std::cout << "Figure of merit: " << fom << std::endl;
-    std::cout << std::endl;
 
     // Write the solution to a file.
     if ( comm->getRank() == 0 )

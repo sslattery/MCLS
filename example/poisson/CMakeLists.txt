@@ -15,6 +15,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ml_verify
+  SOURCES ml_verify.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(
   poisson_driver_files
   SOURCE_FILES input.xml poisson_example.plot

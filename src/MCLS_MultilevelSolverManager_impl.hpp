@@ -49,6 +49,8 @@
 #include <MLAPI_Space.h>
 #include <ml_operator.h>
 
+#include <ml_MultiLevelPreconditioner.h>
+
 #include <EpetraExt_RowMatrixOut.h>
 #include <EpetraExt_VectorOut.h>
 
@@ -251,7 +253,7 @@ bool MultilevelSolverManager<Vector,Matrix>::solve()
 	}
 
 	// Compute the number of histories at this level.
-	nh_l = nh * std::pow( 2.0, -3.0*(d_num_levels-l-1)/2.0 );
+	nh_l = nh * std::pow( 3.0, -3.0*(d_num_levels-l-1)/2.0 );
 	mc_plist->set<int>("Set Number of Histories", nh_l);
 
 	// Solve the Monte Carlo problem on this level.
@@ -325,22 +327,22 @@ void MultilevelSolverManager<Vector,Matrix>::buildOperatorHierarchy()
 				     A.getRawPtr(), false );
 
 	// Create the smoothed aggregation operator hierarchy.
-	d_plist->set<double>("aggregation: damping factor", 0);
+	Teuchos::ParameterList ml_list = d_plist->sublist("ML");
 	d_mlapi = 
-	    Teuchos::rcp( new MLAPI::MultiLevelSA(ml_operator, *d_plist) );
+	    Teuchos::rcp( new MLAPI::MultiLevelSA(ml_operator, ml_list) );
 	d_num_levels = d_mlapi->GetMaxLevels();
 	MCLS_CHECK( d_mlapi->IsComputed() );
 
 	// Allocate the heirarchy.
 	d_A.resize( d_num_levels );
-	Teuchos::RCP<Vector> diagonal;
 	d_diagonal_inv.resize( d_num_levels );
+	d_scaled_ops.resize( d_num_levels );
 	
 	// Build the operator hierarchy.
 	Teuchos::RCP<Matrix> A_l;
 	ML_Operator* A_mlop;
-	d_scaled_ops.resize( d_num_levels );
 	Teuchos::RCP<Matrix> R_l;
+	Teuchos::RCP<Vector> diagonal;
 	for ( int l = 0; l < d_num_levels; ++l )
 	{
 	    // Construct the inverse of the operator diagonal at this level.
@@ -393,6 +395,9 @@ void MultilevelSolverManager<Vector,Matrix>::buildRHSHierarchy()
 	// Set the base vector.
 	d_b[0] = 
 	    Teuchos::rcp_const_cast<Vector,const Vector>(d_problem->getRHS());
+
+	// Get the weight preserving scale factor.
+	double weight_scale = VT::norm1( *d_b[0] );
 	
 	// Apply the restriction operator to successive levels. 
 	Teuchos::RCP<Vector> work;
@@ -403,12 +408,18 @@ void MultilevelSolverManager<Vector,Matrix>::buildRHSHierarchy()
 	    MT::apply( *R_l, *d_b[l-1], *d_b[l] );
 	}
 
-	// Scale by the level diagonal.
+	// Scale the problem.
+	double level_weight = 0.0;
 	for ( int l = 0; l < d_num_levels; ++l )
 	{
+	    // Scale by the diagonal.
 	    work = VT::deepCopy( *d_b[l] );
 	    VT::elementWiseMultiply(
 	     	*d_b[l], 0.0, *d_diagonal_inv[l], *work, 1.0 );
+
+	    // Scale by the weight factor.
+	    level_weight = VT::norm1( *d_b[l] );
+	    VT::scale( *d_b[l], weight_scale / level_weight );
 	}
     }
 }
