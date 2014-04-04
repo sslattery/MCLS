@@ -264,7 +264,7 @@ bool AdditiveMultigridManager<Vector,Matrix>::solve()
 	    {
 		work = VT::clone( *d_b[l-1] );
 		MT::apply( *d_A[l-1]->GetRCPRowMatrix(), *d_x[l-1], *work );
-		VT::update( *work, 1.0, *d_b[l-1], -1.0 );
+		VT::update( *work, -1.0, *d_b[l-1], 1.0 );
 		R_l = d_mlapi->R(l-1).GetRCPRowMatrix();
 		residual = VT::clone( *d_b[l] );
 		MT::apply( *R_l, *work, *residual );
@@ -300,7 +300,7 @@ bool AdditiveMultigridManager<Vector,Matrix>::solve()
 	    MT::apply( *P_l, *delta[l], *work );
 
 	    // Add the coarse level to the fine level.
-	    VT::update( *delta[l-1], 1.0, *work, -1.0 );
+	    VT::update( *delta[l-1], 1.0, *work, 1.0 );
 	}
     }
 
