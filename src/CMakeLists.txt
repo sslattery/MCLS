@@ -22,6 +22,8 @@ SET(HEADERS ${HEADERS}
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
+  MCLS_AdditiveMultigridManager.hpp
+  MCLS_AdditiveMultigridManager_impl.hpp
   MCLS_AdjointDomain.hpp
   MCLS_AdjointDomain_impl.hpp
   MCLS_AdjointHistory.hpp

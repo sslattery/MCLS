@@ -32,14 +32,14 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_MultilevelSolverManager_impl.hpp
+ * \file MCLS_AdditiveMultiGridManager_impl.hpp
  * \author Stuart R. Slattery
  * \brief Multilevel Monte Carlo solver manager implementation.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_MULTILEVELSOLVERMANAGER_IMPL_HPP
-#define MCLS_MULTILEVELSOLVERMANAGER_IMPL_HPP
+#ifndef MCLS_ADDITIVEMULTIGRIDMANAGER_IMPL_HPP
+#define MCLS_ADDITIVEMULTIGRIDMANAGER_IMPL_HPP
 
 #include "MCLS_DBC.hpp"
 
@@ -63,7 +63,7 @@ namespace MCLS
  * before solve(). 
  */
 template<class Vector, class Matrix>
-MultilevelSolverManager<Vector,Matrix>::MultilevelSolverManager( 
+AdditiveMultigridManager<Vector,Matrix>::AdditiveMultigridManager( 
     const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist,
     bool internal_solver )
@@ -83,7 +83,7 @@ MultilevelSolverManager<Vector,Matrix>::MultilevelSolverManager(
  * \brief Constructor.
  */
 template<class Vector, class Matrix>
-MultilevelSolverManager<Vector,Matrix>::MultilevelSolverManager( 
+AdditiveMultigridManager<Vector,Matrix>::AdditiveMultigridManager( 
     const Teuchos::RCP<LinearProblemType>& problem,
     const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist,
@@ -109,7 +109,7 @@ MultilevelSolverManager<Vector,Matrix>::MultilevelSolverManager(
  */
 template<class Vector, class Matrix>
 Teuchos::RCP<const Teuchos::ParameterList> 
-MultilevelSolverManager<Vector,Matrix>::getValidParameters() const
+AdditiveMultigridManager<Vector,Matrix>::getValidParameters() const
 {
     Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::parameterList();
     return plist;
@@ -122,8 +122,8 @@ MultilevelSolverManager<Vector,Matrix>::getValidParameters() const
  */
 template<class Vector, class Matrix>
 typename Teuchos::ScalarTraits<
-    typename MultilevelSolverManager<Vector,Matrix>::Scalar>::magnitudeType 
-MultilevelSolverManager<Vector,Matrix>::achievedTol() const
+    typename AdditiveMultigridManager<Vector,Matrix>::Scalar>::magnitudeType 
+AdditiveMultigridManager<Vector,Matrix>::achievedTol() const
 {
     // Here we'll simply return the source weighted norm of the residual after
     // solution. This will give us a measure of the stochastic error generated
@@ -149,7 +149,7 @@ MultilevelSolverManager<Vector,Matrix>::achievedTol() const
  * direct solver and therefore does not do any iterations.
  */
 template<class Vector, class Matrix>
-int MultilevelSolverManager<Vector,Matrix>::getNumIters() const
+int AdditiveMultigridManager<Vector,Matrix>::getNumIters() const
 {
     return 0;
 }
@@ -159,7 +159,7 @@ int MultilevelSolverManager<Vector,Matrix>::getNumIters() const
  * \brief Set the linear problem with the manager.
  */
 template<class Vector, class Matrix>
-void MultilevelSolverManager<Vector,Matrix>::setProblem( 
+void AdditiveMultigridManager<Vector,Matrix>::setProblem( 
     const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem )
 {
     MCLS_REQUIRE( !d_global_comm.is_null() );
@@ -201,7 +201,7 @@ void MultilevelSolverManager<Vector,Matrix>::setProblem(
     list with default parameters that are not defined. 
 */
 template<class Vector, class Matrix>
-void MultilevelSolverManager<Vector,Matrix>::setParameters( 
+void AdditiveMultigridManager<Vector,Matrix>::setParameters( 
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
     MCLS_REQUIRE( !params.is_null() );
@@ -214,7 +214,7 @@ void MultilevelSolverManager<Vector,Matrix>::setParameters(
  * converged. False if it did not.
  */
 template<class Vector, class Matrix>
-bool MultilevelSolverManager<Vector,Matrix>::solve()
+bool AdditiveMultigridManager<Vector,Matrix>::solve()
 {    
     MCLS_REQUIRE( !d_global_comm.is_null() );
     MCLS_REQUIRE( !d_plist.is_null() );
@@ -245,17 +245,33 @@ bool MultilevelSolverManager<Vector,Matrix>::solve()
     Teuchos::RCP<Matrix> R_l;
     for ( int l = 0; l < d_num_levels; ++l )
     {
-	// Create the level residual problem.
+	// Create the level problem.
 	if ( d_primary_set )
 	{
-	    residual = VT::clone( *d_b[l] );
-	    MT::apply( *d_A[l]->GetRCPRowMatrix(), *d_x[l], *residual );
-	    VT::update( *residual, -1.0, *d_b[l], 1.0 );
 	    delta[l] = VT::clone( *d_x[l] );
 	    VT::putScalar( *delta[l], 0.0 );
-	    level_problem = Teuchos::rcp( 
-	    	new LinearProblem<Vector,Matrix>(
-	    	    d_A[l]->GetRCPRowMatrix(), delta[l], residual) );
+
+	    // Solve Ax = b at level 0.
+	    if ( 0 == l )
+	    {
+		level_problem = Teuchos::rcp( 
+		    new LinearProblem<Vector,Matrix>(
+			d_A[l]->GetRCPRowMatrix(), delta[l], d_b[l]) );
+	    }
+	    
+	    // Solve Ad = Rr_{l-1} at all other levels.
+	    else
+	    {
+		work = VT::clone( *d_b[l-1] );
+		MT::apply( *d_A[l-1]->GetRCPRowMatrix(), *d_x[l-1], *work );
+		VT::update( *work, 1.0, *d_b[l-1], -1.0 );
+		R_l = d_mlapi->R(l-1).GetRCPRowMatrix();
+		residual = VT::clone( *d_b[l] );
+		MT::apply( *R_l, *work, *residual );
+		level_problem = Teuchos::rcp( 
+		    new LinearProblem<Vector,Matrix>(
+			d_A[l]->GetRCPRowMatrix(), delta[l], residual) );
+	    }
 	}
 
 	// Compute the number of histories at this level.
@@ -271,23 +287,6 @@ bool MultilevelSolverManager<Vector,Matrix>::solve()
 	d_mc_solver->setParameters( mc_plist );
 	d_mc_solver->setProblem( level_problem );
 	d_mc_solver->solve();
-
-	// Apply the multilevel tally. Don't apply to the coarsest level.
-	if ( d_primary_set && (l < d_num_levels - 1) )
-	{
-	    // Apply the restriction operator.
-	    R_l = d_mlapi->R(l).GetRCPRowMatrix();
-	    work = VT::clone( *d_x[l+1] );
-	    MT::apply( *R_l, *delta[l], *work );
-
-	    // Apply the prolongation operator.
-	    P_l = d_mlapi->P(l).GetRCPRowMatrix();
-	    work_2 = VT::clone( *delta[l] );
-	    MT::apply( *P_l, *work, *work_2 );
-
-	    // Update the level tally with the coarse tally.
-	    VT::update( *delta[l], 1.0, *work_2, -1.0 );
-	}
     }
 
     // Collapse the tallies to the fine grid.
@@ -301,11 +300,12 @@ bool MultilevelSolverManager<Vector,Matrix>::solve()
 	    MT::apply( *P_l, *delta[l], *work );
 
 	    // Add the coarse level to the fine level.
-	    VT::update( *delta[l-1], 1.0, *work, 1.0 );
+	    VT::update( *delta[l-1], 1.0, *work, -1.0 );
 	}
     }
 
-    // Apply the correction to the initial guess.
+    // Apply the correction to the initial guess as we actually solved a
+    // residual form of the problem.
     if ( d_primary_set )
     {
 	VT::update( *d_problem->getLHS(), 1.0, *delta[0], 1.0 );
@@ -321,7 +321,7 @@ bool MultilevelSolverManager<Vector,Matrix>::solve()
  * \brief Build the multigrid hierarchy.
  */
 template<class Vector, class Matrix>
-void MultilevelSolverManager<Vector,Matrix>::buildOperatorHierarchy()
+void AdditiveMultigridManager<Vector,Matrix>::buildOperatorHierarchy()
 {
     MCLS_REQUIRE( !d_global_comm.is_null() );
     MCLS_REQUIRE( !d_plist.is_null() );
@@ -400,7 +400,7 @@ void MultilevelSolverManager<Vector,Matrix>::buildOperatorHierarchy()
  * \brief Build the multigrid RHS hierarchy.
  */
 template<class Vector, class Matrix>
-void MultilevelSolverManager<Vector,Matrix>::buildRHSHierarchy()
+void AdditiveMultigridManager<Vector,Matrix>::buildRHSHierarchy()
 {
     MCLS_REQUIRE( !d_global_comm.is_null() );
     MCLS_REQUIRE( !d_plist.is_null() );
@@ -408,11 +408,13 @@ void MultilevelSolverManager<Vector,Matrix>::buildRHSHierarchy()
 
     if ( d_primary_set )
     {
-	// Set the base vector.
-	d_b[0] =
-	    Teuchos::rcp_const_cast<Vector,const Vector>(d_problem->getRHS());
+	// Set the base RHS this is the residual of the original linear
+	// problem.
+	d_problem->updateResidual();
+	d_b[0] = Teuchos::rcp_const_cast<Vector,const Vector>(
+	    d_problem->getResidual() );
 
-	// Apply the restriction operator to successive levels.
+	// Apply R to successive levels.
 	Teuchos::RCP<Matrix> R_l;
 	for ( int l = 1; l < d_num_levels; ++l )
 	{
@@ -437,9 +439,9 @@ void MultilevelSolverManager<Vector,Matrix>::buildRHSHierarchy()
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_MULTILEVELSOLVERMANAGER_IMPL_HPP
+#endif // end MCLS_ADDITIVEMULTIGRIDMANAGER_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_MultilevelSolverManager_impl.hpp
+// end MCLS_AdditiveMultigridManager_impl.hpp
 //---------------------------------------------------------------------------//
 

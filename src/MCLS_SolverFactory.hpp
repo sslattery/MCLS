@@ -93,6 +93,7 @@ class SolverFactory : public virtual Teuchos::Describable
 	ADJOINT_MC,
         FORWARD_MC,
 	MULTILEVEL_MC,
+	ADDITIVE_MG,
 	MCSA,
 	SEQUENTIAL_MC,
         FIXED_POINT

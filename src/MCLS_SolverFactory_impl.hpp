@@ -45,6 +45,7 @@
 #include "MCLS_AdjointSolverManager.hpp"
 #include "MCLS_ForwardSolverManager.hpp"
 #include "MCLS_MultilevelSolverManager.hpp"
+#include "MCLS_AdditiveMultigridManager.hpp"
 #include "MCLS_MCSASolverManager.hpp"
 #include "MCLS_SequentialMCSolverManager.hpp"
 #include "MCLS_FixedPointSolverManager.hpp"
@@ -63,6 +64,7 @@ SolverFactory<Vector,Matrix>::SolverFactory()
     d_name_map["Adjoint MC"] = ADJOINT_MC;
     d_name_map["Forward MC"] = FORWARD_MC;
     d_name_map["Multilevel MC"] = MULTILEVEL_MC;
+    d_name_map["Additive Multigrid MC"] = ADDITIVE_MG;
     d_name_map["MCSA"] = MCSA;
     d_name_map["Sequential MC"] = SEQUENTIAL_MC;
     d_name_map["Fixed Point"] = FIXED_POINT;
@@ -104,6 +106,12 @@ SolverFactory<Vector,Matrix>::create(
 	case MULTILEVEL_MC:
 
 	    solver = Teuchos::rcp( new MultilevelSolverManager<Vector,Matrix>( 
+				       global_comm, solver_parameters ) );
+	    break;
+
+	case ADDITIVE_MG:
+
+	    solver = Teuchos::rcp( new AdditiveMultigridManager<Vector,Matrix>( 
 				       global_comm, solver_parameters ) );
 	    break;
 

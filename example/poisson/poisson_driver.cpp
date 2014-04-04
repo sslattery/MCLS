@@ -86,6 +86,7 @@ Teuchos::RCP<Epetra_CrsMatrix> buildPoissonOperator(
 	new Epetra_Map( local_num_rows, 0, *epetra_comm ) );
 
     // Build the linear operator.
+    double h = 0.5;
     Teuchos::RCP<Epetra_CrsMatrix> A = 	
 	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
     Teuchos::Array<int> global_columns( 3 );
@@ -98,9 +99,9 @@ Teuchos::RCP<Epetra_CrsMatrix> buildPoissonOperator(
 	global_columns[0] = i-1;
 	global_columns[1] = i;
 	global_columns[2] = i+1;
-	values[0] = -0.5;
-	values[1] = 1.0;
-	values[2] = -0.5;
+	values[0] = -1.0 / ( h*h );
+	values[1] = 2.0 / ( h*h );
+	values[2] = -1.0 / ( h*h );
 	A->InsertGlobalValues( i, 3, 
 			       &values[0], &global_columns[0] );
     }
@@ -162,8 +163,9 @@ int main( int argc, char * argv[] )
     }
 
     // Create the RHS - this is a homogeneous problem.
+    double forcing = plist->get<double>("Forcing");
     Teuchos::RCP<Vector> b = VT::clone( *u );
-    VT::putScalar( *b, 0.0 );
+    VT::putScalar( *b, forcing );
     
     // Create the linear problem.
     Teuchos::RCP<MCLS::LinearProblem<Vector,Matrix> > linear_problem =
@@ -188,6 +190,8 @@ int main( int argc, char * argv[] )
 
     // Compute the inf-norm of the residual.
     linear_problem->updateResidual();
+    double r_2 = VT::norm2( *linear_problem->getResidual() );
+    std::cout << "||r||_2: " << r_2 << std::endl;
     double r_inf = VT::normInf( *linear_problem->getResidual() );
     std::cout << "||r||_inf: " << r_inf << std::endl;
 

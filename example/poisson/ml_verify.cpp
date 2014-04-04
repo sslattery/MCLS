@@ -356,11 +356,44 @@ int main( int argc, char * argv[] )
 	}
 
 	// Check the result.
-	std::cout << "R*P*x = x " << n << std::endl;
+	std::cout << "R*P*x, x, c " << n << std::endl;
 	for ( int i = 0; i < grid_sizes[n+1]; ++i )
 	{
 	    std::cout << RPx[i] << " " << (*u[n+1])[i] << " " 
-		      << (*u[n+1])[i] / RPx[i] << std::endl;
+		      << RPx[i] / (*u[n+1])[i] << std::endl;
+	}
+	std::cout << std::endl;
+    }
+
+    // Determine c for P*R*x = c*x
+    for ( int n = 0; n < num_levels - 1; ++n )
+    {
+	// Do P*R*x
+	Teuchos::Array<double> PRx( grid_sizes[n], 0.0 );
+	{
+	    // Get x.
+	    double* u_h_ptr;
+	    u[n]->ExtractView( &u_h_ptr );
+	    Teuchos::ArrayView<const double> u_h( u_h_ptr, grid_sizes[n] );
+
+	    // Apply R.
+	    Teuchos::RCP<Vector> work_1 = VT::clone( *u[n+1] );
+	    double* work_1_ptr;
+	    work_1->ExtractView( &work_1_ptr );
+	    Teuchos::ArrayView<double> work_1_view( work_1_ptr, grid_sizes[n+1] );
+	    applyRestrictionOperator( M, u_h, work_1_view );
+
+	    // Apply P.
+	    Teuchos::ArrayView<double> PRx_view = PRx();
+	    applyProlongationOperator( M, work_1_view, PRx_view );
+	}
+
+	// Check the result.
+	std::cout << "P*R*x, x, c " << n << std::endl;
+	for ( int i = 0; i < grid_sizes[n]; ++i )
+	{
+	    std::cout << PRx[i] << " " << (*u[n])[i] << " " 
+		      << PRx[i] / (*u[n])[i] << std::endl;
 	}
 	std::cout << std::endl;
     }
