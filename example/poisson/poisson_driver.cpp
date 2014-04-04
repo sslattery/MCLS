@@ -161,19 +161,14 @@ int main( int argc, char * argv[] )
 		  std::sin( i*k_2*pi / (problem_size-1) );
     }
 
-    // Build the correction vector .
-    Teuchos::RCP<Epetra_Vector> d = MT::cloneVectorFromMatrixRows( *A );
-    VT::putScalar( *d, 0.0 );
-
-    // Build the residual.
-    Teuchos::RCP<Epetra_Vector> r = MT::cloneVectorFromMatrixRows( *A );
-    MT::apply( *A, *u, *r );
-    VT::scale( *r, -1.0 );
-
-    // Create the residual linear problem.
+    // Create the RHS - this is a homogeneous problem.
+    Teuchos::RCP<Vector> b = VT::clone( *u );
+    VT::putScalar( *b, 0.0 );
+    
+    // Create the linear problem.
     Teuchos::RCP<MCLS::LinearProblem<Vector,Matrix> > linear_problem =
 	Teuchos::rcp( new MCLS::LinearProblem<Vector,Matrix>(
-			  A, d, r ) );
+			  A, u, b ) );
 
     // Create the solver.
     std::string solver_type = plist->get<std::string>("Solver Type");
@@ -191,8 +186,10 @@ int main( int argc, char * argv[] )
     timer.stop();
     std::cout << std::endl;
 
-    // Apply the correction to the solution.
-    VT::update( *u, 1.0, *d, 1.0 );
+    // Compute the inf-norm of the residual.
+    linear_problem->updateResidual();
+    double r_inf = VT::normInf( *linear_problem->getResidual() );
+    std::cout << "||r||_inf: " << r_inf << std::endl;
 
     // The point-wise error is the inf-norm of the top level solution.
     double e_inf = VT::normInf( *u );
@@ -212,7 +209,7 @@ int main( int argc, char * argv[] )
         ofile.open( "solution.dat" );
         for ( int i = 0; i < problem_size; ++i )
         {
-            ofile << std::setprecision(8) << (*d)[i] << std::endl;
+            ofile << std::setprecision(8) << (*u)[i] << std::endl;
         }
         ofile.close();
     }

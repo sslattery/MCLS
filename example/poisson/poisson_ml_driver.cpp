@@ -309,9 +309,9 @@ int main( int argc, char * argv[] )
     Teuchos::Array<Teuchos::RCP<Epetra_Vector> > r(num_levels);
     for ( int n = 0; n < num_levels; ++n )
     {
-	r[n] = MT::cloneVectorFromMatrixRows( *A[n] );
-	MT::apply( *A[n], *u[n], *r[n] );
-	VT::scale( *r[n], -1.0 );
+    	r[n] = MT::cloneVectorFromMatrixRows( *A[n] );
+    	MT::apply( *A[n], *u[n], *r[n] );
+    	VT::scale( *r[n], -1.0 );
     }
 
     // Create the residual linear problem hierarchy.

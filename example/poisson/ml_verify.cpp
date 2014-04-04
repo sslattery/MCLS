@@ -312,7 +312,8 @@ int main( int argc, char * argv[] )
 	    // Apply R.
 	    double* work_2_ptr;
 	    work_2->ExtractView( &work_2_ptr );
-	    Teuchos::ArrayView<const double> work_2_view( work_2_ptr, grid_sizes[n] );
+	    Teuchos::ArrayView<const double> work_2_view( 
+		work_2_ptr, grid_sizes[n] );
 	    Teuchos::ArrayView<double> RAPx_view = RAPx();
 	    applyRestrictionOperator( M, work_2_view, RAPx_view );
 	}
@@ -361,6 +362,35 @@ int main( int argc, char * argv[] )
 	    std::cout << RPx[i] << " " << (*u[n+1])[i] << " " 
 		      << (*u[n+1])[i] / RPx[i] << std::endl;
 	}
+	std::cout << std::endl;
+    }
+
+    // Check norm preservation of the restriction operators.
+    for ( int n = 0; n < num_levels - 1; ++n )
+    {
+	// Do R*x
+	Teuchos::RCP<Vector> Rx = VT::clone( *u[n+1] );
+	{
+	    // Get x.
+	    double* u_h_ptr;
+	    u[n]->ExtractView( &u_h_ptr );
+	    Teuchos::ArrayView<const double> u_h( u_h_ptr, grid_sizes[n] );
+
+	    // Apply R.
+	    double* Rx_ptr;
+	    Rx->ExtractView( &Rx_ptr );
+	    Teuchos::ArrayView<double> Rx_view( Rx_ptr, grid_sizes[n+1] );
+	    applyRestrictionOperator( M, u_h, Rx_view );
+	}
+
+	// Check the result.
+	std::cout << "||R*x|| = ||x|| " << n << std::endl;
+	std::cout << "Inf " << VT::normInf( *Rx ) << " " 
+		  << VT::normInf( *u[n] ) << std::endl;
+	std::cout << "1 " << VT::norm1( *Rx ) << " " 
+		  << VT::norm1( *u[n] ) << std::endl;
+	std::cout << "2 " << VT::norm2( *Rx ) << " " 
+		  << VT::norm2( *u[n] ) << std::endl;
 	std::cout << std::endl;
     }
 
