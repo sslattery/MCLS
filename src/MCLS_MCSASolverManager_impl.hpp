@@ -374,13 +374,16 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	// Update the iteration count.
 	++d_num_iters;
 
-	// Perform smoothing and update the residual on the primary set.
+	// Perform smoothing and update the residual on the primary set and
+	// clear the correction.
 	if ( d_primary_set )
 	{
 	    for ( int l = 0; l < smooth_steps; ++l )
 	    {
 		d_fixed_point->doOneIteration();
 	    }
+
+	    VT::putScalar( *d_residual_problem->getLHS(), 0.0 );
 	}
 
 	// Solve the residual Monte Carlo problem.

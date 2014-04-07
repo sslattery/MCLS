@@ -98,7 +98,7 @@ MultilevelSolverManager<Vector,Matrix>::MultilevelSolverManager(
     MCLS_REQUIRE( !d_plist.is_null() );
     d_mc_solver = Teuchos::rcp(
 	new AdjointSolverManager<Vector,Matrix>( 
-	    d_global_comm, d_plist, true) );
+	    d_problem, d_global_comm, d_plist, true) );
 
     buildOperatorHierarchy();
 }
@@ -259,7 +259,7 @@ bool MultilevelSolverManager<Vector,Matrix>::solve()
 	}
 
 	// Compute the number of histories at this level.
-	nh_l = nh * std::pow( 3.0, -3.0*(d_num_levels-l-1)/2.0 );
+	nh_l = nh * std::pow( 2.0, -3.0*(d_num_levels-l-1)/2.0 );
 	mc_plist->set<int>("Set Number of Histories", nh_l);
 
 	// Solve the Monte Carlo problem on this level.
@@ -271,23 +271,18 @@ bool MultilevelSolverManager<Vector,Matrix>::solve()
 	d_mc_solver->setParameters( mc_plist );
 	d_mc_solver->setProblem( level_problem );
 	d_mc_solver->solve();
+    }
 
-	// Apply the multilevel tally. Don't apply to the coarsest level.
-	if ( d_primary_set && (l < d_num_levels - 1) )
-	{
-	    // Apply the restriction operator.
-	    R_l = d_mlapi->R(l).GetRCPRowMatrix();
-	    work = VT::clone( *d_x[l+1] );
-	    MT::apply( *R_l, *delta[l], *work );
+    // Apply the multilevel tally. Don't apply to the coarsest level.
+    for ( int l = 0; l < d_num_levels - 1; ++l )
+    {
+	// Apply the prolongation operator.
+	P_l = d_mlapi->P(l).GetRCPRowMatrix();
+	work = VT::clone( *d_x[l] );
+	MT::apply( *P_l, *delta[l+1], *work );
 
-	    // Apply the prolongation operator.
-	    P_l = d_mlapi->P(l).GetRCPRowMatrix();
-	    work_2 = VT::clone( *delta[l] );
-	    MT::apply( *P_l, *work, *work_2 );
-
-	    // Update the level tally with the coarse tally.
-	    VT::update( *delta[l], 1.0, *work_2, -1.0 );
-	}
+	// Update the level tally with the coarse tally.
+	VT::update( *delta[l], 1.0, *work, -1.0 );
     }
 
     // Collapse the tallies to the fine grid.
@@ -387,7 +382,6 @@ void MultilevelSolverManager<Vector,Matrix>::buildOperatorHierarchy()
 	    // Create the LHS for this level by restricting from the previous
 	    // level.
 	    d_x[l] = Teuchos::rcp( new Vector(R_l->OperatorRangeMap()) );
-	    MT::apply( *R_l, *d_x[l-1], *d_x[l] );
 	    
 	    // Create the RHS for this level.
 	    d_b[l] = Teuchos::rcp( new Vector(R_l->OperatorRangeMap()) );
@@ -408,9 +402,10 @@ void MultilevelSolverManager<Vector,Matrix>::buildRHSHierarchy()
 
     if ( d_primary_set )
     {
-	// Set the base vector.
+	// Set the base vectors.
 	d_b[0] =
 	    Teuchos::rcp_const_cast<Vector,const Vector>(d_problem->getRHS());
+	d_x[0] = d_problem->getLHS();
 
 	// Apply the restriction operator to successive levels.
 	Teuchos::RCP<Matrix> R_l;
@@ -418,9 +413,10 @@ void MultilevelSolverManager<Vector,Matrix>::buildRHSHierarchy()
 	{
 	    R_l = d_mlapi->R(l-1).GetRCPRowMatrix();
 	    MT::apply( *R_l, *d_b[l-1], *d_b[l] );
+	    MT::apply( *R_l, *d_x[l-1], *d_x[l] );
 	}
 
-	// Scale the level by the diagonal.
+	// Scale the level RHS by the diagonal.
 	Teuchos::RCP<Vector> work;
 	for ( int l = 0; l < d_num_levels; ++l )
 	{

@@ -99,9 +99,9 @@ Teuchos::RCP<Epetra_CrsMatrix> buildPoissonOperator(
 	global_columns[0] = i-1;
 	global_columns[1] = i;
 	global_columns[2] = i+1;
-	values[0] = -1.0 / ( h*h );
-	values[1] = 2.0 / ( h*h );
-	values[2] = -1.0 / ( h*h );
+	values[0] = -0.4999;
+	values[1] = 1.0;
+	values[2] = -0.4999;
 	A->InsertGlobalValues( i, 3, 
 			       &values[0], &global_columns[0] );
     }
@@ -182,7 +182,6 @@ int main( int argc, char * argv[] )
     std::cout << std::endl;
     Teuchos::Time timer("");
     timer.start(true);
-    solver_manager->setParameters( plist );
     solver_manager->setProblem( linear_problem );
     solver_manager->solve();
     timer.stop();
