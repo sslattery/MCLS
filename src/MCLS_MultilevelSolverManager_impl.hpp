@@ -276,13 +276,18 @@ bool MultilevelSolverManager<Vector,Matrix>::solve()
     // Apply the multilevel tally. Don't apply to the coarsest level.
     for ( int l = 0; l < d_num_levels - 1; ++l )
     {
+	// Apply the restriction operator.
+	R_l = d_mlapi->R(l).GetRCPRowMatrix();
+	work = VT::clone( *d_x[l+1] );
+	MT::apply( *R_l, *delta[l], *work );
+	
 	// Apply the prolongation operator.
 	P_l = d_mlapi->P(l).GetRCPRowMatrix();
-	work = VT::clone( *d_x[l] );
-	MT::apply( *P_l, *delta[l+1], *work );
+	work_2 = VT::clone( *d_x[l] );
+	MT::apply( *P_l, *work, *work_2 );
 
 	// Update the level tally with the coarse tally.
-	VT::update( *delta[l], 1.0, *work, -1.0 );
+	VT::update( *delta[l], 1.0, *work_2, -1.0 );
     }
 
     // Collapse the tallies to the fine grid.

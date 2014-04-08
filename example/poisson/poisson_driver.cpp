@@ -99,9 +99,9 @@ Teuchos::RCP<Epetra_CrsMatrix> buildPoissonOperator(
 	global_columns[0] = i-1;
 	global_columns[1] = i;
 	global_columns[2] = i+1;
-	values[0] = -0.4999;
+	values[0] = -0.5;
 	values[1] = 1.0;
-	values[2] = -0.4999;
+	values[2] = -0.5;
 	A->InsertGlobalValues( i, 3, 
 			       &values[0], &global_columns[0] );
     }
@@ -190,9 +190,11 @@ int main( int argc, char * argv[] )
     // Compute the inf-norm of the residual.
     linear_problem->updateResidual();
     double r_2 = VT::norm2( *linear_problem->getResidual() );
-    std::cout << "||r||_2: " << r_2 << std::endl;
+    double b_2 = VT::norm2( *linear_problem->getRHS() );
+    std::cout << "||r||_2 / ||b||_2: " << r_2 / b_2 << std::endl;
     double r_inf = VT::normInf( *linear_problem->getResidual() );
-    std::cout << "||r||_inf: " << r_inf << std::endl;
+    double b_inf = VT::normInf( *linear_problem->getRHS() );
+    std::cout << "||r||_inf / ||b||_inf: " << r_inf / b_inf << std::endl;
 
     // The point-wise error is the inf-norm of the top level solution.
     double e_inf = VT::normInf( *u );
