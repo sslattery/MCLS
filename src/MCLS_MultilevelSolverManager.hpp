@@ -138,8 +138,8 @@ class MultilevelSolverManager : public SolverManager<Vector,Matrix>
     // Build the multigrid hierarchy.
     void buildOperatorHierarchy();
 
-    // Build the RHS Hierarchy.
-    void buildRHSHierarchy();
+    // Build the residual Hierarchy.
+    void buildResidualHierarchy();
 
   private:
 
@@ -173,11 +173,8 @@ class MultilevelSolverManager : public SolverManager<Vector,Matrix>
     // Diagonally scaled MLAPI operator hierarchy.
     Teuchos::Array<Teuchos::RCP<MLAPI::Operator> > d_A;
 
-    // LHS hierarchy.
-    Teuchos::Array<Teuchos::RCP<Vector> > d_x;
-
-    // RHS hierarcy.
-    Teuchos::Array<Teuchos::RCP<Vector> > d_b;
+    // Residual hierarchy.
+    Teuchos::Array<Teuchos::RCP<Vector> > d_r;
 
     // Adjoint Monte Carlo solver.
     Teuchos::RCP<AdjointSolverManager<Vector,Matrix> > d_mc_solver;

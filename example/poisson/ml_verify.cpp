@@ -427,6 +427,51 @@ int main( int argc, char * argv[] )
 	std::cout << std::endl;
     }
 
+    // Check that A_0*x = P_0*A_1*R_0*x
+    for ( int n = 0; n < num_levels - 1; ++n )
+    {
+	// Do P*A*R*x
+	Teuchos::Array<double> PARx( grid_sizes[n], 0.0 );
+	{
+	    // Get x.
+	    double* u_h_ptr;
+	    u[n]->ExtractView( &u_h_ptr );
+	    Teuchos::ArrayView<const double> u_h( u_h_ptr, grid_sizes[n] );
+
+	    // Apply R.
+	    Teuchos::RCP<Vector> work_1 = VT::clone( *u[n+1] );
+	    double* work_1_ptr;
+	    work_1->ExtractView( &work_1_ptr );
+	    Teuchos::ArrayView<double> work_1_view( work_1_ptr, grid_sizes[n+1] );
+	    applyRestrictionOperator( M, u_h, work_1_view );
+
+	    // Apply A.
+	    Teuchos::RCP<Vector> work_2 = VT::clone( *u[n+1] );
+	    MT::apply( *A[n+1], *work_1, *work_2 );
+
+	    // Apply P.
+	    double* work_2_ptr;
+	    work_2->ExtractView( &work_2_ptr );
+	    Teuchos::ArrayView<const double> work_2_view( 
+		work_2_ptr, grid_sizes[n+1] );
+	    Teuchos::ArrayView<double> PARx_view = PARx();
+	    applyProlongationOperator( M, work_2_view, PARx_view );
+	}
+
+	// Do A*x
+	Teuchos::RCP<Vector> Ax = VT::clone( *u[n+1] );
+	MT::apply( *A[n+1], *u[n+1], *Ax );
+
+	// Check the result.
+	std::cout << "P*A*R*x = A*x " << n << std::endl;
+	for ( int i = 0; i < grid_sizes[n+1]; ++i )
+	{
+	    std::cout << PARx[i] << " " << (*Ax)[i] << " " 
+		      << (*Ax)[i] / PARx[i] << std::endl;
+	}
+	std::cout << std::endl;
+    }
+
     // Write the solution to a file.
     if ( comm->getRank() == 0 )
     {

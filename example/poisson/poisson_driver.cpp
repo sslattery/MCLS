@@ -99,9 +99,9 @@ Teuchos::RCP<Epetra_CrsMatrix> buildPoissonOperator(
 	global_columns[0] = i-1;
 	global_columns[1] = i;
 	global_columns[2] = i+1;
-	values[0] = -0.5;
+	values[0] = -0.499;
 	values[1] = 1.0;
-	values[2] = -0.5;
+	values[2] = -0.499;
 	A->InsertGlobalValues( i, 3, 
 			       &values[0], &global_columns[0] );
     }
@@ -203,7 +203,7 @@ int main( int argc, char * argv[] )
     // Compute the figure of merit -> error * work
     double toc = timer.totalElapsedTime();
     std::cout << "Time: " << toc << std::endl;
-    double fom = 1.0 / (e_inf * e_inf * toc);
+    double fom = ( b_inf * b_inf ) / ( toc * r_inf * r_inf );
     std::cout << "Figure of merit: " << fom << std::endl;
     std::cout << std::endl;
 

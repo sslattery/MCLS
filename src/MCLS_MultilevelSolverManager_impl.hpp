@@ -219,9 +219,9 @@ bool MultilevelSolverManager<Vector,Matrix>::solve()
     MCLS_REQUIRE( !d_global_comm.is_null() );
     MCLS_REQUIRE( !d_plist.is_null() );
 
-    // Build the RHS hierarchy. We assume the RHS of the linear system changes
-    // with each solve.
-    buildRHSHierarchy();
+    // Build the residual hierarchy. We assume the RHS and initial guess of
+    // the LHS of the linear system changes with each solve.
+    buildResidualHierarchy();
 
     // Get the number of histories to run at the coarsest level.
     int nh = d_plist->get<int>("Set Number of Histories");
@@ -248,14 +248,11 @@ bool MultilevelSolverManager<Vector,Matrix>::solve()
 	// Create the level residual problem.
 	if ( d_primary_set )
 	{
-	    residual = VT::clone( *d_b[l] );
-	    MT::apply( *d_A[l]->GetRCPRowMatrix(), *d_x[l], *residual );
-	    VT::update( *residual, -1.0, *d_b[l], 1.0 );
-	    delta[l] = VT::clone( *d_x[l] );
+	    delta[l] = VT::clone( *d_r[l] );
 	    VT::putScalar( *delta[l], 0.0 );
 	    level_problem = Teuchos::rcp( 
 	    	new LinearProblem<Vector,Matrix>(
-	    	    d_A[l]->GetRCPRowMatrix(), delta[l], residual) );
+	    	    d_A[l]->GetRCPRowMatrix(), delta[l], d_r[l]) );
 	}
 
 	// Compute the number of histories at this level.
@@ -270,24 +267,74 @@ bool MultilevelSolverManager<Vector,Matrix>::solve()
 	}
 	d_mc_solver->setParameters( mc_plist );
 	d_mc_solver->setProblem( level_problem );
-	d_mc_solver->solve();
+	d_mc_solver->solve();	
     }
 
     // Apply the multilevel tally. Don't apply to the coarsest level.
     for ( int l = 0; l < d_num_levels - 1; ++l )
     {
-	// Apply the restriction operator.
-	R_l = d_mlapi->R(l).GetRCPRowMatrix();
-	work = VT::clone( *d_x[l+1] );
-	MT::apply( *R_l, *delta[l], *work );
-	
-	// Apply the prolongation operator.
-	P_l = d_mlapi->P(l).GetRCPRowMatrix();
-	work_2 = VT::clone( *d_x[l] );
-	MT::apply( *P_l, *work, *work_2 );
+    	if ( d_primary_set )
+    	{
 
-	// Update the level tally with the coarse tally.
-	VT::update( *delta[l], 1.0, *work_2, -1.0 );
+
+	    bool print = ( 3 == l );
+	    if ( print )
+	    {
+		std::ofstream ofile;
+		ofile.open( "delta_l.dat" );
+		for ( int i = 0; i < VT::getLocalLength(*delta[l]); ++i )
+		{
+		    ofile << std::setprecision(8) << (*delta[l])[i] << std::endl;
+		}
+		ofile.close();
+	    }
+
+    	    // Apply the restriction operator.
+    	    R_l = d_mlapi->R(l).GetRCPRowMatrix();
+    	    work = VT::clone( *d_r[l+1] );
+    	    MT::apply( *R_l, *delta[l], *work );
+
+	    if ( print )
+	    {
+		std::ofstream ofile;
+		ofile.open( "R_delta_l.dat" );
+		for ( int i = 0; i < VT::getLocalLength(*work); ++i )
+		{
+		    ofile << std::setprecision(8) << (*work)[i] << std::endl;
+		}
+		ofile.close();
+	    }
+
+    	    // Apply the prolongation operator.
+    	    P_l = d_mlapi->P(l).GetRCPRowMatrix();
+    	    work_2 = VT::clone( *d_r[l] );
+    	    MT::apply( *P_l, *work, *work_2 );
+
+	    if ( print )
+	    {
+		std::ofstream ofile;
+		ofile.open( "PR_delta_l.dat" );
+		for ( int i = 0; i < VT::getLocalLength(*work_2); ++i )
+		{
+		    ofile << std::setprecision(8) << (*work_2)[i] << std::endl;
+		}
+		ofile.close();
+	    }
+
+    	    // Update the level tally with the coarse tally.
+    	    VT::update( *delta[l], 1.0, *work_2, -1.0 );
+
+	    if ( print )
+	    {
+		std::ofstream ofile;
+		ofile.open( "I_minus_PR_delta_l.dat" );
+		for ( int i = 0; i < VT::getLocalLength(*delta[l]); ++i )
+		{
+		    ofile << std::setprecision(8) << (*delta[l])[i] << std::endl;
+		}
+		ofile.close();
+	    }
+    	}
     }
 
     // Collapse the tallies to the fine grid.
@@ -295,7 +342,7 @@ bool MultilevelSolverManager<Vector,Matrix>::solve()
     {
 	if ( d_primary_set )
 	{
-	    // Apply the prolongation operator to the level tally.
+	    // Apply the prolongation operator to the coarse level tally.
 	    P_l = d_mlapi->P(l-1).GetRCPRowMatrix();
 	    work = VT::clone( *delta[l-1] );
 	    MT::apply( *P_l, *delta[l], *work );
@@ -340,6 +387,7 @@ void MultilevelSolverManager<Vector,Matrix>::buildOperatorHierarchy()
 
 	// Create the smoothed aggregation operator hierarchy.
 	Teuchos::ParameterList ml_list = d_plist->sublist("ML");
+	ml_list.set<double>("aggregation: damping factor",1.0);
 	d_mlapi = 
 	    Teuchos::rcp( new MLAPI::MultiLevelSA(ml_operator, ml_list) );
 	d_num_levels = d_mlapi->GetMaxLevels();
@@ -375,31 +423,26 @@ void MultilevelSolverManager<Vector,Matrix>::buildOperatorHierarchy()
 	}
 
 	// Build the vector hierarchy.
-	d_x.resize( d_num_levels );
-	d_x[0] = d_problem->getLHS();
-	d_b.resize( d_num_levels );
-	d_b[0] = VT::clone( *d_problem->getRHS() );
+	d_r.resize( d_num_levels );
+	d_r[0] = VT::clone( *d_problem->getRHS() );
 	for ( int l = 1; l < d_num_levels; ++l )
 	{
 	    // Get the restriction operator for this level.
 	    R_l = d_mlapi->R(l-1).GetRCPRowMatrix();
 
-	    // Create the LHS for this level by restricting from the previous
-	    // level.
-	    d_x[l] = Teuchos::rcp( new Vector(R_l->OperatorRangeMap()) );
-	    
-	    // Create the RHS for this level.
-	    d_b[l] = Teuchos::rcp( new Vector(R_l->OperatorRangeMap()) );
+	    // Create the residual for this level by restricting from the
+	    // previous level.
+	    d_r[l] = Teuchos::rcp( new Vector(R_l->OperatorRangeMap()) );
 	}
     }
 }
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Build the multigrid RHS hierarchy.
+ * \brief Build the multigrid residual hierarchy.
  */
 template<class Vector, class Matrix>
-void MultilevelSolverManager<Vector,Matrix>::buildRHSHierarchy()
+void MultilevelSolverManager<Vector,Matrix>::buildResidualHierarchy()
 {
     MCLS_REQUIRE( !d_global_comm.is_null() );
     MCLS_REQUIRE( !d_plist.is_null() );
@@ -407,27 +450,26 @@ void MultilevelSolverManager<Vector,Matrix>::buildRHSHierarchy()
 
     if ( d_primary_set )
     {
-	// Set the base vectors.
-	d_b[0] =
-	    Teuchos::rcp_const_cast<Vector,const Vector>(d_problem->getRHS());
-	d_x[0] = d_problem->getLHS();
+	// Set the base vector.
+	d_problem->updateResidual();
+	d_r[0] =
+	    Teuchos::rcp_const_cast<Vector,const Vector>(d_problem->getResidual());
 
 	// Apply the restriction operator to successive levels.
 	Teuchos::RCP<Matrix> R_l;
 	for ( int l = 1; l < d_num_levels; ++l )
 	{
 	    R_l = d_mlapi->R(l-1).GetRCPRowMatrix();
-	    MT::apply( *R_l, *d_b[l-1], *d_b[l] );
-	    MT::apply( *R_l, *d_x[l-1], *d_x[l] );
+	    MT::apply( *R_l, *d_r[l-1], *d_r[l] );
 	}
 
-	// Scale the level RHS by the diagonal.
+	// Scale the level residual by the diagonal.
 	Teuchos::RCP<Vector> work;
 	for ( int l = 0; l < d_num_levels; ++l )
 	{
-	    work = VT::deepCopy( *d_b[l] );
+	    work = VT::deepCopy( *d_r[l] );
 	    VT::elementWiseMultiply(
-	     	*d_b[l], 0.0, *d_diagonal_inv[l], *work, 1.0 );
+	     	*d_r[l], 0.0, *d_diagonal_inv[l], *work, 1.0 );
 	}
     }
 }

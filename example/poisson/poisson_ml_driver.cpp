@@ -259,18 +259,51 @@ int main( int argc, char * argv[] )
 
     // Create the grid hierarchy.
     Teuchos::Array<int> grid_sizes( num_levels, problem_size );
+    std::cout << std::endl << "Grid size 0: " << grid_sizes[0] << std::endl;
     for ( int n = 1; n < num_levels; ++n )
     {
 	grid_sizes[n] = (grid_sizes[n-1] - 1) / M + 1;
+	std::cout << "Grid size " << n << ": " << grid_sizes[n] << std::endl;
     }
 
-    // Create the poisson operator hierarchy.
+    // Create the poisson operator hierarchy. These are scaled by the inverse
+    // of the diagonal (h^2) already.
     Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> > A(num_levels);
     for ( int n = 0; n < num_levels; ++n )
     {
 	A[n] = buildPoissonOperator( grid_sizes[n], epetra_comm );
     }
+
+    // Create the RHS hierarchy. Scale by the inverse of the diagonal.
+    Teuchos::Array<Teuchos::RCP<Epetra_Vector> > b(num_levels);
+    for ( int n = 0; n < num_levels; ++n )
+    {
+	b[n] = MT::cloneVectorFromMatrixRows( *A[n] );
+    }
+    double forcing = plist->get<double>("Forcing");
+    VT::putScalar( *b[0], forcing );
+    for ( int i = 1; i < num_levels; ++i )
+    {
+	double* b_h_ptr;
+	b[i-1]->ExtractView( &b_h_ptr );
+	Teuchos::ArrayView<const double> b_h( b_h_ptr, grid_sizes[i-1] );
+	double* b_Mh_ptr;
+	b[i]->ExtractView( &b_Mh_ptr );
+	Teuchos::ArrayView<double> b_Mh( b_Mh_ptr, grid_sizes[i] );
+	applyRestrictionOperator( M, b_h, b_Mh );
+    }
     
+    // Scale the RHS hierarchy by the inverse of the diagonal at that level.
+    double h = 0.0;
+    for ( int i = 0; i < num_levels; ++i )
+    {
+	h = 1.0 / (grid_sizes[i] - 1 );
+	for ( int j = 1; j < grid_sizes[i]-1; ++j )
+	{
+	    (*b[i])[j] *= 2*h*h;
+	}
+    }
+
     // Create the solution vector hierarchy.
     Teuchos::Array<Teuchos::RCP<Epetra_Vector> > u(num_levels);
     for ( int n = 0; n < num_levels; ++n )
@@ -283,18 +316,18 @@ int main( int argc, char * argv[] )
     double pi = std::acos(-1.0);
     for ( int i = 1; i < problem_size-1; ++i )
     {
-	(*u[0])[i] = std::sin( i*k_1*pi / (problem_size-1) ) +
-		     std::sin( i*k_2*pi / (problem_size-1) );
+    	(*u[0])[i] = std::sin( i*k_1*pi / (problem_size-1) ) +
+    		     std::sin( i*k_2*pi / (problem_size-1) );
     }
     for ( int i = 1; i < num_levels; ++i )
     {
-	double* u_h_ptr;
-	u[i-1]->ExtractView( &u_h_ptr );
-	Teuchos::ArrayView<const double> u_h( u_h_ptr, grid_sizes[i-1] );
-	double* u_Mh_ptr;
-	u[i]->ExtractView( &u_Mh_ptr );
-	Teuchos::ArrayView<double> u_Mh( u_Mh_ptr, grid_sizes[i] );
-	applyRestrictionOperator( M, u_h, u_Mh );
+    	double* u_h_ptr;
+    	u[i-1]->ExtractView( &u_h_ptr );
+    	Teuchos::ArrayView<const double> u_h( u_h_ptr, grid_sizes[i-1] );
+    	double* u_Mh_ptr;
+    	u[i]->ExtractView( &u_Mh_ptr );
+    	Teuchos::ArrayView<double> u_Mh( u_Mh_ptr, grid_sizes[i] );
+    	applyRestrictionOperator( M, u_h, u_Mh );
     }
 
     // Build the correction vector hierarchy.
@@ -311,7 +344,7 @@ int main( int argc, char * argv[] )
     {
     	r[n] = MT::cloneVectorFromMatrixRows( *A[n] );
     	MT::apply( *A[n], *u[n], *r[n] );
-    	VT::scale( *r[n], -1.0 );
+    	VT::update( *r[n], -1.0, *b[n], 1.0 );
     }
 
     // Create the residual linear problem hierarchy.
@@ -336,7 +369,8 @@ int main( int argc, char * argv[] )
     timer.start(true);
     for ( int n = 0; n < num_levels; ++n )
     {
-	std::cout << "Solving Level " << n << "..." << std::endl;
+	std::cout << "Solving Level " << n << " with " 
+		  << num_histories[n] << " samples..." << std::endl;
 	plist->set<int>("Set Number of Histories", num_histories[n] );
 	solver_manager->setParameters( plist );
 	solver_manager->setProblem( linear_problem[n] );
@@ -344,6 +378,38 @@ int main( int argc, char * argv[] )
     }
     timer.stop();
     std::cout << std::endl;
+
+    // Output the levels
+    if ( num_levels > 0 )
+    {
+        std::ofstream ofile;
+        ofile.open( "level_0.dat" );
+        for ( int i = 0; i < grid_sizes[0]; ++i )
+        {
+            ofile << std::setprecision(8) << (*d[0])[i] << std::endl;
+        }
+        ofile.close();
+    }
+    if ( num_levels > 1 )
+    {
+        std::ofstream ofile;
+        ofile.open( "level_1.dat" );
+        for ( int i = 0; i < grid_sizes[1]; ++i )
+        {
+            ofile << std::setprecision(8) << (*d[1])[i] << std::endl;
+        }
+        ofile.close();
+    }
+    if ( num_levels > 2 )
+    {
+        std::ofstream ofile;
+        ofile.open( "level_2.dat" );
+        for ( int i = 0; i < grid_sizes[2]; ++i )
+        {
+            ofile << std::setprecision(8) << (*d[2])[i] << std::endl;
+        }
+        ofile.close();
+    }
 
     // Apply the multilevel tally.
     for ( int n = 0; n < num_levels - 1; ++n )
@@ -393,10 +459,15 @@ int main( int argc, char * argv[] )
     // Apply the correction to the solution.
     VT::update( *u[0], 1.0, *d[0], 1.0 );
 
-    // The point-wise error is the inf-norm of the top level solution.
-    double e_inf = VT::normInf( *u[0] );
+    // The point-wise error is the inf-norm of the top level residual.
+    MT::apply( *A[0], *u[0], *r[0] );
+    VT::update( *r[0], -1.0, *b[0], 1.0 );
+    double r_inf = VT::normInf( *r[0] );
     std::cout << "Number of Levels: " << num_levels << std::endl;
-    std::cout << "||e||_inf: " << e_inf << std::endl;
+    std::cout << "||r||_inf: " << r_inf << std::endl;
+    double r_2 = VT::norm2( *r[0] );
+    std::cout << "Number of Levels: " << num_levels << std::endl;
+    std::cout << "||r||_2: " << r_2 << std::endl;
 
     // Compute the figure of merit -> error * work
     int total_histories = 0;
@@ -409,7 +480,7 @@ int main( int argc, char * argv[] )
     double toc = timer.totalElapsedTime();
     std::cout << "Time: " << toc << std::endl;
     std::cout << "Time per History: " << toc / total_histories << std::endl;
-    double fom = 1.0 / (e_inf * e_inf * toc);
+    double fom = 1.0 / (r_inf * r_inf * toc);
     std::cout << "Figure of merit: " << fom << std::endl;
     std::cout << std::endl;
 
