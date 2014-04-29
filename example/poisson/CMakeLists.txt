@@ -16,8 +16,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  poisson_scaled
-  SOURCES poisson_scaled.cpp
+  poisson_mlmcsa
+  SOURCES poisson_mlmcsa.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
