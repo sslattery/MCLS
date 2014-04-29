@@ -248,6 +248,7 @@ int main( int argc, char * argv[] )
     int num_levels = plist->get<int>("Number of Levels");
     int set_histories = plist->get<int>("Set Number of Histories");
     int M = plist->get<int>("Grid Refinement");
+    int cga = plist->get<int>("Coarse Grid Acceleration");
 
     // Create the number of histories hierarchy.
     Teuchos::Array<int> num_histories( num_levels );
@@ -374,7 +375,16 @@ int main( int argc, char * argv[] )
 	plist->set<int>("Set Number of Histories", num_histories[n] );
 	solver_manager->setParameters( plist );
 	solver_manager->setProblem( linear_problem[n] );
-	solver_manager->solve();
+
+	// If we aren't doing coarse grid acceleration, solve all levels.
+	if ( !cga )
+	{
+	    solver_manager->solve();
+	}
+	else if ( n == num_levels - 1 )
+	{
+	    solver_manager->solve();
+	}
     }
     timer.stop();
     std::cout << std::endl;
@@ -452,7 +462,15 @@ int main( int argc, char * argv[] )
 	// Add the prolongated coarse result to the fine result.
 	for ( int i = 0; i < grid_sizes[n-1]; ++i )
 	{
-	    (*d[n-1])[i] += v_h[i];
+	    // If we aren't doing coarse grid acceleration, sum all levels.
+	    if ( !cga )
+	    {
+		(*d[n-1])[i] += v_h[i];
+	    }
+	    else
+	    {
+		(*d[n-1])[i] = v_h[i];
+	    }
 	}
     }
 
@@ -466,10 +484,9 @@ int main( int argc, char * argv[] )
     std::cout << "Number of Levels: " << num_levels << std::endl;
     std::cout << "||r||_inf: " << r_inf << std::endl;
     double r_2 = VT::norm2( *r[0] );
-    std::cout << "Number of Levels: " << num_levels << std::endl;
     std::cout << "||r||_2: " << r_2 << std::endl;
 
-    // Compute the figure of merit -> error * work
+    // Compute the residual figure of merit -> error * work
     int total_histories = 0;
     for ( int n = 0; n < num_levels; ++n )
     {
@@ -480,8 +497,8 @@ int main( int argc, char * argv[] )
     double toc = timer.totalElapsedTime();
     std::cout << "Time: " << toc << std::endl;
     std::cout << "Time per History: " << toc / total_histories << std::endl;
-    double fom = 1.0 / (r_inf * r_inf * toc);
-    std::cout << "Figure of merit: " << fom << std::endl;
+    double res_fom = 1.0 / (r_inf * r_inf * toc);
+    std::cout << "Residual figure of merit: " << res_fom << std::endl;
     std::cout << std::endl;
 
     // Write the solution to a file.
@@ -492,6 +509,46 @@ int main( int argc, char * argv[] )
         for ( int i = 0; i < grid_sizes[0]; ++i )
         {
             ofile << std::setprecision(8) << (*u[0])[i] << std::endl;
+        }
+        ofile.close();
+    }
+    comm->barrier();
+
+    // Compute the exact solution.
+    solver_type = "Fixed Point";
+    solver_manager = factory.create( solver_type, comm, plist );
+    Teuchos::RCP<Vector> x = VT::clone( *u[0] );
+    Teuchos::RCP<MCLS::LinearProblem<Vector,Matrix> > exact_linear_problem =
+	Teuchos::rcp( new MCLS::LinearProblem<Vector,Matrix>(
+			  A[0], x, b[0] ) );
+    solver_manager->setProblem( exact_linear_problem );
+    solver_manager->solve();
+
+    // Compute the error.
+    double e_inf = 0.0;
+    double e_2 = 0.0;
+    double local_error = 0.0;
+    for ( int i = 0; i < grid_sizes[0]; ++i )
+    {
+	local_error = ( (*x)[i] - (*u[0])[i] ) / (*x)[i];
+	e_inf = std::max( e_inf, std::abs(local_error) );
+	e_2 += std::abs( local_error * local_error );
+    }
+    e_2 = std::sqrt(e_2);
+    std::cout << "||e||_inf: " << e_inf << std::endl;
+    std::cout << "||e||_2: " << e_2 << std::endl;
+    double err_fom = 1.0 / (e_inf * e_inf * toc);
+    std::cout << "Error figure of merit: " << err_fom << std::endl;
+    std::cout << std::endl;
+
+    // Write the exact solution to a file.
+    if ( comm->getRank() == 0 )
+    {
+        std::ofstream ofile;
+        ofile.open( "exact.dat" );
+        for ( int i = 0; i < grid_sizes[0]; ++i )
+        {
+            ofile << std::setprecision(8) << (*x)[i] << std::endl;
         }
         ofile.close();
     }
