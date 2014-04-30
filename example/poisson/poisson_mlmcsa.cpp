@@ -474,11 +474,15 @@ int main( int argc, char * argv[] )
     Teuchos::RCP<Epetra_Vector> d = MT::cloneVectorFromMatrixRows( *A );
     VT::putScalar( *d, 0.0 );
     double tol = plist->get<double>("Convergence Tolerance");
-    double max_iters = plist->get<int>("Maximum Iterations");
+    double max_iters = plist->get<int>("MLMCSA Maximum Iterations");
     int num_iters = 0;
     double conv_check = 1.0;
     double r_norm = 0.0;
     double b_norm = 0.0;
+
+    std::ofstream residual_file;
+    residual_file.open( "residual.dat" );
+
     std::cout << std::endl;
     Teuchos::Time timer("");
     timer.start(true);
@@ -514,8 +518,10 @@ int main( int argc, char * argv[] )
     	std::cout << "MLMCSA Iteration : " << num_iters
     		  << ", Residual: " << conv_check << std::endl;
     	++num_iters;
+	residual_file << std::setprecision(8) << conv_check << std::endl;
     }
     timer.stop();
+    residual_file.close();
     std::cout << std::endl;
 
     // The point-wise error is the inf-norm of the top level residual.
