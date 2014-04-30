@@ -218,7 +218,7 @@ void applyRestrictionOperator( const int M,
 //---------------------------------------------------------------------------//
 // Multilevel MC solve.
 void multilevelSolve( Teuchos::RCP<Vector>& x,
-		      Teuchos::RCP<Vector>& rhs,
+		      const Teuchos::RCP<Vector>& rhs,
 		      Teuchos::RCP<Teuchos::ParameterList>& plist,
 		      const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
 {
@@ -276,20 +276,20 @@ void multilevelSolve( Teuchos::RCP<Vector>& x,
     double h = 0.0;
     for ( int i = 0; i < num_levels; ++i )
     {
-	h = 1.0 / (grid_sizes[i] - 1 );
-	for ( int j = 1; j < grid_sizes[i]-1; ++j )
-	{
-	    (*b[i])[j] *= 2*h*h;
-	}
+    	h = 1.0 / (grid_sizes[i] - 1 );
+    	for ( int j = 1; j < grid_sizes[i]-1; ++j )
+    	{
+    	    (*b[i])[j] *= 2.0*h*h;
+    	}
     }
 
     // Create the solution vector hierarchy.
     Teuchos::Array<Teuchos::RCP<Epetra_Vector> > u(num_levels);
-    u[0] = x;
-    for ( int n = 1; n < num_levels; ++n )
+    for ( int n = 0; n < num_levels; ++n )
     {
 	u[n] = MT::cloneVectorFromMatrixRows( *A[n] );
     }
+    VT::putScalar( *u[0], 0.0 );
     for ( int i = 1; i < num_levels; ++i )
     {
     	double* u_h_ptr;
@@ -454,7 +454,11 @@ int main( int argc, char * argv[] )
     // Create the RHS. Scale by the inverse of the diagonal.
     Teuchos::RCP<Epetra_Vector> b = MT::cloneVectorFromMatrixRows( *A );
     double forcing = plist->get<double>("Forcing");
-    VT::putScalar( *b, 2*h*h*forcing );
+    VT::putScalar( *b, forcing );
+    for ( int j = 1; j < problem_size-1; ++j )
+    {
+	(*b)[j] *= 2.0*h*h;
+    }
 
     // Create the solution vector.
     Teuchos::RCP<Epetra_Vector> x = MT::cloneVectorFromMatrixRows( *A );
@@ -464,6 +468,7 @@ int main( int argc, char * argv[] )
     Teuchos::RCP<Epetra_Vector> r = MT::cloneVectorFromMatrixRows( *A );
     MT::apply( *A, *x, *r );
     VT::update( *r, -1.0, *b, 1.0 );
+    Teuchos::RCP<Epetra_Vector> unscaled_r = MT::cloneVectorFromMatrixRows( *A );
 
     // Solve the problem using MCSA and multilevel mc.
     Teuchos::RCP<Epetra_Vector> d = MT::cloneVectorFromMatrixRows( *A );
@@ -472,34 +477,43 @@ int main( int argc, char * argv[] )
     double max_iters = plist->get<int>("Maximum Iterations");
     int num_iters = 0;
     double conv_check = 1.0;
+    double r_norm = 0.0;
+    double b_norm = 0.0;
     std::cout << std::endl;
     Teuchos::Time timer("");
     timer.start(true);
     while ( conv_check > tol && num_iters < max_iters )
     {
-	// Do a Richardson iteration.
-	VT::update( *x, 1.0, *r, 1.0 );
+    	// Do a Richardson iteration.
+    	VT::update( *x, 1.0, *r, 1.0 );
 
-	// Update the residual.
-	MT::apply( *A, *x, *r );
-	VT::update( *r, -1.0, *b, 1.0 );
+    	// Update the residual.
+    	MT::apply( *A, *x, *r );
+    	VT::update( *r, -1.0, *b, 1.0 );
 
-	// Solve the multilevel Monte Carlo problem.
-	VT::putScalar( *d, 0.0 );
-	multilevelSolve( d, r, plist, comm );
-	VT::update( *x, 1.0, *d, 1.0 );
-	std::cout << VT::view(*d)() << std::endl;
+	// Compute an unscaled residual.
+	unscaled_r = VT::deepCopy( *r );
+	for ( int j = 1; j < problem_size-1; ++j )
+	{
+	    (*unscaled_r)[j] *= 1.0 / (2.0*h*h);
+	}
 
-	// Update the residual.
-	MT::apply( *A, *x, *r );
-	VT::update( *r, -1.0, *b, 1.0 );
+    	// Solve the multilevel Monte Carlo problem.
+    	VT::putScalar( *d, 0.0 );
+    	multilevelSolve( d, unscaled_r, plist, comm );
+    	VT::update( *x, 1.0, *d, 1.0 );
 
-	// Check for convergence and output.
-	conv_check = VT::normInf( *r ) / VT::normInf( *b );
-	std::cout << "MLMCSA Iteration : " << num_iters
-		  << ", Residual: " << conv_check << " " 
-		  << VT::normInf( *r ) << " " <<  VT::normInf( *b ) << std::endl;
-	++num_iters;
+    	// Update the residual.
+    	MT::apply( *A, *x, *r );
+    	VT::update( *r, -1.0, *b, 1.0 );
+
+    	// Check for convergence and output.
+	r_norm = VT::norm2( *r );
+	b_norm = VT::norm2( *b );
+    	conv_check = r_norm / b_norm;
+    	std::cout << "MLMCSA Iteration : " << num_iters
+    		  << ", Residual: " << conv_check << std::endl;
+    	++num_iters;
     }
     timer.stop();
     std::cout << std::endl;
@@ -511,6 +525,8 @@ int main( int argc, char * argv[] )
     std::cout << "||r||_inf: " << r_inf << std::endl;
     double r_2 = VT::norm2( *r );
     std::cout << "||r||_2: " << r_2 << std::endl;
+    double toc = timer.totalElapsedTime();
+    std::cout << std::endl << "Time: " << toc << std::endl;
 
     // Write the solution to a file.
     if ( comm->getRank() == 0 )
