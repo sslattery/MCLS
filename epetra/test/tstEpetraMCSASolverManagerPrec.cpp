@@ -102,8 +102,6 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_prec_adjoint )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
-    typedef MCLS::UniformAdjointSource<DomainType> SourceType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -295,8 +293,6 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_prec_adjoint )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
-    typedef MCLS::UniformAdjointSource<DomainType> SourceType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -567,8 +563,6 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_prec_forward )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::ForwardDomain<VectorType,MatrixType> DomainType;
-    typedef MCLS::UniformForwardSource<DomainType> SourceType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -760,8 +754,6 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_prec_forward )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::ForwardDomain<VectorType,MatrixType> DomainType;
-    typedef MCLS::UniformForwardSource<DomainType> SourceType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();

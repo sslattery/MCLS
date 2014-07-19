@@ -150,11 +150,11 @@ int main(int argc, char* argv[])
     mclsLOWSFPL_fwdmc.set("Set Number of Histories",int(numHistories));
 
     Teuchos::ParameterList& mclsLOWSFPL_richardson =
-      mclsLOWSFPL_solver.sublist("Richardson");
+      mclsLOWSFPL_solver.sublist("Fixed Point");
     mclsLOWSFPL_richardson.set("Maximum Iterations",int(maxIterations));
     mclsLOWSFPL_richardson.set("Convergence Tolerance",double(maxResid));
     mclsLOWSFPL_richardson.set("Iteration Print Frequency",int(outputFrequency));
-    mclsLOWSFPL_richardson.set("Richardson Relxation",double(richardsonRelax));
+    mclsLOWSFPL_richardson.set("Richardson Relaxation",double(richardsonRelax));
 
     Teuchos::ParameterList precPL("MCLS");
     if(usePreconditioner) 

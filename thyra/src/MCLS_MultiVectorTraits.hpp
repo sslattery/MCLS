@@ -216,6 +216,7 @@ class MultiVectorTraits<Epetra_MultiVector, Epetra_RowMatrix>
 	const Teuchos::RCP<Thyra::MultiVectorBase<scalar_type> >& thyra_mv,
         const Teuchos::RCP<const matrix_type>& matrix )
     {
+	MCLS_REQUIRE( Teuchos::nonnull(thyra_mv) );
         const Epetra_Map& range_map = matrix->OperatorRangeMap();
         Teuchos::RCP<multivector_type> epetra_mv =
             Thyra::get_Epetra_MultiVector( range_map, thyra_mv );
@@ -230,6 +231,7 @@ class MultiVectorTraits<Epetra_MultiVector, Epetra_RowMatrix>
 	const Teuchos::RCP<const Thyra::MultiVectorBase<scalar_type> >& thyra_mv,
         const Teuchos::RCP<const matrix_type>& matrix )
     {
+	MCLS_REQUIRE( Teuchos::nonnull(thyra_mv) );
         const Epetra_Map& range_map = matrix->OperatorRangeMap();
         Teuchos::RCP<const multivector_type> epetra_mv = 
             Thyra::get_Epetra_MultiVector( range_map, thyra_mv );
@@ -244,6 +246,7 @@ class MultiVectorTraits<Epetra_MultiVector, Epetra_RowMatrix>
 	const Teuchos::RCP<Thyra::MultiVectorBase<scalar_type> >& thyra_mv,
         const Teuchos::RCP<const matrix_type>& matrix )
     {
+	MCLS_REQUIRE( Teuchos::nonnull(thyra_mv) );
         const Epetra_Map& domain_map = matrix->OperatorDomainMap();
         Teuchos::RCP<multivector_type> epetra_mv = 
             Thyra::get_Epetra_MultiVector( domain_map, thyra_mv );
@@ -258,6 +261,7 @@ class MultiVectorTraits<Epetra_MultiVector, Epetra_RowMatrix>
 	const Teuchos::RCP<const Thyra::MultiVectorBase<scalar_type> >& thyra_mv,
         const Teuchos::RCP<const matrix_type>& matrix )
     {
+	MCLS_REQUIRE( Teuchos::nonnull(thyra_mv) );
         const Epetra_Map& domain_map = matrix->OperatorDomainMap();
         Teuchos::RCP<const multivector_type> epetra_mv = 
             Thyra::get_Epetra_MultiVector( domain_map, thyra_mv );
@@ -308,10 +312,11 @@ class MultiVectorTraits<Tpetra::MultiVector<Scalar,LO,GO>,
 
     //! Return a multivector given a Thyra base multivector.
     static Teuchos::RCP<multivector_type>
-    getRangeMultiVectorFromThyra( 
+    getRangeMultiVectorFromThyra(
 	const Teuchos::RCP<Thyra::MultiVectorBase<scalar_type> >& thyra_mv,
         const Teuchos::RCP<const matrix_type>& matrix = Teuchos::null )
     {
+	MCLS_REQUIRE( Teuchos::nonnull(thyra_mv) );
 	return Thyra::TpetraOperatorVectorExtraction<
 	    Scalar,LO,GO>::getTpetraMultiVector( thyra_mv );
     }
@@ -322,6 +327,7 @@ class MultiVectorTraits<Tpetra::MultiVector<Scalar,LO,GO>,
 	const Teuchos::RCP<const Thyra::MultiVectorBase<scalar_type> >& thyra_mv,
         const Teuchos::RCP<const matrix_type>& matrix = Teuchos::null )
     {
+	MCLS_REQUIRE( Teuchos::nonnull(thyra_mv) );
 	return Thyra::TpetraOperatorVectorExtraction<
 	    Scalar,LO,GO>::getConstTpetraMultiVector( thyra_mv );
     }
@@ -332,6 +338,7 @@ class MultiVectorTraits<Tpetra::MultiVector<Scalar,LO,GO>,
 	const Teuchos::RCP<Thyra::MultiVectorBase<scalar_type> >& thyra_mv,
         const Teuchos::RCP<const matrix_type>& matrix = Teuchos::null )
     {
+	MCLS_REQUIRE( Teuchos::nonnull(thyra_mv) );
 	return Thyra::TpetraOperatorVectorExtraction<
 	    Scalar,LO,GO>::getTpetraMultiVector( thyra_mv );
     }
@@ -342,6 +349,7 @@ class MultiVectorTraits<Tpetra::MultiVector<Scalar,LO,GO>,
 	const Teuchos::RCP<const Thyra::MultiVectorBase<scalar_type> >& thyra_mv,
         const Teuchos::RCP<const matrix_type>& matrix = Teuchos::null )
     {
+	MCLS_REQUIRE( Teuchos::nonnull(thyra_mv) );
 	return Thyra::TpetraOperatorVectorExtraction<
 	    Scalar,LO,GO>::getConstTpetraMultiVector( thyra_mv );
     }

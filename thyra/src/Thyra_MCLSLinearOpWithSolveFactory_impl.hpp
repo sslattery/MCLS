@@ -788,7 +788,6 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     using Teuchos::rcp;
     using Teuchos::set_extra_data;
     typedef Teuchos::ScalarTraits<Scalar> ST;
-    typedef typename ST::magnitudeType ScalarMag;
 
     const RCP<Teuchos::FancyOStream> out = this->getOStream();
     const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();

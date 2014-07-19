@@ -139,12 +139,9 @@ Teuchos::RCP<MCLS::AdjointHistory<int> > makeHistory(
 TEUCHOS_UNIT_TEST( DomainCommunicator, Typedefs )
 {
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
-    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::AdjointHistory<int> HistoryType;
-    typedef MCLS::AdjointTally<VectorType> TallyType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     typedef MCLS::DomainTransporter<DomainType> TransportType;
@@ -164,11 +161,9 @@ TEUCHOS_UNIT_TEST( DomainCommunicator, Typedefs )
 TEUCHOS_UNIT_TEST( DomainCommunicator, Communicate )
 {
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointHistory<int> HistoryType;
-    typedef MCLS::AdjointTally<VectorType> TallyType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     Teuchos::RCP<const Epetra_Comm> epetra_comm = getEpetraComm();

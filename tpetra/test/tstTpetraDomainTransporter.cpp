@@ -85,9 +85,7 @@
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Typedefs, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
-    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::AdjointHistory<GO> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
@@ -115,7 +113,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Cutoff, LO, GO, Scalar )
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointHistory<GO> HistoryType;
-    typedef MCLS::AdjointTally<VectorType> TallyType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -226,7 +223,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Cutoff2, LO, GO, Scalar )
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointHistory<GO> HistoryType;
-    typedef MCLS::AdjointTally<VectorType> TallyType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -341,11 +337,9 @@ UNIT_TEST_INSTANTIATION( DomainTransporter, Cutoff2 )
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Boundary, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointHistory<GO> HistoryType;
-    typedef MCLS::AdjointTally<VectorType> TallyType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 

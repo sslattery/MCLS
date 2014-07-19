@@ -93,7 +93,6 @@ Teuchos::RCP<Epetra_Comm> getEpetraComm(
 TEUCHOS_UNIT_TEST( AdjointTally, Typedefs )
 {
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
     typedef MCLS::AdjointTally<VectorType> TallyType;
     typedef MCLS::AdjointHistory<int> HistoryType;
     typedef TallyType::HistoryType history_type;

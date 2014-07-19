@@ -85,9 +85,7 @@
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardDomain, Typedefs, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
-    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::ForwardDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::ForwardHistory<GO> HistoryType;
     typedef MCLS::ForwardTally<VectorType> TallyType;
@@ -648,11 +646,9 @@ UNIT_TEST_INSTANTIATION( ForwardDomain, PackUnpackSomeOverlap )
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardDomain, Transition, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::ForwardHistory<GO> HistoryType;
-    typedef MCLS::ForwardTally<VectorType> TallyType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -730,11 +726,9 @@ UNIT_TEST_INSTANTIATION( ForwardDomain, Transition )
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardDomain, Diagonal, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::ForwardHistory<GO> HistoryType;
-    typedef MCLS::ForwardTally<VectorType> TallyType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();

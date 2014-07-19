@@ -55,7 +55,6 @@ TRIBITS_ADD_TEST(
     --max-fwd-error=1e-13 --max-resid=1e-13 --max-iters=1000 --mc-histories=100
     --max-solution-error=1e-6 --matrix-file=KheadK.mtx --solver-type="Sequential MC" 
     --prec-type="Point Jacobi"  COMM serial mpi
-  NUM_MPI_PROCS 1
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyStratimikosTestFiles

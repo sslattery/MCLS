@@ -91,8 +91,10 @@ Teuchos::RCP<Epetra_CrsMatrix> buildPoissonOperator(
     Teuchos::Array<int> global_columns( 3 );
     Teuchos::Array<double> values( 3 );
     global_columns[0] = 0;
+    global_columns[1] = 1;
     values[0] = 1.0;
-    A->InsertGlobalValues( 0, 1, &values[0], &global_columns[0] );
+    values[1] = -1.0/3.0;
+    A->InsertGlobalValues( 0, 2, &values[0], &global_columns[0] );
     for ( int i = 1; i < local_num_rows-1; ++i )
     {
 	global_columns[0] = i-1;
@@ -104,9 +106,11 @@ Teuchos::RCP<Epetra_CrsMatrix> buildPoissonOperator(
 	A->InsertGlobalValues( i, 3, 
 			       &values[0], &global_columns[0] );
     }
-    global_columns[0] = local_num_rows-1;
-    values[0] = 1.0;
-    A->InsertGlobalValues( local_num_rows-1, 1, 
+    global_columns[0] = local_num_rows-2;
+    global_columns[1] = local_num_rows-1;
+    values[0] = -1.0/3.0;
+    values[1] = 1.0;
+    A->InsertGlobalValues( local_num_rows-1, 2, 
 			   &values[0], &global_columns[0] );
     A->FillComplete();
     return A;
@@ -282,7 +286,14 @@ int main( int argc, char * argv[] )
 	b[n] = MT::cloneVectorFromMatrixRows( *A[n] );
     }
     double forcing = plist->get<double>("Forcing");
-    VT::putScalar( *b[0], forcing );
+    double forcing_lb = plist->get<double>("Forcing Lower Bound");
+    double forcing_ub = plist->get<double>("Forcing Upper Bound");
+    for ( int j = std::floor(forcing_lb*grid_sizes[0]); 
+	  j < std::ceil(forcing_ub*grid_sizes[0]); 
+	  ++j )
+    {
+	(*b[0])[j] = forcing;
+    }
     for ( int i = 1; i < num_levels; ++i )
     {
 	double* b_h_ptr;
@@ -420,6 +431,26 @@ int main( int argc, char * argv[] )
         }
         ofile.close();
     }
+    if ( num_levels > 3 )
+    {
+        std::ofstream ofile;
+        ofile.open( "level_3.dat" );
+        for ( int i = 0; i < grid_sizes[3]; ++i )
+        {
+            ofile << std::setprecision(8) << (*d[3])[i] << std::endl;
+        }
+        ofile.close();
+    }
+    if ( num_levels > 4 )
+    {
+        std::ofstream ofile;
+        ofile.open( "level_4.dat" );
+        for ( int i = 0; i < grid_sizes[4]; ++i )
+        {
+            ofile << std::setprecision(8) << (*d[4])[i] << std::endl;
+        }
+        ofile.close();
+    }
 
     // Apply the multilevel tally.
     for ( int n = 0; n < num_levels - 1; ++n )
@@ -550,6 +581,22 @@ int main( int argc, char * argv[] )
         {
             ofile << std::setprecision(8) << (*x)[i] << std::endl;
         }
+        ofile.close();
+    }
+    comm->barrier();
+
+    // Write the rhs solution to a file.
+    if ( comm->getRank() == 0 )
+    {
+        std::ofstream ofile;
+        ofile.open( "rhs.dat" );
+	h = 1.0 / (grid_sizes[0] - 1 );
+	ofile << std::setprecision(8) << (*b[0])[0] << std::endl;
+        for ( int i = 1; i < grid_sizes[0]-1; ++i )
+        {
+            ofile << std::setprecision(8) << (*b[0])[i]/(2*h*h) << std::endl;
+        }
+	ofile << std::setprecision(8) << (*b[0])[grid_sizes[0]-1] << std::endl;
         ofile.close();
     }
     comm->barrier();

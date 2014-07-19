@@ -79,6 +79,7 @@ Teuchos::RCP<Epetra_Comm> getEpetraComm(
 // Poisson operator.
 Teuchos::RCP<Epetra_CrsMatrix> buildPoissonOperator(
     const int local_num_rows,
+    const double off_diag,
     const Teuchos::RCP<Epetra_Comm> epetra_comm )
 {
     // Setup parallel distribution.
@@ -86,7 +87,6 @@ Teuchos::RCP<Epetra_CrsMatrix> buildPoissonOperator(
 	new Epetra_Map( local_num_rows, 0, *epetra_comm ) );
 
     // Build the linear operator.
-    double h = 0.5;
     Teuchos::RCP<Epetra_CrsMatrix> A = 	
 	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
     Teuchos::Array<int> global_columns( 3 );
@@ -99,9 +99,9 @@ Teuchos::RCP<Epetra_CrsMatrix> buildPoissonOperator(
 	global_columns[0] = i-1;
 	global_columns[1] = i;
 	global_columns[2] = i+1;
-	values[0] = -0.499;
+	values[0] = -0.5 + off_diag;
 	values[1] = 1.0;
-	values[2] = -0.499;
+	values[2] = -0.5 + off_diag;
 	A->InsertGlobalValues( i, 3, 
 			       &values[0], &global_columns[0] );
     }
@@ -145,8 +145,9 @@ int main( int argc, char * argv[] )
     int problem_size = plist->get<int>("Problem Size");
 
     // Create the poisson operator.
+    double off_diag = plist->get<double>("Off Diagonal");
     Teuchos::RCP<Epetra_CrsMatrix> A =
-	buildPoissonOperator( problem_size, epetra_comm );
+	buildPoissonOperator( problem_size, off_diag, epetra_comm );
     
     // Create the solution vector.
     Teuchos::RCP<Epetra_Vector> u = MT::cloneVectorFromMatrixRows( *A );
@@ -161,16 +162,34 @@ int main( int argc, char * argv[] )
 	(*u)[i] = std::sin( i*k_1*pi / (problem_size-1) ) +
 		  std::sin( i*k_2*pi / (problem_size-1) );
     }
+    Teuchos::RCP<Vector> w = VT::deepCopy( *u );
 
     // Create the RHS - this is a homogeneous problem.
     double forcing = plist->get<double>("Forcing");
     Teuchos::RCP<Vector> b = VT::clone( *u );
-    VT::putScalar( *b, forcing );
+    VT::putScalar( *b, 0.0 );
+    double forcing_lb = plist->get<double>("Forcing Lower Bound");
+    double forcing_ub = plist->get<double>("Forcing Upper Bound");
+    for ( int j = std::floor(forcing_lb*problem_size); 
+	  j < std::ceil(forcing_ub*problem_size); 
+	  ++j )
+    {
+	(*b)[j] = forcing;
+    }
     
     // Create the linear problem.
     Teuchos::RCP<MCLS::LinearProblem<Vector,Matrix> > linear_problem =
 	Teuchos::rcp( new MCLS::LinearProblem<Vector,Matrix>(
 			  A, u, b ) );
+
+    // Create the residual problem.
+    linear_problem->updateResidual();
+    Teuchos::RCP<const Vector> r = linear_problem->getResidual();
+    Teuchos::RCP<Vector> d = VT::clone( *r );
+    VT::putScalar( *d, 0.0 );
+    Teuchos::RCP<MCLS::LinearProblem<Vector,Matrix> > residual_problem =
+	Teuchos::rcp( new MCLS::LinearProblem<Vector,Matrix>(
+			  A, d, r ) );
 
     // Create the solver.
     std::string solver_type = plist->get<std::string>("Solver Type");
@@ -179,13 +198,15 @@ int main( int argc, char * argv[] )
 	factory.create( solver_type, comm, plist );
 
     // Solve the problem.
-    std::cout << std::endl;
+    solver_manager->setProblem( residual_problem );
     Teuchos::Time timer("");
     timer.start(true);
-    solver_manager->setProblem( linear_problem );
     solver_manager->solve();
     timer.stop();
-    std::cout << std::endl;
+
+    // Recover the solution.
+    Teuchos::RCP<Vector> sol = VT::clone( *r );
+    VT::update( *u, 1.0, *d, 1.0 );
 
     // Compute the inf-norm of the residual.
     linear_problem->updateResidual();
@@ -196,9 +217,23 @@ int main( int argc, char * argv[] )
     double b_inf = VT::normInf( *linear_problem->getRHS() );
     std::cout << "||r||_inf / ||b||_inf: " << r_inf / b_inf << std::endl;
 
-    // The point-wise error is the inf-norm of the top level solution.
-    double e_inf = VT::normInf( *u );
+    // Compute the exact solution with a fixed point iteration.
+    Teuchos::RCP<MCLS::LinearProblem<Vector,Matrix> > exact_problem =
+	Teuchos::rcp( new MCLS::LinearProblem<Vector,Matrix>(
+			  A, w, b ) );
+    solver_type = "Fixed Point";
+    plist->set("Iteration Print Frequency", 100);
+    solver_manager = factory.create( solver_type, comm, plist );
+    solver_manager->setProblem( exact_problem );
+    solver_manager->solve();
+
+    // Compute the error between the exact solution and the mc solution.
+    Teuchos::RCP<Vector> z = VT::deepCopy( *w );
+    VT::update( *z, -1.0, *u, 1.0 );
+    double e_inf = VT::normInf( *z );
     std::cout << "||e||_inf: " << e_inf << std::endl;
+    double e_2 = VT::norm2( *z );
+    std::cout << "||e||_2: " << e_2 << std::endl;
 
     // Compute the figure of merit -> error * work
     double toc = timer.totalElapsedTime();
@@ -217,6 +252,14 @@ int main( int argc, char * argv[] )
             ofile << std::setprecision(8) << (*u)[i] << std::endl;
         }
         ofile.close();
+
+        std::ofstream ofile_2;
+        ofile_2.open( "exact.dat" );
+        for ( int i = 0; i < problem_size; ++i )
+        {
+            ofile_2 << std::setprecision(8) << (*w)[i] << std::endl;
+        }
+        ofile_2.close();
     }
     comm->barrier();
 

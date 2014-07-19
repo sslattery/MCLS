@@ -94,7 +94,6 @@ TEUCHOS_UNIT_TEST( VectorExport, Typedefs )
 {
     typedef Epetra_Export ExportType;
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
     typedef MCLS::VectorExport<VectorType> VE;
     typedef VE::export_type export_type;
 
@@ -108,9 +107,6 @@ TEUCHOS_UNIT_TEST( VectorExport, Add )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef VT::scalar_type scalar_type;
-    typedef VT::local_ordinal_type local_ordinal_type;
-    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -169,9 +165,6 @@ TEUCHOS_UNIT_TEST( VectorExport, Insert )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef VT::scalar_type scalar_type;
-    typedef VT::local_ordinal_type local_ordinal_type;
-    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();

@@ -1,5 +1,5 @@
 
-#include "test_single_belos_thyra_solver.hpp"
+#include "test_single_mcls_thyra_solver.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"

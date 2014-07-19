@@ -46,7 +46,6 @@
 #include "MCLS_DBC.hpp"
 #include "MCLS_AdjointSolverManager.hpp"
 #include "MCLS_ForwardSolverManager.hpp"
-#include "MCLS_MultilevelSolverManager.hpp"
 #include "MCLS_MaximalEntropySolverManager.hpp"
 #include "MCLS_FixedPointIterationFactory.hpp"
 
@@ -363,7 +362,10 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 
     // Print initial iteration data.
     printTopBanner();
-
+    std::cout << d_problem->getLHS() << std::endl
+	      << d_problem->getRHS() << std::endl
+	      << d_residual_problem->getLHS() << std::endl
+	      << d_residual_problem->getRHS() << std::endl;
     // Iterate.
     d_num_iters = 0;
     int do_iterations = 1;
@@ -374,6 +376,7 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	// Update the iteration count.
 	++d_num_iters;
 
+	std::cout << "FIXED POINT" << std::endl;
 	// Perform smoothing and update the residual on the primary set and
 	// clear the correction.
 	if ( d_primary_set )
@@ -385,12 +388,13 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 
 	    VT::putScalar( *d_residual_problem->getLHS(), 0.0 );
 	}
-
+	std::cout << "MC SOLVE" << std::endl;
 	// Solve the residual Monte Carlo problem.
 	d_mc_solver->solve();
 
 	// Apply the correction and update the preconditioned residual on the
 	// primary set.
+	std::cout << "CORRECTION" << std::endl;
 	if ( d_primary_set )
 	{
             VT::update( *d_problem->getLHS(),
@@ -409,7 +413,7 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 				(d_num_iters < max_num_iters);
 	    }
 	}
-
+	std::cout << "ITER DONE" << std::endl;
 	// Broadcast iteration status to the blocks.
 	if ( d_num_iters % check_freq == 0 )
 	{
@@ -504,7 +508,6 @@ void MCSASolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
     // Create the Monte Carlo direct solver for the residual problem.
     bool use_adjoint = false;
     bool use_forward = false;
-    bool use_multilevel = false;
     bool use_merw = false;
     if ( d_plist->isParameter("MC Type") )
     {
@@ -516,17 +519,13 @@ void MCSASolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
         {
             use_forward = true;
         }
-        else if ( d_plist->get<std::string>("MC Type") == "Multilevel" )
-        {
-            use_multilevel = true;
-        }
         else if ( d_plist->get<std::string>("MC Type") == "Maximal Entropy" )
         {
             use_merw = true;
         }
         else
         {
-            MCLS_INSIST( use_forward || use_adjoint || use_merw, 
+            MCLS_INSIST( use_forward || use_adjoint || use_merw , 
                          "MC Type not supported" );
         }
     }
@@ -553,18 +552,6 @@ void MCSASolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
 	MCLS_CHECK( Teuchos::nonnull(d_mc_solver) );
 	d_block_comm = 
 	    Teuchos::rcp_dynamic_cast<ForwardSolverManager<Vector,Matrix> >(
-		d_mc_solver)->blockComm();
-    }
-    else if ( use_multilevel )
-    {
-	d_mc_solver = Teuchos::rcp( 
-	    new MultilevelSolverManager<Vector,Matrix>(
-		d_residual_problem, d_global_comm, d_plist, true) );
-
-	// Get the block constant communicator.
-	MCLS_CHECK( Teuchos::nonnull(d_mc_solver) );
-	d_block_comm = 
-	    Teuchos::rcp_dynamic_cast<MultilevelSolverManager<Vector,Matrix> >(
 		d_mc_solver)->blockComm();
     }
     else if ( use_merw )

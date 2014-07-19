@@ -103,9 +103,7 @@ Teuchos::RCP<Epetra_Comm> getEpetraComm(
 TEUCHOS_UNIT_TEST( SourceTransporter, Typedefs )
 {
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
-    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::UniformAdjointSource<DomainType> SourceType;

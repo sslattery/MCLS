@@ -79,7 +79,6 @@
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardTally, Typedefs, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
     typedef MCLS::ForwardTally<VectorType> TallyType;
     typedef MCLS::ForwardHistory<GO> HistoryType;
     typedef typename TallyType::HistoryType history_type;

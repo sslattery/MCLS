@@ -86,9 +86,7 @@
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformAdjointSource, Typedefs, LO, GO, Scalar )
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
-    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::AdjointHistory<GO> HistoryType;
 

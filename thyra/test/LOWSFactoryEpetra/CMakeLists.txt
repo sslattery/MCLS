@@ -4,7 +4,7 @@ INCLUDE(TribitsCopyFilesToBinaryDir)
 INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_BINARY_DIR}/../../src)
 
 TRIBITS_ADD_EXECUTABLE(
-  test_single_mcls_thyra_solver_driver
+  test_single_mcls_thyra_solver_driver_epetra
   SOURCES
     test_single_mcls_thyra_solver_driver.cpp
     test_single_mcls_thyra_solver.cpp
@@ -12,7 +12,7 @@ TRIBITS_ADD_EXECUTABLE(
   )
 
 TRIBITS_ADD_TEST(
-  test_single_mcls_thyra_solver_driver
+  test_single_mcls_thyra_solver_driver_epetra
   POSTFIX_AND_ARGS_0 FourByFour_mcsa_nrhs1
     --max-iters=15 --no-use-preconditioner --show-all-tests 
     --matrix-file=FourByFour.mtx
@@ -32,7 +32,7 @@ TRIBITS_ADD_TEST(
   POSTFIX_AND_ARGS_4 FourByFour_richardson_nrhs3
     --max-iters=1000 --no-use-preconditioner --show-all-tests 
     --matrix-file=FourByFour.mtx --rich-relax=0.9
-    --solver-type="Richardson" --num-rhs=3
+    --solver-type="Fixed Point" --num-rhs=3
   POSTFIX_AND_ARGS_5 KheadK_adjmc_nrhs1
     --use-preconditioner --show-all-tests --num-rhs=1
     --max-fwd-error=1e-2 --max-resid=1e-2 --max-solution-error=1e-2 --max-iters=1
@@ -66,13 +66,12 @@ TRIBITS_ADD_TEST(
   POSTFIX_AND_ARGS_11 KheadK_richardson_nrhs1
     --use-preconditioner --show-all-tests --num-rhs=1
     --max-fwd-error=1e-13 --max-resid=1e-13 --max-iters=1000
-    --max-solution-error=1e-6 --matrix-file=KheadK.mtx --solver-type="Richardson" 
+    --max-solution-error=1e-6 --matrix-file=KheadK.mtx --solver-type="Fixed Point" 
     --prec-type="Point Jacobi"
   COMM serial mpi
-  NUM_MPI_PROCS 1
   )
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyMclsTestFiles
+TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyMclsTestFilesEpetra
   DEST_FILES
     FourByFour.mtx
     KheadK.mtx
@@ -82,5 +81,5 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyMclsTestFiles
   SOURCE_DIR
     "${Trilinos_SOURCE_DIR}/packages/amesos/test/Test_Basic"
   EXEDEPS
-    test_single_mcls_thyra_solver_driver
+    test_single_mcls_thyra_solver_driver_epetra
   )

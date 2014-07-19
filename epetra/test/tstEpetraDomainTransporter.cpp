@@ -101,9 +101,7 @@ Teuchos::RCP<Epetra_Comm> getEpetraComm(
 TEUCHOS_UNIT_TEST( DomainTransporter, Typedefs )
 {
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
-    typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
     typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
@@ -129,7 +127,6 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff )
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointHistory<int> HistoryType;
-    typedef MCLS::AdjointTally<VectorType> TallyType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -242,7 +239,6 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff2 )
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointHistory<int> HistoryType;
-    typedef MCLS::AdjointTally<VectorType> TallyType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -360,11 +356,9 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff2 )
 TEUCHOS_UNIT_TEST( DomainTransporter, Boundary )
 {
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointHistory<int> HistoryType;
-    typedef MCLS::AdjointTally<VectorType> TallyType;
     typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 

@@ -199,7 +199,6 @@ UNIT_TEST_INSTANTIATION( CommHistoryBuffer, ping_pong )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CommHistoryBuffer, non_blocking, Ordinal, Scalar )
 {
     typedef MCLS::AdjointHistory<Ordinal> HT;
-    typedef MCLS::HistoryBuffer<HT> HistoryBuffer;
     typedef MCLS::SendHistoryBuffer<HT> SendBuffer;
     typedef MCLS::ReceiveHistoryBuffer<HT> ReceiveBuffer;
 

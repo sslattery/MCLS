@@ -115,9 +115,6 @@ TEUCHOS_UNIT_TEST( VectorTraits, Clone )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef VT::scalar_type scalar_type;
-    typedef VT::local_ordinal_type local_ordinal_type;
-    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -153,9 +150,6 @@ TEUCHOS_UNIT_TEST( VectorTraits, RowCreate )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef VT::scalar_type scalar_type;
-    typedef VT::local_ordinal_type local_ordinal_type;
-    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -191,9 +185,6 @@ TEUCHOS_UNIT_TEST( VectorTraits, DeepCopy )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef VT::scalar_type scalar_type;
-    typedef VT::local_ordinal_type local_ordinal_type;
-    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -228,9 +219,6 @@ TEUCHOS_UNIT_TEST( VectorTraits, Modifiers )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef VT::scalar_type scalar_type;
-    typedef VT::local_ordinal_type local_ordinal_type;
-    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -278,9 +266,6 @@ TEUCHOS_UNIT_TEST( VectorTraits, SumIntoElement )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef VT::scalar_type scalar_type;
-    typedef VT::local_ordinal_type local_ordinal_type;
-    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -340,9 +325,6 @@ TEUCHOS_UNIT_TEST( VectorTraits, ReplaceElement )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef VT::scalar_type scalar_type;
-    typedef VT::local_ordinal_type local_ordinal_type;
-    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -403,9 +385,6 @@ TEUCHOS_UNIT_TEST( VectorTraits, DotProduct )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef VT::scalar_type scalar_type;
-    typedef VT::local_ordinal_type local_ordinal_type;
-    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -432,9 +411,6 @@ TEUCHOS_UNIT_TEST( VectorTraits, Norms )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef VT::scalar_type scalar_type;
-    typedef VT::local_ordinal_type local_ordinal_type;
-    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -461,9 +437,6 @@ TEUCHOS_UNIT_TEST( VectorTraits, MeanValue )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef VT::scalar_type scalar_type;
-    typedef VT::local_ordinal_type local_ordinal_type;
-    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -490,9 +463,6 @@ TEUCHOS_UNIT_TEST( VectorTraits, AbsoluteVal )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef VT::scalar_type scalar_type;
-    typedef VT::local_ordinal_type local_ordinal_type;
-    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -536,9 +506,6 @@ TEUCHOS_UNIT_TEST( VectorTraits, Scale )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef VT::scalar_type scalar_type;
-    typedef VT::local_ordinal_type local_ordinal_type;
-    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -581,9 +548,6 @@ TEUCHOS_UNIT_TEST( VectorTraits, Reciprocal )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef VT::scalar_type scalar_type;
-    typedef VT::local_ordinal_type local_ordinal_type;
-    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -628,9 +592,6 @@ TEUCHOS_UNIT_TEST( VectorTraits, Update )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef VT::scalar_type scalar_type;
-    typedef VT::local_ordinal_type local_ordinal_type;
-    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -681,9 +642,6 @@ TEUCHOS_UNIT_TEST( VectorTraits, ElementWiseMultiply )
 {
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef VT::scalar_type scalar_type;
-    typedef VT::local_ordinal_type local_ordinal_type;
-    typedef VT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();

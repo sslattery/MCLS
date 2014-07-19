@@ -102,11 +102,7 @@ TEUCHOS_UNIT_TEST( EpetraBlockJacobiPreconditioner, 1_block_matrix )
 {
     typedef Epetra_RowMatrix MatrixType;
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MT::scalar_type scalar_type;
-    typedef MT::local_ordinal_type local_ordinal_type;
-    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -235,11 +231,7 @@ TEUCHOS_UNIT_TEST( EpetraBlockJacobiPreconditioner, vbr_1_block_matrix )
 {
     typedef Epetra_RowMatrix MatrixType;
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MT::scalar_type scalar_type;
-    typedef MT::local_ordinal_type local_ordinal_type;
-    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -366,11 +358,7 @@ TEUCHOS_UNIT_TEST( EpetraBlockJacobiPreconditioner, 2_block_matrix )
 {
     typedef Epetra_RowMatrix MatrixType;
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MT::scalar_type scalar_type;
-    typedef MT::local_ordinal_type local_ordinal_type;
-    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();

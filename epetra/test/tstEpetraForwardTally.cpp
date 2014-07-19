@@ -94,7 +94,6 @@ Teuchos::RCP<Epetra_Comm> getEpetraComm(
 TEUCHOS_UNIT_TEST( ForwardTally, Typedefs )
 {
     typedef Epetra_Vector VectorType;
-    typedef MCLS::VectorTraits<VectorType> VT;
     typedef MCLS::ForwardTally<VectorType> TallyType;
     typedef MCLS::ForwardHistory<int> HistoryType;
     typedef TallyType::HistoryType history_type;

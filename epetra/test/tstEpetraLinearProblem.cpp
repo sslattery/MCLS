@@ -370,9 +370,6 @@ TEUCHOS_UNIT_TEST( LinearProblem, composite_operator )
     typedef Epetra_Vector VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MT::scalar_type scalar_type;
-    typedef MT::local_ordinal_type local_ordinal_type;
-    typedef MT::global_ordinal_type global_ordinal_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();

@@ -454,7 +454,14 @@ int main( int argc, char * argv[] )
     // Create the RHS. Scale by the inverse of the diagonal.
     Teuchos::RCP<Epetra_Vector> b = MT::cloneVectorFromMatrixRows( *A );
     double forcing = plist->get<double>("Forcing");
-    VT::putScalar( *b, forcing );
+    double forcing_lb = plist->get<double>("Forcing Lower Bound");
+    double forcing_ub = plist->get<double>("Forcing Upper Bound");
+    for ( int j = std::floor(forcing_lb*problem_size); 
+	  j < std::ceil(forcing_ub*problem_size); 
+	  ++j )
+    {
+	(*b)[j] = forcing;
+    }
     for ( int j = 1; j < problem_size-1; ++j )
     {
 	(*b)[j] *= 2.0*h*h;
@@ -475,10 +482,10 @@ int main( int argc, char * argv[] )
     VT::putScalar( *d, 0.0 );
     double tol = plist->get<double>("Convergence Tolerance");
     double max_iters = plist->get<int>("MLMCSA Maximum Iterations");
+    std::string fp_type = plist->get<std::string>("MLMCSA Fixed Point");
+    int fp_iters = plist->get<int>("MLMCSA Fixed Point Iters");
     int num_iters = 0;
     double conv_check = 1.0;
-    double r_norm = 0.0;
-    double b_norm = 0.0;
 
     std::ofstream residual_file;
     residual_file.open( "residual.dat" );
@@ -488,8 +495,21 @@ int main( int argc, char * argv[] )
     timer.start(true);
     while ( conv_check > tol && num_iters < max_iters )
     {
-    	// Do a Richardson iteration.
-    	VT::update( *x, 1.0, *r, 1.0 );
+    	// Do fixed point iterations.
+	for ( int k = 0; k < fp_iters; ++k )
+	{
+	    if ( "Richardson" == fp_type )
+	    {
+		VT::update( *x, 1.0, *r, 1.0 );
+	    }
+	    else if ( "MR" == fp_type )
+	    {
+		Teuchos::RCP<Vector> p = VT::clone( *d );
+		MT::apply( *A, *r, *p );
+		double alpha = VT::dot( *r, *r ) / VT::dot( *p, *p );
+		VT::update( *x, 1.0, *r, alpha );
+	    }
+	}
 
     	// Update the residual.
     	MT::apply( *A, *x, *r );
@@ -512,9 +532,7 @@ int main( int argc, char * argv[] )
     	VT::update( *r, -1.0, *b, 1.0 );
 
     	// Check for convergence and output.
-	r_norm = VT::norm2( *r );
-	b_norm = VT::norm2( *b );
-    	conv_check = r_norm / b_norm;
+    	conv_check = VT::norm2( *r );
     	std::cout << "MLMCSA Iteration : " << num_iters
     		  << ", Residual: " << conv_check << std::endl;
     	++num_iters;
