@@ -242,7 +242,7 @@ bool AdjointSolverManager<Vector,Matrix>::solve()
     // Get the estimator type.
     int estimator = TT::estimatorType( *tally );
 
-    // Set the primary set's base vector to the LHS of the linear problem. 
+    // Set the primary set's base vector to the LHS of the linear problem.
     if ( d_primary_set )
     {
 	TT::setBaseVector( *tally, d_problem->getLHS() );

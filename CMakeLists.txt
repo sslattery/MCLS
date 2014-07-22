@@ -30,6 +30,12 @@ TRIBITS_ADD_DEBUG_OPTION()
 
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
+TRIBITS_ADD_ETI_INSTANTIATIONS(Tpetra
+  "S={double} LO={int} GO={int} N={${KokkosClassic_DefaultNode}}"
+  "S={double} LO={int} GO={long} N={${KokkosClassic_DefaultNode}}"
+  "S={double} LO={long} GO={long} N={${KokkosClassic_DefaultNode}}"
+  )
+
 ##---------------------------------------------------------------------------##
 ## C) Add library, test, and examples.
 ##---------------------------------------------------------------------------##
@@ -60,8 +66,10 @@ IF (MCLS_ENABLE_Thyra)
 ENDIF()
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Stratimikos)
-IF (MCLS_ENABLE_Stratimikos)
-  ADD_SUBDIRECTORY(stratimikos)
+IF (MCLS_ENABLE_Thyra)
+  IF (MCLS_ENABLE_Stratimikos)
+    ADD_SUBDIRECTORY(stratimikos)
+  ENDIF()
 ENDIF()
 
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)

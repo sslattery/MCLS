@@ -42,6 +42,7 @@
 #define MCLS_FORWARDDOMAIN_HPP
 
 #include <stack>
+#include <unordered_map>
 #include <set>
 
 #include "MCLS_DBC.hpp"
@@ -60,8 +61,6 @@
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
-
-#include <boost/tr1/unordered_map.hpp>
 
 namespace MCLS
 {
@@ -111,7 +110,7 @@ class ForwardDomain
     typedef ForwardTally<Vector>                          TallyType;
     typedef typename TallyType::HistoryType               HistoryType;
     typedef std::stack<Teuchos::RCP<HistoryType> >        BankType;
-    typedef typename std::tr1::unordered_map<Ordinal,int> MapType;
+    typedef typename std::unordered_map<Ordinal,int>      MapType;
     typedef Teuchos::Comm<int>                            Comm;
     //@}
 

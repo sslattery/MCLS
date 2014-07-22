@@ -41,6 +41,7 @@
 #ifndef MCLS_FIXEDPOINTITERATIONFACTORY_HPP
 #define MCLS_FIXEDPOINTITERATIONFACTORY_HPP
 
+#include <unordered_map>
 #include <string>
 
 #include "MCLS_FixedPointIteration.hpp"
@@ -48,8 +49,6 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_Describable.hpp>
-
-#include <boost/tr1/unordered_map.hpp>
 
 namespace MCLS
 {
@@ -69,7 +68,7 @@ class FixedPointIterationFactory : public virtual Teuchos::Describable
     typedef Vector                                    vector_type;
     typedef Matrix                                    matrix_type;
     typedef FixedPointIteration<Vector,Matrix>        Iteration;
-    typedef std::tr1::unordered_map<std::string,int>  MapType;
+    typedef std::unordered_map<std::string,int>       MapType;
     //@}
 
     //! Constructor.

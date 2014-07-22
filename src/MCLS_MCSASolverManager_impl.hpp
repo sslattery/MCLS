@@ -362,10 +362,7 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 
     // Print initial iteration data.
     printTopBanner();
-    std::cout << d_problem->getLHS() << std::endl
-	      << d_problem->getRHS() << std::endl
-	      << d_residual_problem->getLHS() << std::endl
-	      << d_residual_problem->getRHS() << std::endl;
+
     // Iterate.
     d_num_iters = 0;
     int do_iterations = 1;
@@ -376,7 +373,6 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 	// Update the iteration count.
 	++d_num_iters;
 
-	std::cout << "FIXED POINT" << std::endl;
 	// Perform smoothing and update the residual on the primary set and
 	// clear the correction.
 	if ( d_primary_set )
@@ -394,7 +390,6 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 
 	// Apply the correction and update the preconditioned residual on the
 	// primary set.
-	std::cout << "CORRECTION" << std::endl;
 	if ( d_primary_set )
 	{
             VT::update( *d_problem->getLHS(),
@@ -413,7 +408,7 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 				(d_num_iters < max_num_iters);
 	    }
 	}
-	std::cout << "ITER DONE" << std::endl;
+
 	// Broadcast iteration status to the blocks.
 	if ( d_num_iters % check_freq == 0 )
 	{

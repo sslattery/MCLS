@@ -50,7 +50,7 @@
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_Comm.hpp>
 
-#include <boost/tr1/unordered_map.hpp>
+#include <unordered_map>
 
 namespace MCLS
 {
@@ -71,7 +71,7 @@ class SolverFactory : public virtual Teuchos::Describable
     typedef Matrix                                    matrix_type;
     typedef SolverManager<Vector,Matrix>              Solver;     
     typedef Teuchos::Comm<int>                        Comm;
-    typedef std::tr1::unordered_map<std::string,int>  MapType;
+    typedef std::unordered_map<std::string,int>       MapType;
     //@}
 
     //! Constructor.

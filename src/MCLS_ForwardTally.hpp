@@ -41,6 +41,7 @@
 #ifndef MCLS_FORWARDTALLY_HPP
 #define MCLS_FORWARDTALLY_HPP
 
+#include <unordered_map>
 #include "MCLS_DBC.hpp"
 #include "MCLS_ForwardHistory.hpp"
 #include "MCLS_VectorTraits.hpp"
@@ -49,8 +50,6 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
-
-#include <boost/tr1/unordered_map.hpp>
 
 namespace MCLS
 {
@@ -74,7 +73,7 @@ class ForwardTally
     typedef typename VT::scalar_type                            Scalar;
     typedef ForwardHistory<Ordinal>                             HistoryType;
     typedef Teuchos::Comm<int>                                  Comm;
-    typedef typename std::tr1::unordered_map<Ordinal,int>       MapType;
+    typedef typename std::unordered_map<Ordinal,int>            MapType;
     //@}
 
     // Constructor.
