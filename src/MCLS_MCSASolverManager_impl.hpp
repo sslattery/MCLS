@@ -384,7 +384,7 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 
 	    VT::putScalar( *d_residual_problem->getLHS(), 0.0 );
 	}
-	std::cout << "MC SOLVE" << std::endl;
+
 	// Solve the residual Monte Carlo problem.
 	d_mc_solver->solve();
 

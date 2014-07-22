@@ -9,10 +9,11 @@ TRIBITS_ADD_EXECUTABLE(
     test_single_mcls_stratimikos_solver_driver.cpp
     test_single_mcls_stratimikos_solver.cpp
   COMM serial mpi
-  )
+)
 
 TRIBITS_ADD_TEST(
   test_single_mcls_stratimikos_solver_driver
+  NUM_MPI_PROCS 1
   POSTFIX_AND_ARGS_0 FourByFour_mcsa_nrhs1
     --max-iters=15 --no-use-preconditioner --show-all-tests --matrix-file=FourByFour.mtx
     --mc-histories=1000 --solver-type="MCSA" --num-rhs=1

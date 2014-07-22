@@ -13,6 +13,7 @@ TRIBITS_ADD_EXECUTABLE(
 
 TRIBITS_ADD_TEST(
   test_single_mcls_thyra_solver_driver_epetra
+  NUM_MPI_PROCS 1
   POSTFIX_AND_ARGS_0 FourByFour_mcsa_nrhs1
     --max-iters=15 --no-use-preconditioner --show-all-tests 
     --matrix-file=FourByFour.mtx

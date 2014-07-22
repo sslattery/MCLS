@@ -112,6 +112,7 @@ int main(int argc, char* argv[])
     mclsLOWSFPL_mcsa.set("Overlap Size",int(overlapSize));
     mclsLOWSFPL_mcsa.set("Number of Sets",int(numSets));
     mclsLOWSFPL_mcsa.set("Set Number of Histories",int(numHistories));
+    mclsLOWSFPL_mcsa.set("Transport Type","Global");
 
     Teuchos::ParameterList& mclsLOWSFPL_seqmc =
       mclsLOWSFPL_solver.sublist("Sequential MC");
@@ -126,6 +127,7 @@ int main(int argc, char* argv[])
     mclsLOWSFPL_seqmc.set("Overlap Size",int(overlapSize));
     mclsLOWSFPL_seqmc.set("Number of Sets",int(numSets));
     mclsLOWSFPL_seqmc.set("Set Number of Histories",int(numHistories));
+    mclsLOWSFPL_seqmc.set("Transport Type","Global");
 
     Teuchos::ParameterList& mclsLOWSFPL_adjmc =
 	mclsLOWSFPL_solver.sublist("Adjoint MC");
@@ -137,6 +139,7 @@ int main(int argc, char* argv[])
     mclsLOWSFPL_adjmc.set("Overlap Size",int(overlapSize));
     mclsLOWSFPL_adjmc.set("Number of Sets",int(numSets));
     mclsLOWSFPL_adjmc.set("Set Number of Histories",int(numHistories));
+    mclsLOWSFPL_adjmc.set("Transport Type","Global");
 
     Teuchos::ParameterList& mclsLOWSFPL_fwdmc =
 	mclsLOWSFPL_solver.sublist("Forward MC");
@@ -148,6 +151,7 @@ int main(int argc, char* argv[])
     mclsLOWSFPL_fwdmc.set("Overlap Size",int(overlapSize));
     mclsLOWSFPL_fwdmc.set("Number of Sets",int(numSets));
     mclsLOWSFPL_fwdmc.set("Set Number of Histories",int(numHistories));
+    mclsLOWSFPL_fwdmc.set("Transport Type","Global");
 
     Teuchos::ParameterList& mclsLOWSFPL_richardson =
       mclsLOWSFPL_solver.sublist("Fixed Point");

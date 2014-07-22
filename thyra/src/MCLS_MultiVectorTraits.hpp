@@ -104,6 +104,14 @@ class MultiVectorTraits
     typedef Matrix                                           matrix_type;
     //@}
 
+    //! Given a multivector, construct a deep copy.
+    static Teuchos::RCP<multivector_type> 
+    deepCopy( const MultiVector& multivector )
+    { 
+	UndefinedMultiVectorTraits<MultiVector,Matrix>::notDefined(); 
+	return Teuchos::null;
+    }
+
     //! Get the number of vectors in this multivector.
     static int getNumVectors( const MultiVector& multivector )
     { 
@@ -188,6 +196,13 @@ class MultiVectorTraits<Epetra_MultiVector, Epetra_RowMatrix>
     typedef VT::global_ordinal_type                     global_ordinal_type;
     typedef Epetra_RowMatrix                             matrix_type;
     //@}
+
+    //! Given a multivector, construct a deep copy.
+    static Teuchos::RCP<multivector_type> 
+    deepCopy( const multivector_type& multivector )
+    { 
+	return Teuchos::rcp( new multivector_type(multivector) );
+    }
 
     //! Get the number of vectors in this multivector.
     static int getNumVectors( const multivector_type& multivector )
@@ -287,8 +302,15 @@ class MultiVectorTraits<Tpetra::MultiVector<Scalar,LO,GO>,
     typedef typename VT::scalar_type                    scalar_type;
     typedef typename VT::local_ordinal_type             local_ordinal_type;
     typedef typename VT::global_ordinal_type            global_ordinal_type;
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO>              matrix_type;
+    typedef Tpetra::CrsMatrix<Scalar,LO,GO>             matrix_type;
     //@}
+
+    //! Given a multivector, construct a deep copy.
+    static Teuchos::RCP<multivector_type> 
+    deepCopy( const multivector_type& multivector )
+    { 
+	return Teuchos::rcp( new multivector_type(multivector) );
+    }
 
     //! Get the number of vectors in this multivector.
     static int getNumVectors( const multivector_type& multivector )

@@ -120,6 +120,13 @@ class LinearProblemBase : public virtual Teuchos::Describable
 
     // Right preconditioner.
     Teuchos::RCP<const linear_op_type> b_PR;
+
+    // Left hand side.
+    Teuchos::RCP<multivector_type> b_x;
+
+    // Right hand side.
+    Teuchos::RCP<const multivector_type> b_b;
+
 };
 
 //---------------------------------------------------------------------------//
@@ -177,8 +184,10 @@ class LinearProblemAdapter : public LinearProblemBase<
 	MCLS_REQUIRE( id < MVT::getNumVectors(*d_x) );
 	MCLS_REQUIRE( id < MVT::getNumVectors(*d_b) );
 
-	Teuchos::RCP<Vector> vector_x = MVT::getVectorNonConst( *d_x, id );
-	Teuchos::RCP<const Vector> vector_b = MVT::getVector( *d_b, id );
+	Teuchos::RCP<Vector> vector_x = 
+	    Teuchos::rcp( MVT::getVectorNonConst( *d_x, id ).getRawPtr(), false );
+	Teuchos::RCP<const Vector> vector_b = 
+	    Teuchos::rcp( MVT::getVector( *d_b, id ).getRawPtr(), false );
 
 	Teuchos::RCP<LinearProblem<Vector,Matrix> > lp = Teuchos::rcp(
 	    new LinearProblem<Vector,Matrix>(d_A, vector_x, vector_b) );
@@ -233,8 +242,7 @@ class LinearProblemAdapter : public LinearProblemBase<
     void setRHS( const typename Base::multivector_type& b )
     { 
         MCLS_REQUIRE( Teuchos::nonnull(d_A) );
-	d_b = MVT::getConstRangeMultiVectorFromThyra( 
-            Teuchos::rcpFromRef(b), d_A );
+	d_b = MVT::getConstRangeMultiVectorFromThyra( Teuchos::rcpFromRef(b), d_A );
 	MCLS_ENSURE( Teuchos::nonnull(d_b) );
     }
 
