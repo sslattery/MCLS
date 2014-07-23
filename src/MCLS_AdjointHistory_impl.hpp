@@ -59,6 +59,7 @@ AdjointHistory<Ordinal>::AdjointHistory( const Teuchos::ArrayView<char>& buffer 
 {
     MCLS_REQUIRE( Teuchos::as<std::size_t>(buffer.size()) == d_packed_bytes );
 
+    // If we sent the RNG state with the history, unpack that first.
     if ( d_packed_rng > 0 )
     {
 	Teuchos::Array<char> brng( d_packed_rng );
@@ -66,6 +67,7 @@ AdjointHistory<Ordinal>::AdjointHistory( const Teuchos::ArrayView<char>& buffer 
 	d_rng = RNG( brng );
     }
 
+    // Unpack the state of the history.
     Deserializer ds;
     ds.setBuffer( d_packed_bytes - d_packed_rng, &buffer[d_packed_rng] );
     int balive;

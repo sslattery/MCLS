@@ -251,11 +251,11 @@ class SourceTraits<UniformAdjointSource<Domain> >
 
     { 
 	return Teuchos::rcp( new source_type( buffer,
-					 domain,
-					 rng_control,
-					 comm,
-					 global_comm_size,
-					 global_comm_rank ) );
+					      domain,
+					      rng_control,
+					      comm,
+					      global_comm_size,
+					      global_comm_rank ) );
     }
 
     /*!
