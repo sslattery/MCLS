@@ -44,6 +44,7 @@
 #include <stack>
 #include <sstream>
 #include <stdexcept>
+#include <random>
 
 #include <MCLS_config.hpp>
 #include <MCLS_AdjointHistory.hpp>
@@ -89,7 +90,7 @@ Teuchos::RCP<const Teuchos::Comm<Ordinal> > getDefaultComm()
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CommHistoryBuffer, ping_pong, Ordinal, Scalar )
 {
-    typedef MCLS::AdjointHistory<Ordinal> HT;
+    typedef MCLS::AdjointHistory<Ordinal,std::mt19937> HT;
     typedef MCLS::HistoryBuffer<HT> HistoryBuffer;
     typedef MCLS::SendHistoryBuffer<HT> SendBuffer;
     typedef MCLS::ReceiveHistoryBuffer<HT> ReceiveBuffer;
@@ -101,7 +102,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CommHistoryBuffer, ping_pong, Ordinal, Scalar
     int comm_size = comm->getSize();
 
     int num_histories = 5;
-    HT::setByteSize( 0 );
+    HT::setByteSize();
     HistoryBuffer::setSizePackedHistory( HT::getPackedBytes() );
     HistoryBuffer::setMaxNumHistories( num_histories );
 
@@ -198,7 +199,7 @@ UNIT_TEST_INSTANTIATION( CommHistoryBuffer, ping_pong )
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CommHistoryBuffer, non_blocking, Ordinal, Scalar )
 {
-    typedef MCLS::AdjointHistory<Ordinal> HT;
+    typedef MCLS::AdjointHistory<Ordinal,std::mt19937> HT;
     typedef MCLS::SendHistoryBuffer<HT> SendBuffer;
     typedef MCLS::ReceiveHistoryBuffer<HT> ReceiveBuffer;
 
@@ -211,7 +212,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CommHistoryBuffer, non_blocking, Ordinal, Sca
     // 4 processes only.
     if ( comm_size == 4 )
     {
-	HT::setByteSize( 0 );
+	HT::setByteSize();
 	int num_histories = 3;
 
 	// Comm Patterns:

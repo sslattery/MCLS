@@ -32,13 +32,16 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_RNGControl.cpp
+ * \file MCLS_PRNG_impl.hpp
  * \author Stuart R. Slattery
- * \brief RNGControl class implementation.
+ * \brief Parallel random number generator class implementation.
  */
 //---------------------------------------------------------------------------//
 
-#include "MCLS_RNGControl.hpp"
+#ifndef MCLS_PRNG_IMPL_HPP
+#define MCLS_PRNG_IMPL_HPP
+
+#include <random>
 
 namespace MCLS
 {
@@ -46,69 +49,32 @@ namespace MCLS
 /*!
  * \brief Constructor.
  */
-RNGControl::RNGControl( int seed, int number, int stream, int parameter )
-    : d_seed( seed )
-    , d_number( number )
-    , d_stream( stream )
-    , d_parameter( parameter )
+template<class RNG>
+PRNG<RNG>::PRNG( const int comm_rank)
 {
-    MCLS_REQUIRE( d_stream <= d_number );
+    // Create a random device to get an initial random number.
+    std::random_device rand_device;
 
-    RNG temp = createRNG();
-    d_size = temp.getSize();
+    // Create a master rng to produce seed values for each parallel rank.
+    RNG master_rng( rand_device() );
+    typename RNG::result_type seed = 0;
+    for ( int i = 0; i < comm_rank; ++i )
+    {
+	seed = master_rng();
+    }
 
-    MCLS_ENSURE( d_size >= 0 );
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Create a SPRNG object.
- */
-RNGControl::RNG RNGControl::rng()
-{
-    MCLS_REQUIRE( d_stream <= d_number );
-
-    RNG random = createRNG();
-    ++d_stream;
-
-    return random;
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Create a SPRNG object with a specified stream index.
- */
-RNGControl::RNG RNGControl::rng( int stream )
-{
-    MCLS_REQUIRE( stream <= d_number );
-
-    d_stream = stream;
-    RNG random = createRNG();
-    ++d_stream;
-
-    return random;
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Spawn a SPRNG object.
- */
-RNGControl::RNG RNGControl::spawn( const RNG& random )
-{
-    int **new_stream;
-    spawn_sprng( random.getID(), 1, &new_stream );
-    RNG new_random( new_stream[0], random.getIndex() );
-
-    std::free( new_stream );
-
-    return new_random;
+    // Seed the random number generator on this process with the appropriate
+    // seed.
+    d_rng = rng_type( seed );
 }
 
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
+#endif // end MCLS_PRNG_IMPL_HPP
+
 //---------------------------------------------------------------------------//
-// end MCLS_RNGControl.cpp
+// end MCLS_PRNG_impl.hpp
 //---------------------------------------------------------------------------//
 

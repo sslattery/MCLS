@@ -54,7 +54,6 @@ APPEND_SET(HEADERS
   MCLS_ForwardSolverManager_impl.hpp
   MCLS_ForwardTally.hpp
   MCLS_ForwardTally_impl.hpp
-  MCLS_GlobalRNG.hpp
   MCLS_GlobalTransporter.hpp
   MCLS_GlobalTransporterFactory.hpp
   MCLS_GlobalTransporterFactory_impl.hpp
@@ -78,11 +77,12 @@ APPEND_SET(HEADERS
   MCLS_MSODManager.hpp
   MCLS_MSODManager_impl.hpp
   MCLS_Preconditioner.hpp
+  MCLS_PRNG.hpp
+  MCLS_PRNG_impl.hpp
   MCLS_RNSDIteration.hpp
   MCLS_RNSDIteration_impl.hpp
   MCLS_RichardsonIteration.hpp
   MCLS_RichardsonIteration_impl.hpp
-  MCLS_RNGControl.hpp
   MCLS_SamplingTools.hpp
   MCLS_Serializer.hpp
   MCLS_SolverFactory.hpp
@@ -90,7 +90,6 @@ APPEND_SET(HEADERS
   MCLS_SourceTraits.hpp
   MCLS_SourceTransporter.hpp
   MCLS_SourceTransporter_impl.hpp
-  MCLS_SPRNG.hpp
   MCLS_SteepestDescentIteration.hpp
   MCLS_SteepestDescentIteration_impl.hpp
   MCLS_SubdomainTransporter.hpp
@@ -107,9 +106,6 @@ APPEND_SET(HEADERS
 APPEND_SET(SOURCES
   MCLS_CommTools.cpp
   MCLS_DBC.cpp
-  MCLS_GlobalRNG.cpp
-  MCLS_RNGControl.cpp
-  MCLS_SPRNG.cpp
   )
 
 #

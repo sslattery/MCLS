@@ -41,7 +41,7 @@
 #ifndef MCLS_HISTORYTRAITS_HPP
 #define MCLS_HISTORYTRAITS_HPP
 
-#include "MCLS_RNGControl.hpp"
+#include "MCLS_PRNG.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
@@ -168,7 +168,8 @@ class HistoryTraits
     /*!
      * \brief Set a new random number generator with the history.
      */
-    static void setRNG( history_type& history, const rng_type& rng )
+    static void setRNG( history_type& history, 
+			const Teuchos::RCP<PRNG<rng_type> >& rng )
     {
 	UndefinedHistoryTraits<History>::notDefined(); 
     }
@@ -176,7 +177,7 @@ class HistoryTraits
     /*!
      * \brief Get this history's random number generator.
      */
-    static const rng_type& rng( const history_type& history )
+    static Teuchos::RCP<PRNG<rng_type> > rng( const history_type& history )
     {
 	UndefinedHistoryTraits<History>::notDefined(); 
     }
@@ -226,7 +227,7 @@ class HistoryTraits
     /*!
      * \brief Set the byte size of the packed history state.
      */
-    static void setByteSize( std::size_t size_rng_state )
+    static void setByteSize()
     {
 	UndefinedHistoryTraits<History>::notDefined();
     }

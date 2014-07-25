@@ -43,9 +43,10 @@
 #include <cmath>
 #include <sstream>
 #include <stdexcept>
+#include <random>
 
 #include <MCLS_config.hpp>
-#include <MCLS_RNGControl.hpp>
+#include <MCLS_PRNG.hpp>
 #include <MCLS_ForwardHistory.hpp>
 #include <MCLS_Events.hpp>
 
@@ -80,19 +81,15 @@ Teuchos::RCP<const Teuchos::Comm<Ordinal> > getDefaultComm()
 }
 
 //---------------------------------------------------------------------------//
-// Random number seed.
-//---------------------------------------------------------------------------//
-
-int seed = 2394723;
-
-//---------------------------------------------------------------------------//
 // Tests.
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, history, Ordinal )
 {
-    MCLS::RNGControl control( seed );
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm<int>();
+    Teuchos::RCP<MCLS::PRNG<std::mt19937> > rng = Teuchos::rcp(
+	new MCLS::PRNG<std::mt19937>(comm->getRank()) );
 
-    MCLS::ForwardHistory<Ordinal> h_1;
+    MCLS::ForwardHistory<Ordinal,std::mt19937> h_1;
     TEST_EQUALITY( h_1.weight(), Teuchos::ScalarTraits<double>::one() );
     TEST_EQUALITY( h_1.state(), Teuchos::OrdinalTraits<Ordinal>::zero() );
     TEST_EQUALITY( h_1.startingState(), 
@@ -132,11 +129,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, history, Ordinal )
     h_1.addToHistoryTally( 1.34 );
     TEST_EQUALITY( h_1.historyTally(), 1.34 );
 
-    MCLS::RNGControl::RNG rng = control.rng( 4 );
     h_1.setRNG( rng );
-    TEST_EQUALITY( h_1.rng().getIndex(), 4 );
+    TEST_EQUALITY( h_1.rng().getRawPtr(), rng.getRawPtr() );
 
-    MCLS::ForwardHistory<Ordinal> h_2( 5, 6 );
+    MCLS::ForwardHistory<Ordinal,std::mt19937> h_2( 5, 6 );
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
     TEST_EQUALITY( h_2.startingState(), 5 );
@@ -150,29 +146,13 @@ UNIT_TEST_INSTANTIATION( ForwardHistory, history )
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, pack_unpack, Ordinal )
 {
-    MCLS::RNGControl control( seed );
-    MCLS::RNGControl::RNG ranr = control.rng( 4 );
-    Teuchos::Array<double> ref(80);
-    for (int i = 0; i < 80; i++)
-    {
-	ref[i] = ranr.random();
-    }
-
-    MCLS::RNGControl::RNG rng = control.rng( 4 );
-    for (int i = 0; i < 40; i++)
-    {
-	rng.random();
-    }
-
-    std::size_t byte_size = 
-	control.getSize() + 2*sizeof(Ordinal) + 2*sizeof(double) + 2*sizeof(int);
-    MCLS::ForwardHistory<Ordinal>::setByteSize( control.getSize() );
+    std::size_t byte_size = 2*sizeof(Ordinal) + 2*sizeof(double) + 2*sizeof(int);
+    MCLS::ForwardHistory<Ordinal,std::mt19937>::setByteSize();
     std::size_t packed_bytes =
-	MCLS::ForwardHistory<Ordinal>::getPackedBytes();
+	MCLS::ForwardHistory<Ordinal,std::mt19937>::getPackedBytes();
     TEST_EQUALITY( packed_bytes, byte_size );
 
-    MCLS::ForwardHistory<Ordinal> h_1( 5, 6 );
-    h_1.setRNG( rng );
+    MCLS::ForwardHistory<Ordinal,std::mt19937> h_1( 5, 6 );
     h_1.live();
     h_1.setEvent( MCLS::Event::BOUNDARY );
     h_1.addToHistoryTally( 2.44 );
@@ -180,45 +160,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, pack_unpack, Ordinal )
     TEST_EQUALITY( Teuchos::as<std::size_t>( packed_history.size() ), 
 		   byte_size );
 
-    MCLS::ForwardHistory<Ordinal> h_2( packed_history );
+    MCLS::ForwardHistory<Ordinal,std::mt19937> h_2( packed_history );
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
     TEST_EQUALITY( h_2.startingState(), 5 );
     TEST_ASSERT( h_2.alive() );
     TEST_EQUALITY( h_2.event(), MCLS::Event::BOUNDARY );
     TEST_EQUALITY( h_2.historyTally(), 2.44 );
-
-    MCLS::RNGControl::RNG rng_2 = h_2.rng();
-    for (int i = 0; i < 40; i++)
-    {
-	TEST_FLOATING_EQUALITY( rng_2.random(), ref[i+40], 1.0e-8 );
-    }
 }
 
 UNIT_TEST_INSTANTIATION( ForwardHistory, pack_unpack )
-
-//---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, pack_unpack_no_rng, Ordinal )
-{
-    std::size_t byte_size = 2*sizeof(Ordinal) + 2*sizeof(double) + 2*sizeof(int);
-    MCLS::ForwardHistory<Ordinal>::setByteSize( 0 );
-
-    MCLS::ForwardHistory<Ordinal> h_1( 5, 6 );
-    h_1.live();
-    h_1.addToHistoryTally( 3.22 );
-    Teuchos::Array<char> packed_history = h_1.pack();
-    TEST_EQUALITY( Teuchos::as<std::size_t>( packed_history.size() ), 
-		   byte_size );
-
-    MCLS::ForwardHistory<Ordinal> h_2( packed_history );
-    TEST_EQUALITY( h_2.weight(), 6 );
-    TEST_EQUALITY( h_2.state(), 5 );
-    TEST_EQUALITY( h_2.startingState(), 5 );
-    TEST_ASSERT( h_2.alive() );
-    TEST_EQUALITY( h_2.historyTally(), 3.22 );
-}
-
-UNIT_TEST_INSTANTIATION( ForwardHistory, pack_unpack_no_rng )
 
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, broadcast, Ordinal )
@@ -227,29 +178,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, broadcast, Ordinal )
 	Teuchos::DefaultComm<int>::getComm();
     int comm_rank = comm->getRank();
 
-    MCLS::RNGControl control( seed );
-    MCLS::RNGControl::RNG ranr = control.rng( 4 );
-    Teuchos::Array<double> ref(80);
-    for (int i = 0; i < 80; i++)
-    {
-	ref[i] = ranr.random();
-    }
-
-    MCLS::ForwardHistory<Ordinal>::setByteSize( control.getSize() );
+    MCLS::ForwardHistory<Ordinal,std::mt19937>::setByteSize();
     std::size_t packed_bytes =
-	MCLS::ForwardHistory<Ordinal>::getPackedBytes();
+	MCLS::ForwardHistory<Ordinal,std::mt19937>::getPackedBytes();
     Teuchos::Array<char> packed_history( packed_bytes );
 
     if ( comm_rank == 0 )
     {
-	MCLS::RNGControl::RNG rng = control.rng( 4 );
-	for (int i = 0; i < 40; i++)
-	{
-	    rng.random();
-	}
-
-	MCLS::ForwardHistory<Ordinal> h_1( 5, 6 );
-	h_1.setRNG( rng );
+	MCLS::ForwardHistory<Ordinal,std::mt19937> h_1( 5, 6 );
 	h_1.live();
 	h_1.setEvent( MCLS::Event::BOUNDARY );
 	h_1.addToHistoryTally( 1.98 );
@@ -258,19 +194,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, broadcast, Ordinal )
 
     Teuchos::broadcast( *comm, 0, packed_history() );
 
-    MCLS::ForwardHistory<Ordinal> h_2( packed_history );
+    MCLS::ForwardHistory<Ordinal,std::mt19937> h_2( packed_history );
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
     TEST_EQUALITY( h_2.startingState(), 5 );
     TEST_ASSERT( h_2.alive() );
     TEST_EQUALITY( h_2.event(), MCLS::Event::BOUNDARY );
     TEST_EQUALITY( h_2.historyTally(), 1.98 );
-
-    MCLS::RNGControl::RNG rng_2 = h_2.rng();
-    for (int i = 0; i < 40; i++)
-    {
-	TEST_FLOATING_EQUALITY( rng_2.random(), ref[i+40], 1.0e-8 );
-    }
 }
 
 UNIT_TEST_INSTANTIATION( ForwardHistory, broadcast )

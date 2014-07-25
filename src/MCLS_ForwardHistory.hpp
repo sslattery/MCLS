@@ -43,7 +43,7 @@
 
 #include <cmath>
 
-#include "MCLS_RNGControl.hpp"
+#include "MCLS_PRNG.hpp"
 #include "MCLS_HistoryTraits.hpp"
 
 #include <Teuchos_ScalarTraits.hpp>
@@ -60,7 +60,7 @@ namespace MCLS
  * calculations.
  */
 //---------------------------------------------------------------------------//
-template<class Ordinal>
+template<class Ordinal, class RNG>
 class ForwardHistory
 {
   public:
@@ -68,7 +68,7 @@ class ForwardHistory
     //@{
     //! Typedefs.
     typedef Ordinal                                   ordinal_type;
-    typedef RNGControl::RNG                           RNG;
+    typedef RNG                                       rng_type;
     //@}
 
     //! Default constructor.
@@ -138,11 +138,11 @@ class ForwardHistory
     { return std::abs(d_weight); }
 
     //! Set a new random number generator.
-    void setRNG( const RNG& rng )
+    void setRNG( const Teuchos::RCP<PRNG<RNG> >& rng )
     { d_rng = rng; }
 
     //! Get the random number generator.
-    const RNG& rng() const
+    Teuchos::RCP<PRNG<RNG> > rng() const
     { return d_rng; }
 
     //! Kill the history.
@@ -174,7 +174,7 @@ class ForwardHistory
   public:
 
     // Set the byte size of the packed history state.
-    static void setByteSize( std::size_t size_rng_state );
+    static void setByteSize();
 
     // Get the number of bytes in the packed history state.
     static std::size_t getPackedBytes();
@@ -190,8 +190,8 @@ class ForwardHistory
     // ForwardHistory weight.
     double d_weight;
 
-    // Random number generator (reference counted).
-    RNG d_rng;
+    // Random number generator.
+    Teuchos::RCP<PRNG<RNG> > d_rng;
 
     // Alive/dead status.
     bool d_alive;
@@ -206,24 +206,21 @@ class ForwardHistory
 
     // Packed size of history in bytes.
     static std::size_t d_packed_bytes;
-
-    // Packed size of the RNG in bytes.
-    static std::size_t d_packed_rng;
 };
 
 //---------------------------------------------------------------------------//
 // HistoryTraits Implementation.
 //---------------------------------------------------------------------------//
-template<class Ordinal>
-class HistoryTraits<ForwardHistory<Ordinal> >
+template<class Ordinal,class RNG>
+class HistoryTraits<ForwardHistory<Ordinal,RNG> >
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef ForwardHistory<Ordinal>                      history_type;
+    typedef ForwardHistory<Ordinal,RNG>                  history_type;
     typedef typename history_type::ordinal_type          ordinal_type;
-    typedef typename history_type::RNG                   rng_type;
+    typedef typename history_type::rng_type              rng_type;
     //@}
 
     /*!
@@ -304,7 +301,8 @@ class HistoryTraits<ForwardHistory<Ordinal> >
     /*!
      * \brief Set a new random number generator with the history.
      */
-    static void setRNG( history_type& history, const rng_type& rng )
+    static void setRNG( history_type& history, 
+			const Teuchos::RCP<PRNG<rng_type> >& rng )
     {
 	history.setRNG( rng );
     }
@@ -312,7 +310,7 @@ class HistoryTraits<ForwardHistory<Ordinal> >
     /*!
      * \brief Get this history's random number generator.
      */
-    static const rng_type& rng( const history_type& history )
+    static Teuchos::RCP<PRNG<rng_type> > rng( const history_type& history )
     {
 	return history.rng();
     }
@@ -360,9 +358,9 @@ class HistoryTraits<ForwardHistory<Ordinal> >
     /*!
      * \brief Set the byte size of the packed history state.
      */
-    static void setByteSize( std::size_t size_rng_state )
+    static void setByteSize()
     {
-	history_type::setByteSize( size_rng_state );
+	history_type::setByteSize();
     }
 
     /*!

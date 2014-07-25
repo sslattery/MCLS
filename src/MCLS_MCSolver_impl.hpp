@@ -75,17 +75,8 @@ MCSolver<Source>::MCSolver( const Teuchos::RCP<const Comm>& set_comm,
     // Build the random number generator.
     d_rng_control = Teuchos::rcp( new RNGControl(seed) );
 
-    // Set the static byte size for the histories. If we want reproducible
-    // results we pack the RNG with the histories. If we don't, then we use
-    // the global RNG.
-    if ( d_plist->get<bool>("Reproducible MC Mode") )
-    {
-	HT::setByteSize( d_rng_control->getSize() );
-    }
-    else
-    {
-	HT::setByteSize( 0 );
-    }
+    // Set the static byte size for the histories.
+    HT::setByteSize();
 
     MCLS_ENSURE( HT::getPackedBytes() > 0 );
     MCLS_ENSURE( !d_rng_control.is_null() );

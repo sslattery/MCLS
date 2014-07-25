@@ -54,20 +54,14 @@ namespace MCLS
 /*!
  * \brief Deserializer constructor.
  */
-template<class Ordinal>
-ForwardHistory<Ordinal>::ForwardHistory( const Teuchos::ArrayView<char>& buffer )
+template<class Ordinal,class RNG>
+ForwardHistory<Ordinal,RNG>::ForwardHistory( 
+    const Teuchos::ArrayView<char>& buffer )
 {
     MCLS_REQUIRE( Teuchos::as<std::size_t>(buffer.size()) == d_packed_bytes );
 
-    if ( d_packed_rng > 0 )
-    {
-	Teuchos::Array<char> brng( d_packed_rng );
-	std::copy( &buffer[0], &buffer[d_packed_rng], brng.begin() );
-	d_rng = RNG( brng );
-    }
-
     Deserializer ds;
-    ds.setBuffer( d_packed_bytes - d_packed_rng, &buffer[d_packed_rng] );
+    ds.setBuffer( d_packed_bytes, &buffer[0] );
     int balive;
     ds >> d_state >> d_starting_state >> d_weight >> balive 
        >> d_event >> d_history_tally;
@@ -80,24 +74,16 @@ ForwardHistory<Ordinal>::ForwardHistory( const Teuchos::ArrayView<char>& buffer 
 /*!
  * \brief Pack the history into a buffer.
  */
-template<class Ordinal>
-Teuchos::Array<char> ForwardHistory<Ordinal>::pack() const
+template<class Ordinal,class RNG>
+Teuchos::Array<char> ForwardHistory<Ordinal,RNG>::pack() const
 {
     MCLS_REQUIRE( d_packed_bytes );
-    MCLS_REQUIRE( d_packed_bytes - d_packed_rng > 0 );
+    MCLS_REQUIRE( d_packed_bytes > 0 );
 
     Teuchos::Array<char> buffer( d_packed_bytes );
 
-    if ( d_packed_rng > 0 )
-    {
-	Teuchos::Array<char> brng = d_rng.pack();
-	MCLS_CHECK( Teuchos::as<std::size_t>(brng.size()) == d_packed_rng );
-
-	std::copy( brng.begin(), brng.end(), buffer.begin() );
-    }
-
     Serializer s;
-    s.setBuffer( d_packed_bytes - d_packed_rng, &buffer[d_packed_rng] );
+    s.setBuffer( d_packed_bytes , &buffer[0] );
     s << d_state << d_starting_state << d_weight << static_cast<int>(d_alive)
       << d_event << d_history_tally;
 
@@ -108,30 +94,25 @@ Teuchos::Array<char> ForwardHistory<Ordinal>::pack() const
 //---------------------------------------------------------------------------//
 // Static members.
 //---------------------------------------------------------------------------//
-template<class Ordinal>
-std::size_t ForwardHistory<Ordinal>::d_packed_bytes = 0;
-
-template<class Ordinal>
-std::size_t ForwardHistory<Ordinal>::d_packed_rng = 0;
+template<class Ordinal,class RNG>
+std::size_t ForwardHistory<Ordinal,RNG>::d_packed_bytes = 0;
 
 //---------------------------------------------------------------------------//
 /*!
  * \brief Set the byte size of the packed history state.
  */
-template<class Ordinal>
-void ForwardHistory<Ordinal>::setByteSize( std::size_t size_rng_state )
+template<class Ordinal,class RNG>
+void ForwardHistory<Ordinal,RNG>::setByteSize()
 {
-    d_packed_rng = size_rng_state;
-    d_packed_bytes = d_packed_rng + 2*sizeof(Ordinal) + 2*sizeof(double)
-		     + 2*sizeof(int);
+    d_packed_bytes = 2*sizeof(Ordinal) + 2*sizeof(double) + 2*sizeof(int);
 }
 
 //---------------------------------------------------------------------------//
 /*!
  * \brief Get the number of bytes in the packed history state.
  */
-template<class Ordinal>
-std::size_t ForwardHistory<Ordinal>::getPackedBytes()
+template<class Ordinal,class RNG>
+std::size_t ForwardHistory<Ordinal,RNG>::getPackedBytes()
 {
     MCLS_REQUIRE( d_packed_bytes );
     return d_packed_bytes;

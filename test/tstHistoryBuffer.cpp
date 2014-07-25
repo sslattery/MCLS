@@ -44,6 +44,7 @@
 #include <stack>
 #include <sstream>
 #include <stdexcept>
+#include <random>
 
 #include <MCLS_config.hpp>
 #include <MCLS_AdjointHistory.hpp>
@@ -84,7 +85,7 @@ Teuchos::RCP<const Teuchos::Comm<Ordinal> > getDefaultComm()
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( HistoryBuffer, sizes, Ordinal )
 {
-    typedef MCLS::AdjointHistory<Ordinal> HT;
+    typedef MCLS::AdjointHistory<Ordinal,std::mt19937> HT;
 
     MCLS::HistoryBuffer<HT> buffer_1;
     TEST_EQUALITY( buffer_1.allocatedSize(), 0 );
@@ -94,7 +95,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( HistoryBuffer, sizes, Ordinal )
     TEST_EQUALITY( MCLS::HistoryBuffer<HT>::maxNum(), 1000 );
     TEST_EQUALITY( MCLS::HistoryBuffer<HT>::sizePackedHistory(), 0 );
 
-    HT::setByteSize( 0 );
+    HT::setByteSize();
     MCLS::HistoryBuffer<HT>::setSizePackedHistory( HT::getPackedBytes() );
     MCLS::HistoryBuffer<HT>::setMaxNumHistories( 10 );
     TEST_EQUALITY( MCLS::HistoryBuffer<HT>::maxNum(), 10 );
@@ -129,8 +130,8 @@ UNIT_TEST_INSTANTIATION( HistoryBuffer, sizes )
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( HistoryBuffer, buffering, Ordinal )
 {
-    typedef MCLS::AdjointHistory<Ordinal> HT;
-    HT::setByteSize( 0 );
+    typedef MCLS::AdjointHistory<Ordinal,std::mt19937> HT;
+    HT::setByteSize();
 
     int num_history = 4;
     MCLS::HistoryBuffer<HT> buffer( HT::getPackedBytes(), num_history );

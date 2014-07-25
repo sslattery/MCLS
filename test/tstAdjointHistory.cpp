@@ -43,9 +43,10 @@
 #include <cmath>
 #include <sstream>
 #include <stdexcept>
+#include <random>
 
 #include <MCLS_config.hpp>
-#include <MCLS_RNGControl.hpp>
+#include <MCLS_PRNG.hpp>
 #include <MCLS_AdjointHistory.hpp>
 #include <MCLS_Events.hpp>
 
@@ -80,19 +81,15 @@ Teuchos::RCP<const Teuchos::Comm<Ordinal> > getDefaultComm()
 }
 
 //---------------------------------------------------------------------------//
-// Random number seed.
-//---------------------------------------------------------------------------//
-
-int seed = 2394723;
-
-//---------------------------------------------------------------------------//
 // Tests.
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( AdjointHistory, history, Ordinal )
 {
-    MCLS::RNGControl control( seed );
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm<int>();
+    Teuchos::RCP<MCLS::PRNG<std::mt19937> > rng = Teuchos::rcp(
+	new MCLS::PRNG<std::mt19937>(comm->getRank()) );
 
-    MCLS::AdjointHistory<Ordinal> h_1;
+    MCLS::AdjointHistory<Ordinal,std::mt19937> h_1;
     TEST_EQUALITY( h_1.weight(), Teuchos::ScalarTraits<double>::one() );
     TEST_EQUALITY( h_1.state(), Teuchos::OrdinalTraits<Ordinal>::zero() );
     TEST_ASSERT( !h_1.alive() );
@@ -123,11 +120,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( AdjointHistory, history, Ordinal )
     TEST_EQUALITY( h_1.weight(), -14 );
     TEST_EQUALITY( h_1.weightAbs(), 14 );
 
-    MCLS::RNGControl::RNG rng = control.rng( 4 );
     h_1.setRNG( rng );
-    TEST_EQUALITY( h_1.rng().getIndex(), 4 );
+    TEST_EQUALITY( h_1.rng().getRawPtr(), rng.getRawPtr() );
 
-    MCLS::AdjointHistory<Ordinal> h_2( 5, 6 );
+    MCLS::AdjointHistory<Ordinal,std::mt19937> h_2( 5, 6 );
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
     TEST_ASSERT( !h_2.alive() );
@@ -139,69 +135,27 @@ UNIT_TEST_INSTANTIATION( AdjointHistory, history )
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( AdjointHistory, pack_unpack, Ordinal )
 {
-    MCLS::RNGControl control( seed );
-    MCLS::RNGControl::RNG ranr = control.rng( 4 );
-    Teuchos::Array<double> ref(80);
-    for (int i = 0; i < 80; i++)
-    {
-	ref[i] = ranr.random();
-    }
-
-    MCLS::RNGControl::RNG rng = control.rng( 4 );
-    for (int i = 0; i < 40; i++)
-    {
-	rng.random();
-    }
-
-    std::size_t byte_size = 
-	control.getSize() + sizeof(Ordinal) + sizeof(double) + 2*sizeof(int);
-    MCLS::AdjointHistory<Ordinal>::setByteSize( control.getSize() );
-    std::size_t packed_bytes =
-	MCLS::AdjointHistory<Ordinal>::getPackedBytes();
+    std::size_t byte_size = sizeof(Ordinal) + sizeof(double) + 2*sizeof(int);
+    MCLS::AdjointHistory<Ordinal,std::mt19937>::setByteSize();
+    std::size_t packed_bytes = 
+	MCLS::AdjointHistory<Ordinal,std::mt19937>::getPackedBytes();
     TEST_EQUALITY( packed_bytes, byte_size );
 
-    MCLS::AdjointHistory<Ordinal> h_1( 5, 6 );
-    h_1.setRNG( rng );
+    MCLS::AdjointHistory<Ordinal,std::mt19937> h_1( 5, 6 );
     h_1.live();
     h_1.setEvent( MCLS::Event::BOUNDARY );
     Teuchos::Array<char> packed_history = h_1.pack();
     TEST_EQUALITY( Teuchos::as<std::size_t>( packed_history.size() ), 
 		   byte_size );
 
-    MCLS::AdjointHistory<Ordinal> h_2( packed_history );
+    MCLS::AdjointHistory<Ordinal,std::mt19937> h_2( packed_history );
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
     TEST_ASSERT( h_2.alive() );
     TEST_EQUALITY( h_2.event(), MCLS::Event::BOUNDARY );
-
-    MCLS::RNGControl::RNG rng_2 = h_2.rng();
-    for (int i = 0; i < 40; i++)
-    {
-	TEST_FLOATING_EQUALITY( rng_2.random(), ref[i+40], 1.0e-8 );
-    }
 }
 
 UNIT_TEST_INSTANTIATION( AdjointHistory, pack_unpack )
-
-//---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( AdjointHistory, pack_unpack_no_rng, Ordinal )
-{
-    std::size_t byte_size = sizeof(Ordinal) + sizeof(double) + 2*sizeof(int);
-    MCLS::AdjointHistory<Ordinal>::setByteSize( 0 );
-
-    MCLS::AdjointHistory<Ordinal> h_1( 5, 6 );
-    h_1.live();
-    Teuchos::Array<char> packed_history = h_1.pack();
-    TEST_EQUALITY( Teuchos::as<std::size_t>( packed_history.size() ), 
-		   byte_size );
-
-    MCLS::AdjointHistory<Ordinal> h_2( packed_history );
-    TEST_EQUALITY( h_2.weight(), 6 );
-    TEST_EQUALITY( h_2.state(), 5 );
-    TEST_ASSERT( h_2.alive() );
-}
-
-UNIT_TEST_INSTANTIATION( AdjointHistory, pack_unpack_no_rng )
 
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( AdjointHistory, broadcast, Ordinal )
@@ -210,29 +164,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( AdjointHistory, broadcast, Ordinal )
 	Teuchos::DefaultComm<int>::getComm();
     int comm_rank = comm->getRank();
 
-    MCLS::RNGControl control( seed );
-    MCLS::RNGControl::RNG ranr = control.rng( 4 );
-    Teuchos::Array<double> ref(80);
-    for (int i = 0; i < 80; i++)
-    {
-	ref[i] = ranr.random();
-    }
-
-    MCLS::AdjointHistory<Ordinal>::setByteSize( control.getSize() );
-    std::size_t packed_bytes =
-	MCLS::AdjointHistory<Ordinal>::getPackedBytes();
+    MCLS::AdjointHistory<Ordinal,std::mt19937>::setByteSize();
+    std::size_t packed_bytes = 
+	MCLS::AdjointHistory<Ordinal,std::mt19937>::getPackedBytes();
     Teuchos::Array<char> packed_history( packed_bytes );
 
     if ( comm_rank == 0 )
     {
-	MCLS::RNGControl::RNG rng = control.rng( 4 );
-	for (int i = 0; i < 40; i++)
-	{
-	    rng.random();
-	}
-
-	MCLS::AdjointHistory<Ordinal> h_1( 5, 6 );
-	h_1.setRNG( rng );
+	MCLS::AdjointHistory<Ordinal,std::mt19937> h_1( 5, 6 );
 	h_1.live();
 	h_1.setEvent( MCLS::Event::BOUNDARY );
 	packed_history = h_1.pack();
@@ -240,17 +179,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( AdjointHistory, broadcast, Ordinal )
 
     Teuchos::broadcast( *comm, 0, packed_history() );
 
-    MCLS::AdjointHistory<Ordinal> h_2( packed_history );
+    MCLS::AdjointHistory<Ordinal,std::mt19937> h_2( packed_history );
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
     TEST_ASSERT( h_2.alive() );
     TEST_EQUALITY( h_2.event(), MCLS::Event::BOUNDARY );
-
-    MCLS::RNGControl::RNG rng_2 = h_2.rng();
-    for (int i = 0; i < 40; i++)
-    {
-	TEST_FLOATING_EQUALITY( rng_2.random(), ref[i+40], 1.0e-8 );
-    }
 }
 
 UNIT_TEST_INSTANTIATION( AdjointHistory, broadcast )
