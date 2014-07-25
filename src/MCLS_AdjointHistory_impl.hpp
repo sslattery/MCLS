@@ -54,8 +54,8 @@ namespace MCLS
 /*!
  * \brief Deserializer constructor.
  */
-template<class Ordinal,class RNG>
-AdjointHistory<Ordinal,RNG>::AdjointHistory( const Teuchos::ArrayView<char>& buffer )
+template<class Ordinal>
+AdjointHistory<Ordinal>::AdjointHistory( const Teuchos::ArrayView<char>& buffer )
 {
     MCLS_REQUIRE( Teuchos::as<std::size_t>(buffer.size()) == d_packed_bytes );
 
@@ -72,8 +72,8 @@ AdjointHistory<Ordinal,RNG>::AdjointHistory( const Teuchos::ArrayView<char>& buf
 /*!
  * \brief Pack the history into a buffer.
  */
-template<class Ordinal,class RNG>
-Teuchos::Array<char> AdjointHistory<Ordinal,RNG>::pack() const
+template<class Ordinal>
+Teuchos::Array<char> AdjointHistory<Ordinal>::pack() const
 {
     MCLS_REQUIRE( d_packed_bytes );
     MCLS_REQUIRE( d_packed_bytes > 0 );
@@ -91,15 +91,15 @@ Teuchos::Array<char> AdjointHistory<Ordinal,RNG>::pack() const
 //---------------------------------------------------------------------------//
 // Static members.
 //---------------------------------------------------------------------------//
-template<class Ordinal,class RNG>
-std::size_t AdjointHistory<Ordinal,RNG>::d_packed_bytes = 0;
+template<class Ordinal>
+std::size_t AdjointHistory<Ordinal>::d_packed_bytes = 0;
 
 //---------------------------------------------------------------------------//
 /*!
  * \brief Set the byte size of the packed history state.
  */
-template<class Ordinal,class RNG>
-void AdjointHistory<Ordinal,RNG>::setByteSize()
+template<class Ordinal>
+void AdjointHistory<Ordinal>::setByteSize()
 {
     d_packed_bytes = sizeof(Ordinal) + sizeof(double) + 2*sizeof(int);
 }
@@ -108,8 +108,8 @@ void AdjointHistory<Ordinal,RNG>::setByteSize()
 /*!
  * \brief Get the number of bytes in the packed history state.
  */
-template<class Ordinal,class RNG>
-std::size_t AdjointHistory<Ordinal,RNG>::getPackedBytes()
+template<class Ordinal>
+std::size_t AdjointHistory<Ordinal>::getPackedBytes()
 {
     MCLS_REQUIRE( d_packed_bytes );
     return d_packed_bytes;

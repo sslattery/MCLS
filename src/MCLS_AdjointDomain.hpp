@@ -44,6 +44,7 @@
 #include <stack>
 #include <set>
 #include <unordered_map>
+#include <random>
 
 #include "MCLS_DBC.hpp"
 #include "MCLS_DomainTraits.hpp"
@@ -53,6 +54,7 @@
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_MatrixTraits.hpp"
 #include "MCLS_MatrixAlgorithms.hpp"
+#include "MCLS_PRNG.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
@@ -91,7 +93,7 @@ namespace MCLS
  * CDFs generated for each state as the CDFs are derived from the iteration
  * matrix.
  */
-template<class Vector, class Matrix>
+template<class Vector, class Matrix, class RNG>
 class AdjointDomain
 {
   public:
@@ -109,6 +111,7 @@ class AdjointDomain
     typedef std::stack<Teuchos::RCP<HistoryType> >        BankType;
     typedef typename std::unordered_map<Ordinal,int>      MapType;
     typedef Teuchos::Comm<int>                            Comm;
+    typedef RNG                                           rng_type;
     //@}
 
     // Matrix constructor.
@@ -124,6 +127,10 @@ class AdjointDomain
     ~AdjointDomain()
     { /* ... */ }
 
+    // Set the random number generator.
+    void setRNG( const Teuchos::RCP<PRNG<RNG> >& rng )
+    { d_rng = rng; }
+
     // Pack the domain into a buffer.
     Teuchos::Array<char> pack() const;
 
@@ -131,7 +138,7 @@ class AdjointDomain
     std::size_t getPackedBytes() const;
 
     // Process a history through a transition to a new state.
-    inline void processTransition( HistoryType& history ) const;
+    inline void processTransition( HistoryType& history );
 
     // Get the domain tally.
     Teuchos::RCP<TallyType> domainTally() const
@@ -174,6 +181,12 @@ class AdjointDomain
 
   private:
 
+    // Random number generator.
+    Teuchos::RCP<PRNG<RNG> > d_rng;
+
+    // Random number distribution.
+    std::uniform_real_distribution<double> d_rng_dist;
+
     // Monte Carlo estimator type.
     int d_estimator;
 
@@ -211,10 +224,11 @@ class AdjointDomain
 /*!
  * \brief Process a history through a transition to a new state.
  */
-template<class Vector, class Matrix>
-inline void AdjointDomain<Vector,Matrix>::processTransition( 
-    HistoryType& history ) const
+template<class Vector, class Matrix, class RNG>
+inline void AdjointDomain<Vector,Matrix,RNG>::processTransition( 
+    HistoryType& history )
 {
+    MCLS_REQUIRE( Teuchos::nonnull(d_rng) );
     MCLS_REQUIRE( history.alive() );
     MCLS_REQUIRE( Event::TRANSITION == history.event() );
     MCLS_REQUIRE( isLocalState(history.state()) );
@@ -227,7 +241,7 @@ inline void AdjointDomain<Vector,Matrix>::processTransition(
     // Sample the row CDF to get a new state.
     Ordinal new_state = 
         SamplingTools::sampleDiscreteCDF( d_cdfs[index->second](),
-                                          history.rng().random() );
+                                          d_rng->random(d_rng_dist) );
     history.setState( (*d_columns[index->second])[new_state] );
 
     // Update the history weight with the transition weight. An absorption
@@ -249,8 +263,8 @@ inline void AdjointDomain<Vector,Matrix>::processTransition(
 /*!
  * \brief Determine if a given state is in the local domain.
  */
-template<class Vector, class Matrix>
-inline bool AdjointDomain<Vector,Matrix>::isLocalState( 
+template<class Vector, class Matrix, class RNG>
+inline bool AdjointDomain<Vector,Matrix,RNG>::isLocalState( 
     const Ordinal& state ) const
 {
    return ( d_row_indexer->end() != d_row_indexer->find(state) );
@@ -260,8 +274,8 @@ inline bool AdjointDomain<Vector,Matrix>::isLocalState(
 /*!
  * \brief Determine if a given state is on the boundary.
  */
-template<class Vector, class Matrix>
-inline bool AdjointDomain<Vector,Matrix>::isBoundaryState( 
+template<class Vector, class Matrix, class RNG>
+inline bool AdjointDomain<Vector,Matrix,RNG>::isBoundaryState( 
     const Ordinal& state ) const
 {
    return ( d_bnd_to_neighbor.end() != d_bnd_to_neighbor.find(state) );
@@ -274,20 +288,30 @@ inline bool AdjointDomain<Vector,Matrix>::isBoundaryState(
  * \class DomainTraits
  * \brief Traits implementation for the AdjointDomain.
  */
-template<class Vector, class Matrix>
-class DomainTraits<AdjointDomain<Vector,Matrix> >
+template<class Vector, class Matrix, class RNG>
+class DomainTraits<AdjointDomain<Vector,Matrix,RNG> >
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef AdjointDomain<Vector,Matrix>                domain_type;
+    typedef AdjointDomain<Vector,Matrix,RNG>            domain_type;
     typedef typename domain_type::Ordinal               ordinal_type;
     typedef typename domain_type::HistoryType           history_type;
     typedef typename domain_type::TallyType             tally_type;
     typedef typename domain_type::BankType              bank_type;
+    typedef typename domain_type::rng_type              rng_type;
     typedef Teuchos::Comm<int>                          Comm;
     //@}
+
+    /*!
+     * \brief Set a random number generator with the domain.
+     */
+    static void setRNG( const domain_type& domain,
+			const Teuchos::RCP<PRNG<rng_type> >& rng )
+    {
+	domain.setRNG( rng );
+    }
 
     /*!
      * \brief Create a reference-counted pointer to a new domain defined over

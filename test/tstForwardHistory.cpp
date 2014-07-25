@@ -46,7 +46,6 @@
 #include <random>
 
 #include <MCLS_config.hpp>
-#include <MCLS_PRNG.hpp>
 #include <MCLS_ForwardHistory.hpp>
 #include <MCLS_Events.hpp>
 
@@ -86,10 +85,8 @@ Teuchos::RCP<const Teuchos::Comm<Ordinal> > getDefaultComm()
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, history, Ordinal )
 {
     Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm<int>();
-    Teuchos::RCP<MCLS::PRNG<std::mt19937> > rng = Teuchos::rcp(
-	new MCLS::PRNG<std::mt19937>(comm->getRank()) );
 
-    MCLS::ForwardHistory<Ordinal,std::mt19937> h_1;
+    MCLS::ForwardHistory<Ordinal> h_1;
     TEST_EQUALITY( h_1.weight(), Teuchos::ScalarTraits<double>::one() );
     TEST_EQUALITY( h_1.state(), Teuchos::OrdinalTraits<Ordinal>::zero() );
     TEST_EQUALITY( h_1.startingState(), 
@@ -129,10 +126,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, history, Ordinal )
     h_1.addToHistoryTally( 1.34 );
     TEST_EQUALITY( h_1.historyTally(), 1.34 );
 
-    h_1.setRNG( rng );
-    TEST_EQUALITY( h_1.rng().getRawPtr(), rng.getRawPtr() );
-
-    MCLS::ForwardHistory<Ordinal,std::mt19937> h_2( 5, 6 );
+    MCLS::ForwardHistory<Ordinal> h_2( 5, 6 );
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
     TEST_EQUALITY( h_2.startingState(), 5 );
@@ -147,12 +141,12 @@ UNIT_TEST_INSTANTIATION( ForwardHistory, history )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, pack_unpack, Ordinal )
 {
     std::size_t byte_size = 2*sizeof(Ordinal) + 2*sizeof(double) + 2*sizeof(int);
-    MCLS::ForwardHistory<Ordinal,std::mt19937>::setByteSize();
+    MCLS::ForwardHistory<Ordinal>::setByteSize();
     std::size_t packed_bytes =
-	MCLS::ForwardHistory<Ordinal,std::mt19937>::getPackedBytes();
+	MCLS::ForwardHistory<Ordinal>::getPackedBytes();
     TEST_EQUALITY( packed_bytes, byte_size );
 
-    MCLS::ForwardHistory<Ordinal,std::mt19937> h_1( 5, 6 );
+    MCLS::ForwardHistory<Ordinal> h_1( 5, 6 );
     h_1.live();
     h_1.setEvent( MCLS::Event::BOUNDARY );
     h_1.addToHistoryTally( 2.44 );
@@ -160,7 +154,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, pack_unpack, Ordinal )
     TEST_EQUALITY( Teuchos::as<std::size_t>( packed_history.size() ), 
 		   byte_size );
 
-    MCLS::ForwardHistory<Ordinal,std::mt19937> h_2( packed_history );
+    MCLS::ForwardHistory<Ordinal> h_2( packed_history );
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
     TEST_EQUALITY( h_2.startingState(), 5 );
@@ -178,14 +172,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, broadcast, Ordinal )
 	Teuchos::DefaultComm<int>::getComm();
     int comm_rank = comm->getRank();
 
-    MCLS::ForwardHistory<Ordinal,std::mt19937>::setByteSize();
+    MCLS::ForwardHistory<Ordinal>::setByteSize();
     std::size_t packed_bytes =
-	MCLS::ForwardHistory<Ordinal,std::mt19937>::getPackedBytes();
+	MCLS::ForwardHistory<Ordinal>::getPackedBytes();
     Teuchos::Array<char> packed_history( packed_bytes );
 
     if ( comm_rank == 0 )
     {
-	MCLS::ForwardHistory<Ordinal,std::mt19937> h_1( 5, 6 );
+	MCLS::ForwardHistory<Ordinal> h_1( 5, 6 );
 	h_1.live();
 	h_1.setEvent( MCLS::Event::BOUNDARY );
 	h_1.addToHistoryTally( 1.98 );
@@ -194,7 +188,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, broadcast, Ordinal )
 
     Teuchos::broadcast( *comm, 0, packed_history() );
 
-    MCLS::ForwardHistory<Ordinal,std::mt19937> h_2( packed_history );
+    MCLS::ForwardHistory<Ordinal> h_2( packed_history );
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
     TEST_EQUALITY( h_2.startingState(), 5 );

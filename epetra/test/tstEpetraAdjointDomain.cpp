@@ -46,6 +46,7 @@
 #include <algorithm>
 #include <string>
 #include <cassert>
+#include <random>
 
 #include <MCLS_AdjointDomain.hpp>
 #include <MCLS_VectorTraits.hpp>
@@ -53,7 +54,7 @@
 #include <MCLS_AdjointHistory.hpp>
 #include <MCLS_AdjointTally.hpp>
 #include <MCLS_Events.hpp>
-#include <MCLS_RNGControl.hpp>
+#include <MCLS_PRNG.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -102,7 +103,8 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Typedefs )
 {
     typedef Epetra_Vector VectorType;
     typedef Epetra_RowMatrix MatrixType;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
+    typedef std::mt19937 rng_type;
+    typedef MCLS::AdjointDomain<VectorType,MatrixType,rng_type> DomainType;
     typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
     typedef DomainType::HistoryType history_type;
@@ -125,6 +127,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, NoOverlap )
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
+    typedef std::mt19937 rng_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -163,7 +166,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, NoOverlap )
     // Build the adjoint domain.
     Teuchos::ParameterList plist;
     plist.set<int>( "Overlap Size", 0 );
-    MCLS::AdjointDomain<VectorType,MatrixType> domain( B, x, plist );
+    MCLS::AdjointDomain<VectorType,MatrixType,rng_type> domain( B, x, plist );
 
     // Check the tally.
     double x_val = 2;
@@ -239,6 +242,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, PackUnpack )
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
+    typedef std::mt19937 rng_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -277,13 +281,13 @@ TEUCHOS_UNIT_TEST( AdjointDomain, PackUnpack )
     // Build the adjoint domain.
     Teuchos::ParameterList plist;
     plist.set<int>( "Overlap Size", 0 );
-    MCLS::AdjointDomain<VectorType,MatrixType> primary_domain( B, x, plist );
+    MCLS::AdjointDomain<VectorType,MatrixType,rng_type> primary_domain( B, x, plist );
 
     // Pack the domain into a buffer.
     Teuchos::Array<char> domain_buffer = primary_domain.pack();
 
     // Unpack the domain to make a new one for testing.
-    MCLS::AdjointDomain<VectorType,MatrixType> domain( domain_buffer, comm );
+    MCLS::AdjointDomain<VectorType,MatrixType,rng_type> domain( domain_buffer, comm );
 
     // Check the tally.
     double x_val = 2;
@@ -360,6 +364,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, SomeOverlap )
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
+    typedef std::mt19937 rng_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -398,7 +403,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, SomeOverlap )
     // Build the adjoint domain.
     Teuchos::ParameterList plist;
     plist.set<int>( "Overlap Size", 2 );
-    MCLS::AdjointDomain<VectorType,MatrixType> domain( B, x, plist );
+    MCLS::AdjointDomain<VectorType,MatrixType,rng_type> domain( B, x, plist );
 
     // Check the tally.
     double x_val = 2;
@@ -495,6 +500,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, SomeOverlapPackUnpack )
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
+    typedef std::mt19937 rng_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -533,13 +539,13 @@ TEUCHOS_UNIT_TEST( AdjointDomain, SomeOverlapPackUnpack )
     // Build the adjoint domain.
     Teuchos::ParameterList plist;
     plist.set<int>( "Overlap Size", 2 );
-    MCLS::AdjointDomain<VectorType,MatrixType> primary_domain( B, x, plist );
+    MCLS::AdjointDomain<VectorType,MatrixType,rng_type> primary_domain( B, x, plist );
 
     // Pack the domain into a buffer.
     Teuchos::Array<char> domain_buffer = primary_domain.pack();
 
     // Unpack the domain to make a new one for testing.
-    MCLS::AdjointDomain<VectorType,MatrixType> domain( domain_buffer, comm );
+    MCLS::AdjointDomain<VectorType,MatrixType,rng_type> domain( domain_buffer, comm );
 
     // Check the tally.
     double x_val = 2;
@@ -635,6 +641,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Transition )
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointHistory<int> HistoryType;
+    typedef std::mt19937 rng_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -671,11 +678,12 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Transition )
     // Build the adjoint domain.
     Teuchos::ParameterList plist;
     plist.set<int>( "Overlap Size", 2 );
-    MCLS::AdjointDomain<VectorType,MatrixType> domain( B, x, plist );
+    MCLS::AdjointDomain<VectorType,MatrixType,rng_type> domain( B, x, plist );
 
     // Process a history transition in the domain.
-    MCLS::RNGControl control( 2394723 );
-    MCLS::RNGControl::RNG rng = control.rng( 4 );
+    Teuchos::RCP<MCLS::PRNG<rng_type> > rng = Teuchos::rcp(
+	new MCLS::PRNG<rng_type>( comm->getRank() ) );
+    domain.setRNG( rng );
     double weight = 3.0; 
     for ( int i = 0; i < global_num_rows-1; ++i )
     {
@@ -686,7 +694,6 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Transition )
 		HistoryType history( i, weight );
 		history.live();
 		history.setEvent( MCLS::Event::TRANSITION );
-		history.setRNG( rng );
 		domain.processTransition( history );
 
 		TEST_EQUALITY( history.state(), i+1 );
@@ -700,7 +707,6 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Transition )
 		HistoryType history( i, weight );
 		history.live();
 		history.setEvent( MCLS::Event::TRANSITION );
-		history.setRNG( rng );
 		domain.processTransition( history );
 
 		TEST_EQUALITY( history.state(), i+1 );
@@ -717,6 +723,7 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Diagonal )
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointHistory<int> HistoryType;
+    typedef std::mt19937 rng_type;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -749,11 +756,12 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Diagonal )
     // Build the adjoint domain.
     Teuchos::ParameterList plist;
     plist.set<int>( "Overlap Size", 2 );
-    MCLS::AdjointDomain<VectorType,MatrixType> domain( B, x, plist );
+    MCLS::AdjointDomain<VectorType,MatrixType,rng_type> domain( B, x, plist );
 
     // Process a history transition in the domain.
-    MCLS::RNGControl control( 2394723 );
-    MCLS::RNGControl::RNG rng = control.rng( 4 );
+    Teuchos::RCP<MCLS::PRNG<rng_type> > rng = Teuchos::rcp(
+	new MCLS::PRNG<rng_type>( comm->getRank() ) );
+    domain.setRNG( rng );
     double weight = 3.0; 
     for ( int i = 0; i < global_num_rows; ++i )
     {
@@ -762,7 +770,6 @@ TEUCHOS_UNIT_TEST( AdjointDomain, Diagonal )
 	    HistoryType history( i, weight );
 	    history.live();
 	    history.setEvent( MCLS::Event::TRANSITION );
-	    history.setRNG( rng );
 	    domain.processTransition( history );
 
 	    TEST_EQUALITY( history.state(), i );

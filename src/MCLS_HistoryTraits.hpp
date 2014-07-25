@@ -41,8 +41,6 @@
 #ifndef MCLS_HISTORYTRAITS_HPP
 #define MCLS_HISTORYTRAITS_HPP
 
-#include "MCLS_PRNG.hpp"
-
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
@@ -82,7 +80,6 @@ class HistoryTraits
     //! Typedefs.
     typedef History                                      history_type;
     typedef typename History::ordinal_type               ordinal_type;
-    typedef typename History::RNG                        rng_type;
     //@}
 
     /*!
@@ -163,23 +160,6 @@ class HistoryTraits
     {
 	UndefinedHistoryTraits<History>::notDefined(); 
 	return -1.0;
-    }
-
-    /*!
-     * \brief Set a new random number generator with the history.
-     */
-    static void setRNG( history_type& history, 
-			const Teuchos::RCP<PRNG<rng_type> >& rng )
-    {
-	UndefinedHistoryTraits<History>::notDefined(); 
-    }
-
-    /*!
-     * \brief Get this history's random number generator.
-     */
-    static Teuchos::RCP<PRNG<rng_type> > rng( const history_type& history )
-    {
-	UndefinedHistoryTraits<History>::notDefined(); 
     }
 
     /*!

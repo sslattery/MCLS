@@ -41,8 +41,6 @@
 #ifndef MCLS_TALLYTRAITS_HPP
 #define MCLS_TALLYTRAITS_HPP
 
-#include "MCLS_RNGControl.hpp"
-
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_Array.hpp>

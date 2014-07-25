@@ -60,12 +60,13 @@ namespace MCLS
 /*!
  * \brief Matrix constructor.
  */
-template<class Vector, class Matrix>
-AdjointDomain<Vector,Matrix>::AdjointDomain( 
+template<class Vector, class Matrix, class RNG>
+AdjointDomain<Vector,Matrix,RNG>::AdjointDomain( 
     const Teuchos::RCP<const Matrix>& A,
     const Teuchos::RCP<Vector>& x,
     const Teuchos::ParameterList& plist )
-    : d_row_indexer( Teuchos::rcp(new MapType()) )
+    : d_rng_dist( 0.0, 1.0 )
+    , d_row_indexer( Teuchos::rcp(new MapType()) )
 {
     MCLS_REQUIRE( !A.is_null() );
     MCLS_REQUIRE( !x.is_null() );
@@ -230,11 +231,12 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
  * \param set_comm Set constant communicator for this domain over which to
  * reconstruct the tallies.
  */
-template<class Vector, class Matrix>
-AdjointDomain<Vector,Matrix>::AdjointDomain( 
+template<class Vector, class Matrix, class RNG>
+AdjointDomain<Vector,Matrix,RNG>::AdjointDomain( 
     const Teuchos::ArrayView<char>& buffer,
     const Teuchos::RCP<const Comm>& set_comm )
-    : d_row_indexer( Teuchos::rcp(new MapType()) )
+    : d_rng_dist( 0.0, 1.0 )
+    , d_row_indexer( Teuchos::rcp(new MapType()) )
 {
     Ordinal num_rows = 0;
     int num_receives = 0;
@@ -431,8 +433,8 @@ AdjointDomain<Vector,Matrix>::AdjointDomain(
 /*!
  * \brief Pack the domain into a buffer.
  */
-template<class Vector, class Matrix>
-Teuchos::Array<char> AdjointDomain<Vector,Matrix>::pack() const
+template<class Vector, class Matrix, class RNG>
+Teuchos::Array<char> AdjointDomain<Vector,Matrix,RNG>::pack() const
 {
     // Get the byte size of the buffer.
     std::size_t packed_bytes = getPackedBytes();
@@ -592,8 +594,8 @@ Teuchos::Array<char> AdjointDomain<Vector,Matrix>::pack() const
 /*!
  * \brief Get the size of this object in packed bytes.
  */
-template<class Vector, class Matrix>
-std::size_t AdjointDomain<Vector,Matrix>::getPackedBytes() const
+template<class Vector, class Matrix, class RNG>
+std::size_t AdjointDomain<Vector,Matrix,RNG>::getPackedBytes() const
 {
     Serializer s;
     s.computeBufferSizeMode();
@@ -745,8 +747,8 @@ std::size_t AdjointDomain<Vector,Matrix>::getPackedBytes() const
 /*!
  * \brief Get the neighbor domain process rank from which we will receive.
  */
-template<class Vector, class Matrix>
-int AdjointDomain<Vector,Matrix>::receiveNeighborRank( int n ) const
+template<class Vector, class Matrix, class RNG>
+int AdjointDomain<Vector,Matrix,RNG>::receiveNeighborRank( int n ) const
 {
     MCLS_REQUIRE( n >= 0 && n < d_receive_ranks.size() );
     return d_receive_ranks[n];
@@ -756,8 +758,8 @@ int AdjointDomain<Vector,Matrix>::receiveNeighborRank( int n ) const
 /*!
  * \brief Get the neighbor domain process rank to which we will send.
  */
-template<class Vector, class Matrix>
-int AdjointDomain<Vector,Matrix>::sendNeighborRank( int n ) const
+template<class Vector, class Matrix, class RNG>
+int AdjointDomain<Vector,Matrix,RNG>::sendNeighborRank( int n ) const
 {
     MCLS_REQUIRE( n >= 0 && n < d_send_ranks.size() );
     return d_send_ranks[n];
@@ -768,8 +770,8 @@ int AdjointDomain<Vector,Matrix>::sendNeighborRank( int n ) const
  * \brief Get the neighbor domain that owns a boundary state (local neighbor
  * id).
  */
-template<class Vector, class Matrix>
-int AdjointDomain<Vector,Matrix>::owningNeighbor( const Ordinal& state ) const
+template<class Vector, class Matrix, class RNG>
+int AdjointDomain<Vector,Matrix,RNG>::owningNeighbor( const Ordinal& state ) const
 {
     typename MapType::const_iterator neighbor = d_bnd_to_neighbor.find( state );
     MCLS_REQUIRE( neighbor != d_bnd_to_neighbor.end() );
@@ -780,8 +782,8 @@ int AdjointDomain<Vector,Matrix>::owningNeighbor( const Ordinal& state ) const
 /*
  * \brief Add matrix data to the local domain.
  */
-template<class Vector, class Matrix>
-void AdjointDomain<Vector,Matrix>::addMatrixToDomain( 
+template<class Vector, class Matrix, class RNG>
+void AdjointDomain<Vector,Matrix,RNG>::addMatrixToDomain( 
     const Teuchos::RCP<const Matrix>& A,
     const Teuchos::RCP<const Vector>& recovered_weights,
     std::set<Ordinal>& tally_states,
@@ -893,8 +895,8 @@ void AdjointDomain<Vector,Matrix>::addMatrixToDomain(
 /*
  * \brief Build boundary data.
  */
-template<class Vector, class Matrix>
-void AdjointDomain<Vector,Matrix>::buildBoundary( 
+template<class Vector, class Matrix, class RNG>
+void AdjointDomain<Vector,Matrix,RNG>::buildBoundary( 
     const Teuchos::RCP<const Matrix>& A,
     const Teuchos::RCP<const Matrix>& base_A )
 {

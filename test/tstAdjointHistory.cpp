@@ -46,7 +46,6 @@
 #include <random>
 
 #include <MCLS_config.hpp>
-#include <MCLS_PRNG.hpp>
 #include <MCLS_AdjointHistory.hpp>
 #include <MCLS_Events.hpp>
 
@@ -85,11 +84,7 @@ Teuchos::RCP<const Teuchos::Comm<Ordinal> > getDefaultComm()
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( AdjointHistory, history, Ordinal )
 {
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm<int>();
-    Teuchos::RCP<MCLS::PRNG<std::mt19937> > rng = Teuchos::rcp(
-	new MCLS::PRNG<std::mt19937>(comm->getRank()) );
-
-    MCLS::AdjointHistory<Ordinal,std::mt19937> h_1;
+    MCLS::AdjointHistory<Ordinal> h_1;
     TEST_EQUALITY( h_1.weight(), Teuchos::ScalarTraits<double>::one() );
     TEST_EQUALITY( h_1.state(), Teuchos::OrdinalTraits<Ordinal>::zero() );
     TEST_ASSERT( !h_1.alive() );
@@ -120,10 +115,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( AdjointHistory, history, Ordinal )
     TEST_EQUALITY( h_1.weight(), -14 );
     TEST_EQUALITY( h_1.weightAbs(), 14 );
 
-    h_1.setRNG( rng );
-    TEST_EQUALITY( h_1.rng().getRawPtr(), rng.getRawPtr() );
-
-    MCLS::AdjointHistory<Ordinal,std::mt19937> h_2( 5, 6 );
+    MCLS::AdjointHistory<Ordinal> h_2( 5, 6 );
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
     TEST_ASSERT( !h_2.alive() );
@@ -136,19 +128,19 @@ UNIT_TEST_INSTANTIATION( AdjointHistory, history )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( AdjointHistory, pack_unpack, Ordinal )
 {
     std::size_t byte_size = sizeof(Ordinal) + sizeof(double) + 2*sizeof(int);
-    MCLS::AdjointHistory<Ordinal,std::mt19937>::setByteSize();
+    MCLS::AdjointHistory<Ordinal>::setByteSize();
     std::size_t packed_bytes = 
-	MCLS::AdjointHistory<Ordinal,std::mt19937>::getPackedBytes();
+	MCLS::AdjointHistory<Ordinal>::getPackedBytes();
     TEST_EQUALITY( packed_bytes, byte_size );
 
-    MCLS::AdjointHistory<Ordinal,std::mt19937> h_1( 5, 6 );
+    MCLS::AdjointHistory<Ordinal> h_1( 5, 6 );
     h_1.live();
     h_1.setEvent( MCLS::Event::BOUNDARY );
     Teuchos::Array<char> packed_history = h_1.pack();
     TEST_EQUALITY( Teuchos::as<std::size_t>( packed_history.size() ), 
 		   byte_size );
 
-    MCLS::AdjointHistory<Ordinal,std::mt19937> h_2( packed_history );
+    MCLS::AdjointHistory<Ordinal> h_2( packed_history );
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
     TEST_ASSERT( h_2.alive() );
@@ -164,14 +156,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( AdjointHistory, broadcast, Ordinal )
 	Teuchos::DefaultComm<int>::getComm();
     int comm_rank = comm->getRank();
 
-    MCLS::AdjointHistory<Ordinal,std::mt19937>::setByteSize();
+    MCLS::AdjointHistory<Ordinal>::setByteSize();
     std::size_t packed_bytes = 
-	MCLS::AdjointHistory<Ordinal,std::mt19937>::getPackedBytes();
+	MCLS::AdjointHistory<Ordinal>::getPackedBytes();
     Teuchos::Array<char> packed_history( packed_bytes );
 
     if ( comm_rank == 0 )
     {
-	MCLS::AdjointHistory<Ordinal,std::mt19937> h_1( 5, 6 );
+	MCLS::AdjointHistory<Ordinal> h_1( 5, 6 );
 	h_1.live();
 	h_1.setEvent( MCLS::Event::BOUNDARY );
 	packed_history = h_1.pack();
@@ -179,7 +171,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( AdjointHistory, broadcast, Ordinal )
 
     Teuchos::broadcast( *comm, 0, packed_history() );
 
-    MCLS::AdjointHistory<Ordinal,std::mt19937> h_2( packed_history );
+    MCLS::AdjointHistory<Ordinal> h_2( packed_history );
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.state(), 5 );
     TEST_ASSERT( h_2.alive() );

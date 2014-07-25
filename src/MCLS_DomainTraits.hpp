@@ -41,6 +41,8 @@
 #ifndef MCLS_DOMAINTRAITS_HPP
 #define MCLS_DOMAINTRAITS_HPP
 
+#include "MCLS_PRNG.hpp"
+
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_ArrayView.hpp>
@@ -84,8 +86,18 @@ class DomainTraits
     typedef typename Domain::history_type               history_type;
     typedef typename Domain::tally_type                 tally_type;
     typedef typename Domain::bank_type                  bank_type;
+    typedef typename Domain::rng_type                   rng_type;
     typedef Teuchos::Comm<int>                          Comm;
     //@}
+
+    /*!
+     * \brief Set a random number generator with the domain.
+     */
+    static void setRNG( const Domain& domain,
+			const Teuchos::RCP<PRNG<rng_type> >& rng )
+    {
+	UndefinedDomainTraits<Domain>::notDefined(); 
+    }
 
     /*!
      * \brief Create a reference-counted pointer to a new domain defined over

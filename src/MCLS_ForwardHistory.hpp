@@ -43,7 +43,6 @@
 
 #include <cmath>
 
-#include "MCLS_PRNG.hpp"
 #include "MCLS_HistoryTraits.hpp"
 
 #include <Teuchos_ScalarTraits.hpp>
@@ -60,7 +59,7 @@ namespace MCLS
  * calculations.
  */
 //---------------------------------------------------------------------------//
-template<class Ordinal, class RNG>
+template<class Ordinal>
 class ForwardHistory
 {
   public:
@@ -68,7 +67,6 @@ class ForwardHistory
     //@{
     //! Typedefs.
     typedef Ordinal                                   ordinal_type;
-    typedef RNG                                       rng_type;
     //@}
 
     //! Default constructor.
@@ -137,14 +135,6 @@ class ForwardHistory
     inline double weightAbs() const
     { return std::abs(d_weight); }
 
-    //! Set a new random number generator.
-    void setRNG( const Teuchos::RCP<PRNG<RNG> >& rng )
-    { d_rng = rng; }
-
-    //! Get the random number generator.
-    Teuchos::RCP<PRNG<RNG> > rng() const
-    { return d_rng; }
-
     //! Kill the history.
     void kill()
     { d_alive = false; }
@@ -190,9 +180,6 @@ class ForwardHistory
     // ForwardHistory weight.
     double d_weight;
 
-    // Random number generator.
-    Teuchos::RCP<PRNG<RNG> > d_rng;
-
     // Alive/dead status.
     bool d_alive;
 
@@ -211,16 +198,15 @@ class ForwardHistory
 //---------------------------------------------------------------------------//
 // HistoryTraits Implementation.
 //---------------------------------------------------------------------------//
-template<class Ordinal,class RNG>
-class HistoryTraits<ForwardHistory<Ordinal,RNG> >
+template<class Ordinal>
+class HistoryTraits<ForwardHistory<Ordinal> >
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef ForwardHistory<Ordinal,RNG>                  history_type;
+    typedef ForwardHistory<Ordinal>                      history_type;
     typedef typename history_type::ordinal_type          ordinal_type;
-    typedef typename history_type::rng_type              rng_type;
     //@}
 
     /*!
@@ -296,23 +282,6 @@ class HistoryTraits<ForwardHistory<Ordinal,RNG> >
     static inline double weightAbs( const history_type& history )
     {
 	return history.weightAbs();
-    }
-
-    /*!
-     * \brief Set a new random number generator with the history.
-     */
-    static void setRNG( history_type& history, 
-			const Teuchos::RCP<PRNG<rng_type> >& rng )
-    {
-	history.setRNG( rng );
-    }
-
-    /*!
-     * \brief Get this history's random number generator.
-     */
-    static Teuchos::RCP<PRNG<rng_type> > rng( const history_type& history )
-    {
-	return history.rng();
     }
 
     /*!

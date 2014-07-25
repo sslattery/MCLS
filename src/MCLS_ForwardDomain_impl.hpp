@@ -60,12 +60,13 @@ namespace MCLS
 /*!
  * \brief Matrix constructor.
  */
-template<class Vector, class Matrix>
-ForwardDomain<Vector,Matrix>::ForwardDomain( 
+template<class Vector, class Matrix, class RNG>
+ForwardDomain<Vector,Matrix,RNG>::ForwardDomain( 
     const Teuchos::RCP<const Matrix>& A,
     const Teuchos::RCP<Vector>& x,
     const Teuchos::ParameterList& plist )
-    : d_row_indexer( Teuchos::rcp(new MapType()) )
+    : d_rng_dist( 0.0, 1.0 )
+    , d_row_indexer( Teuchos::rcp(new MapType()) )
 {
     MCLS_REQUIRE( !A.is_null() );
     MCLS_REQUIRE( !x.is_null() );
@@ -207,11 +208,12 @@ ForwardDomain<Vector,Matrix>::ForwardDomain(
  * \param set_comm Set constant communicator for this domain over which to
  * reconstruct the tallies.
  */
-template<class Vector, class Matrix>
-ForwardDomain<Vector,Matrix>::ForwardDomain( 
+template<class Vector, class Matrix, class RNG>
+ForwardDomain<Vector,Matrix,RNG>::ForwardDomain( 
     const Teuchos::ArrayView<char>& buffer,
     const Teuchos::RCP<const Comm>& set_comm )
-    : d_row_indexer( Teuchos::rcp(new MapType()) )
+    : d_rng_dist( 0.0, 1.0 )
+    , d_row_indexer( Teuchos::rcp(new MapType()) )
 {
     Ordinal num_rows = 0;
     int num_receives = 0;
@@ -383,8 +385,8 @@ ForwardDomain<Vector,Matrix>::ForwardDomain(
 /*!
  * \brief Pack the domain into a buffer.
  */
-template<class Vector, class Matrix>
-Teuchos::Array<char> ForwardDomain<Vector,Matrix>::pack() const
+template<class Vector, class Matrix, class RNG>
+Teuchos::Array<char> ForwardDomain<Vector,Matrix,RNG>::pack() const
 {
     // Get the byte size of the buffer.
     std::size_t packed_bytes = getPackedBytes();
@@ -531,8 +533,8 @@ Teuchos::Array<char> ForwardDomain<Vector,Matrix>::pack() const
 /*!
  * \brief Get the size of this object in packed bytes.
  */
-template<class Vector, class Matrix>
-std::size_t ForwardDomain<Vector,Matrix>::getPackedBytes() const
+template<class Vector, class Matrix, class RNG>
+std::size_t ForwardDomain<Vector,Matrix,RNG>::getPackedBytes() const
 {
     Serializer s;
     s.computeBufferSizeMode();
@@ -671,9 +673,9 @@ std::size_t ForwardDomain<Vector,Matrix>::getPackedBytes() const
 /*!
  * \brief Get the local states owned by this domain.
  */
-template<class Vector, class Matrix>
-Teuchos::Array<typename ForwardDomain<Vector,Matrix>::Ordinal> 
-ForwardDomain<Vector,Matrix>::localStates() const
+template<class Vector, class Matrix, class RNG>
+Teuchos::Array<typename ForwardDomain<Vector,Matrix,RNG>::Ordinal> 
+ForwardDomain<Vector,Matrix,RNG>::localStates() const
 {
     Teuchos::Array<Ordinal> states( d_row_indexer->size() );
     typename Teuchos::Array<Ordinal>::iterator state_it;
@@ -692,8 +694,8 @@ ForwardDomain<Vector,Matrix>::localStates() const
 /*!
  * \brief Get the neighbor domain process rank from which we will receive.
  */
-template<class Vector, class Matrix>
-int ForwardDomain<Vector,Matrix>::receiveNeighborRank( int n ) const
+template<class Vector, class Matrix, class RNG>
+int ForwardDomain<Vector,Matrix,RNG>::receiveNeighborRank( int n ) const
 {
     MCLS_REQUIRE( n >= 0 && n < d_receive_ranks.size() );
     return d_receive_ranks[n];
@@ -703,8 +705,8 @@ int ForwardDomain<Vector,Matrix>::receiveNeighborRank( int n ) const
 /*!
  * \brief Get the neighbor domain process rank to which we will send.
  */
-template<class Vector, class Matrix>
-int ForwardDomain<Vector,Matrix>::sendNeighborRank( int n ) const
+template<class Vector, class Matrix, class RNG>
+int ForwardDomain<Vector,Matrix,RNG>::sendNeighborRank( int n ) const
 {
     MCLS_REQUIRE( n >= 0 && n < d_send_ranks.size() );
     return d_send_ranks[n];
@@ -715,8 +717,8 @@ int ForwardDomain<Vector,Matrix>::sendNeighborRank( int n ) const
  * \brief Get the neighbor domain that owns a boundary state (local neighbor
  * id).
  */
-template<class Vector, class Matrix>
-int ForwardDomain<Vector,Matrix>::owningNeighbor( const Ordinal& state ) const
+template<class Vector, class Matrix, class RNG>
+int ForwardDomain<Vector,Matrix,RNG>::owningNeighbor( const Ordinal& state ) const
 {
     typename MapType::const_iterator neighbor = d_bnd_to_neighbor.find( state );
     MCLS_REQUIRE( neighbor != d_bnd_to_neighbor.end() );
@@ -727,8 +729,8 @@ int ForwardDomain<Vector,Matrix>::owningNeighbor( const Ordinal& state ) const
 /*
  * \brief Add matrix data to the local domain.
  */
-template<class Vector, class Matrix>
-void ForwardDomain<Vector,Matrix>::addMatrixToDomain( 
+template<class Vector, class Matrix, class RNG>
+void ForwardDomain<Vector,Matrix,RNG>::addMatrixToDomain( 
     const Teuchos::RCP<const Matrix>& A,
     const Teuchos::RCP<const Vector>& recovered_weights,
     const double abs_probability )
@@ -814,8 +816,8 @@ void ForwardDomain<Vector,Matrix>::addMatrixToDomain(
 /*
  * \brief Build boundary data.
  */
-template<class Vector, class Matrix>
-void ForwardDomain<Vector,Matrix>::buildBoundary( 
+template<class Vector, class Matrix, class RNG>
+void ForwardDomain<Vector,Matrix,RNG>::buildBoundary( 
     const Teuchos::RCP<const Matrix>& A,
     const Teuchos::RCP<const Matrix>& base_A )
 {
