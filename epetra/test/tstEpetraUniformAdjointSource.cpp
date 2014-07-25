@@ -55,7 +55,7 @@
 #include <MCLS_AdjointHistory.hpp>
 #include <MCLS_AdjointTally.hpp>
 #include <MCLS_Events.hpp>
-#include <MCLS_RNGControl.hpp>
+#include <MCLS_PRNG.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -103,7 +103,8 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, Typedefs )
 {
     typedef Epetra_Vector VectorType;
     typedef Epetra_RowMatrix MatrixType;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
+    typedef std::mt19937 rng_type;
+    typedef MCLS::AdjointDomain<VectorType,MatrixType,rng_type> DomainType;
     typedef MCLS::AdjointHistory<int> HistoryType;
 
     typedef MCLS::UniformAdjointSource<DomainType> SourceType;
@@ -126,7 +127,8 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_not_set )
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointHistory<int> HistoryType;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
+    typedef std::mt19937 rng_type;
+    typedef MCLS::AdjointDomain<VectorType,MatrixType,rng_type> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -167,22 +169,19 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_not_set )
     Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( A_T, x, plist ) );
 
     // History setup.
-    Teuchos::RCP<MCLS::RNGControl> control = Teuchos::rcp(
-	new MCLS::RNGControl( 3939294 ) );
-    HistoryType::setByteSize( control->getSize() );
+    HistoryType::setByteSize();
 
     // Create the adjoint source with default values.
     double cutoff = 1.0e-8;
     plist.set<double>("Weight Cutoff", cutoff );
     MCLS::UniformAdjointSource<DomainType> 
-	source( b, domain, control, comm, comm->getSize(), comm->getRank(), plist );
+	source( b, domain, comm, comm->getSize(), comm->getRank(), plist );
     TEST_ASSERT( source.empty() );
     TEST_EQUALITY( source.numToTransport(), 0 );
     TEST_EQUALITY( source.numToTransportInSet(), global_num_rows );
     TEST_EQUALITY( source.numRequested(), global_num_rows );
     TEST_EQUALITY( source.numLeft(), 0 );
     TEST_EQUALITY( source.numEmitted(), 0 );
-    TEST_EQUALITY( source.numStreams(), 0 );
 
     // Build the source.
     source.buildSource();
@@ -192,10 +191,12 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_not_set )
     TEST_EQUALITY( source.numRequested(), global_num_rows );
     TEST_EQUALITY( source.numLeft(), local_num_rows );
     TEST_EQUALITY( source.numEmitted(), 0 );
-    TEST_EQUALITY( source.numStreams(), comm->getSize() );
     TEST_EQUALITY( source.sourceWeight(), VT::norm1(*b) );
 
     // Sample the source.
+    Teuchos::RCP<MCLS::PRNG<rng_type> > rng = Teuchos::rcp(
+	new MCLS::PRNG<rng_type>(comm->getRank()) );
+    source.setRNG( rng );
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	TEST_ASSERT( !source.empty() );
@@ -222,7 +223,8 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, PackUnpack )
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointHistory<int> HistoryType;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
+    typedef std::mt19937 rng_type;
+    typedef MCLS::AdjointDomain<VectorType,MatrixType,rng_type> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -263,21 +265,19 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, PackUnpack )
     Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( A_T, x, plist ) );
 
     // History setup.
-    Teuchos::RCP<MCLS::RNGControl> control = Teuchos::rcp(
-	new MCLS::RNGControl( 3939294 ) );
-    HistoryType::setByteSize( control->getSize() );
+    HistoryType::setByteSize();
 
     // Create the adjoint source with default values.
     double cutoff = 1.0e-8;
     plist.set<double>("Weight Cutoff", cutoff );
     MCLS::UniformAdjointSource<DomainType> 
-	primary_source( b, domain, control, comm, comm->getSize(), 
+	primary_source( b, domain, comm, comm->getSize(), 
 			comm->getRank(), plist );
 
     // Pack and unpack the source.
     Teuchos::Array<char> source_buffer = primary_source.pack();
     MCLS::UniformAdjointSource<DomainType> 
-	source( source_buffer, domain, control, 
+	source( source_buffer, domain,
 		comm, comm->getSize(), comm->getRank() );
 
     TEST_ASSERT( source.empty() );
@@ -286,7 +286,6 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, PackUnpack )
     TEST_EQUALITY( source.numRequested(), global_num_rows );
     TEST_EQUALITY( source.numLeft(), 0 );
     TEST_EQUALITY( source.numEmitted(), 0 );
-    TEST_EQUALITY( source.numStreams(), 0 );
 
     // Build the source.
     source.buildSource();
@@ -296,9 +295,11 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, PackUnpack )
     TEST_EQUALITY( source.numRequested(), global_num_rows );
     TEST_EQUALITY( source.numLeft(), local_num_rows );
     TEST_EQUALITY( source.numEmitted(), 0 );
-    TEST_EQUALITY( source.numStreams(), comm->getSize() );
 
     // Sample the source.
+    Teuchos::RCP<MCLS::PRNG<rng_type> > rng = Teuchos::rcp(
+	new MCLS::PRNG<rng_type>(comm->getRank()) );
+    source.setRNG( rng );
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	TEST_ASSERT( !source.empty() );
@@ -325,7 +326,8 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_set_pu )
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointHistory<int> HistoryType;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
+    typedef std::mt19937 rng_type;
+    typedef MCLS::AdjointDomain<VectorType,MatrixType,rng_type> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -366,9 +368,7 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_set_pu )
     Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( A_T, x, plist ) );
 
     // History setup.
-    Teuchos::RCP<MCLS::RNGControl> control = Teuchos::rcp(
-	new MCLS::RNGControl( 3939294 ) );
-    HistoryType::setByteSize( control->getSize() );
+    HistoryType::setByteSize();
 
     // Create the adjoint source with a set number of histories.
     int mult = 10;
@@ -376,13 +376,13 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_set_pu )
     plist.set<int>("Set Number of Histories", mult*global_num_rows);
     plist.set<double>("Weight Cutoff", cutoff);
     MCLS::UniformAdjointSource<DomainType> 
-	primary_source( b, domain, control, comm, comm->getSize(), 
+	primary_source( b, domain, comm, comm->getSize(), 
 			comm->getRank(), plist );
 
     // Pack and unpack the source.
     Teuchos::Array<char> source_buffer = primary_source.pack();
     MCLS::UniformAdjointSource<DomainType> 
-	source( source_buffer, domain, control, 
+	source( source_buffer, domain,
 		comm, comm->getSize(), comm->getRank() );
 
     TEST_ASSERT( source.empty() );
@@ -391,7 +391,6 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_set_pu )
     TEST_EQUALITY( source.numRequested(), mult*global_num_rows );
     TEST_EQUALITY( source.numLeft(), 0 );
     TEST_EQUALITY( source.numEmitted(), 0 );
-    TEST_EQUALITY( source.numStreams(), 0 );
 
     // Build the source.
     source.buildSource();
@@ -401,9 +400,11 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_set_pu )
     TEST_EQUALITY( source.numRequested(), mult*global_num_rows );
     TEST_EQUALITY( source.numLeft(), mult*local_num_rows );
     TEST_EQUALITY( source.numEmitted(), 0 );
-    TEST_EQUALITY( source.numStreams(), comm->getSize() );
 
     // Sample the source.
+    Teuchos::RCP<MCLS::PRNG<rng_type> > rng = Teuchos::rcp(
+	new MCLS::PRNG<rng_type>(comm->getRank()) );
+    source.setRNG( rng );
     for ( int i = 0; i < mult*local_num_rows; ++i )
     {
 	TEST_ASSERT( !source.empty() );
@@ -430,7 +431,8 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_set )
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointHistory<int> HistoryType;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
+    typedef std::mt19937 rng_type;
+    typedef MCLS::AdjointDomain<VectorType,MatrixType,rng_type> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -471,9 +473,7 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_set )
     Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( A_T, x, plist ) );
 
     // History setup.
-    Teuchos::RCP<MCLS::RNGControl> control = Teuchos::rcp(
-	new MCLS::RNGControl( 3939294 ) );
-    HistoryType::setByteSize( control->getSize() );
+    HistoryType::setByteSize();
 
     // Create the adjoint source with a set number of histories.
     int mult = 10;
@@ -481,14 +481,13 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_set )
     plist.set<int>("Set Number of Histories", mult*global_num_rows);
     plist.set<double>("Weight Cutoff", cutoff);
     MCLS::UniformAdjointSource<DomainType> 
-	source( b, domain, control, comm, comm->getSize(), comm->getRank(), plist );
+	source( b, domain, comm, comm->getSize(), comm->getRank(), plist );
     TEST_ASSERT( source.empty() );
     TEST_EQUALITY( source.numToTransport(), 0 );
     TEST_EQUALITY( source.numToTransportInSet(), mult*global_num_rows );
     TEST_EQUALITY( source.numRequested(), mult*global_num_rows );
     TEST_EQUALITY( source.numLeft(), 0 );
     TEST_EQUALITY( source.numEmitted(), 0 );
-    TEST_EQUALITY( source.numStreams(), 0 );
 
     // Build the source.
     source.buildSource();
@@ -498,9 +497,11 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_set )
     TEST_EQUALITY( source.numRequested(), mult*global_num_rows );
     TEST_EQUALITY( source.numLeft(), mult*local_num_rows );
     TEST_EQUALITY( source.numEmitted(), 0 );
-    TEST_EQUALITY( source.numStreams(), comm->getSize() );
 
     // Sample the source.
+    Teuchos::RCP<MCLS::PRNG<rng_type> > rng = Teuchos::rcp(
+	new MCLS::PRNG<rng_type>(comm->getRank()) );
+    source.setRNG( rng );
     for ( int i = 0; i < mult*local_num_rows; ++i )
     {
 	TEST_ASSERT( !source.empty() );

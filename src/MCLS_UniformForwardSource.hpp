@@ -45,7 +45,7 @@
 #include "MCLS_DomainTraits.hpp"
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_TallyTraits.hpp"
-#include "MCLS_RNGControl.hpp"
+#include "MCLS_PRNG.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
@@ -81,7 +81,7 @@ class UniformForwardSource
     typedef typename TT::vector_type                     VectorType;
     typedef VectorTraits<VectorType>                     VT;
     typedef typename VT::scalar_type                     Scalar;
-    typedef RNGControl::RNG                              RNG;
+    typedef typename Domain::rng_type                    rng_type;
     typedef Teuchos::Comm<int>                           Comm;
 
     //@}
@@ -89,7 +89,6 @@ class UniformForwardSource
     // Constructor.
     UniformForwardSource( const Teuchos::RCP<VectorType>& b,
 			  const Teuchos::RCP<Domain>& domain,
-			  const Teuchos::RCP<RNGControl>& rng_control,
 			  const Teuchos::RCP<const Comm>& set_comm,
 			  const int global_comm_size,
 			  const int global_comm_rank,
@@ -98,13 +97,16 @@ class UniformForwardSource
     // Deserializer constructor.
     UniformForwardSource( const Teuchos::ArrayView<char>& buffer,
 			  const Teuchos::RCP<Domain>& domain,
-			  const Teuchos::RCP<RNGControl>& rng_control,
 			  const Teuchos::RCP<const Comm>& set_comm,
 			  const int global_comm_size,
 			  const int global_comm_rank );
 
     // Destructor.
     ~UniformForwardSource() { /* ... */ }
+
+    // Set the random number generator.
+    void setRNG( const Teuchos::RCP<PRNG<rng_type> >& rng )
+    { d_rng = rng; }
 
     // Pack the source into a buffer.
     Teuchos::Array<char> pack() const;
@@ -143,14 +145,6 @@ class UniformForwardSource
     //! Get the number of histories left to emit in this domain.
     int numLeft() const { return d_nh_left; }
 
-    //! Get the number of random number streams generated to this point. 
-    int numStreams() const { return d_rng_stream; }
-
-  private:
-
-    // Make a globally unique random number generator for this proc.
-    void makeRNG();
-
   private:
 
     // Source vector.
@@ -159,8 +153,11 @@ class UniformForwardSource
     // Local domain.
     Teuchos::RCP<Domain> d_domain;
 
-    // Random number controller.
-    Teuchos::RCP<RNGControl> d_rng_control;
+    // Random number generator.
+    Teuchos::RCP<PRNG<rng_type> > d_rng;
+    
+    // Random number distribution.
+    std::uniform_real_distribution<double> d_rng_dist;
 
     // Communicator for this set.
     Teuchos::RCP<const Comm> d_set_comm;
@@ -170,9 +167,6 @@ class UniformForwardSource
 
     // Global rank of this proc (all sets, all blocks).
     int d_global_rank;
-
-    // RNG stream offset.
-    int d_rng_stream;
 
     // Number of requested histories.
     int d_nh_requested;
@@ -214,8 +208,18 @@ class SourceTraits<UniformForwardSource<Domain> >
     typedef typename source_type::Ordinal               ordinal_type;
     typedef typename source_type::HistoryType           history_type;
     typedef typename source_type::domain_type           domain_type;
+    typedef typename source_type::rng_type              rng_type;
     typedef Teuchos::Comm<int>                          Comm;
     //@}
+
+    /*!
+     * \brief Set a random number generator with the source.
+     */
+    static void setRNG( const source_type& source,
+			const Teuchos::RCP<PRNG<rng_type> >& rng )
+    {
+	source.setRNG( rng );
+    }
 
     /*!
      * \brief Create a reference-counted pointer to a new source defined over
@@ -225,14 +229,12 @@ class SourceTraits<UniformForwardSource<Domain> >
     createFromBuffer( const Teuchos::ArrayView<char>& buffer,
 		      const Teuchos::RCP<const Comm>& comm,
 		      const Teuchos::RCP<domain_type>& domain,
-		      const Teuchos::RCP<RNGControl>& rng_control,
 		      const int global_comm_size,
 		      const int global_comm_rank )
 
     { 
 	return Teuchos::rcp( new source_type( buffer,
                                               domain,
-                                              rng_control,
                                               comm,
                                               global_comm_size,
                                               global_comm_rank ) );

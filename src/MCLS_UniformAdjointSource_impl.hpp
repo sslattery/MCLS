@@ -42,7 +42,6 @@
 #define MCLS_UNIFORMADJOINTSOURCE_IMPL_HPP
 
 #include "MCLS_DBC.hpp"
-#include "MCLS_GlobalRNG.hpp"
 #include "MCLS_SamplingTools.hpp"
 #include "MCLS_Serializer.hpp"
 #include "MCLS_SamplingTools.hpp"
@@ -61,18 +60,16 @@ template<class Domain>
 UniformAdjointSource<Domain>::UniformAdjointSource( 
     const Teuchos::RCP<VectorType>& b,
     const Teuchos::RCP<Domain>& domain,
-    const Teuchos::RCP<RNGControl>& rng_control,
     const Teuchos::RCP<const Comm>& set_comm,
     const int global_comm_size,
     const int global_comm_rank,
     const Teuchos::ParameterList& plist )
     : d_b( b )
     , d_domain( domain )
-    , d_rng_control( rng_control )
+    , d_rng_dist( 0.0, 1.0 )
     , d_set_comm( set_comm )
     , d_global_size( global_comm_size )
     , d_global_rank( global_comm_rank )
-    , d_rng_stream(0)
     , d_nh_requested( VT::getGlobalLength(*d_b) )
     , d_nh_total(0)
     , d_nh_domain(0)
@@ -83,7 +80,6 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
 {
     MCLS_REQUIRE( !d_b.is_null() );
     MCLS_REQUIRE( !d_domain.is_null() );
-    MCLS_REQUIRE( !d_rng_control.is_null() );
     MCLS_REQUIRE( !d_set_comm.is_null() );
 
     // Get the requested number of histories. The default value is the
@@ -123,16 +119,14 @@ template<class Domain>
 UniformAdjointSource<Domain>::UniformAdjointSource( 
     const Teuchos::ArrayView<char>& buffer,
     const Teuchos::RCP<Domain>& domain,
-    const Teuchos::RCP<RNGControl>& rng_control,
     const Teuchos::RCP<const Comm>& set_comm,
     const int global_comm_size,
     const int global_comm_rank )
     : d_domain( domain )
-    , d_rng_control( rng_control )
+    , d_rng_dist( 0.0, 1.0 )
     , d_set_comm( set_comm )
     , d_global_size( global_comm_size )
     , d_global_rank( global_comm_rank )
-    , d_rng_stream(0)
     , d_nh_requested(0)
     , d_nh_total(0)
     , d_nh_domain(0)
@@ -141,7 +135,6 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
     , d_nh_emitted(0)
 {
     MCLS_REQUIRE( !d_domain.is_null() );
-    MCLS_REQUIRE( !d_rng_control.is_null() );
     MCLS_REQUIRE( !d_set_comm.is_null() );
 
     Deserializer ds;
@@ -277,9 +270,6 @@ std::size_t UniformAdjointSource<Domain>::getPackedBytes() const
 template<class Domain>
 void UniformAdjointSource<Domain>::buildSource()
 {
-    // Set the RNG stream.
-    makeRNG();
-
     // Get the local source components.
     d_local_source = VT::view( *d_b );
     MCLS_CHECK( d_local_source.size() > 0 );
@@ -313,8 +303,8 @@ Teuchos::RCP<typename UniformAdjointSource<Domain>::HistoryType>
 UniformAdjointSource<Domain>::getHistory()
 {
     MCLS_REQUIRE( d_weight > 0.0 );
-    MCLS_REQUIRE( GlobalRNG::d_rng.assigned() );
     MCLS_REQUIRE( d_nh_left >= 0 );
+    MCLS_REQUIRE( Teuchos::nonnull(d_rng) );
 
     // Return null if empty.
     if ( !d_nh_left )
@@ -328,12 +318,10 @@ UniformAdjointSource<Domain>::getHistory()
 
     // Generate the history.
     Teuchos::RCP<HistoryType> history = Teuchos::rcp( new HistoryType() );
-    history->setRNG( GlobalRNG::d_rng );
-    RNG rng = history->rng();
 
     // Sample the local source cdf to get a starting state.
     int local_state = d_random_sampling ? 
-                      sampleRandomSource( rng.random() ) : 
+                      sampleRandomSource( d_rng->random(d_rng_dist) ) : 
                       sampleStratifiedSource();
     MCLS_CHECK( VT::isLocalRow(*d_b,local_state) );
     Ordinal starting_state = VT::getGlobalRow( *d_b, local_state );
@@ -355,22 +343,6 @@ UniformAdjointSource<Domain>::getHistory()
     MCLS_ENSURE( history->weightAbs() == d_weight );
 
     return history;
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Make a globally unique random number generator for this proc.
- *
- * This function creates unique RNGs for each proc so that each history in the
- * parallel domain will sample from a globally unique stream.
- */
-template<class Domain>
-void UniformAdjointSource<Domain>::makeRNG()
-{
-    GlobalRNG::d_rng = d_rng_control->rng( d_rng_stream + d_global_rank );
-    d_rng_stream += d_global_size;
-
-    MCLS_ENSURE( GlobalRNG::d_rng.assigned() );
 }
 
 //---------------------------------------------------------------------------//

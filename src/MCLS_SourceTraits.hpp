@@ -41,7 +41,7 @@
 #ifndef MCLS_SOURCETRAITS_HPP
 #define MCLS_SOURCETRAITS_HPP
 
-#include "MCLS_RNGControl.hpp"
+#include "MCLS_PRNG.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
@@ -85,8 +85,18 @@ class SourceTraits
     typedef typename Source::ordinal_type               ordinal_type;
     typedef typename Source::history_type               history_type;
     typedef typename Source::domain_type                domain_type;
+    typedef typename Source::rng_type                   rng_type;
     typedef Teuchos::Comm<int>                          Comm;
     //@}
+
+    /*!
+     * \brief Set a random number generator with the source.
+     */
+    static void setRNG( const Source& source,
+			const Teuchos::RCP<PRNG<rng_type> >& rng )
+    {
+	UndefinedSourceTraits<Source>::notDefined(); 
+    }
 
     /*!
      * \brief Create a reference-counted pointer to a new source defined over
@@ -96,7 +106,6 @@ class SourceTraits
     createFromBuffer( const Teuchos::ArrayView<char>& buffer,
 		      const Teuchos::RCP<const Comm>& comm,
 		      const Teuchos::RCP<domain_type>& domain,
-		      const Teuchos::RCP<RNGControl>& rng_control,
 		      const int global_comm_size,
 		      const int global_comm_rank )
 
