@@ -92,7 +92,7 @@ class SourceTraits
     /*!
      * \brief Set a random number generator with the source.
      */
-    static void setRNG( const Source& source,
+    static void setRNG( Source& source,
 			const Teuchos::RCP<PRNG<rng_type> >& rng )
     {
 	UndefinedSourceTraits<Source>::notDefined(); 

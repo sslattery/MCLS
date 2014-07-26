@@ -43,7 +43,6 @@
 
 #include "MCLS_DomainTraits.hpp"
 #include "MCLS_SourceTraits.hpp"
-#include "MCLS_RNGControl.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
@@ -84,8 +83,7 @@ class MSODManager
     void setDomain( const Teuchos::RCP<Domain>& primary_domain );
 
     // Set the local source.
-    void setSource( const Teuchos::RCP<Source>& primary_source,
-		    const Teuchos::RCP<RNGControl>& rng_control );
+    void setSource( const Teuchos::RCP<Source>& primary_source );
 
     //! Get the local domain.
     Teuchos::RCP<Domain> localDomain() const { return d_local_domain; }
@@ -123,15 +121,12 @@ class MSODManager
     void broadcastDomain();
 
     // Build the global decomposition by broadcasting the primary source. 
-    void broadcastSource( const Teuchos::RCP<RNGControl>& rng_control );
+    void broadcastSource();
 
   private:
 
     // Global communicator.
     Teuchos::RCP<const Comm> d_global_comm;
-
-    // RNG Controller.
-    Teuchos::RCP<RNGControl> d_rng_control;
 
     // Number of sets in the problem.
     int d_num_sets;

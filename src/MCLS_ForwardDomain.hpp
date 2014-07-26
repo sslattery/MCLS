@@ -312,7 +312,7 @@ class DomainTraits<ForwardDomain<Vector,Matrix,RNG> >
     /*!
      * \brief Set a random number generator with the domain.
      */
-    static void setRNG( const domain_type& domain,
+    static void setRNG( domain_type& domain,
 			const Teuchos::RCP<PRNG<rng_type> >& rng )
     {
 	domain.setRNG( rng );
@@ -351,7 +351,7 @@ class DomainTraits<ForwardDomain<Vector,Matrix,RNG> >
      * new state
      */
     static inline void processTransition( 
-	const domain_type& domain, history_type& history )
+	domain_type& domain, history_type& history )
     { 
 	domain.processTransition( history );
     }

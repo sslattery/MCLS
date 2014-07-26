@@ -337,7 +337,8 @@ void AdjointSolverManager<Vector,Matrix>::buildMonteCarloDomain()
     if ( Teuchos::is_null(d_mc_solver) )
     {
 	d_mc_solver = Teuchos::rcp(
-	    new MCSolver<SourceType>(d_msod_manager->setComm(), d_plist) );
+	    new MCSolver<SourceType>(
+		d_msod_manager->setComm(), d_global_comm->getRank(), d_plist) );
     }
 
     // Set a global scope variable for the primary domain.
@@ -406,7 +407,6 @@ void AdjointSolverManager<Vector,Matrix>::buildMonteCarloSource()
         primary_source = Teuchos::rcp( 
             new SourceType( rhs_copy,
                             d_msod_manager->localDomain(),
-                            d_mc_solver->rngControl(),
                             d_msod_manager->setComm(),
                             d_global_comm->getSize(),
                             d_global_comm->getRank(),
@@ -415,7 +415,7 @@ void AdjointSolverManager<Vector,Matrix>::buildMonteCarloSource()
     d_global_comm->barrier();
 
     // Build the global MSOD Monte Carlo source from the primary set.
-    d_msod_manager->setSource( primary_source, d_mc_solver->rngControl() );
+    d_msod_manager->setSource( primary_source );
 
     MCLS_ENSURE( !d_msod_manager->localSource().is_null() );
 }

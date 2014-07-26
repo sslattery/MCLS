@@ -45,7 +45,7 @@
 #include "MCLS_DomainTraits.hpp"
 #include "MCLS_TallyTraits.hpp"
 #include "MCLS_HistoryTraits.hpp"
-#include "MCLS_RNGControl.hpp"
+#include "MCLS_PRNG.hpp"
 #include "MCLS_GlobalTransporter.hpp"
 
 #include <Teuchos_RCP.hpp>
@@ -72,6 +72,7 @@ class MCSolver
     //! Typedefs.
     typedef Source                                      source_type;
     typedef SourceTraits<Source>                        ST;
+    typedef typename ST::rng_type                       rng_type;
     typedef typename ST::domain_type                    Domain;
     typedef DomainTraits<Domain>                        DT;
     typedef typename DT::tally_type                     TallyType;
@@ -84,8 +85,8 @@ class MCSolver
 
     // Constructor.
     MCSolver( const Teuchos::RCP<const Comm>& set_comm,
-	      const Teuchos::RCP<Teuchos::ParameterList>& plist,
-	      int seed = 433494437 );
+	      const int global_rank,
+	      const Teuchos::RCP<Teuchos::ParameterList>& plist );
 
     //! Destructor.
     ~MCSolver() { /* ... */ }
@@ -99,9 +100,6 @@ class MCSolver
     // Set the source.
     void setSource( const Teuchos::RCP<Source>& source );
 
-    //! Get the random number controller.
-    Teuchos::RCP<RNGControl> rngControl() const { return d_rng_control; }
-
   private:
 
     // Set constant communicator.
@@ -113,8 +111,8 @@ class MCSolver
     // Relative weight cutoff.
     double d_relative_weight_cutoff;
 
-    // Random number controller.
-    Teuchos::RCP<RNGControl> d_rng_control;
+    // Random number generator.
+    Teuchos::RCP<PRNG<rng_type> > d_rng;
 
     // Domain.
     Teuchos::RCP<Domain> d_domain;

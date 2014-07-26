@@ -72,7 +72,6 @@ template<class Domain>
 void DomainTransporter<Domain>::transport( HistoryType& history )
 {
     MCLS_REQUIRE( HT::alive(history) );
-    MCLS_REQUIRE( HT::rng(history).assigned() );
     MCLS_REQUIRE( HT::weightAbs(history) >= d_weight_cutoff );
     MCLS_REQUIRE( DT::isLocalState(*d_domain, HT::state(history)) );
     MCLS_REQUIRE( d_weight_cutoff > 0.0 );

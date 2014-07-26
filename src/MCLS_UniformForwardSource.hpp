@@ -215,7 +215,7 @@ class SourceTraits<UniformForwardSource<Domain> >
     /*!
      * \brief Set a random number generator with the source.
      */
-    static void setRNG( const source_type& source,
+    static void setRNG( source_type& source,
 			const Teuchos::RCP<PRNG<rng_type> >& rng )
     {
 	source.setRNG( rng );

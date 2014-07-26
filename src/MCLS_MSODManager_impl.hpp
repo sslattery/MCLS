@@ -139,17 +139,14 @@ void MSODManager<Source>::setDomain(
  */
 template<class Source>
 void MSODManager<Source>::setSource( 
-    const Teuchos::RCP<Source>& primary_source,
-    const Teuchos::RCP<RNGControl>& rng_control )
+    const Teuchos::RCP<Source>& primary_source )
 {
-    MCLS_REQUIRE( !rng_control.is_null() );
-
     MCLS_CHECK( d_set_id 
                 ? Teuchos::is_null(primary_source)
                 : Teuchos::nonnull(primary_source) );
 
     d_local_source = primary_source;
-    broadcastSource( rng_control );
+    broadcastSource();
 }
 
 //---------------------------------------------------------------------------//
@@ -198,10 +195,8 @@ void MSODManager<Source>::broadcastDomain()
  * \brief Build the global decomposition by broadcasting the primary source.
  */
 template<class Source>
-void MSODManager<Source>::broadcastSource( 
-    const Teuchos::RCP<RNGControl>& rng_control )
+void MSODManager<Source>::broadcastSource()
 {
-    MCLS_REQUIRE( !rng_control.is_null() );
     MCLS_REQUIRE( !d_set_comm.is_null() );
     MCLS_REQUIRE( !d_block_comm.is_null() );
     MCLS_REQUIRE( !d_local_domain.is_null() );
@@ -232,7 +227,6 @@ void MSODManager<Source>::broadcastSource(
     d_local_source = ST::createFromBuffer( source_buffer(),
 					   d_set_comm,
 					   d_local_domain,
-					   rng_control,
 					   d_global_comm->getSize(),
 					   d_global_comm->getRank() );
 

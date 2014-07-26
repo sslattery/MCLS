@@ -93,7 +93,7 @@ class DomainTraits
     /*!
      * \brief Set a random number generator with the domain.
      */
-    static void setRNG( const Domain& domain,
+    static void setRNG( Domain& domain,
 			const Teuchos::RCP<PRNG<rng_type> >& rng )
     {
 	UndefinedDomainTraits<Domain>::notDefined(); 
@@ -134,7 +134,7 @@ class DomainTraits
      * new state.
      */
     static inline void processTransition( 
-	const Domain& domain, history_type& history )
+	Domain& domain, history_type& history )
     { 
 	UndefinedDomainTraits<Domain>::notDefined(); 
     }

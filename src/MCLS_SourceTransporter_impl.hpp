@@ -43,7 +43,6 @@
 
 #include "MCLS_DBC.hpp"
 #include "MCLS_CommTools.hpp"
-#include "MCLS_GlobalRNG.hpp"
 #include "MCLS_Events.hpp"
 
 #include <Teuchos_CommHelpers.hpp>
@@ -259,14 +258,6 @@ void SourceTransporter<Source>::transportBankHistory( BankType& bank )
     bank.pop();
     MCLS_CHECK( !history.is_null() );
 
-    // If the history doesn't have a random number state, supply it with the
-    // global RNG.
-    if ( !HT::rng(*history).assigned() )
-    {
-	MCLS_CHECK( GlobalRNG::d_rng.assigned() );
-	HT::setRNG( *history, GlobalRNG::d_rng );
-    }
-
     // Set the history alive for transport.
     HT::live( *history );
 
@@ -286,7 +277,6 @@ void SourceTransporter<Source>::localHistoryTransport(
 {
     MCLS_REQUIRE( !history.is_null() );
     MCLS_REQUIRE( HT::alive(*history) );
-    MCLS_REQUIRE( HT::rng(*history).assigned() );
 
     // Do local transport.
     d_domain_transporter.transport( *history );

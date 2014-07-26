@@ -43,7 +43,6 @@
 
 #include "MCLS_DBC.hpp"
 #include "MCLS_CommTools.hpp"
-#include "MCLS_GlobalRNG.hpp"
 #include "MCLS_Events.hpp"
 
 #include <Teuchos_CommHelpers.hpp>
@@ -100,7 +99,6 @@ void SubdomainTransporter<Source>::transport()
         Teuchos::RCP<HistoryType> history = ST::getHistory( *d_source );
         MCLS_CHECK( !history.is_null() );
         MCLS_CHECK( HT::alive(*history) );
-        MCLS_CHECK( HT::rng(*history).assigned() );
 
         // Do local transport.
         d_domain_transporter.transport( *history );

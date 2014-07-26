@@ -47,6 +47,7 @@
 #include <algorithm>
 #include <string>
 #include <cassert>
+#include <random>
 
 #include <MCLS_MCSolver.hpp>
 #include <MCLS_UniformAdjointSource.hpp>
@@ -88,7 +89,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSolver, solve, LO, GO, Scalar )
     typedef MCLS::VectorTraits<VectorType> VT;
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
+    typedef std::mt19937 rng_type;
+    typedef MCLS::AdjointDomain<VectorType,MatrixType,rng_type> DomainType;
     typedef MCLS::UniformAdjointSource<DomainType> SourceType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -149,7 +151,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSolver, solve, LO, GO, Scalar )
     plist->set<int>("MC Check Frequency", 10);
     plist->set<bool>("Reproducible MC Mode",true);
     plist->set<std::string>("Transport Type", "Global" );
-    MCLS::MCSolver<SourceType> solver( comm, plist );
+    MCLS::MCSolver<SourceType> solver( comm, comm->getRank(), plist );
 
     // Build the adjoint domain.
     plist->set<int>( "Overlap Size", 2 );
@@ -159,7 +161,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSolver, solve, LO, GO, Scalar )
     int mult = 100;
     plist->set<int>("Set Number of Histories", mult*global_num_rows);
     Teuchos::RCP<SourceType> source = Teuchos::rcp(
-	new SourceType( b, domain, solver.rngControl(), comm, 
+	new SourceType( b, domain, comm, 
 			comm->getSize(), comm->getRank(), *plist ) );
     source->buildSource();
     plist->set<double>("Relative Weight Cutoff", source->sourceWeight()*cutoff);

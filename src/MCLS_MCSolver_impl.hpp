@@ -56,30 +56,21 @@ namespace MCLS
  */
 template<class Source>
 MCSolver<Source>::MCSolver( const Teuchos::RCP<const Comm>& set_comm,
-			    const Teuchos::RCP<Teuchos::ParameterList>& plist,
-			    int seed )
+			    const int global_rank,
+			    const Teuchos::RCP<Teuchos::ParameterList>& plist )
     : d_set_comm( set_comm )
     , d_plist( plist )
     , d_relative_weight_cutoff( 0.0 )
+    , d_rng( Teuchos::rcp(new PRNG<rng_type>(global_rank)) )
 {
     MCLS_REQUIRE( !d_plist.is_null() );
     MCLS_REQUIRE( !d_set_comm.is_null() );
-
-    // Check for a user provided random number seed. The default is provided
-    // as a default argument for this constructor.
-    if ( d_plist->isParameter("Random Number Seed") )
-    {
-	seed = d_plist->get<int>("Random Number Seed");
-    }
-
-    // Build the random number generator.
-    d_rng_control = Teuchos::rcp( new RNGControl(seed) );
 
     // Set the static byte size for the histories.
     HT::setByteSize();
 
     MCLS_ENSURE( HT::getPackedBytes() > 0 );
-    MCLS_ENSURE( !d_rng_control.is_null() );
+    MCLS_ENSURE( Teuchos::nonnull(d_rng) );
 }
 
 //---------------------------------------------------------------------------//
@@ -122,6 +113,9 @@ void MCSolver<Source>::setDomain( const Teuchos::RCP<Domain>& domain )
     // Set the domain.
     d_domain = domain;
 
+    // Set the random number generator with the domain.
+    DT::setRNG( *d_domain, d_rng );
+
     // Get the domain tally.
     d_tally = DT::domainTally( *d_domain );
 
@@ -144,9 +138,16 @@ void MCSolver<Source>::setSource( const Teuchos::RCP<Source>& source )
 {
     MCLS_REQUIRE( !source.is_null() );
 
+    // Set the source.
     d_source = source;
+
+    // Set the random number generator with the source.
+    ST::setRNG( *d_source, d_rng );
+
+    // Build the source.
     ST::buildSource( *d_source );
 
+    // Get the weight cutoff.
     double cutoff = d_plist->get<double>("Weight Cutoff");
     d_relative_weight_cutoff = cutoff * ST::weight( *d_source, 0 );
 
