@@ -63,8 +63,7 @@ PRNG<RNG>::PRNG( const int comm_rank)
 	seed = master_rng();
     }
 
-    // Seed the random number generator on this process with the appropriate
-    // seed.
+    // Seed the random number generator on this process.
     d_rng = rng_type( seed );
 }
 

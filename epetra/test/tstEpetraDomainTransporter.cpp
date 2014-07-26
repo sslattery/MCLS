@@ -46,6 +46,7 @@
 #include <algorithm>
 #include <string>
 #include <cassert>
+#include <random>
 
 #include <MCLS_DomainTransporter.hpp>
 #include <MCLS_AdjointDomain.hpp>
@@ -54,7 +55,7 @@
 #include <MCLS_AdjointHistory.hpp>
 #include <MCLS_AdjointTally.hpp>
 #include <MCLS_Events.hpp>
-#include <MCLS_RNGControl.hpp>
+#include <MCLS_PRNG.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -102,10 +103,9 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Typedefs )
 {
     typedef Epetra_Vector VectorType;
     typedef Epetra_RowMatrix MatrixType;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
+    typedef MCLS::AdjointDomain<VectorType,MatrixType,std::mt19937> DomainType;
     typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     typedef MCLS::DomainTransporter<DomainType> TransportType;
     typedef TransportType::HistoryType history_type;
@@ -127,7 +127,8 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff )
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointHistory<int> HistoryType;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
+    typedef std::mt19937 rng_type;
+    typedef MCLS::AdjointDomain<VectorType,MatrixType,rng_type> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -165,6 +166,9 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff )
     Teuchos::ParameterList plist;
     plist.set<int>( "Overlap Size", 2 );
     Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( B, x, plist ) );
+    Teuchos::RCP<MCLS::PRNG<rng_type> > rng = Teuchos::rcp(
+	new MCLS::PRNG<rng_type>( comm->getRank() ) );
+    domain->setRNG( rng );
 
     // Build the domain transporter.
     double weight = 3.0;
@@ -173,8 +177,6 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff )
     transporter.setCutoff( relative_cutoff );
 
     // Transport histories through the domain.
-    MCLS::RNGControl control( 2394723 );
-    MCLS::RNGControl::RNG rng = control.rng( 4 );
     for ( int i = 0; i < global_num_rows-1; ++i )
     {
 	if ( comm_rank == comm_size - 1 )
@@ -183,7 +185,6 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff )
 	    {
 		HistoryType history( i, weight );
 		history.live();
-		history.setRNG( rng );
 		transporter.transport( history );
 
 		TEST_EQUALITY( history.state(), i+1 );
@@ -198,7 +199,6 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff )
 	    {
 		HistoryType history( i, weight );
 		history.live();
-		history.setRNG( rng );
 		transporter.transport( history );
 
 		TEST_EQUALITY( history.state(), i+1 );
@@ -239,7 +239,8 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff2 )
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointHistory<int> HistoryType;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
+    typedef std::mt19937 rng_type;
+    typedef MCLS::AdjointDomain<VectorType,MatrixType,rng_type> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -278,6 +279,9 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff2 )
     Teuchos::ParameterList plist;
     plist.set<int>( "Overlap Size", 2 );
     Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( B, x, plist ) );
+    Teuchos::RCP<MCLS::PRNG<rng_type> > rng = Teuchos::rcp(
+	new MCLS::PRNG<rng_type>( comm->getRank() ) );
+    domain->setRNG( rng );
 
     // Build the domain transporter.
     double weight = 3.0; 
@@ -286,8 +290,6 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff2 )
     transporter.setCutoff( relative_cutoff );
 
     // Transport histories through the domain.
-    MCLS::RNGControl control( 2394723 );
-    MCLS::RNGControl::RNG rng = control.rng( 4 );
     for ( int i = 0; i < global_num_rows-2; ++i )
     {
 	if ( comm_rank == comm_size - 1 )
@@ -296,7 +298,6 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff2 )
 	    {
 		HistoryType history( i, weight );
 		history.live();
-		history.setRNG( rng );
 		transporter.transport( history );
 
 		TEST_EQUALITY( history.state(), i+2 );
@@ -311,7 +312,6 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff2 )
 	    {
 		HistoryType history( i, weight );
 		history.live();
-		history.setRNG( rng );
 		transporter.transport( history );
 
 		TEST_EQUALITY( history.state(), i+2 );
@@ -359,7 +359,8 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Boundary )
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointHistory<int> HistoryType;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
+    typedef std::mt19937 rng_type;
+    typedef MCLS::AdjointDomain<VectorType,MatrixType,rng_type> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -420,6 +421,9 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Boundary )
 	Teuchos::ParameterList plist;
 	plist.set<int>( "Overlap Size", 2 );
 	Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( B, x, plist ) );
+	Teuchos::RCP<MCLS::PRNG<rng_type> > rng = Teuchos::rcp(
+	    new MCLS::PRNG<rng_type>( comm->getRank() ) );
+	domain->setRNG( rng );
 
 	// Build the domain transporter.
 	MCLS::DomainTransporter<DomainType> transporter( domain, plist );
@@ -427,8 +431,6 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Boundary )
 
 	// Transport histories through the domain until they hit a boundary.
 	double weight = 3.0; 
-	MCLS::RNGControl control( 2394723 );
-	MCLS::RNGControl::RNG rng = control.rng( 4 );
 	for ( int i = 0; i < global_num_rows-1; ++i )
 	{
 	    if ( comm_rank == comm_size - 1 )
@@ -437,10 +439,10 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Boundary )
 		{
 		    HistoryType history( i, weight );
 		    history.live();
-		    history.setRNG( rng );
 		    transporter.transport( history );
 
-		    TEST_EQUALITY( history.event(), MCLS::Event::BOUNDARY );
+		    TEST_ASSERT( history.event() == 
+				 MCLS::Event::BOUNDARY || MCLS::Event::CUTOFF );
 		    TEST_ASSERT( !history.alive() );
 		}
 	    }
@@ -450,10 +452,10 @@ TEUCHOS_UNIT_TEST( DomainTransporter, Boundary )
 		{
 		    HistoryType history( i, weight );
 		    history.live();
-		    history.setRNG( rng );
 		    transporter.transport( history );
 
-		    TEST_EQUALITY( history.event(), MCLS::Event::BOUNDARY );
+		    TEST_ASSERT( history.event() ==
+				 MCLS::Event::BOUNDARY || MCLS::Event::CUTOFF );
 		    TEST_ASSERT( !history.alive() );
 		}
 	    }

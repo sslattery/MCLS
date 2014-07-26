@@ -41,6 +41,8 @@
 #ifndef MCLS_MCSASOLVERMANAGER_HPP
 #define MCLS_MCSASOLVERMANAGER_HPP
 
+#include <random>
+
 #include "MCLS_SolverManager.hpp"
 #include "MCLS_FixedPointIteration.hpp"
 #include "MCLS_LinearProblem.hpp"
@@ -60,7 +62,7 @@ namespace MCLS
  * \class MCSASolverManager
  * \brief Solver manager for Monte Carlo synthetic acceleration.
  */
-template<class Vector, class Matrix>
+template<class Vector, class Matrix, class RNG = std::mt19937>
 class MCSASolverManager : public SolverManager<Vector,Matrix>
 {
   public:

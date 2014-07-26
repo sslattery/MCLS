@@ -47,6 +47,7 @@
 #include <algorithm>
 #include <string>
 #include <cassert>
+#include <random>
 
 #include <MCLS_SourceTransporter.hpp>
 #include <MCLS_UniformAdjointSource.hpp>
@@ -55,7 +56,7 @@
 #include <MCLS_EpetraAdapter.hpp>
 #include <MCLS_AdjointHistory.hpp>
 #include <MCLS_Events.hpp>
-#include <MCLS_RNGControl.hpp>
+#include <MCLS_PRNG.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -104,7 +105,7 @@ TEUCHOS_UNIT_TEST( SourceTransporter, Typedefs )
 {
     typedef Epetra_Vector VectorType;
     typedef Epetra_RowMatrix MatrixType;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
+    typedef MCLS::AdjointDomain<VectorType,MatrixType,std::mt19937> DomainType;
     typedef MCLS::AdjointHistory<int> HistoryType;
     typedef MCLS::UniformAdjointSource<DomainType> SourceType;
     typedef std::stack<Teuchos::RCP<HistoryType> > BankType;
@@ -133,7 +134,8 @@ TEUCHOS_UNIT_TEST( SourceTransporter, transport )
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointHistory<int> HistoryType;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
+    typedef std::mt19937 rng_type;
+    typedef MCLS::AdjointDomain<VectorType,MatrixType,rng_type> DomainType;
     typedef MCLS::UniformAdjointSource<DomainType> SourceType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -191,11 +193,12 @@ TEUCHOS_UNIT_TEST( SourceTransporter, transport )
     Teuchos::ParameterList plist;
     plist.set<int>( "Overlap Size", 2 );
     Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( B, x, plist ) );
+    Teuchos::RCP<MCLS::PRNG<rng_type> > rng = Teuchos::rcp(
+	new MCLS::PRNG<rng_type>( comm->getRank() ) );
+    domain->setRNG( rng );
 
     // History setup.
-    Teuchos::RCP<MCLS::RNGControl> control = Teuchos::rcp(
-	new MCLS::RNGControl( 3939294 ) );
-    HistoryType::setByteSize( control->getSize() );
+    HistoryType::setByteSize();
 
     // Create the adjoint source with a set number of histories.
     int mult = 100;
@@ -203,8 +206,9 @@ TEUCHOS_UNIT_TEST( SourceTransporter, transport )
     plist.set<int>("Set Number of Histories", mult*global_num_rows);
     plist.set<double>("Weight Cutoff", cutoff);
     Teuchos::RCP<SourceType> source = Teuchos::rcp(
-	new SourceType( b, domain, control, comm, 
+	new SourceType( b, domain, comm, 
 			comm->getSize(), comm->getRank(), plist ) );
+    source->setRNG( rng );
     source->buildSource();
 
     // Create the source transporter.

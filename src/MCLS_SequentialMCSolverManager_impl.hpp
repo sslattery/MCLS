@@ -57,8 +57,8 @@ namespace MCLS
 /*!
  * \brief Comm constructor. setProblem() must be called before solve().
  */
-template<class Vector, class Matrix>
-SequentialMCSolverManager<Vector,Matrix>::SequentialMCSolverManager( 
+template<class Vector, class Matrix, class RNG>
+SequentialMCSolverManager<Vector,Matrix,RNG>::SequentialMCSolverManager( 
     const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
     : d_global_comm( global_comm )
@@ -72,8 +72,8 @@ SequentialMCSolverManager<Vector,Matrix>::SequentialMCSolverManager(
 /*!
  * \brief Constructor.
  */
-template<class Vector, class Matrix>
-SequentialMCSolverManager<Vector,Matrix>::SequentialMCSolverManager( 
+template<class Vector, class Matrix, class RNG>
+SequentialMCSolverManager<Vector,Matrix,RNG>::SequentialMCSolverManager( 
     const Teuchos::RCP<LinearProblemType>& problem,
     const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
@@ -94,9 +94,9 @@ SequentialMCSolverManager<Vector,Matrix>::SequentialMCSolverManager(
 /*!
  * \brief Get the valid parameters for this manager.
  */
-template<class Vector, class Matrix>
+template<class Vector, class Matrix, class RNG>
 Teuchos::RCP<const Teuchos::ParameterList> 
-SequentialMCSolverManager<Vector,Matrix>::getValidParameters() const
+SequentialMCSolverManager<Vector,Matrix,RNG>::getValidParameters() const
 {
     // Create a parameter list with the Monte Carlo solver parameters as a
     // starting point.
@@ -121,10 +121,10 @@ SequentialMCSolverManager<Vector,Matrix>::getValidParameters() const
  * \brief Get the tolerance achieved on the last linear solve. This may be
  * less or more than the set convergence tolerance. 
  */
-template<class Vector, class Matrix>
+template<class Vector, class Matrix, class RNG>
 typename Teuchos::ScalarTraits<
-    typename SequentialMCSolverManager<Vector,Matrix>::Scalar>::magnitudeType 
-SequentialMCSolverManager<Vector,Matrix>::achievedTol() const
+    typename SequentialMCSolverManager<Vector,Matrix,RNG>::Scalar>::magnitudeType 
+SequentialMCSolverManager<Vector,Matrix,RNG>::achievedTol() const
 {
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType residual_norm = 
 	Teuchos::ScalarTraits<Scalar>::zero();
@@ -163,8 +163,8 @@ SequentialMCSolverManager<Vector,Matrix>::achievedTol() const
 /*!
  * \brief Set the linear problem with the manager.
  */
-template<class Vector, class Matrix>
-void SequentialMCSolverManager<Vector,Matrix>::setProblem( 
+template<class Vector, class Matrix, class RNG>
+void SequentialMCSolverManager<Vector,Matrix,RNG>::setProblem( 
     const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
@@ -224,8 +224,8 @@ void SequentialMCSolverManager<Vector,Matrix>::setProblem(
  * \brief Set the parameters for the manager. The manager will modify this
  * list with default parameters that are not defined.
  */
-template<class Vector, class Matrix>
-void SequentialMCSolverManager<Vector,Matrix>::setParameters( 
+template<class Vector, class Matrix, class RNG>
+void SequentialMCSolverManager<Vector,Matrix,RNG>::setParameters( 
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
     MCLS_REQUIRE( Teuchos::nonnull(params) );
@@ -243,8 +243,8 @@ void SequentialMCSolverManager<Vector,Matrix>::setParameters(
  * \brief Solve the linear problem. Return true if the solution
  * converged. False if it did not.
  */
-template<class Vector, class Matrix>
-bool SequentialMCSolverManager<Vector,Matrix>::solve()
+template<class Vector, class Matrix, class RNG>
+bool SequentialMCSolverManager<Vector,Matrix,RNG>::solve()
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_mc_solver) );
@@ -398,8 +398,8 @@ bool SequentialMCSolverManager<Vector,Matrix>::solve()
 /*!
  * \brief Build the residual Monte Carlo problem.
  */
-template<class Vector, class Matrix>
-void SequentialMCSolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
+template<class Vector, class Matrix, class RNG>
+void SequentialMCSolverManager<Vector,Matrix,RNG>::buildResidualMonteCarloProblem()
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
@@ -438,25 +438,25 @@ void SequentialMCSolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
     if ( use_adjoint )
     {
 	d_mc_solver = Teuchos::rcp( 
-	    new AdjointSolverManager<Vector,Matrix>(
+	    new AdjointSolverManager<Vector,Matrix,RNG>(
 		d_residual_problem, d_global_comm, d_plist) );
 
 	// Get the block constant communicator.
 	MCLS_CHECK( Teuchos::nonnull(d_mc_solver) );
 	d_block_comm = 
-	    Teuchos::rcp_dynamic_cast<AdjointSolverManager<Vector,Matrix> >(
+	    Teuchos::rcp_dynamic_cast<AdjointSolverManager<Vector,Matrix,RNG> >(
 		d_mc_solver)->blockComm();
     }
     else if ( use_forward )
     {
 	d_mc_solver = Teuchos::rcp( 
-	    new ForwardSolverManager<Vector,Matrix>(
+	    new ForwardSolverManager<Vector,Matrix,RNG>(
 		d_residual_problem, d_global_comm, d_plist, true) );
 
 	// Get the block constant communicator.
 	MCLS_CHECK( Teuchos::nonnull(d_mc_solver) );
 	d_block_comm = 
-	    Teuchos::rcp_dynamic_cast<ForwardSolverManager<Vector,Matrix> >(
+	    Teuchos::rcp_dynamic_cast<ForwardSolverManager<Vector,Matrix,RNG> >(
 		d_mc_solver)->blockComm();
     }
     else

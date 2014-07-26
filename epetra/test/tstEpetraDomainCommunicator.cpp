@@ -47,6 +47,7 @@
 #include <algorithm>
 #include <string>
 #include <cassert>
+#include <random>
 
 #include <MCLS_DomainCommunicator.hpp>
 #include <MCLS_DomainTransporter.hpp>
@@ -56,7 +57,7 @@
 #include <MCLS_AdjointHistory.hpp>
 #include <MCLS_AdjointTally.hpp>
 #include <MCLS_Events.hpp>
-#include <MCLS_RNGControl.hpp>
+#include <MCLS_PRNG.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -116,11 +117,6 @@ Teuchos::RCP<const Teuchos::Comm<int> > getTeuchosCommFromEpetra(
 }
 
 //---------------------------------------------------------------------------//
-// RNG setup.
-//---------------------------------------------------------------------------//
-MCLS::RNGControl control( 2394723 );
-
-//---------------------------------------------------------------------------//
 // Helper functions.
 //---------------------------------------------------------------------------//
 Teuchos::RCP<MCLS::AdjointHistory<int> > makeHistory( 
@@ -128,7 +124,6 @@ Teuchos::RCP<MCLS::AdjointHistory<int> > makeHistory(
 {
     Teuchos::RCP<MCLS::AdjointHistory<int> > history = Teuchos::rcp(
 	new MCLS::AdjointHistory<int>( state, weight ) );
-    history->setRNG( control.rng(streamid) );
     history->setEvent( MCLS::Event::BOUNDARY );
     return history;
 }
@@ -140,9 +135,8 @@ TEUCHOS_UNIT_TEST( DomainCommunicator, Typedefs )
 {
     typedef Epetra_Vector VectorType;
     typedef Epetra_RowMatrix MatrixType;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
+    typedef MCLS::AdjointDomain<VectorType,MatrixType,std::mt19937> DomainType;
     typedef MCLS::AdjointHistory<int> HistoryType;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
 
     typedef MCLS::DomainTransporter<DomainType> TransportType;
     typedef TransportType::HistoryType history_type;
@@ -164,7 +158,8 @@ TEUCHOS_UNIT_TEST( DomainCommunicator, Communicate )
     typedef Epetra_RowMatrix MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointHistory<int> HistoryType;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
+    typedef std::mt19937 rng_type;
+    typedef MCLS::AdjointDomain<VectorType,MatrixType,rng_type> DomainType;
 
     Teuchos::RCP<const Epetra_Comm> epetra_comm = getEpetraComm();
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -206,9 +201,12 @@ TEUCHOS_UNIT_TEST( DomainCommunicator, Communicate )
 	plist.set<int>( "Overlap Size", 0 );
 	Teuchos::RCP<DomainType> domain = 
 	    Teuchos::rcp( new DomainType( B, x, plist ) );
+	Teuchos::RCP<MCLS::PRNG<rng_type> > rng = Teuchos::rcp(
+	    new MCLS::PRNG<rng_type>( comm->getRank() ) );
+	domain->setRNG( rng );
 
 	// History setup.
-	HistoryType::setByteSize( control.getSize() );
+	HistoryType::setByteSize();
 
 	// Build the domain communicator.
 	MCLS::DomainCommunicator<DomainType>::BankType bank;

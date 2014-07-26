@@ -56,7 +56,6 @@
 #include <MCLS_AdjointHistory.hpp>
 #include <MCLS_AdjointTally.hpp>
 #include <MCLS_Events.hpp>
-#include <MCLS_RNGControl.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -82,11 +81,6 @@
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
 
 //---------------------------------------------------------------------------//
-// RNG setup.
-//---------------------------------------------------------------------------//
-MCLS::RNGControl control( 2394723 );
-
-//---------------------------------------------------------------------------//
 // Helper functions.
 //---------------------------------------------------------------------------//
 template<class GO>
@@ -95,7 +89,6 @@ Teuchos::RCP<MCLS::AdjointHistory<GO> > makeHistory(
 {
     Teuchos::RCP<MCLS::AdjointHistory<GO> > history = Teuchos::rcp(
 	new MCLS::AdjointHistory<GO>( state, weight ) );
-    history->setRNG( control.rng(streamid) );
     history->setEvent( MCLS::Event::BOUNDARY );
     return history;
 }
@@ -107,7 +100,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Typedefs, LO, GO, Scalar 
 {
     typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
+    typedef MCLS::AdjointDomain<VectorType,MatrixType,std::mt19937> DomainType;
     typedef MCLS::AdjointHistory<GO> HistoryType;
 
     typedef MCLS::DomainTransporter<DomainType> TransportType;
@@ -132,7 +125,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Communicate, LO, GO, Scal
     typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
     typedef MCLS::AdjointHistory<GO> HistoryType;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType> DomainType;
+    typedef std::mt19937 rng_type;
+    typedef MCLS::AdjointDomain<VectorType,MatrixType,rng_type> DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -170,9 +164,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Communicate, LO, GO, Scal
 	plist.set<int>( "Overlap Size", 0 );
 	Teuchos::RCP<DomainType> domain = 
             Teuchos::rcp( new DomainType( A_T, x, plist ) );
+	Teuchos::RCP<MCLS::PRNG<rng_type> > rng = Teuchos::rcp(
+	    new MCLS::PRNG<rng_type>( comm->getRank() ) );
+	domain->setRNG( rng );
 
 	// History setup.
-	HistoryType::setByteSize( control.getSize() );
+	HistoryType::setByteSize();
 
 	// Build the domain communicator.
 	typename MCLS::DomainCommunicator<DomainType>::BankType bank;

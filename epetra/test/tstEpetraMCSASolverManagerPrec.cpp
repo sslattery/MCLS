@@ -207,14 +207,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_prec_adjoint )
 
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    if ( comm_size == 1 )
-    {
-        TEST_EQUALITY( solver_manager.getNumIters(), 6 );
-    }
-    else
-    {
-        TEST_EQUALITY( solver_manager.getNumIters(), 8 );
-    }
+    TEST_ASSERT( solver_manager.getNumIters() < 10 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
 
     // Check that we got a negative solution.
@@ -231,14 +224,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_prec_adjoint )
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    if ( comm_size == 1 )
-    {
-        TEST_EQUALITY( solver_manager.getNumIters(), 6 );
-    }
-    else
-    {
-        TEST_EQUALITY( solver_manager.getNumIters(), 8 );
-    }
+    TEST_ASSERT( solver_manager.getNumIters() < 10 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -251,14 +237,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_prec_adjoint )
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    if ( comm_size == 1 )
-    {
-        TEST_EQUALITY( solver_manager.getNumIters(), 6 );
-    }
-    else
-    {
-        TEST_EQUALITY( solver_manager.getNumIters(), 8 );
-    }
+    TEST_ASSERT( solver_manager.getNumIters() < 10 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -271,14 +250,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_prec_adjoint )
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    if ( comm_size == 1 )
-    {
-        TEST_EQUALITY( solver_manager.getNumIters(), 6 );
-    }
-    else
-    {
-        TEST_EQUALITY( solver_manager.getNumIters(), 8 );
-    }
+    TEST_ASSERT( solver_manager.getNumIters() < 10 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -426,15 +398,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_prec_adjoint )
 
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 7 );
-	if ( comm_rank < 2 )
-	{
-	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
-	}
-	else
-	{
-	    TEST_ASSERT( solver_manager.achievedTol() == 0.0 );
-	}
+	TEST_ASSERT( solver_manager.getNumIters() < 10 );
 
 	if ( comm_rank < 2 )
 	{
@@ -464,15 +428,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_prec_adjoint )
 
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 7 );
-	if ( comm_rank < 2 )
-	{
-	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
-	}
-	else
-	{
-	    TEST_ASSERT( solver_manager.achievedTol() == 0.0 );
-	}
+	TEST_ASSERT( solver_manager.getNumIters() < 10 );
 
 	if ( comm_rank < 2 )
 	{
@@ -496,15 +452,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_prec_adjoint )
 	converged_status = solver_manager.solve();
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 7 );
-	if ( comm_rank < 2 )
-	{
-	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
-	}
-	else
-	{
-	    TEST_ASSERT( solver_manager.achievedTol() == 0.0 );
-	}
+	TEST_ASSERT( solver_manager.getNumIters() < 10 );
 
 	if ( comm_rank < 2 )
 	{
@@ -532,15 +480,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_prec_adjoint )
 	converged_status = solver_manager.solve();
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 7 );
-	if ( comm_rank < 2 )
-	{
-	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
-	}
-	else
-	{
-	    TEST_ASSERT( solver_manager.achievedTol() == 0.0 );
-	}
+	TEST_ASSERT( solver_manager.getNumIters() < 10 );
 
 	if ( comm_rank < 2 )
 	{
@@ -668,15 +608,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_prec_forward )
 
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    if ( comm_size == 1 )
-    {
-        TEST_EQUALITY( solver_manager.getNumIters(), 8 );
-    }
-    else
-    {
-        TEST_EQUALITY( solver_manager.getNumIters(), 6 );
-    }
-    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
+    TEST_ASSERT( solver_manager.getNumIters() < 10 );
 
     // Check that we got a negative solution.
     Teuchos::ArrayRCP<const double> x_view = VT::view(*x);
@@ -692,14 +624,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_prec_forward )
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    if ( comm_size == 1 )
-    {
-        TEST_EQUALITY( solver_manager.getNumIters(), 6 );
-    }
-    else
-    {
-        TEST_EQUALITY( solver_manager.getNumIters(), 6 );
-    }
+    TEST_ASSERT( solver_manager.getNumIters() < 10 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -712,14 +637,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_prec_forward )
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    if ( comm_size == 1 )
-    {
-        TEST_EQUALITY( solver_manager.getNumIters(), 6 );
-    }
-    else
-    {
-        TEST_EQUALITY( solver_manager.getNumIters(), 6 );
-    }
+    TEST_ASSERT( solver_manager.getNumIters() < 10 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -732,14 +650,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_prec_forward )
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    if ( comm_size == 1 )
-    {
-        TEST_EQUALITY( solver_manager.getNumIters(), 6 );
-    }
-    else
-    {
-        TEST_EQUALITY( solver_manager.getNumIters(), 6 );
-    }
+    TEST_ASSERT( solver_manager.getNumIters() < 10 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -887,15 +798,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_prec_forward )
 
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 6 );
-	if ( comm_rank < 2 )
-	{
-	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
-	}
-	else
-	{
-	    TEST_ASSERT( solver_manager.achievedTol() == 0.0 );
-	}
+	TEST_ASSERT( solver_manager.getNumIters() < 10 );
 
 	if ( comm_rank < 2 )
 	{
@@ -925,15 +828,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_prec_forward )
 
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 6 );
-	if ( comm_rank < 2 )
-	{
-	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
-	}
-	else
-	{
-	    TEST_ASSERT( solver_manager.achievedTol() == 0.0 );
-	}
+	TEST_ASSERT( solver_manager.getNumIters() < 10 );
 
 	if ( comm_rank < 2 )
 	{
@@ -957,15 +852,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_prec_forward )
 	converged_status = solver_manager.solve();
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 6 );
-	if ( comm_rank < 2 )
-	{
-	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
-	}
-	else
-	{
-	    TEST_ASSERT( solver_manager.achievedTol() == 0.0 );
-	}
+	TEST_ASSERT( solver_manager.getNumIters() < 10 );
 
 	if ( comm_rank < 2 )
 	{
@@ -993,15 +880,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_prec_forward )
 	converged_status = solver_manager.solve();
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_EQUALITY( solver_manager.getNumIters(), 6 );
-	if ( comm_rank < 2 )
-	{
-	    TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
-	}
-	else
-	{
-	    TEST_ASSERT( solver_manager.achievedTol() == 0.0 );
-	}
+	TEST_ASSERT( solver_manager.getNumIters() < 10 );
 
 	if ( comm_rank < 2 )
 	{

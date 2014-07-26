@@ -60,8 +60,8 @@ namespace MCLS
 /*!
  * \brief Comm constructor. setProblem() must be called before solve().
  */
-template<class Vector, class Matrix>
-MCSASolverManager<Vector,Matrix>::MCSASolverManager( 
+template<class Vector, class Matrix, class RNG>
+MCSASolverManager<Vector,Matrix,RNG>::MCSASolverManager( 
     const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
     : d_global_comm( global_comm )
@@ -75,8 +75,8 @@ MCSASolverManager<Vector,Matrix>::MCSASolverManager(
 /*!
  * \brief Constructor.
  */
-template<class Vector, class Matrix>
-MCSASolverManager<Vector,Matrix>::MCSASolverManager( 
+template<class Vector, class Matrix, class RNG>
+MCSASolverManager<Vector,Matrix,RNG>::MCSASolverManager( 
     const Teuchos::RCP<LinearProblemType>& problem,
     const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
@@ -112,9 +112,9 @@ MCSASolverManager<Vector,Matrix>::MCSASolverManager(
 /*!
  * \brief Get the valid parameters for this manager.
  */
-template<class Vector, class Matrix>
+template<class Vector, class Matrix, class RNG>
 Teuchos::RCP<const Teuchos::ParameterList> 
-MCSASolverManager<Vector,Matrix>::getValidParameters() const
+MCSASolverManager<Vector,Matrix,RNG>::getValidParameters() const
 {
     // Create a parameter list with the Monte Carlo solver parameters as a
     // starting point.
@@ -140,10 +140,10 @@ MCSASolverManager<Vector,Matrix>::getValidParameters() const
  * \brief Get the tolerance achieved on the last linear solve. This may be
  * less or more than the set convergence tolerance. 
  */
-template<class Vector, class Matrix>
+template<class Vector, class Matrix, class RNG>
 typename Teuchos::ScalarTraits<
-    typename MCSASolverManager<Vector,Matrix>::Scalar>::magnitudeType 
-MCSASolverManager<Vector,Matrix>::achievedTol() const
+    typename MCSASolverManager<Vector,Matrix,RNG>::Scalar>::magnitudeType 
+MCSASolverManager<Vector,Matrix,RNG>::achievedTol() const
 {
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType residual_norm = 
 	Teuchos::ScalarTraits<Scalar>::zero();
@@ -182,8 +182,8 @@ MCSASolverManager<Vector,Matrix>::achievedTol() const
 /*!
  * \brief Set the linear problem with the manager.
  */
-template<class Vector, class Matrix>
-void MCSASolverManager<Vector,Matrix>::setProblem( 
+template<class Vector, class Matrix, class RNG>
+void MCSASolverManager<Vector,Matrix,RNG>::setProblem( 
     const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
@@ -264,8 +264,8 @@ void MCSASolverManager<Vector,Matrix>::setProblem(
  * \brief Set the parameters for the manager. The manager will modify this
  * list with default parameters that are not defined.
  */
-template<class Vector, class Matrix>
-void MCSASolverManager<Vector,Matrix>::setParameters( 
+template<class Vector, class Matrix, class RNG>
+void MCSASolverManager<Vector,Matrix,RNG>::setParameters( 
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
     MCLS_REQUIRE( Teuchos::nonnull(params) );
@@ -283,8 +283,8 @@ void MCSASolverManager<Vector,Matrix>::setParameters(
  * \brief Solve the linear problem. Return true if the solution
  * converged. False if it did not.
  */
-template<class Vector, class Matrix>
-bool MCSASolverManager<Vector,Matrix>::solve()
+template<class Vector, class Matrix, class RNG>
+bool MCSASolverManager<Vector,Matrix,RNG>::solve()
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_mc_solver) );
@@ -470,8 +470,8 @@ bool MCSASolverManager<Vector,Matrix>::solve()
 /*!
  * \brief Build the residual Monte Carlo problem.
  */
-template<class Vector, class Matrix>
-void MCSASolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
+template<class Vector, class Matrix, class RNG>
+void MCSASolverManager<Vector,Matrix,RNG>::buildResidualMonteCarloProblem()
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
@@ -522,25 +522,25 @@ void MCSASolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
     if ( use_adjoint )
     {
 	d_mc_solver = Teuchos::rcp( 
-	    new AdjointSolverManager<Vector,Matrix>(
+	    new AdjointSolverManager<Vector,Matrix,RNG>(
 		d_residual_problem, d_global_comm, d_plist, true) );
 
 	// Get the block constant communicator.
 	MCLS_CHECK( Teuchos::nonnull(d_mc_solver) );
 	d_block_comm = 
-	    Teuchos::rcp_dynamic_cast<AdjointSolverManager<Vector,Matrix> >(
+	    Teuchos::rcp_dynamic_cast<AdjointSolverManager<Vector,Matrix,RNG> >(
 		d_mc_solver)->blockComm();
     }
     else if ( use_forward )
     {
 	d_mc_solver = Teuchos::rcp( 
-	    new ForwardSolverManager<Vector,Matrix>(
+	    new ForwardSolverManager<Vector,Matrix,RNG>(
 		d_residual_problem, d_global_comm, d_plist, true) );
 
 	// Get the block constant communicator.
 	MCLS_CHECK( Teuchos::nonnull(d_mc_solver) );
 	d_block_comm = 
-	    Teuchos::rcp_dynamic_cast<ForwardSolverManager<Vector,Matrix> >(
+	    Teuchos::rcp_dynamic_cast<ForwardSolverManager<Vector,Matrix,RNG> >(
 		d_mc_solver)->blockComm();
     }
     else
@@ -557,8 +557,8 @@ void MCSASolverManager<Vector,Matrix>::buildResidualMonteCarloProblem()
 /*!
  * \brief Print top banner for the iteration.
  */
-template<class Vector, class Matrix>
-void MCSASolverManager<Vector,Matrix>::printTopBanner()
+template<class Vector, class Matrix, class RNG>
+void MCSASolverManager<Vector,Matrix,RNG>::printTopBanner()
 {
     if ( d_global_comm->getRank() == 0 )
     {
@@ -576,8 +576,8 @@ void MCSASolverManager<Vector,Matrix>::printTopBanner()
 /*!
  * \brief Print bottom banner for the iteration.
  */
-template<class Vector, class Matrix>
-void MCSASolverManager<Vector,Matrix>::printBottomBanner()
+template<class Vector, class Matrix, class RNG>
+void MCSASolverManager<Vector,Matrix,RNG>::printBottomBanner()
 {
     if ( d_global_comm->getRank() == 0 )
     {

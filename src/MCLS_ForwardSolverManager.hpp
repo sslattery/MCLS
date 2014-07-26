@@ -41,6 +41,8 @@
 #ifndef MCLS_FORWARDSOLVERMANAGER_HPP
 #define MCLS_FORWARDSOLVERMANAGER_HPP
 
+#include <random>
+
 #include "MCLS_SolverManager.hpp"
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
@@ -64,7 +66,7 @@ namespace MCLS
  * \class ForwardSolverManager
  * \brief Solver manager for analog forward Monte Carlo.
  */
-template<class Vector, class Matrix, class RNG>
+template<class Vector, class Matrix, class RNG = std::mt19937>
 class ForwardSolverManager : public SolverManager<Vector,Matrix>
 {
   public:

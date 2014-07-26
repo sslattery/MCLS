@@ -41,6 +41,8 @@
 #ifndef MCLS_SEQUENTIALMCSOLVERMANAGER_HPP
 #define MCLS_SEQUENTIALMCSOLVERMANAGER_HPP
 
+#include <random>
+
 #include "MCLS_SolverManager.hpp"
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
@@ -59,7 +61,7 @@ namespace MCLS
  * \class SequentialMCSolverManager
  * \brief Solver manager for Sequential Monte Carlo.
  */
-template<class Vector, class Matrix>
+template<class Vector, class Matrix, class RNG = std::mt19937>
 class SequentialMCSolverManager : public SolverManager<Vector,Matrix>
 {
   public:
@@ -82,8 +84,8 @@ class SequentialMCSolverManager : public SolverManager<Vector,Matrix>
 
     // Constructor.
     SequentialMCSolverManager( const Teuchos::RCP<LinearProblemType>& problem,
-		       const Teuchos::RCP<const Comm>& global_comm,
-		       const Teuchos::RCP<Teuchos::ParameterList>& plist );
+			       const Teuchos::RCP<const Comm>& global_comm,
+			       const Teuchos::RCP<Teuchos::ParameterList>& plist );
 
     //! Destructor.
     ~SequentialMCSolverManager() { /* ... */ }
