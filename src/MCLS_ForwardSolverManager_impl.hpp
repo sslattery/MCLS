@@ -56,8 +56,8 @@ namespace MCLS
  * \brief Comm constructor. setProblem() and setParameters() must be called
  * before solve(). 
  */
-template<class Vector, class Matrix>
-ForwardSolverManager<Vector,Matrix>::ForwardSolverManager( 
+template<class Vector, class Matrix, class RNG>
+ForwardSolverManager<Vector,Matrix,RNG>::ForwardSolverManager( 
     const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist,
     bool internal_solver )
@@ -73,8 +73,8 @@ ForwardSolverManager<Vector,Matrix>::ForwardSolverManager(
 /*!
  * \brief Constructor.
  */
-template<class Vector, class Matrix>
-ForwardSolverManager<Vector,Matrix>::ForwardSolverManager( 
+template<class Vector, class Matrix, class RNG>
+ForwardSolverManager<Vector,Matrix,RNG>::ForwardSolverManager( 
     const Teuchos::RCP<LinearProblemType>& problem,
     const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist,
@@ -95,9 +95,9 @@ ForwardSolverManager<Vector,Matrix>::ForwardSolverManager(
 /*!
  * \brief Get the valid parameters for this manager.
  */
-template<class Vector, class Matrix>
+template<class Vector, class Matrix, class RNG>
 Teuchos::RCP<const Teuchos::ParameterList> 
-ForwardSolverManager<Vector,Matrix>::getValidParameters() const
+ForwardSolverManager<Vector,Matrix,RNG>::getValidParameters() const
 {
     Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::parameterList();
 
@@ -118,10 +118,10 @@ ForwardSolverManager<Vector,Matrix>::getValidParameters() const
  * \brief Get the tolerance achieved on the last linear solve. This may be
  * less or more than the set convergence tolerance.
  */
-template<class Vector, class Matrix>
+template<class Vector, class Matrix, class RNG>
 typename Teuchos::ScalarTraits<
-    typename ForwardSolverManager<Vector,Matrix>::Scalar>::magnitudeType 
-ForwardSolverManager<Vector,Matrix>::achievedTol() const
+    typename ForwardSolverManager<Vector,Matrix,RNG>::Scalar>::magnitudeType 
+ForwardSolverManager<Vector,Matrix,RNG>::achievedTol() const
 {
     // Here we'll simply return the source weighted norm of the residual after
     // solution. This will give us a measure of the stochastic error generated
@@ -146,8 +146,8 @@ ForwardSolverManager<Vector,Matrix>::achievedTol() const
  * \brief Get the number of iterations from the last linear solve. This is a
  * direct solver and therefore does not do any iterations.
  */
-template<class Vector, class Matrix>
-int ForwardSolverManager<Vector,Matrix>::getNumIters() const
+template<class Vector, class Matrix, class RNG>
+int ForwardSolverManager<Vector,Matrix,RNG>::getNumIters() const
 {
     return 0;
 }
@@ -156,8 +156,8 @@ int ForwardSolverManager<Vector,Matrix>::getNumIters() const
 /*!
  * \brief Set the linear problem with the manager.
  */
-template<class Vector, class Matrix>
-void ForwardSolverManager<Vector,Matrix>::setProblem( 
+template<class Vector, class Matrix, class RNG>
+void ForwardSolverManager<Vector,Matrix,RNG>::setProblem( 
     const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem )
 {
     MCLS_REQUIRE( !d_global_comm.is_null() );
@@ -214,8 +214,8 @@ void ForwardSolverManager<Vector,Matrix>::setProblem(
  * \brief Set the parameters for the manager. The manager will modify this
     list with default parameters that are not defined. 
 */
-template<class Vector, class Matrix>
-void ForwardSolverManager<Vector,Matrix>::setParameters( 
+template<class Vector, class Matrix, class RNG>
+void ForwardSolverManager<Vector,Matrix,RNG>::setParameters( 
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
     MCLS_REQUIRE( !params.is_null() );
@@ -227,8 +227,8 @@ void ForwardSolverManager<Vector,Matrix>::setParameters(
  * \brief Solve the linear problem. Return true if the solution
  * converged. False if it did not.
  */
-template<class Vector, class Matrix>
-bool ForwardSolverManager<Vector,Matrix>::solve()
+template<class Vector, class Matrix, class RNG>
+bool ForwardSolverManager<Vector,Matrix,RNG>::solve()
 {    
     MCLS_REQUIRE( !d_global_comm.is_null() );
     MCLS_REQUIRE( !d_plist.is_null() );
@@ -300,8 +300,8 @@ bool ForwardSolverManager<Vector,Matrix>::solve()
 /*!
  * \brief Build the Monte Carlo domain from the provided linear problem.
  */
-template<class Vector, class Matrix>
-void ForwardSolverManager<Vector,Matrix>::buildMonteCarloDomain()
+template<class Vector, class Matrix, class RNG>
+void ForwardSolverManager<Vector,Matrix,RNG>::buildMonteCarloDomain()
 {
     MCLS_REQUIRE( !d_global_comm.is_null() );
     MCLS_REQUIRE( !d_plist.is_null() );
@@ -314,7 +314,8 @@ void ForwardSolverManager<Vector,Matrix>::buildMonteCarloDomain()
     if ( Teuchos::is_null(d_mc_solver) )
     {
 	d_mc_solver = Teuchos::rcp(
-	    new MCSolver<SourceType>(d_msod_manager->setComm(), d_plist) );
+	    new MCSolver<SourceType>(
+		d_msod_manager->setComm(), d_global_comm->getRank(), d_plist) );
     }
 
     // Set a global scope variable for the primary domain.
@@ -343,8 +344,8 @@ void ForwardSolverManager<Vector,Matrix>::buildMonteCarloDomain()
 /*!
  * \brief Build the Monte Carlo source from the provided linear problem.
  */
-template<class Vector, class Matrix>
-void ForwardSolverManager<Vector,Matrix>::buildMonteCarloSource()
+template<class Vector, class Matrix, class RNG>
+void ForwardSolverManager<Vector,Matrix,RNG>::buildMonteCarloSource()
 {
     MCLS_REQUIRE( !d_global_comm.is_null() );
     MCLS_REQUIRE( !d_plist.is_null() );
@@ -383,7 +384,6 @@ void ForwardSolverManager<Vector,Matrix>::buildMonteCarloSource()
         primary_source = Teuchos::rcp( 
             new SourceType( rhs_copy,
                             d_msod_manager->localDomain(),
-                            d_mc_solver->rngControl(),
                             d_msod_manager->setComm(),
                             d_global_comm->getSize(),
                             d_global_comm->getRank(),
@@ -392,7 +392,7 @@ void ForwardSolverManager<Vector,Matrix>::buildMonteCarloSource()
     d_global_comm->barrier();
 
     // Build the global MSOD Monte Carlo source from the primary set.
-    d_msod_manager->setSource( primary_source, d_mc_solver->rngControl() );
+    d_msod_manager->setSource( primary_source );
 
     MCLS_ENSURE( !d_msod_manager->localSource().is_null() );
 }

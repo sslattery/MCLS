@@ -47,6 +47,7 @@
 #include <algorithm>
 #include <string>
 #include <cassert>
+#include <random>
 
 #include <MCLS_AdjointSolverManager.hpp>
 #include <MCLS_LinearProblem.hpp>
@@ -178,7 +179,7 @@ TEUCHOS_UNIT_TEST( AdjointSolverManager, one_by_one )
 			  B, x, b ) );
 
     // Create the solver.
-    MCLS::AdjointSolverManager<VectorType,MatrixType> 
+    MCLS::AdjointSolverManager<VectorType,MatrixType,std::mt19937> 
 	solver_manager( linear_problem, comm, plist );
 
     // Solve the problem.
@@ -343,7 +344,7 @@ TEUCHOS_UNIT_TEST( AdjointSolverManager, two_by_two )
 	plist->set<std::string>("Transport Type", "Global" );
 
 	// Create the solver.
-	MCLS::AdjointSolverManager<VectorType,MatrixType> 
+	MCLS::AdjointSolverManager<VectorType,MatrixType,std::mt19937> 
 	    solver_manager( linear_problem, comm, plist );
 
 	// Solve the problem.

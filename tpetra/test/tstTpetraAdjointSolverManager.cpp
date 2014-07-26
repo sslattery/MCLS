@@ -47,6 +47,7 @@
 #include <algorithm>
 #include <string>
 #include <cassert>
+#include <random>
 
 #include <MCLS_AdjointSolverManager.hpp>
 #include <MCLS_LinearProblem.hpp>
@@ -154,7 +155,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointSolverManager, one_by_one, LO, GO, Sca
 			  A, x, b ) );
 
     // Create the solver.
-    MCLS::AdjointSolverManager<VectorType,MatrixType> 
+    MCLS::AdjointSolverManager<VectorType,MatrixType,std::mt19937> 
 	solver_manager( linear_problem, comm, plist );
 
     // Solve the problem.
@@ -314,7 +315,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointSolverManager, two_by_two, LO, GO, Sca
 	plist->set<std::string>("Transport Type", "Global" );
 
 	// Create the solver.
-	MCLS::AdjointSolverManager<VectorType,MatrixType> 
+	MCLS::AdjointSolverManager<VectorType,MatrixType,std::mt19937> 
 	    solver_manager( linear_problem, comm, plist );
 
 	// Solve the problem.
@@ -538,7 +539,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointSolverManager, one_by_one_prec, LO, GO
     linear_problem->setRightPrec( I );
 
     // Create the solver.
-    MCLS::AdjointSolverManager<VectorType,MatrixType> 
+    MCLS::AdjointSolverManager<VectorType,MatrixType,std::mt19937> 
 	solver_manager( linear_problem, comm, plist );
 
     // Solve the problem.
@@ -713,7 +714,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointSolverManager, two_by_two_prec, LO, GO
 	plist->set<std::string>("Transport Type", "Global" );
 
 	// Create the solver.
-	MCLS::AdjointSolverManager<VectorType,MatrixType> 
+	MCLS::AdjointSolverManager<VectorType,MatrixType,std::mt19937> 
 	    solver_manager( linear_problem, comm, plist );
 
 	// Solve the problem.

@@ -64,7 +64,7 @@ namespace MCLS
  * \class AdjointSolverManager
  * \brief Solver manager for analog adjoint Monte Carlo.
  */
-template<class Vector, class Matrix>
+template<class Vector, class Matrix, class RNG>
 class AdjointSolverManager : public SolverManager<Vector,Matrix>
 {
   public:
@@ -78,10 +78,11 @@ class AdjointSolverManager : public SolverManager<Vector,Matrix>
     typedef Matrix                                  matrix_type;
     typedef MatrixTraits<Vector,Matrix>             MT;
     typedef LinearProblem<Vector,Matrix>            LinearProblemType;
-    typedef AdjointDomain<Vector,Matrix>            DomainType;
+    typedef AdjointDomain<Vector,Matrix,RNG>        DomainType;
     typedef typename DomainType::TallyType          TallyType;
     typedef TallyTraits<TallyType>                  TT;
     typedef UniformAdjointSource<DomainType>        SourceType;
+    typedef RNG                                     rng_type;
     typedef Teuchos::Comm<int>                      Comm;
     //@}
 

@@ -64,7 +64,7 @@ namespace MCLS
  * \class ForwardSolverManager
  * \brief Solver manager for analog forward Monte Carlo.
  */
-template<class Vector, class Matrix>
+template<class Vector, class Matrix, class RNG>
 class ForwardSolverManager : public SolverManager<Vector,Matrix>
 {
   public:
@@ -78,10 +78,11 @@ class ForwardSolverManager : public SolverManager<Vector,Matrix>
     typedef Matrix                                  matrix_type;
     typedef MatrixTraits<Vector,Matrix>             MT;
     typedef LinearProblem<Vector,Matrix>            LinearProblemType;
-    typedef ForwardDomain<Vector,Matrix>            DomainType;
+    typedef ForwardDomain<Vector,Matrix,RNG>        DomainType;
     typedef typename DomainType::TallyType          TallyType;
     typedef TallyTraits<TallyType>                  TT;
     typedef UniformForwardSource<DomainType>        SourceType;
+    typedef RNG                                     rng_type;
     typedef Teuchos::Comm<int>                      Comm;
     //@}
 
