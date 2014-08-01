@@ -62,11 +62,9 @@ PRNG<RNG>::PRNG( const int comm_rank)
 
     // Create a master rng to produce seed values for each parallel rank.
     Teuchos::RCP<RNG> master_rng = RNGT::create( rand_device() );
-    typename RNGT::uniform_int_distribution_type::result_type seed = 0;
-    Teuchos::RCP<typename RNGT::uniform_int_distribution_type> distribution =
-	RandomDistributionTraits<RNGT::uniform_int_distribution_type>::create(
-	    0, std::numeric_limits<
-	    typename RNGT::uniform_int_distribution_type::result_type>::max() );
+    typename IDT::result_type seed = 0;
+    Teuchos::RCP<IntDistribution> distribution =IDT::create(
+	0, std::numeric_limits<typename IDT::result_type>::max() );
     for ( int i = 0; i < comm_rank; ++i )
     {
 	seed = RNGT::random( *master_rng, *distribution );

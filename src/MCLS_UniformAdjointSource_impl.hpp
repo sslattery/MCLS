@@ -66,7 +66,7 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
     const Teuchos::ParameterList& plist )
     : d_b( b )
     , d_domain( domain )
-    , d_rng_dist( RNDT::create(0.0, 1.0) )
+    , d_rng_dist( RDT::create(0.0, 1.0) )
     , d_set_comm( set_comm )
     , d_global_size( global_comm_size )
     , d_global_rank( global_comm_rank )

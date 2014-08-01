@@ -60,6 +60,8 @@ class PRNG
     //! Typedefs.
     typedef RNG rng_type;
     typedef RNGTraits<RNG> RNGT;
+    typedef typename RNGT::uniform_int_distribution_type IntDistribution;
+    typedef RandomDistributionTraits<IntDistribution> IDT;
     //@}
 
     // Constructor.
@@ -70,13 +72,13 @@ class PRNG
     { /* ... */ }
 
     // Get a random number from a specified distribution.
-    template<class Distribution>
-    inline typename Distribution::result_type 
-    random( Distribution& distribution );
+    template<class RandomDistribution>
+    inline typename RandomDistributionTraits<RandomDistribution>::result_type
+    random( RandomDistribution& distribution );
 
   private:
 
-    // Seed for SPRNG stream initialization.
+    // Random number generator.
     Teuchos::RCP<RNG> d_rng;
 };
 

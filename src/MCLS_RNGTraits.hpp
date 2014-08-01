@@ -54,12 +54,12 @@ namespace MCLS
  *
  * Will throw a compile-time error if these traits are not specialized.
  */
-template<class Distribution>
-struct UndefinedDistributionTraits
+template<class RandomDistribution>
+struct UndefinedRandomDistributionTraits
 {
     static inline void notDefined()
     {
-	return Distribution::this_type_is_missing_a_specialization();
+	return RandomDistribution::this_type_is_missing_a_specialization();
     }
 };
 
@@ -77,15 +77,15 @@ class RandomDistributionTraits
     //@{
     //! Typedefs.
     typedef RandomDistribution distribution_type;
-    typedef RandomDistribution::result_type result_type;
+    typedef typename RandomDistribution::result_type result_type;
     //@}
 
     //! Create a random number distribution from upper and lower bounds.
-    static Teuchos::RCP<RNG> create( const result_type lower_bound,
-				     const result_type upper_bound )
+    static Teuchos::RCP<RandomDistribution> 
+    create( const result_type lower_bound, const result_type upper_bound )
     {
-	UndefinedRNGTraits<RNG>::notDefined();
-	return Teuchos::null();
+	UndefinedRandomDistributionTraits<RandomDistribution>::notDefined();
+	return Teuchos::null;
     }
 };
 
@@ -119,15 +119,15 @@ class RNGTraits
     //@{
     //! Typedefs.
     typedef RNG rng_type;
-    typedef RNG::uniform_int_distribution_type uniform_int_distribution_type;
-    typedef RNG::uniform_real_distribution_type uniform_real_distribution_type;
+    typedef typename RNG::uniform_int_distribution_type uniform_int_distribution_type;
+    typedef typename RNG::uniform_real_distribution_type uniform_real_distribution_type;
     //@}
 
     //! Create a random number generator from a seed.
     static Teuchos::RCP<RNG> create( const std::size_t seed )
     {
 	UndefinedRNGTraits<RNG>::notDefined();
-	return Teuchos::null();
+	return Teuchos::null;
     }
 
     //! Get a random number from a specified distribution.
@@ -151,15 +151,14 @@ class RandomDistributionTraits<std::uniform_real_distribution<double> >
     //@{
     //! Typedefs.
     typedef std::uniform_real_distribution<double> distribution_type;
-    typedef std::uniform_real_distribution<double>::result_type result_type;
+    typedef typename distribution_type::result_type result_type;
     //@}
 
     //! Create a random number distribution from upper and lower bounds.
-    static Teuchos::RCP<RNG> create( const result_type lower_bound,
-				     const result_type upper_bound )
+    static Teuchos::RCP<distribution_type> 
+    create( const result_type lower_bound, const result_type upper_bound )
     {
-	return Teuchos::rcp( 
-	    new std::uniform_real_distribution<double>(lower_bound,upper_bound) );
+	return Teuchos::rcp( new distribution_type(lower_bound,upper_bound) );
     }
 };
 
@@ -172,48 +171,19 @@ class RandomDistributionTraits<std::uniform_int_distribution<int> >
     //@{
     //! Typedefs.
     typedef std::uniform_int_distribution<int> distribution_type;
-    typedef std::uniform_int_distribution<int>::result_type result_type;
+    typedef typename distribution_type::result_type result_type;
     //@}
 
     //! Create a random number distribution from upper and lower bounds.
-    static Teuchos::RCP<RNG> create( const result_type lower_bound,
-				     const result_type upper_bound )
+    static Teuchos::RCP<distribution_type> 
+    create( const result_type lower_bound, const result_type upper_bound )
     {
-	return Teuchos::rcp( 
-	    new std::uniform_int_distribution<int>(lower_bound,upper_bound) );
+	return Teuchos::rcp( new distribution_type(lower_bound,upper_bound) );
     }
 };
 
 //---------------------------------------------------------------------------//
 // C++11 Specializations for RNGTraits.
-//---------------------------------------------------------------------------//
-template<>
-class RNGTraits<std::default_random_engine>
-{
-  public:
-
-    //@{
-    //! Typedefs.
-    typedef std::default_random_engine rng_type;
-    typedef std::uniform_int_distribution<int> uniform_int_distribution_type;
-    typedef std::uniform_real_distribution<double> uniform_real_distribution_type;
-    //@}
-
-    //! Create a random number generator from a seed.
-    static Teuchos::RCP<RNG> create( const std::size_t seed )
-    {
-	return Teuchos::rcp( new rng_type(seed) );
-    }
-
-    //! Get a random number from a specified distribution.
-    template<class RandomDistribution>
-    static inline typename RandomDistributionTraits<RandomDistribution>::result_type 
-    random( RNG& rng, RandomDistribution& distribution )
-    {
-	return distribution( rng );
-    }
-};
-
 //---------------------------------------------------------------------------//
 template<>
 class RNGTraits<std::minstd_rand>
@@ -228,15 +198,15 @@ class RNGTraits<std::minstd_rand>
     //@}
 
     //! Create a random number generator from a seed.
-    static Teuchos::RCP<RNG> create( const std::size_t seed )
+    static Teuchos::RCP<rng_type> create( const std::size_t seed )
     {
 	return Teuchos::rcp( new rng_type(seed) );
     }
 
     //! Get a random number from a specified distribution.
     template<class RandomDistribution>
-    static inline typename RandomDistributionTraits<RandomDistribution>::result_type 
-    random( RNG& rng, RandomDistribution& distribution )
+    static inline typename RandomDistributionTraits<RandomDistribution>::result_type
+    random( rng_type& rng, RandomDistribution& distribution )
     {
 	return distribution( rng );
     }
@@ -256,15 +226,15 @@ class RNGTraits<std::minstd_rand0>
     //@}
 
     //! Create a random number generator from a seed.
-    static Teuchos::RCP<RNG> create( const std::size_t seed )
+    static Teuchos::RCP<rng_type> create( const std::size_t seed )
     {
 	return Teuchos::rcp( new rng_type(seed) );
     }
 
     //! Get a random number from a specified distribution.
     template<class RandomDistribution>
-    static inline typename RandomDistributionTraits<RandomDistribution>::result_type 
-    random( RNG& rng, RandomDistribution& distribution )
+    static inline typename RandomDistributionTraits<RandomDistribution>::result_type
+    random( rng_type& rng, RandomDistribution& distribution )
     {
 	return distribution( rng );
     }
@@ -284,15 +254,15 @@ class RNGTraits<std::mt19937>
     //@}
 
     //! Create a random number generator from a seed.
-    static Teuchos::RCP<RNG> create( const std::size_t seed )
+    static Teuchos::RCP<rng_type> create( const std::size_t seed )
     {
 	return Teuchos::rcp( new rng_type(seed) );
     }
 
     //! Get a random number from a specified distribution.
     template<class RandomDistribution>
-    static inline typename RandomDistributionTraits<RandomDistribution>::result_type 
-    random( RNG& rng, RandomDistribution& distribution )
+    static inline typename RandomDistributionTraits<RandomDistribution>::result_type
+    random( rng_type& rng, RandomDistribution& distribution )
     {
 	return distribution( rng );
     }
@@ -312,15 +282,15 @@ class RNGTraits<std::mt19937_64>
     //@}
 
     //! Create a random number generator from a seed.
-    static Teuchos::RCP<RNG> create( const std::size_t seed )
+    static Teuchos::RCP<rng_type> create( const std::size_t seed )
     {
 	return Teuchos::rcp( new rng_type(seed) );
     }
 
     //! Get a random number from a specified distribution.
     template<class RandomDistribution>
-    static inline typename RandomDistributionTraits<RandomDistribution>::result_type 
-    random( RNG& rng, RandomDistribution& distribution )
+    static inline typename RandomDistributionTraits<RandomDistribution>::result_type
+    random( rng_type& rng, RandomDistribution& distribution )
     {
 	return distribution( rng );
     }
@@ -340,15 +310,15 @@ class RNGTraits<std::ranlux24_base>
     //@}
 
     //! Create a random number generator from a seed.
-    static Teuchos::RCP<RNG> create( const std::size_t seed )
+    static Teuchos::RCP<rng_type> create( const std::size_t seed )
     {
 	return Teuchos::rcp( new rng_type(seed) );
     }
 
     //! Get a random number from a specified distribution.
     template<class RandomDistribution>
-    static inline typename RandomDistributionTraits<RandomDistribution>::result_type 
-    random( RNG& rng, RandomDistribution& distribution )
+    static inline typename RandomDistributionTraits<RandomDistribution>::result_type
+    random( rng_type& rng, RandomDistribution& distribution )
     {
 	return distribution( rng );
     }
@@ -368,7 +338,7 @@ class RNGTraits<std::ranlux48_base>
     //@}
 
     //! Create a random number generator from a seed.
-    static Teuchos::RCP<RNG> create( const std::size_t seed )
+    static Teuchos::RCP<rng_type> create( const std::size_t seed )
     {
 	return Teuchos::rcp( new rng_type(seed) );
     }
@@ -376,7 +346,7 @@ class RNGTraits<std::ranlux48_base>
     //! Get a random number from a specified distribution.
     template<class RandomDistribution>
     static inline typename RandomDistributionTraits<RandomDistribution>::result_type 
-    random( RNG& rng, RandomDistribution& distribution )
+    random( rng_type& rng, RandomDistribution& distribution )
     {
 	return distribution( rng );
     }
@@ -396,15 +366,15 @@ class RNGTraits<std::ranlux24>
     //@}
 
     //! Create a random number generator from a seed.
-    static Teuchos::RCP<RNG> create( const std::size_t seed )
+    static Teuchos::RCP<rng_type> create( const std::size_t seed )
     {
 	return Teuchos::rcp( new rng_type(seed) );
     }
 
     //! Get a random number from a specified distribution.
     template<class RandomDistribution>
-    static inline typename RandomDistributionTraits<RandomDistribution>::result_type 
-    random( RNG& rng, RandomDistribution& distribution )
+    static inline typename RandomDistributionTraits<RandomDistribution>::result_type
+    random( rng_type& rng, RandomDistribution& distribution )
     {
 	return distribution( rng );
     }
@@ -424,15 +394,15 @@ class RNGTraits<std::ranlux48>
     //@}
 
     //! Create a random number generator from a seed.
-    static Teuchos::RCP<RNG> create( const std::size_t seed )
+    static Teuchos::RCP<rng_type> create( const std::size_t seed )
     {
 	return Teuchos::rcp( new rng_type(seed) );
     }
 
     //! Get a random number from a specified distribution.
     template<class RandomDistribution>
-    static inline typename RandomDistributionTraits<RandomDistribution>::result_type 
-    random( RNG& rng, RandomDistribution& distribution )
+    static inline typename RandomDistributionTraits<RandomDistribution>::result_type
+    random( rng_type& rng, RandomDistribution& distribution )
     {
 	return distribution( rng );
     }
@@ -453,15 +423,15 @@ class RNGTraits<std::knuth_b>
     //@}
 
     //! Create a random number generator from a seed.
-    static Teuchos::RCP<RNG> create( const std::size_t seed )
+    static Teuchos::RCP<rng_type> create( const std::size_t seed )
     {
 	return Teuchos::rcp( new rng_type(seed) );
     }
 
     //! Get a random number from a specified distribution.
     template<class RandomDistribution>
-    static inline typename RandomDistributionTraits<RandomDistribution>::result_type 
-    random( RNG& rng, RandomDistribution& distribution )
+    static inline typename RandomDistributionTraits<RandomDistribution>::result_type
+    random( rng_type& rng, RandomDistribution& distribution )
     {
 	return distribution( rng );
     }
