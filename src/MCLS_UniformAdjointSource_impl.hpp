@@ -66,7 +66,7 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
     const Teuchos::ParameterList& plist )
     : d_b( b )
     , d_domain( domain )
-    , d_rng_dist( 0.0, 1.0 )
+    , d_rng_dist( RNDT::create(0.0, 1.0) )
     , d_set_comm( set_comm )
     , d_global_size( global_comm_size )
     , d_global_rank( global_comm_rank )
@@ -123,7 +123,7 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
     const int global_comm_size,
     const int global_comm_rank )
     : d_domain( domain )
-    , d_rng_dist( 0.0, 1.0 )
+    , d_rng_dist( RDT::create(0.0, 1.0) )
     , d_set_comm( set_comm )
     , d_global_size( global_comm_size )
     , d_global_rank( global_comm_rank )
@@ -321,7 +321,7 @@ UniformAdjointSource<Domain>::getHistory()
 
     // Sample the local source cdf to get a starting state.
     int local_state = d_random_sampling ? 
-                      sampleRandomSource( d_rng->random(d_rng_dist) ) : 
+                      sampleRandomSource( d_rng->random(*d_rng_dist) ) : 
                       sampleStratifiedSource();
     MCLS_CHECK( VT::isLocalRow(*d_b,local_state) );
     Ordinal starting_state = VT::getGlobalRow( *d_b, local_state );

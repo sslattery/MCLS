@@ -75,6 +75,7 @@ APPEND_SET(HEADERS
   MCLS_Preconditioner.hpp
   MCLS_PRNG.hpp
   MCLS_PRNG_impl.hpp
+  MCLS_RNGTraits.hpp
   MCLS_RNSDIteration.hpp
   MCLS_RNSDIteration_impl.hpp
   MCLS_RichardsonIteration.hpp

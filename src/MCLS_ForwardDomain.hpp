@@ -55,6 +55,7 @@
 #include "MCLS_MatrixTraits.hpp"
 #include "MCLS_MatrixAlgorithms.hpp"
 #include "MCLS_PRNG.hpp"
+#include "MCLS_RNGTraits.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
@@ -115,6 +116,9 @@ class ForwardDomain
     typedef typename std::unordered_map<Ordinal,int>      MapType;
     typedef Teuchos::Comm<int>                            Comm;
     typedef RNG                                           rng_type;
+    typedef RNGTraits<RNG>                                RNGT;
+    typedef typename RNGT::uniform_real_distribution_type RandomDistribution;
+    typedef RandomDistributionTraits<RandomDistribution>  RDT;
     //@}
 
     // Matrix constructor.
@@ -190,7 +194,7 @@ class ForwardDomain
     Teuchos::RCP<PRNG<RNG> > d_rng;
 
     // Random number distribution.
-    std::uniform_real_distribution<double> d_rng_dist;
+    Teuchos::RCP<RandomDistribution> d_rng_dist;
 
     // Monte Carlo estimator type.
     int d_estimator;
@@ -246,7 +250,7 @@ inline void ForwardDomain<Vector,Matrix,RNG>::processTransition(
     // Sample the row CDF to get a new state.
     Ordinal new_state = 
         SamplingTools::sampleDiscreteCDF( d_cdfs[index->second](),
-                                          d_rng->random(d_rng_dist) );
+                                          d_rng->random(*d_rng_dist) );
     history.setState( (*d_columns[index->second])[new_state] );
 
     // Update the history weight with the transition weight. An absorption

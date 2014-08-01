@@ -41,6 +41,8 @@
 #ifndef MCLS_PRNG_HPP
 #define MCLS_PRNG_HPP
 
+#include <MCLS_RNGTraits.hpp>
+
 namespace MCLS
 {
 //---------------------------------------------------------------------------//
@@ -57,6 +59,7 @@ class PRNG
     //@{
     //! Typedefs.
     typedef RNG rng_type;
+    typedef RNGTraits<RNG> RNGT;
     //@}
 
     // Constructor.
@@ -66,6 +69,7 @@ class PRNG
     ~PRNG()
     { /* ... */ }
 
+    // Get a random number from a specified distribution.
     template<class Distribution>
     inline typename Distribution::result_type 
     random( Distribution& distribution );
@@ -73,18 +77,21 @@ class PRNG
   private:
 
     // Seed for SPRNG stream initialization.
-    RNG d_rng;
+    Teuchos::RCP<RNG> d_rng;
 };
 
 //---------------------------------------------------------------------------//
 // Inline functions.
 //---------------------------------------------------------------------------//
+/*!
+ * \brief Get a random number from a specified distribution.
+ */
 template<class RNG>
-template<class Distribution>
-inline typename Distribution::result_type
-PRNG<RNG>::random( Distribution& distribution )
+template<class RandomDistribution>
+inline typename RandomDistributionTraits<RandomDistribution>::result_type
+PRNG<RNG>::random( RandomDistribution& distribution )
 {
-    return distribution( d_rng );
+    return RNGT::random( *d_rng, distribution );
 }
 
 //---------------------------------------------------------------------------//

@@ -46,6 +46,7 @@
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_TallyTraits.hpp"
 #include "MCLS_PRNG.hpp"
+#include "MCLS_RNGTraits.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
@@ -72,18 +73,20 @@ class UniformAdjointSource
 
     //@{
     //! Typedefs.
-    typedef Domain                                       domain_type;
-    typedef DomainTraits<Domain>                         DT;
-    typedef typename DT::history_type                    HistoryType;
-    typedef typename DT::ordinal_type                    Ordinal;
-    typedef typename DT::tally_type                      TallyType;
-    typedef TallyTraits<TallyType>                       TT;
-    typedef typename TT::vector_type                     VectorType;
-    typedef VectorTraits<VectorType>                     VT;
-    typedef typename VT::scalar_type                     Scalar;
-    typedef typename Domain::rng_type                    rng_type;
-    typedef Teuchos::Comm<int>                           Comm;
-
+    typedef Domain                                        domain_type;
+    typedef DomainTraits<Domain>                          DT;
+    typedef typename DT::history_type                     HistoryType;
+    typedef typename DT::ordinal_type                     Ordinal;
+    typedef typename DT::tally_type                       TallyType;
+    typedef TallyTraits<TallyType>                        TT;
+    typedef typename TT::vector_type                      VectorType;
+    typedef VectorTraits<VectorType>                      VT;
+    typedef typename VT::scalar_type                      Scalar;
+    typedef typename Domain::rng_type                     rng_type;
+    typedef Teuchos::Comm<int>                            Comm;
+    typedef RNGTraits<rng_type>                           RNGT;
+    typedef typename RNGT::uniform_real_distribution_type RandomDistribution;
+    typedef RandomDistributionTraits<RandomDistribution>  RDT;
     //@}
 
     // Constructor.
@@ -171,7 +174,7 @@ class UniformAdjointSource
     Teuchos::RCP<PRNG<rng_type> > d_rng;
     
     // Random number distribution.
-    std::uniform_real_distribution<double> d_rng_dist;
+    Teuchos::RCP<RandomDistribution> d_rng_dist;
 
     // Communicator for this set.
     Teuchos::RCP<const Comm> d_set_comm;

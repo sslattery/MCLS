@@ -65,7 +65,7 @@ UniformForwardSource<Domain>::UniformForwardSource(
     const Teuchos::ParameterList& plist )
     : d_b( b )
     , d_domain( domain )
-    , d_rng_dist( 0.0, 1.0 )
+    , d_rng_dist( RDT::create(0.0, 1.0) )
     , d_set_comm( set_comm )
     , d_global_size( global_comm_size )
     , d_global_rank( global_comm_rank )
@@ -107,7 +107,7 @@ UniformForwardSource<Domain>::UniformForwardSource(
     const int global_comm_size,
     const int global_comm_rank )
     : d_domain( domain )
-    , d_rng_dist( 0.0, 1.0 )
+    , d_rng_dist( RDT::create(0.0, 1.0) )
     , d_set_comm( set_comm )
     , d_global_size( global_comm_size )
     , d_global_rank( global_comm_rank )
@@ -313,7 +313,7 @@ UniformForwardSource<Domain>::getHistory()
 
     // Sample the local source cdf to get a starting state.
     Teuchos::ArrayView<double>::size_type local_state =
-	SamplingTools::sampleDiscreteCDF( d_cdf(), d_rng->random(d_rng_dist) );
+	SamplingTools::sampleDiscreteCDF( d_cdf(), d_rng->random(*d_rng_dist) );
     MCLS_CHECK( VT::isLocalRow(*d_b,local_state) );
     Ordinal starting_state = VT::getGlobalRow( *d_b, local_state );
     MCLS_CHECK( DT::isLocalState(*d_domain,starting_state) );

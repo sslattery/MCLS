@@ -65,7 +65,7 @@ AdjointDomain<Vector,Matrix,RNG>::AdjointDomain(
     const Teuchos::RCP<const Matrix>& A,
     const Teuchos::RCP<Vector>& x,
     const Teuchos::ParameterList& plist )
-    : d_rng_dist( 0.0, 1.0 )
+    : d_rng_dist( RDT::create(0.0, 1.0) )
     , d_row_indexer( Teuchos::rcp(new MapType()) )
 {
     MCLS_REQUIRE( !A.is_null() );
@@ -235,7 +235,7 @@ template<class Vector, class Matrix, class RNG>
 AdjointDomain<Vector,Matrix,RNG>::AdjointDomain( 
     const Teuchos::ArrayView<char>& buffer,
     const Teuchos::RCP<const Comm>& set_comm )
-    : d_rng_dist( 0.0, 1.0 )
+    : d_rng_dist( RDT::create(0.0, 1.0) )
     , d_row_indexer( Teuchos::rcp(new MapType()) )
 {
     Ordinal num_rows = 0;

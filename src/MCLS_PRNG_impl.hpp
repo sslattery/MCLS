@@ -42,29 +42,38 @@
 #define MCLS_PRNG_IMPL_HPP
 
 #include <random>
+#include <limits>
 
 namespace MCLS
 {
 //---------------------------------------------------------------------------//
 /*!
  * \brief Constructor.
+ *
+ * \param comm_rank Rank of the local process in the global parallel
+ * communicator.
  */
 template<class RNG>
 PRNG<RNG>::PRNG( const int comm_rank)
 {
-    // Create a random device to get an initial random number.
+    // Create a random device to get an initial random number. This is
+    // potentially non-deterministic.
     std::random_device rand_device;
 
     // Create a master rng to produce seed values for each parallel rank.
-    RNG master_rng( rand_device() );
-    typename RNG::result_type seed = 0;
+    Teuchos::RCP<RNG> master_rng = RNGT::create( rand_device() );
+    typename RNGT::uniform_int_distribution_type::result_type seed = 0;
+    Teuchos::RCP<typename RNGT::uniform_int_distribution_type> distribution =
+	RandomDistributionTraits<RNGT::uniform_int_distribution_type>::create(
+	    0, std::numeric_limits<
+	    typename RNGT::uniform_int_distribution_type::result_type>::max() );
     for ( int i = 0; i < comm_rank; ++i )
     {
-	seed = master_rng();
+	seed = RNGT::random( *master_rng, *distribution );
     }
 
     // Seed the random number generator on this process.
-    d_rng = rng_type( seed );
+    d_rng = RNGT::create( seed );
 }
 
 //---------------------------------------------------------------------------//
