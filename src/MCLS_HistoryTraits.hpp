@@ -102,18 +102,36 @@ class HistoryTraits
     }
 
     /*!
-     * \brief Set the state of a history
+     * \brief Set the state of a history in global indexing.
      */
-    static inline void setState( history_type& history, 
-				 const ordinal_type state )
+    static inline void setGlobalState( history_type& history, 
+				       const ordinal_type state )
     {
 	UndefinedHistoryTraits<History>::notDefined(); 
     }
 
     /*! 
-     * \brief get the state of a history.
+     * \brief Get the state of a history in global indexing.
      */
-    static inline ordinal_type state( const history_type& history )
+    static inline ordinal_type globalState( const history_type& history )
+    {
+	UndefinedHistoryTraits<History>::notDefined(); 
+	return -1;
+    }
+
+    /*!
+     * \brief Set the state of a history in local indexing.
+     */
+    static inline void setLocalState( history_type& history, 
+				      const int state )
+    {
+	UndefinedHistoryTraits<History>::notDefined(); 
+    }
+
+    /*! 
+     * \brief Get the state of a history in local indexing.
+     */
+    static inline int localState( const history_type& history )
     {
 	UndefinedHistoryTraits<History>::notDefined(); 
 	return -1;

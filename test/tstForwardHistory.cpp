@@ -88,7 +88,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, history, Ordinal )
 
     MCLS::ForwardHistory<Ordinal> h_1;
     TEST_EQUALITY( h_1.weight(), Teuchos::ScalarTraits<double>::one() );
-    TEST_EQUALITY( h_1.state(), Teuchos::OrdinalTraits<Ordinal>::zero() );
+    TEST_EQUALITY( h_1.globalState(), Teuchos::OrdinalTraits<Ordinal>::invalid() );
     TEST_EQUALITY( h_1.startingState(), 
 		   Teuchos::OrdinalTraits<Ordinal>::zero() );
     TEST_ASSERT( !h_1.alive() );
@@ -106,8 +106,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, history, Ordinal )
     h_1.setEvent( MCLS::Event::BOUNDARY );
     TEST_EQUALITY( h_1.event(), Teuchos::as<int>(MCLS::Event::BOUNDARY) );
 
-    h_1.setState( 3 );
-    TEST_EQUALITY( h_1.state(), 3 );
+    h_1.setGlobalState( 3 );
+    TEST_EQUALITY( h_1.globalState(), 3 );
+
+    h_1.setLocalState( 4 );
+    TEST_EQUALITY( h_1.localState(), 4 );
 
     h_1.setStartingState( 2 );
     TEST_EQUALITY( h_1.startingState(), 2 );
@@ -126,9 +129,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, history, Ordinal )
     h_1.addToHistoryTally( 1.34 );
     TEST_EQUALITY( h_1.historyTally(), 1.34 );
 
-    MCLS::ForwardHistory<Ordinal> h_2( 5, 6 );
+    MCLS::ForwardHistory<Ordinal> h_2( 5, 2, 6 );
     TEST_EQUALITY( h_2.weight(), 6 );
-    TEST_EQUALITY( h_2.state(), 5 );
+    TEST_EQUALITY( h_2.globalState(), 5 );
+    TEST_EQUALITY( h_2.localState(), 2 );
     TEST_EQUALITY( h_2.startingState(), 5 );
     TEST_ASSERT( !h_2.alive() );
     TEST_EQUALITY( h_2.event(), MCLS::Event::NO_EVENT );
@@ -146,7 +150,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, pack_unpack, Ordinal )
 	MCLS::ForwardHistory<Ordinal>::getPackedBytes();
     TEST_EQUALITY( packed_bytes, byte_size );
 
-    MCLS::ForwardHistory<Ordinal> h_1( 5, 6 );
+    MCLS::ForwardHistory<Ordinal> h_1( 5, 2, 6 );
     h_1.live();
     h_1.setEvent( MCLS::Event::BOUNDARY );
     h_1.addToHistoryTally( 2.44 );
@@ -156,7 +160,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, pack_unpack, Ordinal )
 
     MCLS::ForwardHistory<Ordinal> h_2( packed_history );
     TEST_EQUALITY( h_2.weight(), 6 );
-    TEST_EQUALITY( h_2.state(), 5 );
+    TEST_EQUALITY( h_2.globalState(), 5 );
+    TEST_EQUALITY( h_2.localState(), Teuchos::OrdinalTraits<Ordinal>::invalid() );
     TEST_EQUALITY( h_2.startingState(), 5 );
     TEST_ASSERT( h_2.alive() );
     TEST_EQUALITY( h_2.event(), MCLS::Event::BOUNDARY );
@@ -179,7 +184,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, broadcast, Ordinal )
 
     if ( comm_rank == 0 )
     {
-	MCLS::ForwardHistory<Ordinal> h_1( 5, 6 );
+	MCLS::ForwardHistory<Ordinal> h_1( 5, 2, 6 );
 	h_1.live();
 	h_1.setEvent( MCLS::Event::BOUNDARY );
 	h_1.addToHistoryTally( 1.98 );
@@ -190,7 +195,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, broadcast, Ordinal )
 
     MCLS::ForwardHistory<Ordinal> h_2( packed_history );
     TEST_EQUALITY( h_2.weight(), 6 );
-    TEST_EQUALITY( h_2.state(), 5 );
+    TEST_EQUALITY( h_2.globalState(), 5 );
+    TEST_EQUALITY( h_2.localState(), Teuchos::OrdinalTraits<Ordinal>::invalid() );
     TEST_EQUALITY( h_2.startingState(), 5 );
     TEST_ASSERT( h_2.alive() );
     TEST_EQUALITY( h_2.event(), MCLS::Event::BOUNDARY );

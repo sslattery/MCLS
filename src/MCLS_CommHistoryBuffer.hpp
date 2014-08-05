@@ -115,12 +115,12 @@ class CommHistoryBuffer : public HistoryBuffer<History>
 	d_handle = Teuchos::null;
 	Base::empty();
 	MCLS_ENSURE( Base::isEmpty() );
-	MCLS_ENSURE( d_handle.is_null() );
+	MCLS_ENSURE( Teuchos::is_null(d_handle) );
     }
 
     //! Check the status of a non-blocking communication buffer.
     inline bool status() const
-    { return !d_handle.is_null(); }
+    { return Teuchos::nonnull(d_handle); }
 
     //! Set the communicators for this buffer.
     void setComm( const Teuchos::RCP<const Comm>& comm_blocking,
@@ -128,8 +128,8 @@ class CommHistoryBuffer : public HistoryBuffer<History>
     { 
 	d_comm_blocking = comm_blocking; 
 	d_comm_nonblocking = comm_nonblocking; 
-	MCLS_ENSURE( !d_comm_blocking.is_null() );
-	MCLS_ENSURE( !d_comm_nonblocking.is_null() );
+	MCLS_ENSURE( Teuchos::nonnull(d_comm_blocking) );
+	MCLS_ENSURE( Teuchos::nonnull(d_comm_nonblocking) );
     }
 
   protected:

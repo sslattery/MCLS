@@ -148,10 +148,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( HistoryBuffer, buffering, Ordinal )
     std::stack<Teuchos::RCP<HT> > bank;
     TEST_ASSERT( bank.empty() );
 
-    HT h1( 1, 1 );
-    HT h2( 2, 2 );
-    HT h3( 3, 3 );
-    HT h4( 4, 4 );
+    HT h1( 1, 1, 1 );
+    HT h2( 2, 2, 2 );
+    HT h3( 3, 4, 3 );
+    HT h4( 4, 4, 4 );
 
     buffer.bufferHistory( h1 );
     TEST_ASSERT( !buffer.isFull() );
@@ -180,25 +180,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( HistoryBuffer, buffering, Ordinal )
     TEST_EQUALITY( bank.size(), 4 );
     ph4 = bank.top();
     bank.pop();
-    TEST_EQUALITY( ph4->state(), 4 );
+    TEST_EQUALITY( ph4->globalState(), 4 );
     TEST_EQUALITY( ph4->weight(), 4 );
 
     TEST_EQUALITY( bank.size(), 3 );
     ph3 = bank.top();
     bank.pop();
-    TEST_EQUALITY( ph3->state(), 3 );
+    TEST_EQUALITY( ph3->globalState(), 3 );
     TEST_EQUALITY( ph3->weight(), 3 );
 
     TEST_EQUALITY( bank.size(), 2 );
     ph2 = bank.top();
     bank.pop();
-    TEST_EQUALITY( ph2->state(), 2 );
+    TEST_EQUALITY( ph2->globalState(), 2 );
     TEST_EQUALITY( ph2->weight(), 2 );
 
     TEST_EQUALITY( bank.size(), 1 );
     ph1 = bank.top();
     bank.pop();
-    TEST_EQUALITY( ph1->state(), 1 );
+    TEST_EQUALITY( ph1->globalState(), 1 );
     TEST_EQUALITY( ph1->weight(), 1 );
 
     TEST_ASSERT( bank.empty() );

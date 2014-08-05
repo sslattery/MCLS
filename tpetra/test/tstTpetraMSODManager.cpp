@@ -239,7 +239,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MSODManager, two_by_two, LO, GO, Scalar )
 	{
 	    if ( i >= local_num_rows*set_rank && i < 2+local_num_rows*(set_rank+1) )
 	    {
-		HistoryType history( i, x_val );
+		HistoryType history( i, i, x_val );
 		history.live();
 		tally->tallyHistory( history );
 	    }
@@ -347,9 +347,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MSODManager, two_by_two, LO, GO, Scalar )
 	    Teuchos::RCP<HistoryType> history = source->getHistory();
 
 	    TEST_EQUALITY( history->weight(), -global_num_rows );
-	    TEST_ASSERT( domain->isLocalState( history->state() ) );
+	    TEST_ASSERT( domain->isLocalState( history->globalState() ) );
 	    TEST_ASSERT( history->alive() );
-	    TEST_ASSERT( VT::isGlobalRow( *x, history->state() ) );
+	    TEST_ASSERT( VT::isGlobalRow( *x, history->globalState() ) );
 	}
 	TEST_ASSERT( source->empty() );
 	TEST_EQUALITY( source->numLeft(), 0 );
@@ -374,7 +374,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MSODManager, two_by_two, LO, GO, Scalar )
 	{
 	    if ( i >= local_num_rows*set_rank && i < 2+local_num_rows*(set_rank+1) )
 	    {
-		HistoryType history( i, x_val );
+		HistoryType history( i, i, x_val );
 		history.live();
 		tally->tallyHistory( history );
 	    }
@@ -479,9 +479,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MSODManager, two_by_two, LO, GO, Scalar )
 	    Teuchos::RCP<HistoryType> history = source->getHistory();
 
 	    TEST_EQUALITY( history->weight(), -global_num_rows );
-	    TEST_ASSERT( domain->isLocalState( history->state() ) );
+	    TEST_ASSERT( domain->isLocalState( history->globalState() ) );
 	    TEST_ASSERT( history->alive() );
-	    TEST_ASSERT( VT::isGlobalRow( *x, history->state() ) );
+	    TEST_ASSERT( VT::isGlobalRow( *x, history->globalState() ) );
 	}
 	TEST_ASSERT( source->empty() );
 	TEST_EQUALITY( source->numLeft(), 0 );

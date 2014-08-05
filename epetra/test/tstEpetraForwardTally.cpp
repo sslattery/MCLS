@@ -160,7 +160,7 @@ TEUCHOS_UNIT_TEST( ForwardTally, TallyHistory )
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	int state = i + local_num_rows*comm_rank;
-	HistoryType history( state, a_val );
+	HistoryType history( state, state, a_val );
 	history.live();
 	tally.tallyHistory( history );
 	TEST_EQUALITY( history.historyTally(), a_val*b_val );
@@ -170,7 +170,7 @@ TEUCHOS_UNIT_TEST( ForwardTally, TallyHistory )
 
 	int inverse_state = 
 	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
-	history = HistoryType( inverse_state, b_val );
+	history = HistoryType( inverse_state, inverse_state, b_val );
 	history.live();
 	tally.tallyHistory( history );
 	TEST_EQUALITY( history.historyTally(), b_val*b_val );
@@ -272,7 +272,7 @@ TEUCHOS_UNIT_TEST( ForwardTally, SetCombine )
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	int state = i + local_num_rows*comm_rank;
-	HistoryType history( state, a_val );
+	HistoryType history( state, state, a_val );
 	history.live();
 	tally.tallyHistory( history );
 	TEST_EQUALITY( history.historyTally(), a_val*b_val );
@@ -282,7 +282,7 @@ TEUCHOS_UNIT_TEST( ForwardTally, SetCombine )
 
 	int inverse_state = 
 	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
-	history = HistoryType( inverse_state, b_val );
+	history = HistoryType( inverse_state, inverse_state, b_val );
 	history.live();
 	tally.tallyHistory( history );
 	TEST_EQUALITY( history.historyTally(), b_val*b_val );
@@ -422,7 +422,7 @@ TEUCHOS_UNIT_TEST( ForwardTally, BlockCombine )
 	for ( int i = 0; i < local_num_rows; ++i )
 	{
 	    int state = i + local_num_rows*set_rank;
-	    HistoryType history( state, a_val );
+	    HistoryType history( state, state, a_val );
 	    history.live();
 	    tally.tallyHistory( history );
 	    history.kill();
@@ -431,7 +431,7 @@ TEUCHOS_UNIT_TEST( ForwardTally, BlockCombine )
 
 	    int inverse_state = 
 		(local_num_rows-1-i) + local_num_rows*(set_size-1-set_rank);
-	    history = HistoryType( inverse_state, a_val );
+	    history = HistoryType( inverse_state, state, a_val );
 	    history.live();
 	    tally.tallyHistory( history );
 	    history.kill();
@@ -527,7 +527,7 @@ TEUCHOS_UNIT_TEST( ForwardTally, Normalize )
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	int state = i + local_num_rows*comm_rank;
-	HistoryType history( state, a_val );
+	HistoryType history( state, state, a_val );
 	history.live();
 	tally.tallyHistory( history );
 	history.kill();
@@ -536,7 +536,7 @@ TEUCHOS_UNIT_TEST( ForwardTally, Normalize )
 
 	int inverse_state = 
 	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
-	history = HistoryType( inverse_state, b_val );
+	history = HistoryType( inverse_state, inverse_state, b_val );
 	history.live();
 	tally.tallyHistory( history );
 	history.kill();

@@ -48,12 +48,12 @@
 
 #include "MCLS_DBC.hpp"
 #include "MCLS_DomainTraits.hpp"
+#include "MCLS_HistoryTraits.hpp"
 #include "MCLS_ForwardTally.hpp"
 #include "MCLS_SamplingTools.hpp"
 #include "MCLS_Events.hpp"
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_MatrixTraits.hpp"
-#include "MCLS_MatrixAlgorithms.hpp"
 #include "MCLS_PRNG.hpp"
 #include "MCLS_RNGTraits.hpp"
 
@@ -108,10 +108,10 @@ class ForwardDomain
     typedef VectorTraits<Vector>                          VT;
     typedef Matrix                                        matrix_type;
     typedef MatrixTraits<Vector,Matrix>                   MT;
-    typedef MatrixAlgorithms<Vector,Matrix>               MA;
     typedef typename VT::global_ordinal_type              Ordinal;
     typedef ForwardTally<Vector>                          TallyType;
     typedef typename TallyType::HistoryType               HistoryType;
+    typedef HistoryTraits<HistoryType>                    HT;
     typedef std::stack<Teuchos::RCP<HistoryType> >        BankType;
     typedef typename std::unordered_map<Ordinal,int>      MapType;
     typedef Teuchos::Comm<int>                            Comm;
@@ -181,8 +181,8 @@ class ForwardDomain
 
     // Add matrix data to the local domain.
     void addMatrixToDomain( const Teuchos::RCP<const Matrix>& A,
-                            const Teuchos::RCP<const Vector>& recovered_weights,
-                            const double abs_probability );
+                            const double abs_probability,
+			    const double relaxation );
 
     // Build boundary data.
     void buildBoundary( const Teuchos::RCP<const Matrix>& A,
@@ -238,33 +238,34 @@ inline void ForwardDomain<Vector,Matrix,RNG>::processTransition(
     HistoryType& history )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_rng) );
-    MCLS_REQUIRE( history.alive() );
-    MCLS_REQUIRE( Event::TRANSITION == history.event() );
-    MCLS_REQUIRE( isLocalState(history.state()) );
+    MCLS_REQUIRE( HT::alive(history) );
+    MCLS_REQUIRE( Event::TRANSITION == HT::event(history) );
+    MCLS_REQUIRE( isLocalState(HT::globalState(history)) );
 
     // Get the current state.
     typename MapType::const_iterator index = 
-	d_row_indexer->find( history.state() );
+	d_row_indexer->find( HT::globalState(history) );
     MCLS_CHECK( index != d_row_indexer->end() );
 
     // Sample the row CDF to get a new state.
     Ordinal new_state = 
         SamplingTools::sampleDiscreteCDF( d_cdfs[index->second](),
                                           d_rng->random(*d_rng_dist) );
-    history.setState( (*d_columns[index->second])[new_state] );
+    HT::setGlobalState( history, (*d_columns[index->second])[new_state] );
 
     // Update the history weight with the transition weight. An absorption
     // event contributes a weight of zero, triggering the weight cutoff
     // termination.
-    if ( Teuchos::OrdinalTraits<Ordinal>::invalid() == history.state() )
+    if ( Teuchos::OrdinalTraits<Ordinal>::invalid() != HT::globalState(history) )
     {
-        history.multiplyWeight( 0.0 );
+	HT::multiplyWeight( history, 
+			    d_weights[index->second] *
+			    d_h[index->second][new_state] /
+			    std::abs(d_h[index->second][new_state]) );
     }
     else
     {
-        history.multiplyWeight( d_weights[index->second] *
-                                d_h[index->second][new_state] /
-                                std::abs(d_h[index->second][new_state]) );
+	HT::multiplyWeight( history, 0.0 );
     }
 }
 

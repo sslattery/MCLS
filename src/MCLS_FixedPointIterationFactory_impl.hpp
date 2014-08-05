@@ -74,7 +74,7 @@ FixedPointIterationFactory<Vector,Matrix>::create(
     const std::string& iteration_name,
     const Teuchos::RCP<Teuchos::ParameterList>& iteration_parameters )
 {
-    MCLS_REQUIRE( !iteration_parameters.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(iteration_parameters) );
 
     Teuchos::RCP<Iteration> iteration;
 
@@ -113,7 +113,7 @@ FixedPointIterationFactory<Vector,Matrix>::create(
 	    break;
     }
 
-    MCLS_ENSURE( !iteration.is_null() );
+    MCLS_ENSURE( Teuchos::nonnull(iteration) );
 
     return iteration;
 }

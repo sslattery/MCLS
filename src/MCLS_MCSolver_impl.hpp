@@ -63,8 +63,8 @@ MCSolver<Source>::MCSolver( const Teuchos::RCP<const Comm>& set_comm,
     , d_relative_weight_cutoff( 0.0 )
     , d_rng( Teuchos::rcp(new PRNG<rng_type>(global_rank)) )
 {
-    MCLS_REQUIRE( !d_plist.is_null() );
-    MCLS_REQUIRE( !d_set_comm.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_set_comm) );
 
     // Set the static byte size for the histories.
     HT::setByteSize();
@@ -80,10 +80,10 @@ MCSolver<Source>::MCSolver( const Teuchos::RCP<const Comm>& set_comm,
 template<class Source>
 void MCSolver<Source>::solve()
 {
-    MCLS_REQUIRE( !d_domain.is_null() );
-    MCLS_REQUIRE( !d_source.is_null() );
-    MCLS_REQUIRE( !d_tally.is_null() );
-    MCLS_REQUIRE( !d_transporter.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_domain) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_source) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_tally) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_transporter) );
     
     // Zero out the tally.
     TT::zeroOut( *d_tally );
@@ -108,7 +108,7 @@ void MCSolver<Source>::solve()
 template<class Source>
 void MCSolver<Source>::setDomain( const Teuchos::RCP<Domain>& domain )
 {
-    MCLS_REQUIRE( !domain.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(domain) );
 
     // Set the domain.
     d_domain = domain;
@@ -123,9 +123,9 @@ void MCSolver<Source>::setDomain( const Teuchos::RCP<Domain>& domain )
     d_transporter = GlobalTransporterFactory<Source>::create(
         d_set_comm, d_domain, *d_plist );
 
-    MCLS_ENSURE( !d_domain.is_null() );
-    MCLS_ENSURE( !d_tally.is_null() );
-    MCLS_ENSURE( !d_transporter.is_null() );
+    MCLS_ENSURE( Teuchos::nonnull(d_domain) );
+    MCLS_ENSURE( Teuchos::nonnull(d_tally) );
+    MCLS_ENSURE( Teuchos::nonnull(d_transporter) );
 }
 
 //---------------------------------------------------------------------------//
@@ -136,7 +136,7 @@ void MCSolver<Source>::setDomain( const Teuchos::RCP<Domain>& domain )
 template<class Source>
 void MCSolver<Source>::setSource( const Teuchos::RCP<Source>& source )
 {
-    MCLS_REQUIRE( !source.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(source) );
 
     // Set the source.
     d_source = source;
@@ -151,7 +151,7 @@ void MCSolver<Source>::setSource( const Teuchos::RCP<Source>& source )
     double cutoff = d_plist->get<double>("Weight Cutoff");
     d_relative_weight_cutoff = cutoff * ST::weight( *d_source, 0 );
 
-    MCLS_ENSURE( !d_source.is_null() );
+    MCLS_ENSURE( Teuchos::nonnull(d_source) );
     MCLS_ENSURE( d_relative_weight_cutoff > 0.0 );
 }
 

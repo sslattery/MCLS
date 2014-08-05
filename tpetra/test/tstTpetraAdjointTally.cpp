@@ -139,13 +139,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, TallyHistory, LO, GO, Scalar )
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	GO state = i + local_num_rows*comm_rank;
-	HistoryType history( state, a_val );
+	HistoryType history( state, state, a_val );
 	history.live();
 	tally.tallyHistory( history );
 
 	GO inverse_state = 
 	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
-	history = HistoryType( inverse_state, b_val );
+	history = HistoryType( inverse_state, inverse_state, b_val );
 	history.live();
 	tally.tallyHistory( history );
     }
@@ -281,13 +281,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, SetCombine, LO, GO, Scalar )
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	GO state = i + local_num_rows*comm_rank;
-	HistoryType history( state, a_val );
+	HistoryType history( state, state, a_val );
 	history.live();
 	tally.tallyHistory( history );
 
 	GO inverse_state = 
 	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
-	history = HistoryType( inverse_state, b_val );
+	history = HistoryType( inverse_state, inverse_state, b_val );
 	history.live();
 	tally.tallyHistory( history );
     }
@@ -438,13 +438,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, BlockCombine, LO, GO, Scalar )
 	for ( int i = 0; i < local_num_rows; ++i )
 	{
 	    GO state = i + local_num_rows*set_rank;
-	    HistoryType history( state, a_val );
+	    HistoryType history( state, state, a_val );
 	    history.live();
 	    tally.tallyHistory( history );
 
 	    GO inverse_state = 
 		(local_num_rows-1-i) + local_num_rows*(set_size-1-set_rank);
-	    history = HistoryType( inverse_state, b_val );
+	    history = HistoryType( inverse_state, inverse_state, b_val );
 	    history.live();
 	    tally.tallyHistory( history );
 	}
@@ -548,13 +548,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, Normalize, LO, GO, Scalar )
     for ( int i = 0; i < local_num_rows; ++i )
     {
 	GO state = i + local_num_rows*comm_rank;
-	HistoryType history( state, a_val );
+	HistoryType history( state, state, a_val );
 	history.live();
 	tally.tallyHistory( history );
 
 	GO inverse_state = 
 	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
-	history = HistoryType( inverse_state, b_val );
+	history = HistoryType( inverse_state, inverse_state, b_val );
 	history.live();
 	tally.tallyHistory( history );
     }

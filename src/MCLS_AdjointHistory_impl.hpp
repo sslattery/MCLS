@@ -56,13 +56,14 @@ namespace MCLS
  */
 template<class Ordinal>
 AdjointHistory<Ordinal>::AdjointHistory( const Teuchos::ArrayView<char>& buffer )
+    : d_local_state( Teuchos::OrdinalTraits<Ordinal>::invalid() )
 {
     MCLS_REQUIRE( Teuchos::as<std::size_t>(buffer.size()) == d_packed_bytes );
 
     Deserializer ds;
     ds.setBuffer( d_packed_bytes, &buffer[0] );
     int balive;
-    ds >> d_state >> d_weight >> balive >> d_event;
+    ds >> d_global_state >> d_weight >> balive >> d_event;
     d_alive = static_cast<bool>(balive);
 
     MCLS_ENSURE( ds.getPtr() == ds.end() );
@@ -82,7 +83,7 @@ Teuchos::Array<char> AdjointHistory<Ordinal>::pack() const
 
     Serializer s;
     s.setBuffer( d_packed_bytes, &buffer[0] );
-    s << d_state << d_weight << static_cast<int>(d_alive) << d_event;
+    s << d_global_state << d_weight << static_cast<int>(d_alive) << d_event;
 
     MCLS_ENSURE( s.getPtr() == s.end() );
     return buffer;

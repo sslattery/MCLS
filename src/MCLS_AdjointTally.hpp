@@ -201,8 +201,8 @@ inline void AdjointTally<Vector>::collisionEstimatorTally(
 {
     // The collision estimator tally sums the history's current weight into
     // x(i) where the index i is the history's current state.
-    MCLS_REQUIRE( VT::isGlobalRow(*d_x_tally, history.state()) );
-    VT::sumIntoGlobalValue( *d_x_tally, history.state(), history.weight() );
+    MCLS_REQUIRE( VT::isGlobalRow(*d_x_tally, history.globalState()) );
+    VT::sumIntoGlobalValue( *d_x_tally, history.globalState(), history.weight() );
 }
 
 //---------------------------------------------------------------------------//
@@ -219,7 +219,7 @@ inline void AdjointTally<Vector>::expectedValueEstimatorTally(
 
     // Get the local row.
     typename MapType::const_iterator index = 
-	d_row_indexer->find( history.state() );
+	d_row_indexer->find( history.globalState() );
     MCLS_CHECK( index != d_row_indexer->end() );
 
     // The expected value estimator sums the history's weight multiplied by

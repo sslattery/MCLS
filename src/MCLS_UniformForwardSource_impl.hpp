@@ -76,9 +76,9 @@ UniformForwardSource<Domain>::UniformForwardSource(
     , d_nh_left(0)
     , d_nh_emitted(0)
 {
-    MCLS_REQUIRE( !d_b.is_null() );
-    MCLS_REQUIRE( !d_domain.is_null() );
-    MCLS_REQUIRE( !d_set_comm.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_b) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_domain) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_set_comm) );
 
     // Get the requested number of histories. The default value is the
     // length of the source vector in this set.
@@ -118,8 +118,8 @@ UniformForwardSource<Domain>::UniformForwardSource(
     , d_nh_left(0)
     , d_nh_emitted(0)
 {
-    MCLS_REQUIRE( !d_domain.is_null() );
-    MCLS_REQUIRE( !d_set_comm.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_domain) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_set_comm) );
 
     Deserializer ds;
     ds.setBuffer( buffer() );
@@ -320,7 +320,7 @@ UniformForwardSource<Domain>::getHistory()
 
     // Set the history state.
     history->setWeight( d_weight );
-    history->setState( starting_state );
+    history->setGlobalState( starting_state );
     history->setStartingState( starting_state );
     history->live();
 
@@ -328,7 +328,7 @@ UniformForwardSource<Domain>::getHistory()
     --d_nh_left;
     ++d_nh_emitted;
 
-    MCLS_ENSURE( !history.is_null() );
+    MCLS_ENSURE( Teuchos::nonnull(history) );
     MCLS_ENSURE( history->alive() );
     MCLS_ENSURE( history->weightAbs() == d_weight );
 

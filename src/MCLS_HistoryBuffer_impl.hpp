@@ -135,7 +135,7 @@ void HistoryBuffer<History>::addToBank( BankType& bank )
 		   packed_history.begin() );
 
 	history = HT::createFromBuffer( packed_history );
-	MCLS_CHECK( !history.is_null() );
+	MCLS_CHECK( Teuchos::nonnull(history) );
 	bank.push( history );
 
 	buffer_it += d_size_packed_history;

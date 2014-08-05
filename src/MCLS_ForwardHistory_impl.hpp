@@ -57,13 +57,14 @@ namespace MCLS
 template<class Ordinal>
 ForwardHistory<Ordinal>::ForwardHistory( 
     const Teuchos::ArrayView<char>& buffer )
+    : d_local_state( Teuchos::OrdinalTraits<Ordinal>::invalid() )
 {
     MCLS_REQUIRE( Teuchos::as<std::size_t>(buffer.size()) == d_packed_bytes );
 
     Deserializer ds;
     ds.setBuffer( d_packed_bytes, &buffer[0] );
     int balive;
-    ds >> d_state >> d_starting_state >> d_weight >> balive 
+    ds >> d_global_state >> d_starting_state >> d_weight >> balive 
        >> d_event >> d_history_tally;
     d_alive = static_cast<bool>(balive);
 
@@ -84,7 +85,7 @@ Teuchos::Array<char> ForwardHistory<Ordinal>::pack() const
 
     Serializer s;
     s.setBuffer( d_packed_bytes , &buffer[0] );
-    s << d_state << d_starting_state << d_weight << static_cast<int>(d_alive)
+    s << d_global_state << d_starting_state << d_weight << static_cast<int>(d_alive)
       << d_event << d_history_tally;
 
     MCLS_ENSURE( s.getPtr() == s.end() );

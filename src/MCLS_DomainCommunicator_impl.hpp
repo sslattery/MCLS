@@ -66,8 +66,8 @@ DomainCommunicator<Domain>::DomainCommunicator(
     , d_num_send_neighbors( DT::numSendNeighbors(*d_domain) )
     , d_num_receive_neighbors( DT::numReceiveNeighbors(*d_domain) )
 {
-    MCLS_REQUIRE( !d_domain.is_null() );
-    MCLS_REQUIRE( !comm.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_domain) );
+    MCLS_REQUIRE( Teuchos::nonnull(comm) );
     MCLS_REQUIRE( d_num_send_neighbors >= 0 );
     MCLS_REQUIRE( d_num_receive_neighbors >= 0 );
 
@@ -110,7 +110,7 @@ const typename DomainCommunicator<Domain>::Result&
 DomainCommunicator<Domain>::communicate( 
     const Teuchos::RCP<HistoryType>& history )
 {
-    MCLS_REQUIRE( !history.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(history) );
     MCLS_REQUIRE( Event::BOUNDARY == HT::event(*history) );
     MCLS_REQUIRE( !HT::alive(*history) );
 
@@ -119,7 +119,7 @@ DomainCommunicator<Domain>::communicate(
     d_result.destination = 0;
 
     // Add the history to the appropriate buffer.
-    int neighbor_id = DT::owningNeighbor( *d_domain, HT::state(*history) );
+    int neighbor_id = DT::owningNeighbor( *d_domain, HT::globalState(*history) );
     d_sends[neighbor_id].bufferHistory( *history );
 
     // Update the result destination.

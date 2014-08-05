@@ -62,11 +62,11 @@ LinearProblem<Vector,Matrix>::LinearProblem(
     , d_r( MT::cloneVectorFromMatrixRows(*d_A) )
     , d_rp( MT::cloneVectorFromMatrixRows(*d_A) )
 {
-    MCLS_ENSURE( !d_A.is_null() );
-    MCLS_ENSURE( !d_x.is_null() );
-    MCLS_ENSURE( !d_b.is_null() );
-    MCLS_ENSURE( !d_r.is_null() );
-    MCLS_ENSURE( !d_rp.is_null() );
+    MCLS_ENSURE( Teuchos::nonnull(d_A) );
+    MCLS_ENSURE( Teuchos::nonnull(d_x) );
+    MCLS_ENSURE( Teuchos::nonnull(d_b) );
+    MCLS_ENSURE( Teuchos::nonnull(d_r) );
+    MCLS_ENSURE( Teuchos::nonnull(d_rp) );
 }
 
 //---------------------------------------------------------------------------//
@@ -85,7 +85,7 @@ template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::setOperator( 
     const Teuchos::RCP<const Matrix>& A )
 {
-    MCLS_REQUIRE( !A.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(A) );
     d_A = A;
 }
 
@@ -96,7 +96,7 @@ void LinearProblem<Vector,Matrix>::setOperator(
 template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::setLHS( const Teuchos::RCP<Vector>& x )
 {
-    MCLS_REQUIRE( !x.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(x) );
     d_x = x;
 }
 
@@ -107,7 +107,7 @@ void LinearProblem<Vector,Matrix>::setLHS( const Teuchos::RCP<Vector>& x )
 template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::setRHS( const Teuchos::RCP<const Vector>& b )
 {
-    MCLS_REQUIRE( !b.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(b) );
     d_b = b;
 }
 
@@ -119,7 +119,7 @@ template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::setLeftPrec( 
     const Teuchos::RCP<const Matrix>& PL )
 {
-    MCLS_REQUIRE( !PL.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(PL) );
     d_PL = PL;
 }
 
@@ -131,7 +131,7 @@ template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::setRightPrec( 
     const Teuchos::RCP<const Matrix>& PR )
 {
-    MCLS_REQUIRE( !PR.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(PR) );
     d_PR = PR;
 }
 

@@ -88,7 +88,7 @@ Teuchos::RCP<MCLS::AdjointHistory<GO> > makeHistory(
     GO state, double weight, int streamid )
 {
     Teuchos::RCP<MCLS::AdjointHistory<GO> > history = Teuchos::rcp(
-	new MCLS::AdjointHistory<GO>( state, weight ) );
+	new MCLS::AdjointHistory<GO>( state, state, weight ) );
     history->setEvent( MCLS::Event::BOUNDARY );
     return history;
 }
@@ -311,11 +311,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Communicate, LO, GO, Scal
 	    bank.pop();
 	    TEST_ASSERT( bank.empty() );
 
-	    TEST_EQUALITY( rp3->state(), comm_rank*10 );
+	    TEST_EQUALITY( rp3->globalState(), comm_rank*10 );
 	    TEST_EQUALITY( rp3->weight(), 3.1 );
-	    TEST_EQUALITY( rp2->state(), comm_rank*10 );
+	    TEST_EQUALITY( rp2->globalState(), comm_rank*10 );
 	    TEST_EQUALITY( rp2->weight(), 2.1 );
-	    TEST_EQUALITY( rp1->state(), comm_rank*10 );
+	    TEST_EQUALITY( rp1->globalState(), comm_rank*10 );
 	    TEST_EQUALITY( rp1->weight(), 1.1 );
 
 	    TEST_ASSERT( communicator.receiveStatus() );
@@ -340,11 +340,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Communicate, LO, GO, Scal
 	    bank.pop();
 	    TEST_ASSERT( bank.empty() );
 
-	    TEST_EQUALITY( rp3->state(), comm_rank*10 );
+	    TEST_EQUALITY( rp3->globalState(), comm_rank*10 );
 	    TEST_EQUALITY( rp3->weight(), 3.1 );
-	    TEST_EQUALITY( rp2->state(), comm_rank*10 );
+	    TEST_EQUALITY( rp2->globalState(), comm_rank*10 );
 	    TEST_EQUALITY( rp2->weight(), 2.1 );
-	    TEST_EQUALITY( rp1->state(), comm_rank*10 );
+	    TEST_EQUALITY( rp1->globalState(), comm_rank*10 );
 	    TEST_EQUALITY( rp1->weight(), 1.1 );
 	}
 

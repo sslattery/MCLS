@@ -120,9 +120,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CommHistoryBuffer, ping_pong, Ordinal, Scalar
 	    TEST_EQUALITY( buffer.allocatedSize(), byte_size );
 	    TEST_ASSERT( !buffer.status() );
 
-	    HT h1( 1, 1 );
-	    HT h2( 2, 2 );
-	    HT h3( 3, 3 );
+	    HT h1( 1, 1, 1 );
+	    HT h2( 2, 2, 2 );
+	    HT h3( 3, 3, 3 );
 	    buffer.bufferHistory( h1 );
 	    buffer.bufferHistory( h2 );
 	    buffer.bufferHistory( h3 );
@@ -163,19 +163,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CommHistoryBuffer, ping_pong, Ordinal, Scalar
 	    TEST_EQUALITY( bank.size(), 3 );
 	    ph3 = bank.top();
 	    bank.pop();
-	    TEST_EQUALITY( ph3->state(), 3 );
+	    TEST_EQUALITY( ph3->globalState(), 3 );
 	    TEST_EQUALITY( ph3->weight(), 3 );
 
 	    TEST_EQUALITY( bank.size(), 2 );
 	    ph2 = bank.top();
 	    bank.pop();
-	    TEST_EQUALITY( ph2->state(), 2 );
+	    TEST_EQUALITY( ph2->globalState(), 2 );
 	    TEST_EQUALITY( ph2->weight(), 2 );
 
 	    TEST_EQUALITY( bank.size(), 1 );
 	    ph1 = bank.top();
 	    bank.pop();
-	    TEST_EQUALITY( ph1->state(), 1 );
+	    TEST_EQUALITY( ph1->globalState(), 1 );
 	    TEST_EQUALITY( ph1->weight(), 1 );
 
 	    TEST_ASSERT( bank.empty() );
@@ -249,10 +249,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CommHistoryBuffer, non_blocking, Ordinal, Sca
 	     receives[1].post(2);
 	 }
 
-	 HT h1( 1, 1 );
-	 HT h2( 2, 2 );
-	 HT h3( 3, 3 );
-	 HT h4( 4, 4 );
+	 HT h1( 1, 1, 1 );
+	 HT h2( 2, 2, 2 );
+	 HT h3( 3, 3, 3 );
+	 HT h4( 4, 4, 4 );
 	 sends[0].bufferHistory( h1 );
 	 sends[1].bufferHistory( h2 );
 	 sends[1].bufferHistory( h3 );
@@ -328,10 +328,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CommHistoryBuffer, non_blocking, Ordinal, Sca
 	     hp1 = bank.top();
 	     bank.pop();
 
-	     TEST_EQUALITY( hp2->state(), 1 );
+	     TEST_EQUALITY( hp2->globalState(), 1 );
 	     TEST_EQUALITY( hp2->weight(), 1 );
 
-	     TEST_EQUALITY( hp1->state(), 1 );
+	     TEST_EQUALITY( hp1->globalState(), 1 );
 	     TEST_EQUALITY( hp1->weight(), 1 );
 	 } 
 	 else if ( comm_rank == 1 )
@@ -349,10 +349,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CommHistoryBuffer, non_blocking, Ordinal, Sca
 	     hp1 = bank.top();
 	     bank.pop();
 
-	     TEST_EQUALITY( hp2->state(), 1 );
+	     TEST_EQUALITY( hp2->globalState(), 1 );
 	     TEST_EQUALITY( hp2->weight(), 1 );
 
-	     TEST_EQUALITY( hp1->state(), 1 );
+	     TEST_EQUALITY( hp1->globalState(), 1 );
 	     TEST_EQUALITY( hp1->weight(), 1 );
 	 }
 	 else if ( comm_rank == 2 )
@@ -378,22 +378,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CommHistoryBuffer, non_blocking, Ordinal, Sca
 	     hp1 = bank.top();
 	     bank.pop();
 
-	     TEST_EQUALITY( hp6->state(), 4);
+	     TEST_EQUALITY( hp6->globalState(), 4);
 	     TEST_EQUALITY( hp6->weight(), 4 );
 
-	     TEST_EQUALITY( hp5->state(), 3 );
+	     TEST_EQUALITY( hp5->globalState(), 3 );
 	     TEST_EQUALITY( hp5->weight(), 3 );
 
-	     TEST_EQUALITY( hp4->state(), 2 );
+	     TEST_EQUALITY( hp4->globalState(), 2 );
 	     TEST_EQUALITY( hp4->weight(), 2 );
 
-	     TEST_EQUALITY( hp3->state(), 4 );
+	     TEST_EQUALITY( hp3->globalState(), 4 );
 	     TEST_EQUALITY( hp3->weight(), 4 );
 
-	     TEST_EQUALITY( hp2->state(), 3 );
+	     TEST_EQUALITY( hp2->globalState(), 3 );
 	     TEST_EQUALITY( hp2->weight(), 3 );
 
-	     TEST_EQUALITY( hp1->state(), 2 );
+	     TEST_EQUALITY( hp1->globalState(), 2 );
 	     TEST_EQUALITY( hp1->weight(), 2 );
 	 }
 	 else if ( comm_rank == 3 )
@@ -419,22 +419,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CommHistoryBuffer, non_blocking, Ordinal, Sca
 	     hp1 = bank.top();
 	     bank.pop();
 
-	     TEST_EQUALITY( hp6->state(), 4 );
+	     TEST_EQUALITY( hp6->globalState(), 4 );
 	     TEST_EQUALITY( hp6->weight(), 4 );
 
-	     TEST_EQUALITY( hp5->state(), 3 );
+	     TEST_EQUALITY( hp5->globalState(), 3 );
 	     TEST_EQUALITY( hp5->weight(), 3 );
 
-	     TEST_EQUALITY( hp4->state(), 2 );
+	     TEST_EQUALITY( hp4->globalState(), 2 );
 	     TEST_EQUALITY( hp4->weight(), 2 );
 
-	     TEST_EQUALITY( hp3->state(), 4 );
+	     TEST_EQUALITY( hp3->globalState(), 4 );
 	     TEST_EQUALITY( hp3->weight(), 4 );
 
-	     TEST_EQUALITY( hp2->state(), 3 );
+	     TEST_EQUALITY( hp2->globalState(), 3 );
 	     TEST_EQUALITY( hp2->weight(), 3 );
 
-	     TEST_EQUALITY( hp1->state(), 2 );
+	     TEST_EQUALITY( hp1->globalState(), 2 );
 	     TEST_EQUALITY( hp1->weight(), 2 );
 	 }
 	 comm->barrier();

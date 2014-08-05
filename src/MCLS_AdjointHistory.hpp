@@ -71,15 +71,17 @@ class AdjointHistory
 
     //! Default constructor.
     AdjointHistory()
-	: d_state( Teuchos::OrdinalTraits<Ordinal>::zero() )
+	: d_global_state( Teuchos::OrdinalTraits<Ordinal>::invalid() )
+	, d_local_state( Teuchos::OrdinalTraits<Ordinal>::invalid() )
 	, d_weight( Teuchos::ScalarTraits<double>::one() )
 	, d_alive( false )
 	, d_event( 0 )
     { /* ... */ }
 
     //! State constructor.
-    AdjointHistory( Ordinal state, double weight )
-	: d_state( state )
+    AdjointHistory( Ordinal global_state, int local_state, double weight )
+	: d_global_state( global_state )
+	, d_local_state( local_state )
 	, d_weight( weight )
 	, d_alive( false )
 	, d_event( 0 )
@@ -95,13 +97,21 @@ class AdjointHistory
     // Pack the history into a buffer.
     Teuchos::Array<char> pack() const;
 
-    //! Set the history state.
-    inline void setState( const Ordinal state )
-    { d_state = state; }
+    //! Set the history state in global indexing.
+    inline void setGlobalState( const Ordinal global_state )
+    { d_global_state = global_state; }
 
-    //! Get the history state.
-    inline Ordinal state() const 
-    { return d_state; }
+    //! Get the history state in global indexing.
+    inline Ordinal globalState() const 
+    { return d_global_state; }
+
+    //! Set the history state in local indexing.
+    inline void setLocalState( const int local_state )
+    { d_local_state = local_state; }
+
+    //! Get the history state in local indexing.
+    inline int localState() const 
+    { return d_local_state; }
 
     //! Set the history weight.
     inline void setWeight( const double weight )
@@ -153,10 +163,13 @@ class AdjointHistory
 
   private:
 
-    //  history state.
-    Ordinal d_state;
+    // History state in globial indexing.
+    Ordinal d_global_state;
 
-    // AdjointHistory weight.
+    // History state in local indexing.
+    int d_local_state;
+
+    // History weight.
     double d_weight;
 
     // Alive/dead status.
@@ -203,20 +216,37 @@ class HistoryTraits<AdjointHistory<Ordinal> >
     }
 
     /*!
-     * \brief Set the state of a history
+     * \brief Set the state of a history in global indexing.
      */
-    static inline void setState( history_type& history, 
-				 const ordinal_type state )
+    static inline void setGlobalState( history_type& history, 
+				       const ordinal_type state )
     {
-	history.setState( state );
+	history.setGlobalState( state );
     }
 
     /*! 
-     * \brief get the state of a history.
+     * \brief Get the state of a history in global indexing.
      */
-    static inline ordinal_type state( const history_type& history )
+    static inline ordinal_type globalState( const history_type& history )
     {
-	return history.state();
+	return history.globalState();
+    }
+
+    /*!
+     * \brief Set the state of a history in local indexing.
+     */
+    static inline void setLocalState( history_type& history, 
+				      const int state )
+    {
+	history.setLocalState( state );
+    }
+
+    /*! 
+     * \brief Get the state of a history in local indexing.
+     */
+    static inline int localState( const history_type& history )
+    {
+	return history.localState();
     }
 
     /*!

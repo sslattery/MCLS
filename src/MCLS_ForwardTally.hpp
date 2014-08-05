@@ -153,11 +153,11 @@ inline void ForwardTally<Vector>::tallyHistory( HistoryType& history )
 {
     MCLS_REQUIRE( history.alive() );
     MCLS_REQUIRE( Teuchos::nonnull(d_b) );
-    MCLS_REQUIRE( VT::isGlobalRow(*d_b,history.state()) );
+    MCLS_REQUIRE( VT::isGlobalRow(*d_b,history.globalState()) );
     MCLS_REQUIRE( Estimator::COLLISION == d_estimator );
 
     typename VT::local_ordinal_type local_state = 
-	VT::getLocalRow( *d_b, history.state() );
+	VT::getLocalRow( *d_b, history.globalState() );
     history.addToHistoryTally( history.weight() * VT::view(*d_b)[local_state] );
 }
 

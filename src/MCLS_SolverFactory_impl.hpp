@@ -77,8 +77,8 @@ SolverFactory<Vector,Matrix>::create(
     const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& solver_parameters )
 {
-    MCLS_REQUIRE( !global_comm.is_null() );
-    MCLS_REQUIRE( !solver_parameters.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(global_comm) );
+    MCLS_REQUIRE( Teuchos::nonnull(solver_parameters) );
 
     Teuchos::RCP<Solver> solver;
 
@@ -123,7 +123,7 @@ SolverFactory<Vector,Matrix>::create(
 	    break;
     }
 
-    MCLS_ENSURE( !solver.is_null() );
+    MCLS_ENSURE( Teuchos::nonnull(solver) );
 
     return solver;
 }

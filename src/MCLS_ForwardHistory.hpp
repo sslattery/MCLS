@@ -71,7 +71,8 @@ class ForwardHistory
 
     //! Default constructor.
     ForwardHistory()
-	: d_state( Teuchos::OrdinalTraits<Ordinal>::zero() )
+	: d_global_state( Teuchos::OrdinalTraits<Ordinal>::invalid() )
+	, d_local_state( Teuchos::OrdinalTraits<Ordinal>::invalid() )
 	, d_starting_state( Teuchos::OrdinalTraits<Ordinal>::zero() )
 	, d_weight( Teuchos::ScalarTraits<double>::one() )
 	, d_alive( false )
@@ -80,9 +81,10 @@ class ForwardHistory
     { /* ... */ }
 
     //! State constructor.
-    ForwardHistory( Ordinal state, double weight )
-	: d_state( state )
-	, d_starting_state( state )
+    ForwardHistory( Ordinal global_state, int local_state, double weight )
+	: d_global_state( global_state )
+	, d_local_state( local_state )
+	, d_starting_state( global_state )
 	, d_weight( weight )
 	, d_alive( false )
 	, d_event( 0 )
@@ -99,19 +101,27 @@ class ForwardHistory
     // Pack the history into a buffer.
     Teuchos::Array<char> pack() const;
 
-    //! Set the history state.
-    inline void setState( const Ordinal state )
-    { d_state = state; }
+    //! Set the history state in global indexing.
+    inline void setGlobalState( const Ordinal global_state )
+    { d_global_state = global_state; }
 
-    //! Get the history state.
-    inline Ordinal state() const 
-    { return d_state; }
+    //! Get the history state in global indexing.
+    inline Ordinal globalState() const 
+    { return d_global_state; }
 
-    //! Set the history starting state.
-    inline void setStartingState( const Ordinal state )
-    { d_starting_state = state; }
+    //! Set the history state in local indexing.
+    inline void setLocalState( const int local_state )
+    { d_local_state = local_state; }
 
-    //! Get the history starting state.
+    //! Get the history state in local indexing.
+    inline int localState() const 
+    { return d_local_state; }
+
+    //! Set the history starting state in global indexing.
+    inline void setStartingState( const Ordinal starting_state )
+    { d_starting_state = starting_state; }
+
+    //! Get the history starting state in global indexing.
     inline Ordinal startingState() const 
     { return d_starting_state; }
 
@@ -171,8 +181,11 @@ class ForwardHistory
 
   private:
 
-    // Current history state.
-    Ordinal d_state;
+    // Current history state in global indexing.
+    Ordinal d_global_state;
+
+    // Current history state in local indexing.
+    int d_local_state;
 
     // History starting state.
     Ordinal d_starting_state;
@@ -227,20 +240,37 @@ class HistoryTraits<ForwardHistory<Ordinal> >
     }
 
     /*!
-     * \brief Set the state of a history
+     * \brief Set the state of a history in global indexing.
      */
-    static inline void setState( history_type& history, 
-				 const ordinal_type state )
+    static inline void setGlobalState( history_type& history, 
+				       const ordinal_type state )
     {
-	history.setState( state );
+	history.setGlobalState( state );
     }
 
     /*! 
-     * \brief get the state of a history.
+     * \brief Get the state of a history in global indexing.
      */
-    static inline ordinal_type state( const history_type& history )
+    static inline ordinal_type globalState( const history_type& history )
     {
-	return history.state();
+	return history.globalState();
+    }
+
+    /*!
+     * \brief Set the state of a history in local indexing.
+     */
+    static inline void setLocalState( history_type& history, 
+				      const int state )
+    {
+	history.setLocalState( state );
+    }
+
+    /*! 
+     * \brief Get the state of a history in local indexing.
+     */
+    static inline int localState( const history_type& history )
+    {
+	return history.localState();
     }
 
     /*!

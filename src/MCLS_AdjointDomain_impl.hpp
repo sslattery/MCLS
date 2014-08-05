@@ -68,8 +68,8 @@ AdjointDomain<Vector,Matrix,RNG>::AdjointDomain(
     : d_rng_dist( RDT::create(0.0, 1.0) )
     , d_row_indexer( Teuchos::rcp(new MapType()) )
 {
-    MCLS_REQUIRE( !A.is_null() );
-    MCLS_REQUIRE( !x.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(A) );
+    MCLS_REQUIRE( Teuchos::nonnull(x) );
 
     // Get the estimator type. User the collision estimator as the default.
     d_estimator = Estimator::COLLISION;
@@ -100,72 +100,21 @@ AdjointDomain<Vector,Matrix,RNG>::AdjointDomain(
     // Set of local tally states.
     std::set<Ordinal> tally_states;
 
-    // Build the reduced domain.
-    Teuchos::RCP<Matrix> reduced_H;
-    Teuchos::RCP<Vector> recovered_weights;
-    {
-        // Get the filter tolerance.
-        double filter_tol = 0.0;
-        if ( plist.isParameter("Domain Filter Tolerance") )
-        {
-            filter_tol = plist.get<double>("Domain Filter Tolerance");
-        }
-        MCLS_CHECK( 0.0 <= filter_tol );
-
-        // Get the fill value.
-        int fill_value = std::numeric_limits<int>::max();
-        if ( plist.isParameter("Domain Fill Value") )
-        {
-            fill_value = plist.get<int>("Domain Fill Value");
-        }
-        MCLS_CHECK( 0 < fill_value );
-
-        // Get the weight recovery value.
-        double weight_recovery = 0.0;
-        if ( plist.isParameter("Domain Weight Recovery") )
-        {
-            weight_recovery = plist.get<double>("Domain Weight Recovery");
-        }
-        MCLS_CHECK( 0.0 <= weight_recovery && 1.0 >= weight_recovery );
-    
-        // Get the Neumann relaxation parameter.
-        double neumann_relax = 1.0;
-        if ( plist.isParameter("Neumann Relaxation") )
-        {
-            neumann_relax = plist.get<double>("Neumann Relaxation");
-        }
-        MCLS_CHECK( 0.0 < neumann_relax );
-
-        // Apply the reduced domain approximation to build a reduced iteration
-        // matrix. 
-        MA::reducedDomainApproximation( *A, neumann_relax, filter_tol, 
-                                        fill_value, weight_recovery, 
-                                        reduced_H, recovered_weights );
-    }
-
     // Generate the Monte Carlo domain.
     {
         // Generate the overlap for the transpose operator.
-        Teuchos::RCP<Matrix> reduced_H_overlap;
-        Teuchos::RCP<Vector> recovered_weights_overlap;
+        Teuchos::RCP<Matrix> A_overlap;
         if ( num_overlap > 0 )
         {
-            reduced_H_overlap = 
-                MT::copyNearestNeighbors( *reduced_H, num_overlap );
-            recovered_weights_overlap =
-                MT::cloneVectorFromMatrixRows( *reduced_H_overlap );
-            {
-                VectorExport<Vector> rweight_export( 
-                    recovered_weights, recovered_weights_overlap );
-                rweight_export.doExportInsert();
-            }
+            A_overlap = 
+                MT::copyNearestNeighbors( *A, num_overlap );
         }
 
         // Get the total number of local rows.
-        int num_rows = MT::getLocalNumRows( *reduced_H );
+        int num_rows = MT::getLocalNumRows( *A );
         if ( num_overlap > 0 )
         { 
-            num_rows += MT::getLocalNumRows( *reduced_H_overlap );
+            num_rows += MT::getLocalNumRows( *A_overlap );
         }
 
         // Allocate space in local row data arrays.
@@ -176,22 +125,27 @@ AdjointDomain<Vector,Matrix,RNG>::AdjointDomain(
         d_h = Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( num_rows );
 
         // Build the local CDFs and weights.
-        addMatrixToDomain( reduced_H, recovered_weights, 
-                           tally_states, abs_probability );
+	double relaxation = 1.0;
+	if ( plist.isParameter("Neumann Relaxation") )
+	{
+	    relaxation = plist.get<double>("Neumann Relaxation");
+	}
+	MCLS_CHECK( 0.0 < relaxation );
+        addMatrixToDomain( A, tally_states, abs_probability, relaxation );
         if ( num_overlap > 0 )
         {
-            addMatrixToDomain( reduced_H_overlap, recovered_weights_overlap, 
-                               tally_states, abs_probability );
+            addMatrixToDomain( 
+		A_overlap, tally_states, abs_probability, relaxation );
         }
 
         // Get the boundary states and their owning process ranks.
         if ( num_overlap == 0 )
         {
-            buildBoundary( reduced_H, reduced_H );
+            buildBoundary( A, A );
         }
         else
         {
-            buildBoundary( reduced_H_overlap, reduced_H );
+            buildBoundary( A_overlap, A );
         }
     }
 
@@ -219,7 +173,7 @@ AdjointDomain<Vector,Matrix,RNG>::AdjointDomain(
         d_tally->setIterationMatrix( d_h, d_columns, d_row_indexer );
     }
 
-    MCLS_ENSURE( !d_tally.is_null() );
+    MCLS_ENSURE( Teuchos::nonnull(d_tally) );
 }
 
 //---------------------------------------------------------------------------//
@@ -426,7 +380,7 @@ AdjointDomain<Vector,Matrix,RNG>::AdjointDomain(
         d_tally->setIterationMatrix( d_h, d_columns, d_row_indexer );
     }
 
-    MCLS_ENSURE( !d_tally.is_null() );
+    MCLS_ENSURE( Teuchos::nonnull(d_tally) );
 }
 
 //---------------------------------------------------------------------------//
@@ -785,57 +739,69 @@ int AdjointDomain<Vector,Matrix,RNG>::owningNeighbor( const Ordinal& state ) con
 template<class Vector, class Matrix, class RNG>
 void AdjointDomain<Vector,Matrix,RNG>::addMatrixToDomain( 
     const Teuchos::RCP<const Matrix>& A,
-    const Teuchos::RCP<const Vector>& recovered_weights,
     std::set<Ordinal>& tally_states,
-    const double abs_probability )
+    const double abs_probability,
+    const double relaxation )
 {
-    MCLS_REQUIRE( !A.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(A) );
 
-    Teuchos::ArrayRCP<const double> rweights_view =
-        VT::view( *recovered_weights );
     Ordinal local_num_rows = MT::getLocalNumRows( *A );
     Ordinal global_row = 0;
     int offset = d_row_indexer->size();
+    int ipoffset = 0;
     int max_entries = MT::getGlobalMaxNumRowEntries( *A );
     std::size_t num_entries = 0;
     Teuchos::Array<double>::iterator cdf_iterator;
     double pdf_norm = 1.0 - abs_probability;
 
+    // Add row-by-row.
     for ( Ordinal i = 0; i < local_num_rows; ++i )
     {
+	// Get the offset row index.
+	ipoffset = i+offset;
+
 	// Add the global row id and local row id to the indexer.
 	global_row = MT::getGlobalRow(*A, i);
-	(*d_row_indexer)[global_row] = i+offset;
+	(*d_row_indexer)[global_row] = ipoffset;
 
 	// Allocate column and CDF memory for this row.
-        d_columns[i+offset] = 
+        d_columns[ipoffset] = 
             Teuchos::rcp( new Teuchos::Array<Ordinal>(max_entries) );
-	d_cdfs[i+offset].resize( max_entries );
+	d_cdfs[ipoffset].resize( max_entries );
 
 	// Add the columns and base PDF values for this row.
 	MT::getGlobalRowCopy( *A, 
 			      global_row,
-			      (*d_columns[i+offset])(), 
-			      d_cdfs[i+offset](),
+			      (*d_columns[ipoffset])(), 
+			      d_cdfs[ipoffset](),
 			      num_entries );
 
 	// Check for degeneracy.
 	MCLS_CHECK( num_entries > 0 );
 
 	// Resize local column and CDF arrays for this row.
-	d_columns[i+offset]->resize( num_entries );
-	d_cdfs[i+offset].resize( num_entries );
+	d_columns[ipoffset]->resize( num_entries );
+	d_cdfs[ipoffset].resize( num_entries );
+
+	// Create the iteration matrix.
+	for ( std::size_t j = 0; j < num_entries; ++j )
+	{
+	    d_cdfs[ipoffset][j] = 
+		( (*d_columns[ipoffset])[j] == global_row ) ?
+		1.0 - relaxation*d_cdfs[ipoffset][j] : 
+		-relaxation*d_cdfs[ipoffset][j];
+	}
 
         // Save the current cdf state as the iteration matrix.
-        d_h[i+offset] = Teuchos::ArrayRCP<double>( d_cdfs[i+offset].size() );
-        std::copy( d_cdfs[i+offset].begin(), d_cdfs[i+offset].end(),
-                   d_h[i+offset].begin() );
+        d_h[ipoffset] = Teuchos::ArrayRCP<double>( d_cdfs[ipoffset].size() );
+        std::copy( d_cdfs[ipoffset].begin(), d_cdfs[ipoffset].end(),
+                   d_h[ipoffset].begin() );
 
 	// Accumulate the absolute value of the PDF values to get a
 	// non-normalized CDF for the row.
-	d_cdfs[i+offset].front() = std::abs( d_cdfs[i+offset].front() );
-	for ( cdf_iterator = d_cdfs[i+offset].begin()+1;
-	      cdf_iterator != d_cdfs[i+offset].end();
+	d_cdfs[ipoffset].front() = std::abs( d_cdfs[ipoffset].front() );
+	for ( cdf_iterator = d_cdfs[ipoffset].begin()+1;
+	      cdf_iterator != d_cdfs[ipoffset].end();
 	      ++cdf_iterator )
 	{
 	    *cdf_iterator = std::abs( *cdf_iterator ) + *(cdf_iterator-1);
@@ -843,26 +809,23 @@ void AdjointDomain<Vector,Matrix,RNG>::addMatrixToDomain(
 
 	// The final value in the non-normalized CDF is the weight for this
 	// row. This is the absolute value row sum of the iteration matrix.
-	d_weights[i+offset] = d_cdfs[i+offset].back() / pdf_norm;
-	MCLS_CHECK( d_weights[i+offset] > 0.0 );
+	d_weights[ipoffset] = d_cdfs[ipoffset].back() / pdf_norm;
+	MCLS_CHECK( d_weights[ipoffset] > 0.0 );
 
 	// Normalize the CDF for the row.
-	for ( cdf_iterator = d_cdfs[i+offset].begin();
-	      cdf_iterator != d_cdfs[i+offset].end();
+	for ( cdf_iterator = d_cdfs[ipoffset].begin();
+	      cdf_iterator != d_cdfs[ipoffset].end();
 	      ++cdf_iterator )
 	{
-	    *cdf_iterator /= d_weights[i+offset];
+	    *cdf_iterator /= d_weights[ipoffset];
 	    MCLS_CHECK( *cdf_iterator >= 0.0 );
 	}
-	MCLS_CHECK( d_cdfs[i+offset].back() <= 1.0 );
+	MCLS_CHECK( d_cdfs[ipoffset].back() <= 1.0 );
 
         // Add the absorbing state.
-        d_cdfs[i+offset].push_back( 1.0 );
-        d_columns[i+offset]->push_back( 
+        d_cdfs[ipoffset].push_back( 1.0 );
+        d_columns[ipoffset]->push_back( 
             Teuchos::OrdinalTraits<Ordinal>::invalid() );
-
-        // Recover the weight.
-        d_weights[i+offset] += rweights_view[i] / pdf_norm;
 
         // If we're using the collision estimator, add the global row as a
         // local tally state.
@@ -875,8 +838,8 @@ void AdjointDomain<Vector,Matrix,RNG>::addMatrixToDomain(
         else if ( Estimator::EXPECTED_VALUE == d_estimator )
         {
             typename Teuchos::Array<Ordinal>::const_iterator col_it;
-            for ( col_it = d_columns[i+offset]->begin();
-                  col_it != d_columns[i+offset]->end()-1;
+            for ( col_it = d_columns[ipoffset]->begin();
+                  col_it != d_columns[ipoffset]->end()-1;
                   ++col_it )
             {
                 tally_states.insert( *col_it );
@@ -900,7 +863,7 @@ void AdjointDomain<Vector,Matrix,RNG>::buildBoundary(
     const Teuchos::RCP<const Matrix>& A,
     const Teuchos::RCP<const Matrix>& base_A )
 {
-    MCLS_REQUIRE( !A.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(A) );
 
     // Get the next set of off-process rows. This is the boundary. If we
     // transition to these then we have left the local domain.

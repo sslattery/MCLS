@@ -78,9 +78,9 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
     , d_nh_emitted(0)
     , d_random_sampling(1)
 {
-    MCLS_REQUIRE( !d_b.is_null() );
-    MCLS_REQUIRE( !d_domain.is_null() );
-    MCLS_REQUIRE( !d_set_comm.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_b) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_domain) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_set_comm) );
 
     // Get the requested number of histories. The default value is the
     // length of the source vector in this set.
@@ -134,8 +134,8 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
     , d_nh_left(0)
     , d_nh_emitted(0)
 {
-    MCLS_REQUIRE( !d_domain.is_null() );
-    MCLS_REQUIRE( !d_set_comm.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_domain) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_set_comm) );
 
     Deserializer ds;
     ds.setBuffer( buffer() );
@@ -331,14 +331,14 @@ UniformAdjointSource<Domain>::getHistory()
     Ordinal weight_sign = 
 	local_source[local_state] / std::abs(local_source[local_state]);
     history->setWeight( d_weight * weight_sign );
-    history->setState( starting_state );
+    history->setGlobalState( starting_state );
     history->live();
 
     // Update count.
     --d_nh_left;
     ++d_nh_emitted;
 
-    MCLS_ENSURE( !history.is_null() );
+    MCLS_ENSURE( Teuchos::nonnull(history) );
     MCLS_ENSURE( history->alive() );
     MCLS_ENSURE( history->weightAbs() == d_weight );
 

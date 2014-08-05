@@ -205,7 +205,7 @@ void ForwardTally<Vector>::combineBlockTallies(
     const Teuchos::RCP<const Comm>& block_comm, const int num_sets )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_x) );
-    MCLS_REQUIRE( !block_comm.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(block_comm) );
 
     Teuchos::ArrayRCP<const Scalar> const_tally_view = VT::view( *d_x );
 

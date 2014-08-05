@@ -419,7 +419,7 @@ bool MCSASolverManager<Vector,Matrix,RNG>::solve()
 	if ( (d_global_comm->getRank() == 0 && d_num_iters % print_freq == 0) ||
              (d_global_comm->getRank() == 0 && !do_iterations) )
 	{
-	    std::cout << "Iteration " << d_num_iters << ": Residual = " 
+	    std::cout << " Iteration " << d_num_iters << ": Residual = " 
 		      << residual_norm/source_norm << std::endl;
 	}
 
@@ -453,7 +453,8 @@ bool MCSASolverManager<Vector,Matrix,RNG>::solve()
     // Print final iteration data.
     if ( d_global_comm->getRank() == 0 )
     {
-        std::cout << "MCSA Solve: Complete in " << timer.totalElapsedTime() 
+        std::cout << std::endl
+		  << " MCSA Solve: Complete in " << timer.totalElapsedTime() 
                   << " seconds." << std::endl;
     }
     printBottomBanner();
@@ -563,10 +564,10 @@ void MCSASolverManager<Vector,Matrix,RNG>::printTopBanner()
     if ( d_global_comm->getRank() == 0 )
     {
         std::cout << std::endl;
-        std::cout << "************************************" << std::endl;
-        std::cout << "MCLS: Monte Carlo Linear Solvers" << std::endl;
-        std::cout << "************************************" << std::endl;
-        std::cout << "MCSA / " << d_fixed_point->name() << std::endl;
+        std::cout << "**********************************************" << std::endl;
+        std::cout << "*     MCLS: Monte Carlo Linear Solvers       *" << std::endl;
+        std::cout << "**********************************************" << std::endl;
+        std::cout << " MCSA / " << d_fixed_point->name() << std::endl << std::endl;
     }
     d_global_comm->barrier();
   
@@ -581,7 +582,7 @@ void MCSASolverManager<Vector,Matrix,RNG>::printBottomBanner()
 {
     if ( d_global_comm->getRank() == 0 )
     {
-        std::cout << "************************************" << std::endl;
+        std::cout << "**********************************************" << std::endl;
         std::cout << std::endl;
     } 
 }

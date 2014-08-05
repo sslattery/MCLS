@@ -66,7 +66,7 @@ MSODManager<Source>::MSODManager( const bool primary_set,
     , d_set_id( -1 )
     , d_block_id( -1 )
 {
-    MCLS_REQUIRE( !d_global_comm.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( d_num_sets > 0 );
 
     // Get the set size. We could compute this value from user input, but we
@@ -156,8 +156,8 @@ void MSODManager<Source>::setSource(
 template<class Source>
 void MSODManager<Source>::broadcastDomain()
 {
-    MCLS_REQUIRE( !d_set_comm.is_null() );
-    MCLS_REQUIRE( !d_block_comm.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_set_comm) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_block_comm) );
     MCLS_REQUIRE( d_set_id >= 0 );
 
     // Check the local domain.
@@ -187,7 +187,7 @@ void MSODManager<Source>::broadcastDomain()
     // Barrier before continuing.
     d_block_comm->barrier();
 
-    MCLS_ENSURE( !d_local_domain.is_null() );
+    MCLS_ENSURE( Teuchos::nonnull(d_local_domain) );
 }
 
 //---------------------------------------------------------------------------//
@@ -197,9 +197,9 @@ void MSODManager<Source>::broadcastDomain()
 template<class Source>
 void MSODManager<Source>::broadcastSource()
 {
-    MCLS_REQUIRE( !d_set_comm.is_null() );
-    MCLS_REQUIRE( !d_block_comm.is_null() );
-    MCLS_REQUIRE( !d_local_domain.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_set_comm) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_block_comm) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_local_domain) );
     MCLS_REQUIRE( d_set_id >= 0 ); 
 
     // Check the local source.
@@ -233,7 +233,7 @@ void MSODManager<Source>::broadcastSource()
     // Barrier before continuing.
     d_block_comm->barrier();
 
-    MCLS_ENSURE( !d_local_source.is_null() );
+    MCLS_ENSURE( Teuchos::nonnull(d_local_source) );
 }
 
 //---------------------------------------------------------------------------//

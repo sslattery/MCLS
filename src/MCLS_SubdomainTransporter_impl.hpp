@@ -64,8 +64,8 @@ SubdomainTransporter<Source>::SubdomainTransporter(
     , d_domain( domain )
     , d_domain_transporter( d_domain, plist )
 {
-    MCLS_REQUIRE( !d_comm.is_null() );
-    MCLS_REQUIRE( !d_domain.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_comm) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_domain) );
 }
 
 //---------------------------------------------------------------------------//
@@ -77,7 +77,7 @@ void SubdomainTransporter<Source>::assignSource(
     const Teuchos::RCP<Source>& source,
     const double relative_weight_cutoff )
 {
-    MCLS_REQUIRE( !source.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(source) );
     d_source = source;
     d_domain_transporter.setCutoff( relative_weight_cutoff );
 }
@@ -90,14 +90,14 @@ void SubdomainTransporter<Source>::assignSource(
 template<class Source>
 void SubdomainTransporter<Source>::transport()
 {
-    MCLS_REQUIRE( !d_source.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_source) );
 
     // Transport all source histories through the local domain until completion.
     while (  !ST::empty(*d_source) )
     {
         // Get a history from the source.
         Teuchos::RCP<HistoryType> history = ST::getHistory( *d_source );
-        MCLS_CHECK( !history.is_null() );
+        MCLS_CHECK( Teuchos::nonnull(history) );
         MCLS_CHECK( HT::alive(*history) );
 
         // Do local transport.

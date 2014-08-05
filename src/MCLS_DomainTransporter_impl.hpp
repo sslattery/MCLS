@@ -60,8 +60,8 @@ DomainTransporter<Domain>::DomainTransporter(
     , d_tally( DT::domainTally(*d_domain) )
     , d_weight_cutoff( 0.0 )
 {
-    MCLS_REQUIRE( !d_domain.is_null() );
-    MCLS_REQUIRE( !d_tally.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_domain) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_tally) );
 }
 
 //---------------------------------------------------------------------------//
@@ -73,7 +73,7 @@ void DomainTransporter<Domain>::transport( HistoryType& history )
 {
     MCLS_REQUIRE( HT::alive(history) );
     MCLS_REQUIRE( HT::weightAbs(history) >= d_weight_cutoff );
-    MCLS_REQUIRE( DT::isLocalState(*d_domain, HT::state(history)) );
+    MCLS_REQUIRE( DT::isLocalState(*d_domain, HT::globalState(history)) );
     MCLS_REQUIRE( d_weight_cutoff > 0.0 );
 
     // Set the history to transition.
@@ -87,7 +87,7 @@ void DomainTransporter<Domain>::transport( HistoryType& history )
 	MCLS_CHECK( Event::TRANSITION == HT::event(history) );
 	MCLS_CHECK( HT::weightAbs(history) >= d_weight_cutoff );
 	MCLS_CHECK( HT::weightAbs(history) < std::numeric_limits<double>::max() );
-	MCLS_CHECK( DT::isLocalState(*d_domain, HT::state(history)) );
+	MCLS_CHECK( DT::isLocalState(*d_domain, HT::globalState(history)) );
 
 	// Tally the history.
 	TT::tallyHistory( *d_tally, history );
@@ -105,7 +105,7 @@ void DomainTransporter<Domain>::transport( HistoryType& history )
 	}
 
 	// If the history has left the domain, kill it.
-	else if ( !DT::isLocalState(*d_domain,history.state()) )
+	else if ( !DT::isLocalState(*d_domain,HT::globalState(history)) )
 	{
             HT::setEvent( history, Event::BOUNDARY );
             HT::kill( history );

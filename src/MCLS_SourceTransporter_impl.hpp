@@ -72,8 +72,8 @@ SourceTransporter<Source>::SourceTransporter(
     , d_num_done( Teuchos::rcp(new int(0)) )
     , d_complete( Teuchos::rcp(new int(0)) )
 {
-    MCLS_REQUIRE( !d_comm.is_null() );
-    MCLS_REQUIRE( !d_domain.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_comm) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_domain) );
 
     // Set the duplicate communicators. This is how we get around not having
     // access to message tags through the abstract Teuchos::Comm interface. We
@@ -122,8 +122,8 @@ SourceTransporter<Source>::SourceTransporter(
     }
 
     MCLS_ENSURE( d_check_freq > 0 );
-    MCLS_ENSURE( !d_comm_num_done.is_null() );
-    MCLS_ENSURE( !d_comm_complete.is_null() );
+    MCLS_ENSURE( Teuchos::nonnull(d_comm_num_done) );
+    MCLS_ENSURE( Teuchos::nonnull(d_comm_complete) );
 }
 
 //---------------------------------------------------------------------------//
@@ -135,7 +135,7 @@ void SourceTransporter<Source>::assignSource(
     const Teuchos::RCP<Source>& source,
     const double relative_weight_cutoff )
 {
-    MCLS_REQUIRE( !source.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(source) );
     d_source = source;
     d_domain_transporter.setCutoff( relative_weight_cutoff );
 }
@@ -148,7 +148,7 @@ void SourceTransporter<Source>::assignSource(
 template<class Source>
 void SourceTransporter<Source>::transport()
 {
-    MCLS_REQUIRE( !d_source.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_source) );
 
     // Barrier before transport.
     d_comm->barrier();
@@ -231,12 +231,12 @@ void SourceTransporter<Source>::transport()
 template<class Source>
 void SourceTransporter<Source>::transportSourceHistory( BankType& bank )
 {
-    MCLS_REQUIRE( !d_source.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_source) );
     MCLS_REQUIRE( !ST::empty(*d_source) );
 
     // Get a history from the source.
     Teuchos::RCP<HistoryType> history = ST::getHistory( *d_source );
-    MCLS_CHECK( !history.is_null() );
+    MCLS_CHECK( Teuchos::nonnull(history) );
     MCLS_CHECK( HT::alive(*history) );
 
     // Transport the history through the local domain and communicate it if
@@ -256,7 +256,7 @@ void SourceTransporter<Source>::transportBankHistory( BankType& bank )
     // Get a history from the bank.
     Teuchos::RCP<HistoryType> history = bank.top();
     bank.pop();
-    MCLS_CHECK( !history.is_null() );
+    MCLS_CHECK( Teuchos::nonnull(history) );
 
     // Set the history alive for transport.
     HT::live( *history );
@@ -275,7 +275,7 @@ void SourceTransporter<Source>::localHistoryTransport(
     const Teuchos::RCP<HistoryType>& history, 
     BankType& bank )
 {
-    MCLS_REQUIRE( !history.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(history) );
     MCLS_REQUIRE( HT::alive(*history) );
 
     // Do local transport.
@@ -360,7 +360,7 @@ void SourceTransporter<Source>::completeTreeCount()
 	request_ptr = 
 	    Teuchos::Ptr<Teuchos::RCP<Request> >(&finish);
 	Teuchos::wait( *d_comm_num_done, request_ptr );
-	MCLS_CHECK( finish.is_null() );
+	MCLS_CHECK( Teuchos::is_null(finish) );
     }
 
     // Parent will wait for first child node to clear communication.
@@ -369,7 +369,7 @@ void SourceTransporter<Source>::completeTreeCount()
         request_ptr = 
             Teuchos::Ptr<Teuchos::RCP<Request> >(&d_num_done_handles.first);
         Teuchos::wait( *d_comm_num_done, request_ptr );
-        MCLS_CHECK( d_num_done_handles.first.is_null() );
+        MCLS_CHECK( Teuchos::is_null(d_num_done_handles.first) );
     }
 
     // Parent will wait for second child node to clear communication.
@@ -378,7 +378,7 @@ void SourceTransporter<Source>::completeTreeCount()
         request_ptr = 
             Teuchos::Ptr<Teuchos::RCP<Request> >(&d_num_done_handles.second);
         Teuchos::wait( *d_comm_num_done, request_ptr );
-        MCLS_CHECK( d_num_done_handles.second.is_null() );
+        MCLS_CHECK( Teuchos::is_null(d_num_done_handles.second) );
     }
 }
 
@@ -442,7 +442,7 @@ void SourceTransporter<Source>::sendCompleteToChildren()
             *d_comm_complete, d_complete, d_children.first );
         Teuchos::Ptr<Teuchos::RCP<Request> > request_ptr(&complete);
         Teuchos::wait( *d_comm_complete, request_ptr );
-        MCLS_CHECK( complete.is_null() );
+        MCLS_CHECK( Teuchos::is_null(complete) );
     }
 
     // Child 2
@@ -452,7 +452,7 @@ void SourceTransporter<Source>::sendCompleteToChildren()
             *d_comm_complete, d_complete, d_children.second );
         Teuchos::Ptr<Teuchos::RCP<Request> > request_ptr(&complete);
         Teuchos::wait( *d_comm_complete, request_ptr );
-        MCLS_CHECK( complete.is_null() );
+        MCLS_CHECK( Teuchos::is_null(complete) );
     }
 }
 
@@ -491,7 +491,7 @@ void SourceTransporter<Source>::controlTermination()
                 *d_comm_num_done, d_num_done, d_parent );
             Teuchos::Ptr<Teuchos::RCP<Request> > request_ptr(&report);
             Teuchos::wait( *d_comm_num_done, request_ptr );
-            MCLS_CHECK( report.is_null() );
+            MCLS_CHECK( Teuchos::is_null(report) );
             *d_num_done = 0;
         } 
 

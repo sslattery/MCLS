@@ -64,8 +64,8 @@ AdjointSolverManager<Vector,Matrix,RNG>::AdjointSolverManager(
     , d_plist( plist )
     , d_internal_solver( internal_solver )
 {
-    MCLS_REQUIRE( !d_global_comm.is_null() );
-    MCLS_REQUIRE( !d_plist.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 }
 
 //---------------------------------------------------------------------------//
@@ -82,10 +82,10 @@ AdjointSolverManager<Vector,Matrix,RNG>::AdjointSolverManager(
     , d_global_comm( global_comm )
     , d_plist( plist )
     , d_internal_solver( internal_solver )
-    , d_primary_set( !d_problem.is_null() )
+    , d_primary_set( Teuchos::nonnull(d_problem) )
 {
-    MCLS_REQUIRE( !d_global_comm.is_null() );
-    MCLS_REQUIRE( !d_plist.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
     buildMonteCarloDomain();
 }
@@ -158,8 +158,8 @@ template<class Vector, class Matrix, class RNG>
 void AdjointSolverManager<Vector,Matrix,RNG>::setProblem( 
     const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem )
 {
-    MCLS_REQUIRE( !d_global_comm.is_null() );
-    MCLS_REQUIRE( !d_plist.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
     d_primary_set = Teuchos::nonnull( problem );
 
@@ -216,7 +216,7 @@ template<class Vector, class Matrix, class RNG>
 void AdjointSolverManager<Vector,Matrix,RNG>::setParameters( 
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
-    MCLS_REQUIRE( !params.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(params) );
     d_plist = params;
 }
 
@@ -228,10 +228,10 @@ void AdjointSolverManager<Vector,Matrix,RNG>::setParameters(
 template<class Vector, class Matrix, class RNG>
 bool AdjointSolverManager<Vector,Matrix,RNG>::solve()
 {    
-    MCLS_REQUIRE( !d_global_comm.is_null() );
-    MCLS_REQUIRE( !d_plist.is_null() );
-    MCLS_REQUIRE( !d_msod_manager.is_null() );
-    MCLS_REQUIRE( !d_mc_solver.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_msod_manager) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_mc_solver) );
 
     // Get the domain tally.
     Teuchos::RCP<TallyType> tally = 
@@ -325,8 +325,8 @@ bool AdjointSolverManager<Vector,Matrix,RNG>::solve()
 template<class Vector, class Matrix, class RNG>
 void AdjointSolverManager<Vector,Matrix,RNG>::buildMonteCarloDomain()
 {
-    MCLS_REQUIRE( !d_global_comm.is_null() );
-    MCLS_REQUIRE( !d_plist.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
     // Build the MSOD manager.
     d_msod_manager = Teuchos::rcp( 
@@ -357,9 +357,9 @@ void AdjointSolverManager<Vector,Matrix,RNG>::buildMonteCarloDomain()
     // Build the global MSOD Monte Carlo domain from the primary set.
     d_msod_manager->setDomain( primary_domain );
 
-    MCLS_ENSURE( !d_msod_manager.is_null() );
-    MCLS_ENSURE( !d_msod_manager->localDomain().is_null() );
-    MCLS_ENSURE( !d_mc_solver.is_null() );
+    MCLS_ENSURE( Teuchos::nonnull(d_msod_manager) );
+    MCLS_ENSURE( Teuchos::nonnull(d_msod_manager->localDomain()) );
+    MCLS_ENSURE( Teuchos::nonnull(d_mc_solver) );
 }
 
 //---------------------------------------------------------------------------//
@@ -369,11 +369,11 @@ void AdjointSolverManager<Vector,Matrix,RNG>::buildMonteCarloDomain()
 template<class Vector, class Matrix, class RNG>
 void AdjointSolverManager<Vector,Matrix,RNG>::buildMonteCarloSource()
 {
-    MCLS_REQUIRE( !d_global_comm.is_null() );
-    MCLS_REQUIRE( !d_plist.is_null() );
-    MCLS_REQUIRE( !d_msod_manager.is_null() );
-    MCLS_REQUIRE( !d_msod_manager->localDomain().is_null() );
-    MCLS_REQUIRE( !d_mc_solver.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_msod_manager) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_msod_manager->localDomain()) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_mc_solver) );
 
     // Set a global scope variable for the primary source.
     Teuchos::RCP<SourceType> primary_source;
@@ -416,7 +416,7 @@ void AdjointSolverManager<Vector,Matrix,RNG>::buildMonteCarloSource()
     // Build the global MSOD Monte Carlo source from the primary set.
     d_msod_manager->setSource( primary_source );
 
-    MCLS_ENSURE( !d_msod_manager->localSource().is_null() );
+    MCLS_ENSURE( Teuchos::nonnull(d_msod_manager->localSource()) );
 }
 
 //---------------------------------------------------------------------------//

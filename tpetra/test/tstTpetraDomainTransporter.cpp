@@ -165,11 +165,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Cutoff, LO, GO, Scalar )
 	{
 	    if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
 	    {
-		HistoryType history( i, weight );
+		HistoryType history( i, i, weight );
 		history.live();
 		transporter.transport( history );
 
-		TEST_EQUALITY( history.state(), i+1 );
+		TEST_EQUALITY( history.globalState(), i+1 );
 		TEST_EQUALITY( history.weight(), weight / 2 );
 		TEST_EQUALITY( history.event(), MCLS::Event::CUTOFF );
 		TEST_ASSERT( !history.alive() );
@@ -179,11 +179,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Cutoff, LO, GO, Scalar )
 	{
 	    if ( i >= local_num_rows*comm_rank && i < 2+local_num_rows*(comm_rank+1) )
 	    {
-		HistoryType history( i, weight );
+		HistoryType history( i, i, weight );
 		history.live();
 		transporter.transport( history );
 
-		TEST_EQUALITY( history.state(), i+1 );
+		TEST_EQUALITY( history.globalState(), i+1 );
 		TEST_EQUALITY( history.weight(), weight / 2 );
 		TEST_EQUALITY( history.event(), MCLS::Event::CUTOFF );
 		TEST_ASSERT( !history.alive() );
@@ -275,11 +275,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Cutoff2, LO, GO, Scalar )
 	{
 	    if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
 	    {
-		HistoryType history( i, weight );
+		HistoryType history( i, i, weight );
 		history.live();
 		transporter.transport( history );
 
-		TEST_EQUALITY( history.state(), i+2 );
+		TEST_EQUALITY( history.globalState(), i+2 );
 		TEST_EQUALITY( history.weight(), weight / 4 );
 		TEST_EQUALITY( history.event(), MCLS::Event::CUTOFF );
 		TEST_ASSERT( !history.alive() );
@@ -289,11 +289,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Cutoff2, LO, GO, Scalar )
 	{
 	    if ( i >= local_num_rows*comm_rank && i < 1+local_num_rows*(comm_rank+1) )
 	    {
-		HistoryType history( i, weight );
+		HistoryType history( i, i, weight );
 		history.live();
 		transporter.transport( history );
 
-		TEST_EQUALITY( history.state(), i+2 );
+		TEST_EQUALITY( history.globalState(), i+2 );
 		TEST_EQUALITY( history.weight(), weight / 4 );
 		TEST_EQUALITY( history.event(), MCLS::Event::CUTOFF );
 		TEST_ASSERT( !history.alive() );
@@ -412,7 +412,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Boundary, LO, GO, Scalar )
 	    {
 		if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
 		{
-		    HistoryType history( i, weight );
+		    HistoryType history( i, i, weight );
 		    history.live();
 		    transporter.transport( history );
 
@@ -425,7 +425,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Boundary, LO, GO, Scalar )
 	    {
 		if ( i >= local_num_rows*comm_rank && i < 2+local_num_rows*(comm_rank+1) )
 		{
-		    HistoryType history( i, weight );
+		    HistoryType history( i, i, weight );
 		    history.live();
 		    transporter.transport( history );
 

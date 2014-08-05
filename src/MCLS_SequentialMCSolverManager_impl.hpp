@@ -64,8 +64,8 @@ SequentialMCSolverManager<Vector,Matrix,RNG>::SequentialMCSolverManager(
     : d_global_comm( global_comm )
     , d_plist( plist )
 {
-    MCLS_REQUIRE( !d_global_comm.is_null() );
-    MCLS_REQUIRE( !d_plist.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 }
 
 //---------------------------------------------------------------------------//
@@ -80,12 +80,12 @@ SequentialMCSolverManager<Vector,Matrix,RNG>::SequentialMCSolverManager(
     : d_problem( problem )
     , d_global_comm( global_comm )
     , d_plist( plist )
-    , d_primary_set( !d_problem.is_null() )
+    , d_primary_set( Teuchos::nonnull(d_problem) )
     , d_num_iters( 0 )
     , d_converged_status( 0 )
 {
-    MCLS_REQUIRE( !global_comm.is_null() );
-    MCLS_REQUIRE( !d_plist.is_null() );
+    MCLS_REQUIRE( Teuchos::nonnull(global_comm) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
     buildResidualMonteCarloProblem();
 }
