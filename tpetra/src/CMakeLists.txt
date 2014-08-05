@@ -21,7 +21,6 @@ APPEND_SET(HEADERS
   MCLS_TpetraBlockJacobiPreconditioner_impl.hpp
   MCLS_TpetraCrsMatrixAdapter.hpp
   MCLS_TpetraHelpers.hpp
-  MCLS_TpetraMatrixAlgorithms.hpp
   MCLS_TpetraPointJacobiPreconditioner.hpp
   MCLS_TpetraPointJacobiPreconditioner_impl.hpp
   MCLS_TpetraVectorAdapter.hpp

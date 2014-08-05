@@ -62,7 +62,6 @@ APPEND_SET(HEADERS
   MCLS_HistoryTraits.hpp
   MCLS_LinearProblem.hpp
   MCLS_LinearProblem_impl.hpp
-  MCLS_MatrixAlgorithms.hpp
   MCLS_MatrixTraits.hpp
   MCLS_MCSASolverManager.hpp
   MCLS_MCSASolverManager_impl.hpp
