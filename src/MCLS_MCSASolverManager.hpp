@@ -62,7 +62,7 @@ namespace MCLS
  * \class MCSASolverManager
  * \brief Solver manager for Monte Carlo synthetic acceleration.
  */
-template<class Vector, class Matrix, class RNG = std::mt19937>
+template<class Vector, class Matrix, class RNG = std::mt19937_64>
 class MCSASolverManager : public SolverManager<Vector,Matrix>
 {
   public:

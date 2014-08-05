@@ -483,7 +483,7 @@ SolveStatus<Scalar> MCLSLinearOpWithSolve<Scalar>::solveImpl(
     // Release the LHS/RHS views.
     d_linear_problem->releaseLHS();
     d_linear_problem->releaseRHS();
-
+ 
     // Report the overall timing.
     if ( out.get() && 
 	 static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW) )

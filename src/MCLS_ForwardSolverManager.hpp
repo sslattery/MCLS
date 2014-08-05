@@ -66,7 +66,7 @@ namespace MCLS
  * \class ForwardSolverManager
  * \brief Solver manager for analog forward Monte Carlo.
  */
-template<class Vector, class Matrix, class RNG = std::mt19937>
+template<class Vector, class Matrix, class RNG = std::mt19937_64>
 class ForwardSolverManager : public SolverManager<Vector,Matrix>
 {
   public:

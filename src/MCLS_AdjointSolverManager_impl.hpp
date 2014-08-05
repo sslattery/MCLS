@@ -106,7 +106,6 @@ AdjointSolverManager<Vector,Matrix,RNG>::getValidParameters() const
     plist->set<int>("MC Buffer Size", 1000);
     plist->set<bool>("Reproducible MC Mode", false);
     plist->set<int>("Overlap Size",0);
-    plist->set<int>("Random Number Seed", 433494437);
     plist->set<int>("Number of Sets", 1);
     plist->set<double>("Neumann Relaxation", 1.0);
     return plist;

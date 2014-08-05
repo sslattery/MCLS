@@ -61,7 +61,7 @@ namespace MCLS
  * \class SequentialMCSolverManager
  * \brief Solver manager for Sequential Monte Carlo.
  */
-template<class Vector, class Matrix, class RNG = std::mt19937>
+template<class Vector, class Matrix, class RNG = std::mt19937_64>
 class SequentialMCSolverManager : public SolverManager<Vector,Matrix>
 {
   public:

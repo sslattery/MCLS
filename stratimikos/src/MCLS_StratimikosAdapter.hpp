@@ -32,7 +32,7 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_Stratimikos.hpp
+ * \file MCLS_StratimikosAdapter.hpp
  * \author Stuart R. Slattery
  * \brief Stratimikos Adapter for MCLS.
  */

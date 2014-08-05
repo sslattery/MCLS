@@ -120,14 +120,16 @@ class MultiVectorTraits
     }
 
     //! Return a vector given its id in the multivector.
-    static Teuchos::RCP<const vector_type> getVector( const int id )
+    static Teuchos::RCP<const vector_type> 
+    getVector( multivector_type& multivector, const int id )
     {
 	UndefinedMultiVectorTraits<MultiVector,Matrix>::notDefined(); 
 	return Teuchos::null;
     }
 
     //! Return a vector given its id in the multivector.
-    static Teuchos::RCP<vector_type> getVectorNonConst( const int id )
+    static Teuchos::RCP<vector_type> 
+    getVectorNonConst( multivector_type& multivector, const int id )
     {
 	UndefinedMultiVectorTraits<MultiVector,Matrix>::notDefined(); 
 	return Teuchos::null;
@@ -211,16 +213,18 @@ class MultiVectorTraits<Epetra_MultiVector, Epetra_RowMatrix>
     }
 
     //! Return a vector given its id in the multivector.
-    static Teuchos::RCP<const vector_type> 
+    static Teuchos::RCP<const vector_type>
     getVector( const multivector_type& multivector, const int id )
     {
+	MCLS_REQUIRE( id < multivector.NumVectors() );
 	return Teuchos::rcp( multivector(id), false );
     }
 
     //! Return a vector given its id in the multivector.
-    static Teuchos::RCP<vector_type> 
+    static Teuchos::RCP<vector_type>
     getVectorNonConst( multivector_type& multivector, const int id )
     {
+	MCLS_REQUIRE( id < multivector.NumVectors() );
 	return Teuchos::rcp( multivector(id), false );
     }
 
@@ -322,6 +326,7 @@ class MultiVectorTraits<Tpetra::MultiVector<Scalar,LO,GO>,
     static Teuchos::RCP<const vector_type> 
     getVector( const multivector_type& multivector, const int id )
     {
+	MCLS_REQUIRE( id < multivector.getNumVectors() );
 	return multivector.getVector(id);
     }
 
@@ -329,6 +334,7 @@ class MultiVectorTraits<Tpetra::MultiVector<Scalar,LO,GO>,
     static Teuchos::RCP<vector_type> 
     getVectorNonConst( multivector_type& multivector, const int id )
     {
+	MCLS_REQUIRE( id < multivector.getNumVectors() );
 	return multivector.getVectorNonConst(id);
     }
 

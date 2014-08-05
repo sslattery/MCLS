@@ -184,10 +184,8 @@ class LinearProblemAdapter : public LinearProblemBase<
 	MCLS_REQUIRE( id < MVT::getNumVectors(*d_x) );
 	MCLS_REQUIRE( id < MVT::getNumVectors(*d_b) );
 
-	Teuchos::RCP<Vector> vector_x = 
-	    Teuchos::rcp( MVT::getVectorNonConst( *d_x, id ).getRawPtr(), false );
-	Teuchos::RCP<const Vector> vector_b = 
-	    Teuchos::rcp( MVT::getVector( *d_b, id ).getRawPtr(), false );
+	Teuchos::RCP<Vector> vector_x = MVT::getVectorNonConst( *d_x, id );
+	Teuchos::RCP<const Vector> vector_b = MVT::getVector( *d_b, id );
 
 	Teuchos::RCP<LinearProblem<Vector,Matrix> > lp = Teuchos::rcp(
 	    new LinearProblem<Vector,Matrix>(d_A, vector_x, vector_b) );

@@ -66,7 +66,7 @@ namespace MCLS
  * \class AdjointSolverManager
  * \brief Solver manager for analog adjoint Monte Carlo.
  */
-template<class Vector, class Matrix, class RNG = std::mt19937>
+template<class Vector, class Matrix, class RNG = std::mt19937_64>
 class AdjointSolverManager : public SolverManager<Vector,Matrix>
 {
   public:
