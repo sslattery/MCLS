@@ -403,9 +403,8 @@ bool MCSASolverManager<Vector,Matrix,RNG>::solve()
 	    // Check if we're done iterating.
 	    if ( d_num_iters % check_freq == 0 )
 	    {
-		do_iterations = 
-		    (residual_norm/source_norm > convergence_criteria) &&
-		    (d_num_iters < max_num_iters);
+		do_iterations = (residual_norm > convergence_criteria) &&
+				(d_num_iters < max_num_iters);
 	    }
 	}
 
@@ -446,8 +445,7 @@ bool MCSASolverManager<Vector,Matrix,RNG>::solve()
         }
 
         // Check for convergence.
-	if ( VT::norm2(*d_problem->getPrecResidual())/source_norm
-	     <= convergence_criteria )
+	if ( VT::norm2(*d_problem->getPrecResidual()) <= convergence_criteria )
 	{
 	    d_converged_status = 1;
 	}
@@ -457,7 +455,7 @@ bool MCSASolverManager<Vector,Matrix,RNG>::solve()
     if ( d_global_comm->getRank() == 0 )
     {
         std::cout << std::endl
-		  << " MCSA Solve: Complete in " << timer.totalElapsedTime() 
+		  << "    MCSA Solve: Complete in " << timer.totalElapsedTime() 
                   << " seconds." << std::endl;
     }
     printBottomBanner();
@@ -564,9 +562,9 @@ void MCSASolverManager<Vector,Matrix,RNG>::printTopBanner()
     if ( d_global_comm->getRank() == 0 )
     {
         std::cout << std::endl;
-        std::cout << "**********************************************" << std::endl;
-        std::cout << "*     MCLS: Monte Carlo Linear Solvers       *" << std::endl;
-        std::cout << "**********************************************" << std::endl;
+        std::cout << "**************************************************" << std::endl;
+        std::cout << "*       MCLS: Monte Carlo Linear Solvers         *" << std::endl;
+        std::cout << "**************************************************" << std::endl;
 	std::cout << std::endl;
         std::cout << "    MCSA / " << d_fixed_point->name() << " / "
 		  << d_plist->get<std::string>("MC Type") << std::endl << std::endl;
@@ -584,8 +582,8 @@ void MCSASolverManager<Vector,Matrix,RNG>::printBottomBanner()
 {
     if ( d_global_comm->getRank() == 0 )
     {
-        std::cout << "**********************************************" << std::endl;
-        std::cout << "**********************************************" << std::endl;
+	std::cout << std::endl;
+        std::cout << "**************************************************" << std::endl;
         std::cout << std::endl;
     } 
 }

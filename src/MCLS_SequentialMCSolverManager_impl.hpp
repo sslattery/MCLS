@@ -339,9 +339,8 @@ bool SequentialMCSolverManager<Vector,Matrix,RNG>::solve()
 	    // Check if we're done iterating.
 	    if ( d_num_iters % check_freq == 0 )
 	    {
-		do_iterations = 
-		    (residual_norm/source_norm > convergence_criteria) &&
-		    (d_num_iters < max_num_iters);
+		do_iterations = (residual_norm > convergence_criteria) &&
+				(d_num_iters < max_num_iters);
 	    }
 	}
 	d_global_comm->barrier();
@@ -381,8 +380,7 @@ bool SequentialMCSolverManager<Vector,Matrix,RNG>::solve()
         }
 
         // Check for convergence.
-	if ( VT::norm2(*d_problem->getPrecResidual())/source_norm
-	     <= convergence_criteria )
+	if ( VT::norm2(*d_problem->getPrecResidual()) <= convergence_criteria )
 	{
 	    d_converged_status = 1;
 	}
