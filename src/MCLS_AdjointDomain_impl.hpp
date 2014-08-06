@@ -66,7 +66,7 @@ AdjointDomain<Vector,Matrix,RNG>::AdjointDomain(
     const Teuchos::RCP<Vector>& x,
     const Teuchos::ParameterList& plist )
     : d_rng_dist( RDT::create(0.0, 1.0) )
-    , d_g2l_row_indexer( Teuchos::rcp(new MapType()) )
+    , d_g2l_row_indexer( Teuchos::rcp(new std::unordered_map<Ordinal,int>()) )
 {
     MCLS_REQUIRE( Teuchos::nonnull(A) );
     MCLS_REQUIRE( Teuchos::nonnull(x) );
@@ -181,7 +181,7 @@ AdjointDomain<Vector,Matrix,RNG>::AdjointDomain(
     const Teuchos::ArrayView<char>& buffer,
     const Teuchos::RCP<const Comm>& set_comm )
     : d_rng_dist( RDT::create(0.0, 1.0) )
-    , d_g2l_row_indexer( Teuchos::rcp(new MapType()) )
+    , d_g2l_row_indexer( Teuchos::rcp(new std::unordered_map<Ordinal,int>()) )
 {
     Ordinal num_rows = 0;
     int num_receives = 0;
@@ -412,7 +412,7 @@ Teuchos::Array<char> AdjointDomain<Vector,Matrix,RNG>::pack() const
     s << Teuchos::as<Ordinal>(d_tally->numTallyRows());
 
     // Pack up the local row indexer by key-value pairs.
-    typename MapType::const_iterator row_index_it;
+    typename std::unordered_map<Ordinal,int>::const_iterator row_index_it;
     for ( row_index_it = d_g2l_row_indexer->begin();
 	  row_index_it != d_g2l_row_indexer->end();
 	  ++row_index_it )
@@ -502,7 +502,7 @@ Teuchos::Array<char> AdjointDomain<Vector,Matrix,RNG>::pack() const
     }
 
     // Pack up the boundary-to-neighbor id table.
-    typename MapType::const_iterator bnd_it;
+    typename std::unordered_map<Ordinal,int>::const_iterator bnd_it;
     for ( bnd_it = d_bnd_to_neighbor.begin();
 	  bnd_it != d_bnd_to_neighbor.end();
 	  ++bnd_it )
@@ -567,7 +567,7 @@ std::size_t AdjointDomain<Vector,Matrix,RNG>::getPackedBytes() const
     s << Teuchos::as<Ordinal>(d_tally->numTallyRows());
 
     // Pack up the local row indexer by key-value pairs.
-    typename MapType::const_iterator row_index_it;
+    typename std::unordered_map<Ordinal,int>::const_iterator row_index_it;
     for ( row_index_it = d_g2l_row_indexer->begin();
 	  row_index_it != d_g2l_row_indexer->end();
 	  ++row_index_it )
@@ -657,7 +657,7 @@ std::size_t AdjointDomain<Vector,Matrix,RNG>::getPackedBytes() const
     }
 
     // Pack up the boundary-to-neighbor id table.
-    typename MapType::const_iterator bnd_it;
+    typename std::unordered_map<Ordinal,int>::const_iterator bnd_it;
     for ( bnd_it = d_bnd_to_neighbor.begin();
 	  bnd_it != d_bnd_to_neighbor.end();
 	  ++bnd_it )
@@ -718,7 +718,8 @@ int AdjointDomain<Vector,Matrix,RNG>::sendNeighborRank( int n ) const
 template<class Vector, class Matrix, class RNG>
 int AdjointDomain<Vector,Matrix,RNG>::owningNeighbor( const Ordinal& state ) const
 {
-    typename MapType::const_iterator neighbor = d_bnd_to_neighbor.find( state );
+    typename std::unordered_map<Ordinal,int>::const_iterator neighbor = 
+	d_bnd_to_neighbor.find( state );
     MCLS_REQUIRE( neighbor != d_bnd_to_neighbor.end() );
     return neighbor->second;
 }

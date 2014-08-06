@@ -113,7 +113,6 @@ class ForwardDomain
     typedef typename TallyType::HistoryType               HistoryType;
     typedef HistoryTraits<HistoryType>                    HT;
     typedef std::stack<Teuchos::RCP<HistoryType> >        BankType;
-    typedef typename std::unordered_map<Ordinal,int>      MapType;
     typedef Teuchos::Comm<int>                            Comm;
     typedef RNG                                           rng_type;
     typedef RNGTraits<RNG>                                RNGT;
@@ -213,7 +212,7 @@ class ForwardDomain
     Teuchos::RCP<TallyType> d_tally;
 
     // Global-to-local row indexer.
-    Teuchos::RCP<MapType> d_row_indexer;
+    Teuchos::RCP<std::unordered_map<Ordinal,int> > d_g2l_row_indexer;
 
     // Local CDF columns.
     Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > > d_columns;
@@ -234,7 +233,7 @@ class ForwardDomain
     Teuchos::Array<int> d_send_ranks;
 
     // Boundary state to owning neighbor local id table.
-    MapType d_bnd_to_neighbor;
+    std::unordered_map<Ordinal,int> d_bnd_to_neighbor;
 };
 
 //---------------------------------------------------------------------------//
@@ -253,9 +252,9 @@ inline void ForwardDomain<Vector,Matrix,RNG>::processTransition(
     MCLS_REQUIRE( isGlobalState(HT::globalState(history)) );
 
     // Get the current state.
-    typename MapType::const_iterator index = 
-	d_row_indexer->find( HT::globalState(history) );
-    MCLS_CHECK( index != d_row_indexer->end() );
+    typename std::unordered_map<Ordinal,int>::const_iterator index = 
+	d_g2l_row_indexer->find( HT::globalState(history) );
+    MCLS_CHECK( index != d_g2l_row_indexer->end() );
 
     // Sample the row CDF to get a new state.
     Ordinal new_state = 
@@ -278,7 +277,7 @@ template<class Vector, class Matrix, class RNG>
 inline bool ForwardDomain<Vector,Matrix,RNG>::isGlobalState( 
     const Ordinal& state ) const
 {
-    return ( d_row_indexer->end() != d_row_indexer->find(state) );
+    return d_g2l_row_indexer->count( state );
 }
 
 //---------------------------------------------------------------------------//
@@ -289,7 +288,7 @@ template<class Vector, class Matrix, class RNG>
 inline bool ForwardDomain<Vector,Matrix,RNG>::isBoundaryState( 
     const Ordinal& state ) const
 {
-   return ( d_bnd_to_neighbor.end() != d_bnd_to_neighbor.find(state) );
+    return d_bnd_to_neighbor.count( state );
 }
 
 //---------------------------------------------------------------------------//
@@ -390,7 +389,7 @@ class DomainTraits<ForwardDomain<Vector,Matrix,RNG> >
     /*!
      * \brief Determine if a given state is in the local domain.
      */
-    static bool isGlobalState( const domain_type& domain, 
+    static inline bool isGlobalState( const domain_type& domain, 
 			      const ordinal_type state )
     { 
 	return domain.isGlobalState( state );
@@ -399,7 +398,7 @@ class DomainTraits<ForwardDomain<Vector,Matrix,RNG> >
     /*!
      * \brief Determine if a given state is on the boundary.
      */
-    static bool isBoundaryState( const domain_type& domain, 
+    static inline bool isBoundaryState( const domain_type& domain, 
                                  const ordinal_type state )
     { 
 	return domain.isBoundaryState( state );

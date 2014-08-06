@@ -66,7 +66,7 @@ ForwardDomain<Vector,Matrix,RNG>::ForwardDomain(
     const Teuchos::RCP<Vector>& x,
     const Teuchos::ParameterList& plist )
     : d_rng_dist( RDT::create(0.0, 1.0) )
-    , d_row_indexer( Teuchos::rcp(new MapType()) )
+    , d_g2l_row_indexer( Teuchos::rcp(new std::unordered_map<Ordinal,int>()) )
 {
     MCLS_REQUIRE( Teuchos::nonnull(A) );
     MCLS_REQUIRE( Teuchos::nonnull(x) );
@@ -158,7 +158,7 @@ ForwardDomain<Vector,Matrix,RNG>::ForwardDomain(
     const Teuchos::ArrayView<char>& buffer,
     const Teuchos::RCP<const Comm>& set_comm )
     : d_rng_dist( RDT::create(0.0, 1.0) )
-    , d_row_indexer( Teuchos::rcp(new MapType()) )
+    , d_g2l_row_indexer( Teuchos::rcp(new std::unordered_map<Ordinal,int>()) )
 {
     Ordinal num_rows = 0;
     int num_receives = 0;
@@ -200,7 +200,7 @@ ForwardDomain<Vector,Matrix,RNG>::ForwardDomain(
     for ( Ordinal n = 0; n < num_rows; ++n )
     {
 	ds >> global_row >> local_row;
-	(*d_row_indexer)[global_row] = local_row;
+	(*d_g2l_row_indexer)[global_row] = local_row;
     }
 
     // Unpack the local columns.
@@ -346,7 +346,7 @@ Teuchos::Array<char> ForwardDomain<Vector,Matrix,RNG>::pack() const
     s << Teuchos::as<int>(d_estimator);
 
     // Pack the local number of rows.
-    s << Teuchos::as<Ordinal>(d_row_indexer->size());
+    s << Teuchos::as<Ordinal>(d_g2l_row_indexer->size());
 
     // Pack in the number of receive neighbors.
     s << Teuchos::as<int>(d_receive_ranks.size());
@@ -361,9 +361,9 @@ Teuchos::Array<char> ForwardDomain<Vector,Matrix,RNG>::pack() const
     s << Teuchos::as<Ordinal>(d_tally->numBaseRows());
 
     // Pack up the local row indexer by key-value pairs.
-    typename MapType::const_iterator row_index_it;
-    for ( row_index_it = d_row_indexer->begin();
-	  row_index_it != d_row_indexer->end();
+    typename std::unordered_map<Ordinal,int>::const_iterator row_index_it;
+    for ( row_index_it = d_g2l_row_indexer->begin();
+	  row_index_it != d_g2l_row_indexer->end();
 	  ++row_index_it )
     {
 	s << row_index_it->first << row_index_it->second;
@@ -451,7 +451,7 @@ Teuchos::Array<char> ForwardDomain<Vector,Matrix,RNG>::pack() const
     }
 
     // Pack up the boundary-to-neighbor id table.
-    typename MapType::const_iterator bnd_it;
+    typename std::unordered_map<Ordinal,int>::const_iterator bnd_it;
     for ( bnd_it = d_bnd_to_neighbor.begin();
 	  bnd_it != d_bnd_to_neighbor.end();
 	  ++bnd_it )
@@ -488,7 +488,7 @@ std::size_t ForwardDomain<Vector,Matrix,RNG>::getPackedBytes() const
     s << Teuchos::as<int>(d_estimator);
 
     // Pack the local number of rows.
-    s << Teuchos::as<Ordinal>(d_row_indexer->size());
+    s << Teuchos::as<Ordinal>(d_g2l_row_indexer->size());
 
     // Pack in the number of receive neighbors.
     s << Teuchos::as<int>(d_receive_ranks.size());
@@ -503,9 +503,9 @@ std::size_t ForwardDomain<Vector,Matrix,RNG>::getPackedBytes() const
     s << Teuchos::as<Ordinal>(d_tally->numBaseRows());
 
     // Pack up the local row indexer by key-value pairs.
-    typename MapType::const_iterator row_index_it;
-    for ( row_index_it = d_row_indexer->begin();
-	  row_index_it != d_row_indexer->end();
+    typename std::unordered_map<Ordinal,int>::const_iterator row_index_it;
+    for ( row_index_it = d_g2l_row_indexer->begin();
+	  row_index_it != d_g2l_row_indexer->end();
 	  ++row_index_it )
     {
 	s << row_index_it->first << row_index_it->second;
@@ -593,7 +593,7 @@ std::size_t ForwardDomain<Vector,Matrix,RNG>::getPackedBytes() const
     }
 
     // Pack up the boundary-to-neighbor id table.
-    typename MapType::const_iterator bnd_it;
+    typename std::unordered_map<Ordinal,int>::const_iterator bnd_it;
     for ( bnd_it = d_bnd_to_neighbor.begin();
 	  bnd_it != d_bnd_to_neighbor.end();
 	  ++bnd_it )
@@ -622,11 +622,11 @@ template<class Vector, class Matrix, class RNG>
 Teuchos::Array<typename ForwardDomain<Vector,Matrix,RNG>::Ordinal> 
 ForwardDomain<Vector,Matrix,RNG>::localStates() const
 {
-    Teuchos::Array<Ordinal> states( d_row_indexer->size() );
+    Teuchos::Array<Ordinal> states( d_g2l_row_indexer->size() );
     typename Teuchos::Array<Ordinal>::iterator state_it;
-    typename MapType::const_iterator map_it;
-    for ( map_it = d_row_indexer->begin(), state_it = states.begin();
-          map_it != d_row_indexer->end(); 
+    typename std::unordered_map<Ordinal,int>::const_iterator map_it;
+    for ( map_it = d_g2l_row_indexer->begin(), state_it = states.begin();
+          map_it != d_g2l_row_indexer->end(); 
           ++map_it, ++state_it )
     {
         *state_it = map_it->first;
@@ -665,7 +665,8 @@ int ForwardDomain<Vector,Matrix,RNG>::sendNeighborRank( int n ) const
 template<class Vector, class Matrix, class RNG>
 int ForwardDomain<Vector,Matrix,RNG>::owningNeighbor( const Ordinal& state ) const
 {
-    typename MapType::const_iterator neighbor = d_bnd_to_neighbor.find( state );
+    typename std::unordered_map<Ordinal,int>::const_iterator neighbor = 
+	d_bnd_to_neighbor.find( state );
     MCLS_REQUIRE( neighbor != d_bnd_to_neighbor.end() );
     return neighbor->second;
 }
@@ -683,7 +684,7 @@ void ForwardDomain<Vector,Matrix,RNG>::addMatrixToDomain(
 
     Ordinal local_num_rows = MT::getLocalNumRows( *A );
     Ordinal global_row = 0;
-    int offset = d_row_indexer->size();
+    int offset = d_g2l_row_indexer->size();
     int ipoffset = 0;
     int max_entries = MT::getGlobalMaxNumRowEntries( *A );
     std::size_t num_entries = 0;
@@ -696,7 +697,7 @@ void ForwardDomain<Vector,Matrix,RNG>::addMatrixToDomain(
 
 	// Add the global row id and local row id to the indexer.
 	global_row = MT::getGlobalRow(*A, i);
-	(*d_row_indexer)[global_row] = ipoffset;
+	(*d_g2l_row_indexer)[global_row] = ipoffset;
 
 	// Allocate column and CDF memory for this row.
         d_columns[ipoffset] = 

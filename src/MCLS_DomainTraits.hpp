@@ -158,6 +158,26 @@ class DomainTraits
     }
 
     /*!
+     * \brief Given a local index in the domain get the global index.
+     */
+    static ordinal_type 
+    localToGlobal( const Domain& domain, const int local_id )
+    {
+	UndefinedDomainTraits<Domain>::notDefined();
+	return 0;
+    }
+
+    /*!
+     * \brief Given a local index in the domain get the global index.
+     */
+    static int 
+    globalToLocal( const Domain& domain, const ordinal_type global_id  )
+    {
+	UndefinedDomainTraits<Domain>::notDefined();
+	return 0;
+    }
+
+    /*!
      * \brief Get the tally associated with this domain.
      */
     static Teuchos::RCP<tally_type> domainTally( const Domain& domain )
@@ -169,7 +189,7 @@ class DomainTraits
     /*!
      * \brief Determine if a given state is in the local domain.
      */
-    static bool isGlobalState( const Domain& domain, const ordinal_type state )
+    static inline bool isGlobalState( const Domain& domain, const ordinal_type state )
     { 
 	UndefinedDomainTraits<Domain>::notDefined(); 
 	return false;
@@ -178,7 +198,7 @@ class DomainTraits
     /*!
      * \brief Determine if a given state is on the boundary.
      */
-    static bool isBoundaryState( const Domain& domain, const ordinal_type state )
+    static inline bool isBoundaryState( const Domain& domain, const ordinal_type state )
     { 
 	UndefinedDomainTraits<Domain>::notDefined(); 
 	return false;
