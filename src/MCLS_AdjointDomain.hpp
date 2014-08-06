@@ -148,8 +148,8 @@ class AdjointDomain
     Teuchos::RCP<TallyType> domainTally() const
     { return d_tally; }
 
-    // Determine if a given state is in the local domain.
-    inline bool isLocalState( const Ordinal& state ) const;
+    // Determine if a given state global is in the local domain.
+    inline bool isGlobalState( const Ordinal& state ) const;
 
     // Determine if a given state is on the boundary.
     inline bool isBoundaryState( const Ordinal& state ) const;
@@ -176,7 +176,6 @@ class AdjointDomain
     // Add matrix data to the local domain.
     void addMatrixToDomain( const Teuchos::RCP<const Matrix>& A,
                             std::set<Ordinal>& tally_states,
-                            const double abs_probability,
 			    const double relaxation );
 
     // Build boundary data.
@@ -198,7 +197,7 @@ class AdjointDomain
     Teuchos::RCP<TallyType> d_tally;
 
     // Global-to-local row indexer.
-    Teuchos::RCP<MapType> d_row_indexer;
+    Teuchos::RCP<MapType> d_g2l_row_indexer;
 
     // Local CDF columns.
     Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > > d_columns;
@@ -235,12 +234,12 @@ inline void AdjointDomain<Vector,Matrix,RNG>::processTransition(
     MCLS_REQUIRE( Teuchos::nonnull(d_rng) );
     MCLS_REQUIRE( HT::alive(history) );
     MCLS_REQUIRE( Event::TRANSITION == HT::event(history) );
-    MCLS_REQUIRE( isLocalState(HT::globalState(history)) );
+    MCLS_REQUIRE( isGlobalState(HT::globalState(history)) );
 
     // Get the current state.
     typename MapType::const_iterator index = 
-	d_row_indexer->find( HT::globalState(history) );
-    MCLS_CHECK( index != d_row_indexer->end() );
+	d_g2l_row_indexer->find( HT::globalState(history) );
+    MCLS_CHECK( index != d_g2l_row_indexer->end() );
 
     // Sample the row CDF to get a new state.
     Ordinal new_state = 
@@ -248,36 +247,27 @@ inline void AdjointDomain<Vector,Matrix,RNG>::processTransition(
 					  d_rng->random(*d_rng_dist) );
     HT::setGlobalState( history, (*d_columns[index->second])[new_state] );
 
-    // Update the history weight with the transition weight. An absorption
-    // event contributes a weight of zero, triggering the weight cutoff
-    // termination.
-    if ( Teuchos::OrdinalTraits<Ordinal>::invalid() != HT::globalState(history) )
-    {
-	HT::multiplyWeight( history,
-			    d_weights[index->second] *
-			    d_h[index->second][new_state] /
-			    std::abs(d_h[index->second][new_state]) );
-    }
-    else
-    {
-	HT::multiplyWeight( history, 0.0 );
-    }
+    // Update the history weight with the transition weight.
+    HT::multiplyWeight( history,
+			d_weights[index->second] *
+			d_h[index->second][new_state] /
+			std::abs(d_h[index->second][new_state]) );
 }
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Determine if a given state is in the local domain.
+ * \brief Determine if a given global state is in the local domain.
  */
 template<class Vector, class Matrix, class RNG>
-inline bool AdjointDomain<Vector,Matrix,RNG>::isLocalState( 
+inline bool AdjointDomain<Vector,Matrix,RNG>::isGlobalState( 
     const Ordinal& state ) const
 {
-    return ( d_row_indexer->end() != d_row_indexer->find(state) );
+    return ( d_g2l_row_indexer->end() != d_g2l_row_indexer->find(state) );
 }
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Determine if a given state is on the boundary.
+ * \brief Determine if a given global state is on the boundary.
  */
 template<class Vector, class Matrix, class RNG>
 inline bool AdjointDomain<Vector,Matrix,RNG>::isBoundaryState( 
@@ -365,12 +355,12 @@ class DomainTraits<AdjointDomain<Vector,Matrix,RNG> >
     }
 
     /*!
-     * \brief Determine if a given state is in the local domain.
+     * \brief Determine if a given global state is in the local domain.
      */
-    static bool isLocalState( const domain_type& domain, 
+    static bool isGlobalState( const domain_type& domain, 
 			      const ordinal_type state )
     { 
-	return domain.isLocalState( state );
+	return domain.isGlobalState( state );
     }
 
     /*!

@@ -152,7 +152,7 @@ class ForwardDomain
     { return d_tally; }
 
     // Determine if a given state is in the local domain.
-    inline bool isLocalState( const Ordinal& state ) const;
+    inline bool isGlobalState( const Ordinal& state ) const;
 
     // Determine if a given state is on the boundary.
     inline bool isBoundaryState( const Ordinal& state ) const;
@@ -181,7 +181,6 @@ class ForwardDomain
 
     // Add matrix data to the local domain.
     void addMatrixToDomain( const Teuchos::RCP<const Matrix>& A,
-                            const double abs_probability,
 			    const double relaxation );
 
     // Build boundary data.
@@ -240,7 +239,7 @@ inline void ForwardDomain<Vector,Matrix,RNG>::processTransition(
     MCLS_REQUIRE( Teuchos::nonnull(d_rng) );
     MCLS_REQUIRE( HT::alive(history) );
     MCLS_REQUIRE( Event::TRANSITION == HT::event(history) );
-    MCLS_REQUIRE( isLocalState(HT::globalState(history)) );
+    MCLS_REQUIRE( isGlobalState(HT::globalState(history)) );
 
     // Get the current state.
     typename MapType::const_iterator index = 
@@ -253,20 +252,11 @@ inline void ForwardDomain<Vector,Matrix,RNG>::processTransition(
                                           d_rng->random(*d_rng_dist) );
     HT::setGlobalState( history, (*d_columns[index->second])[new_state] );
 
-    // Update the history weight with the transition weight. An absorption
-    // event contributes a weight of zero, triggering the weight cutoff
-    // termination.
-    if ( Teuchos::OrdinalTraits<Ordinal>::invalid() != HT::globalState(history) )
-    {
-	HT::multiplyWeight( history, 
-			    d_weights[index->second] *
-			    d_h[index->second][new_state] /
-			    std::abs(d_h[index->second][new_state]) );
-    }
-    else
-    {
-	HT::multiplyWeight( history, 0.0 );
-    }
+    // Update the history weight with the transition weight.
+    HT::multiplyWeight( history, 
+			d_weights[index->second] *
+			d_h[index->second][new_state] /
+			std::abs(d_h[index->second][new_state]) );
 }
 
 //---------------------------------------------------------------------------//
@@ -274,7 +264,7 @@ inline void ForwardDomain<Vector,Matrix,RNG>::processTransition(
  * \brief Determine if a given state is in the local domain.
  */
 template<class Vector, class Matrix, class RNG>
-inline bool ForwardDomain<Vector,Matrix,RNG>::isLocalState( 
+inline bool ForwardDomain<Vector,Matrix,RNG>::isGlobalState( 
     const Ordinal& state ) const
 {
     return ( d_row_indexer->end() != d_row_indexer->find(state) );
@@ -372,10 +362,10 @@ class DomainTraits<ForwardDomain<Vector,Matrix,RNG> >
     /*!
      * \brief Determine if a given state is in the local domain.
      */
-    static bool isLocalState( const domain_type& domain, 
+    static bool isGlobalState( const domain_type& domain, 
 			      const ordinal_type state )
     { 
-	return domain.isLocalState( state );
+	return domain.isGlobalState( state );
     }
 
     /*!

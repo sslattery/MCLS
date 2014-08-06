@@ -224,11 +224,11 @@ TEUCHOS_UNIT_TEST( AdjointDomain, NoOverlap )
     {
 	if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
 	{
-	    TEST_ASSERT( domain.isLocalState(i) );
+	    TEST_ASSERT( domain.isGlobalState(i) );
 	}
 	else
 	{
-	    TEST_ASSERT( !domain.isLocalState(i) );
+	    TEST_ASSERT( !domain.isGlobalState(i) );
 	}
     }
 }
@@ -346,11 +346,11 @@ TEUCHOS_UNIT_TEST( AdjointDomain, PackUnpack )
     {
 	if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
 	{
-	    TEST_ASSERT( domain.isLocalState(i) );
+	    TEST_ASSERT( domain.isGlobalState(i) );
 	}
 	else
 	{
-	    TEST_ASSERT( !domain.isLocalState(i) );
+	    TEST_ASSERT( !domain.isGlobalState(i) );
 	}
     }
 }
@@ -467,11 +467,11 @@ TEUCHOS_UNIT_TEST( AdjointDomain, SomeOverlap )
 	{
 	    if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
 	    {
-		TEST_ASSERT( domain.isLocalState(i) );
+		TEST_ASSERT( domain.isGlobalState(i) );
 	    }
 	    else
 	    {
-		TEST_ASSERT( !domain.isLocalState(i) );
+		TEST_ASSERT( !domain.isGlobalState(i) );
 	    }
 	}
     }
@@ -481,11 +481,11 @@ TEUCHOS_UNIT_TEST( AdjointDomain, SomeOverlap )
 	{
 	    if ( i >= local_num_rows*comm_rank && i < 2+local_num_rows*(comm_rank+1) )
 	    {
-		TEST_ASSERT( domain.isLocalState(i) );
+		TEST_ASSERT( domain.isGlobalState(i) );
 	    }
 	    else
 	    {
-		TEST_ASSERT( !domain.isLocalState(i) );
+		TEST_ASSERT( !domain.isGlobalState(i) );
 	    }
 	}
     }
@@ -610,11 +610,11 @@ TEUCHOS_UNIT_TEST( AdjointDomain, SomeOverlapPackUnpack )
 	{
 	    if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
 	    {
-		TEST_ASSERT( domain.isLocalState(i) );
+		TEST_ASSERT( domain.isGlobalState(i) );
 	    }
 	    else
 	    {
-		TEST_ASSERT( !domain.isLocalState(i) );
+		TEST_ASSERT( !domain.isGlobalState(i) );
 	    }
 	}
     }
@@ -624,11 +624,11 @@ TEUCHOS_UNIT_TEST( AdjointDomain, SomeOverlapPackUnpack )
 	{
 	    if ( i >= local_num_rows*comm_rank && i < 2+local_num_rows*(comm_rank+1) )
 	    {
-		TEST_ASSERT( domain.isLocalState(i) );
+		TEST_ASSERT( domain.isGlobalState(i) );
 	    }
 	    else
 	    {
-		TEST_ASSERT( !domain.isLocalState(i) );
+		TEST_ASSERT( !domain.isGlobalState(i) );
 	    }
 	}
     }

@@ -151,7 +151,7 @@ class DomainTraits
     /*!
      * \brief Determine if a given state is in the local domain.
      */
-    static bool isLocalState( const Domain& domain, const ordinal_type state )
+    static bool isGlobalState( const Domain& domain, const ordinal_type state )
     { 
 	UndefinedDomainTraits<Domain>::notDefined(); 
 	return false;

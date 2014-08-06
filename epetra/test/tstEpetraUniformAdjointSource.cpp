@@ -206,7 +206,7 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_not_set )
 	Teuchos::RCP<HistoryType> history = source.getHistory();
 
 	TEST_EQUALITY( history->weight(), -global_num_rows );
-	TEST_ASSERT( domain->isLocalState( history->globalState() ) );
+	TEST_ASSERT( domain->isGlobalState( history->globalState() ) );
 	TEST_ASSERT( history->alive() );
 	TEST_ASSERT( VT::isGlobalRow( *x, history->globalState() ) );
     }
@@ -309,7 +309,7 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, PackUnpack )
 	Teuchos::RCP<HistoryType> history = source.getHistory();
 
 	TEST_EQUALITY( history->weight(), -global_num_rows );
-	TEST_ASSERT( domain->isLocalState( history->globalState() ) );
+	TEST_ASSERT( domain->isGlobalState( history->globalState() ) );
 	TEST_ASSERT( history->alive() );
 	TEST_ASSERT( VT::isGlobalRow( *x, history->globalState() ) );
     }
@@ -414,7 +414,7 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_set_pu )
 	Teuchos::RCP<HistoryType> history = source.getHistory();
 
 	TEST_EQUALITY( history->weight(), -global_num_rows );
-	TEST_ASSERT( domain->isLocalState( history->globalState() ) );
+	TEST_ASSERT( domain->isGlobalState( history->globalState() ) );
 	TEST_ASSERT( history->alive() );
 	TEST_ASSERT( VT::isGlobalRow( *x, history->globalState() ) );
     }
@@ -511,7 +511,7 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_set )
 	Teuchos::RCP<HistoryType> history = source.getHistory();
 
 	TEST_EQUALITY( history->weight(), -global_num_rows );
-	TEST_ASSERT( domain->isLocalState( history->globalState() ) );
+	TEST_ASSERT( domain->isGlobalState( history->globalState() ) );
 	TEST_ASSERT( history->alive() );
 	TEST_ASSERT( VT::isGlobalRow( *x, history->globalState() ) );
     }

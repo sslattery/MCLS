@@ -291,11 +291,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MSODManager, two_by_two, LO, GO, Scalar )
 		if ( i >= local_num_rows*set_rank && 
 		     i < local_num_rows*(set_rank+1) )
 		{
-		    TEST_ASSERT( domain->isLocalState(i) );
+		    TEST_ASSERT( domain->isGlobalState(i) );
 		}
 		else
 		{
-		    TEST_ASSERT( !domain->isLocalState(i) );
+		    TEST_ASSERT( !domain->isGlobalState(i) );
 		}
 	    }
 	}
@@ -306,11 +306,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MSODManager, two_by_two, LO, GO, Scalar )
 		if ( i >= local_num_rows*set_rank && 
 		     i < 2+local_num_rows*(set_rank+1) )
 		{
-		    TEST_ASSERT( domain->isLocalState(i) );
+		    TEST_ASSERT( domain->isGlobalState(i) );
 		}
 		else
 		{
-		    TEST_ASSERT( !domain->isLocalState(i) );
+		    TEST_ASSERT( !domain->isGlobalState(i) );
 		}
 	    }
 	}
@@ -347,7 +347,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MSODManager, two_by_two, LO, GO, Scalar )
 	    Teuchos::RCP<HistoryType> history = source->getHistory();
 
 	    TEST_EQUALITY( history->weight(), -global_num_rows );
-	    TEST_ASSERT( domain->isLocalState( history->globalState() ) );
+	    TEST_ASSERT( domain->isGlobalState( history->globalState() ) );
 	    TEST_ASSERT( history->alive() );
 	    TEST_ASSERT( VT::isGlobalRow( *x, history->globalState() ) );
 	}
@@ -425,11 +425,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MSODManager, two_by_two, LO, GO, Scalar )
 		if ( i >= local_num_rows*set_rank && 
 		     i < local_num_rows*(set_rank+1) )
 		{
-		    TEST_ASSERT( domain->isLocalState(i) );
+		    TEST_ASSERT( domain->isGlobalState(i) );
 		}
 		else
 		{
-		    TEST_ASSERT( !domain->isLocalState(i) );
+		    TEST_ASSERT( !domain->isGlobalState(i) );
 		}
 	    }
 	}
@@ -440,11 +440,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MSODManager, two_by_two, LO, GO, Scalar )
 		if ( i >= local_num_rows*set_rank && 
 		     i < 2+local_num_rows*(set_rank+1) )
 		{
-		    TEST_ASSERT( domain->isLocalState(i) );
+		    TEST_ASSERT( domain->isGlobalState(i) );
 		}
 		else
 		{
-		    TEST_ASSERT( !domain->isLocalState(i) );
+		    TEST_ASSERT( !domain->isGlobalState(i) );
 		}
 	    }
 	}
@@ -479,7 +479,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MSODManager, two_by_two, LO, GO, Scalar )
 	    Teuchos::RCP<HistoryType> history = source->getHistory();
 
 	    TEST_EQUALITY( history->weight(), -global_num_rows );
-	    TEST_ASSERT( domain->isLocalState( history->globalState() ) );
+	    TEST_ASSERT( domain->isGlobalState( history->globalState() ) );
 	    TEST_ASSERT( history->alive() );
 	    TEST_ASSERT( VT::isGlobalRow( *x, history->globalState() ) );
 	}

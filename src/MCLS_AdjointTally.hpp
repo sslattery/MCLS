@@ -225,12 +225,12 @@ inline void AdjointTally<Vector>::expectedValueEstimatorTally(
     // The expected value estimator sums the history's weight multiplied by
     // the absolute value of the transpose iteration matrix component
     // h^T_(i,j) into each tally state x(j) where the index i is the history's
-    // current state. The last column is the absorbing state so ignore it.
+    // current state.
     typename Teuchos::Array<Ordinal>::const_iterator col_it;
     Teuchos::ArrayRCP<double>::const_iterator val_it;
     for ( col_it = d_columns[index->second]->begin(),
           val_it = d_h[index->second].begin();
-          col_it != d_columns[index->second]->end()-1;
+          col_it != d_columns[index->second]->end();
           ++col_it, ++val_it )
     {
         MCLS_CHECK( VT::isGlobalRow(*d_x_tally, *col_it) );

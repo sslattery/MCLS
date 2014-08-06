@@ -215,11 +215,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardDomain, NoOverlap, LO, GO, Scalar )
     {
 	if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
 	{
-	    TEST_ASSERT( domain.isLocalState(i) );
+	    TEST_ASSERT( domain.isGlobalState(i) );
 	}
 	else
 	{
-	    TEST_ASSERT( !domain.isLocalState(i) );
+	    TEST_ASSERT( !domain.isGlobalState(i) );
 	}
     }
 }
@@ -344,11 +344,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardDomain, PackUnpack, LO, GO, Scalar )
     {
 	if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
 	{
-	    TEST_ASSERT( domain.isLocalState(i) );
+	    TEST_ASSERT( domain.isGlobalState(i) );
 	}
 	else
 	{
-	    TEST_ASSERT( !domain.isLocalState(i) );
+	    TEST_ASSERT( !domain.isGlobalState(i) );
 	}
     }
 }
@@ -472,11 +472,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardDomain, SomeOverlap, LO, GO, Scalar )
 	{
 	    if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
 	    {
-		TEST_ASSERT( domain.isLocalState(i) );
+		TEST_ASSERT( domain.isGlobalState(i) );
 	    }
 	    else
 	    {
-		TEST_ASSERT( !domain.isLocalState(i) );
+		TEST_ASSERT( !domain.isGlobalState(i) );
 	    }
 	}
     }
@@ -486,11 +486,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardDomain, SomeOverlap, LO, GO, Scalar )
 	{
 	    if ( i >= local_num_rows*comm_rank && i < 2+local_num_rows*(comm_rank+1) )
 	    {
-		TEST_ASSERT( domain.isLocalState(i) );
+		TEST_ASSERT( domain.isGlobalState(i) );
 	    }
 	    else
 	    {
-		TEST_ASSERT( !domain.isLocalState(i) );
+		TEST_ASSERT( !domain.isGlobalState(i) );
 	    }
 	}
     }
@@ -622,11 +622,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardDomain, PackUnpackSomeOverlap, LO, GO,
 	{
 	    if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
 	    {
-		TEST_ASSERT( domain.isLocalState(i) );
+		TEST_ASSERT( domain.isGlobalState(i) );
 	    }
 	    else
 	    {
-		TEST_ASSERT( !domain.isLocalState(i) );
+		TEST_ASSERT( !domain.isGlobalState(i) );
 	    }
 	}
     }
@@ -636,11 +636,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardDomain, PackUnpackSomeOverlap, LO, GO,
 	{
 	    if ( i >= local_num_rows*comm_rank && i < 2+local_num_rows*(comm_rank+1) )
 	    {
-		TEST_ASSERT( domain.isLocalState(i) );
+		TEST_ASSERT( domain.isGlobalState(i) );
 	    }
 	    else
 	    {
-		TEST_ASSERT( !domain.isLocalState(i) );
+		TEST_ASSERT( !domain.isGlobalState(i) );
 	    }
 	}
     }

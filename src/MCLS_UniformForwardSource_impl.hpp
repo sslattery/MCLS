@@ -316,7 +316,7 @@ UniformForwardSource<Domain>::getHistory()
 	SamplingTools::sampleDiscreteCDF( d_cdf(), d_rng->random(*d_rng_dist) );
     MCLS_CHECK( VT::isLocalRow(*d_b,local_state) );
     Ordinal starting_state = VT::getGlobalRow( *d_b, local_state );
-    MCLS_CHECK( DT::isLocalState(*d_domain,starting_state) );
+    MCLS_CHECK( DT::isGlobalState(*d_domain,starting_state) );
 
     // Set the history state.
     history->setWeight( d_weight );

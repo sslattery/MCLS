@@ -81,14 +81,6 @@ ForwardDomain<Vector,Matrix,RNG>::ForwardDomain(
 	}
     }
 
-    // Get the absorption probability. Default to 0.0.
-    double abs_probability = 0.0;
-    if ( plist.isParameter("Absorption Probability") )
-    {
-        abs_probability = plist.get<double>("Absorption Probability");
-    }
-    MCLS_CHECK( 0.0 <= abs_probability && abs_probability < 1.0 );
-
     // Get the amount of overlap.
     int num_overlap = plist.get<int>( "Overlap Size" );
     MCLS_REQUIRE( num_overlap >= 0 );
@@ -123,10 +115,10 @@ ForwardDomain<Vector,Matrix,RNG>::ForwardDomain(
 	{
 	    relaxation = plist.get<double>("Neumann Relaxation");
 	}
-        addMatrixToDomain( A, abs_probability, relaxation );
+        addMatrixToDomain( A, relaxation );
         if ( num_overlap > 0 )
         {
-            addMatrixToDomain( A_overlap, abs_probability, relaxation );
+            addMatrixToDomain( A_overlap, relaxation );
         }
 
         // Get the boundary states and their owning process ranks.
@@ -685,7 +677,6 @@ int ForwardDomain<Vector,Matrix,RNG>::owningNeighbor( const Ordinal& state ) con
 template<class Vector, class Matrix, class RNG>
 void ForwardDomain<Vector,Matrix,RNG>::addMatrixToDomain( 
     const Teuchos::RCP<const Matrix>& A,
-    const double abs_probability,
     const double relaxation )
 {
     MCLS_REQUIRE( Teuchos::nonnull(A) );
@@ -697,7 +688,6 @@ void ForwardDomain<Vector,Matrix,RNG>::addMatrixToDomain(
     int max_entries = MT::getGlobalMaxNumRowEntries( *A );
     std::size_t num_entries = 0;
     Teuchos::Array<double>::iterator cdf_iterator;
-    double pdf_norm = 1.0 - abs_probability;
 
     for ( Ordinal i = 0; i < local_num_rows; ++i )
     {
@@ -778,7 +768,7 @@ void ForwardDomain<Vector,Matrix,RNG>::addMatrixToDomain(
 
 	// The final value in the non-normalized CDF is the weight for this
 	// row. This is the absolute value row sum of the iteration matrix.
-	d_weights[ipoffset] = d_cdfs[ipoffset].back() / pdf_norm;
+	d_weights[ipoffset] = d_cdfs[ipoffset].back();
 	MCLS_CHECK( d_weights[ipoffset] > 0.0 );
 
 	// Normalize the CDF for the row.
@@ -789,12 +779,7 @@ void ForwardDomain<Vector,Matrix,RNG>::addMatrixToDomain(
 	    *cdf_iterator /= d_weights[ipoffset];
 	    MCLS_CHECK( *cdf_iterator >= 0.0 );
 	}
-	MCLS_CHECK( d_cdfs[ipoffset].back() <= 1.0 );
-
-        // Add the absorbing state.
-        d_cdfs[ipoffset].push_back( 1.0 );
-        d_columns[ipoffset]->push_back( 
-            Teuchos::OrdinalTraits<Ordinal>::invalid() );
+	MCLS_CHECK( 1.0 == d_cdfs[ipoffset].back() );
     }
 }
 
@@ -819,7 +804,7 @@ void ForwardDomain<Vector,Matrix,RNG>::buildBoundary(
     for ( Ordinal i = 0; i < MT::getLocalNumRows( *A_boundary ); ++i )
     {
 	global_row = MT::getGlobalRow( *A_boundary, i );
-	if ( !isLocalState(global_row) )
+	if ( !isGlobalState(global_row) )
 	{
 	    boundary_rows.push_back( global_row );
 	}

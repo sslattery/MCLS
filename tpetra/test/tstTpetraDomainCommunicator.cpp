@@ -241,7 +241,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Communicate, LO, GO, Scal
 	// Proc 0 will send to proc 1.
 	if ( comm_rank == 0 )
 	{
-	    TEST_ASSERT( !domain->isLocalState(10) );
+	    TEST_ASSERT( !domain->isGlobalState(10) );
 
 	    Teuchos::RCP<HistoryType> h1 = 
 		makeHistory<GO>( 10, 1.1, comm_rank*4 + 1 );
@@ -271,7 +271,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Communicate, LO, GO, Scal
 	else if ( comm_rank < comm_size - 1 )
 	{
 	    // Send to proc comm_rank+1.
-	    TEST_ASSERT( !domain->isLocalState((comm_rank+1)*10) );
+	    TEST_ASSERT( !domain->isGlobalState((comm_rank+1)*10) );
 
 	    Teuchos::RCP<HistoryType> h1 = 
 		makeHistory<GO>( (comm_rank+1)*10, 1.1, comm_rank*4 + 1 );

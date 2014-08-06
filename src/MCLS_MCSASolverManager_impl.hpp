@@ -421,9 +421,8 @@ bool MCSASolverManager<Vector,Matrix,RNG>::solve()
 	if ( (d_global_comm->getRank() == 0 && d_num_iters % print_freq == 0) ||
              (d_global_comm->getRank() == 0 && !do_iterations) )
 	{
-	    std::cout << "    Iteration " 
-		      << d_num_iters
-		      << ": |r|_2 / |b|_2 = " 
+	    std::cout << std::setw(18) << d_num_iters;
+	    std::cout << std::setw(18) 
 		      << std::setprecision(4) 
 		      << std::scientific
 		      << residual_norm/source_norm << std::endl;
@@ -460,7 +459,7 @@ bool MCSASolverManager<Vector,Matrix,RNG>::solve()
     if ( d_global_comm->getRank() == 0 )
     {
         std::cout << std::endl
-		  << "    MCSA Solve: Complete in " << timer.totalElapsedTime() 
+		  << "         MCSA Solve: Complete in " << timer.totalElapsedTime() 
                   << " seconds." << std::endl;
     }
     printBottomBanner();
@@ -573,6 +572,8 @@ void MCSASolverManager<Vector,Matrix,RNG>::printTopBanner()
 	std::cout << std::endl;
         std::cout << "    MCSA / " << d_fixed_point->name() << " / "
 		  << d_plist->get<std::string>("MC Type") << std::endl << std::endl;
+	std::cout << std::setw(18) << "Iteration";
+	std::cout << std::setw(18) << "|r|_2 / |b|_2" << std::endl;
     }
     d_global_comm->barrier();
   
