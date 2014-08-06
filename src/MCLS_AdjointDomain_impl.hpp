@@ -102,7 +102,7 @@ AdjointDomain<Vector,Matrix,RNG>::AdjointDomain(
 
     // Generate the Monte Carlo domain.
     {
-        // Generate the overlap for the transpose operator.
+        // Generate the overlap for the operator.
         Teuchos::RCP<Matrix> A_overlap;
         if ( num_overlap > 0 )
         {
@@ -786,11 +786,36 @@ void AdjointDomain<Vector,Matrix,RNG>::addMatrixToDomain(
 	// Create the iteration matrix.
 	for ( std::size_t j = 0; j < num_entries; ++j )
 	{
+	    // Subtract the operator from the identity matrix.
 	    d_cdfs[ipoffset][j] = 
 		( (*d_columns[ipoffset])[j] == global_row ) ?
 		1.0 - relaxation*d_cdfs[ipoffset][j] : 
 		-relaxation*d_cdfs[ipoffset][j];
+
+	    // Mark any zero entries.
+	    if ( std::abs(d_cdfs[ipoffset][j]) < 
+		 std::numeric_limits<double>::epsilon() )
+	    {
+		d_cdfs[ipoffset][j] = std::numeric_limits<double>::max();
+		(*d_columns[ipoffset])[j] = 
+		    Teuchos::OrdinalTraits<Ordinal>::invalid();
+	    }
 	}
+
+	// Extract any zero entries from the iteration matrix.
+	Teuchos::Array<double>::iterator cdf_remove_it;
+	cdf_remove_it = std::remove( d_cdfs[ipoffset].begin(), 
+				     d_cdfs[ipoffset].end(),
+				     std::numeric_limits<double>::max() );
+	d_cdfs[ipoffset].resize( 
+	    std::distance(d_cdfs[ipoffset].begin(), cdf_remove_it) );
+
+	typename Teuchos::Array<Ordinal>::iterator col_remove_it;
+	col_remove_it = std::remove( d_columns[ipoffset]->begin(), 
+				     d_columns[ipoffset]->end(),
+				     Teuchos::OrdinalTraits<Ordinal>::invalid() );
+	d_columns[ipoffset]->resize( 
+	    std::distance(d_columns[ipoffset]->begin(), col_remove_it) );
 
         // Save the current cdf state as the iteration matrix.
         d_h[ipoffset] = Teuchos::ArrayRCP<double>( d_cdfs[ipoffset].size() );

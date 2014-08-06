@@ -277,7 +277,7 @@ template<class Vector, class Matrix, class RNG>
 inline bool ForwardDomain<Vector,Matrix,RNG>::isLocalState( 
     const Ordinal& state ) const
 {
-   return ( d_row_indexer->end() != d_row_indexer->find(state) );
+    return ( d_row_indexer->end() != d_row_indexer->find(state) );
 }
 
 //---------------------------------------------------------------------------//
