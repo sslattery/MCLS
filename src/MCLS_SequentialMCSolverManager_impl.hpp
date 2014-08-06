@@ -134,18 +134,18 @@ SequentialMCSolverManager<Vector,Matrix,RNG>::achievedTol() const
     {
 	typename Teuchos::ScalarTraits<Scalar>::magnitudeType source_norm = 0;
 
-	residual_norm = VT::normInf( *d_problem->getPrecResidual() );
+	residual_norm = VT::norm2( *d_problem->getPrecResidual() );
 
 	// Compute the source norm preconditioned if necessary.
 	if ( d_problem->isLeftPrec() )
 	{
 	    Teuchos::RCP<Vector> tmp = VT::clone( *d_problem->getRHS() );
 	    d_problem->applyLeftPrec( *d_problem->getRHS(), *tmp );
-	    source_norm = VT::normInf( *tmp );
+	    source_norm = VT::norm2( *tmp );
 	}
 	else
 	{
-	    source_norm = VT::normInf( *d_problem->getRHS() );
+	    source_norm = VT::norm2( *d_problem->getRHS() );
 	}
 
 	// Heterogenous case.
@@ -267,11 +267,11 @@ bool SequentialMCSolverManager<Vector,Matrix,RNG>::solve()
 	{
 	    Teuchos::RCP<Vector> tmp = VT::clone( *d_problem->getRHS() );
 	    d_problem->applyLeftPrec( *d_problem->getRHS(), *tmp );
-	    source_norm = VT::normInf( *tmp );
+	    source_norm = VT::norm2( *tmp );
 	}
 	else
 	{
-	    source_norm = VT::normInf( *d_problem->getRHS() );
+	    source_norm = VT::norm2( *d_problem->getRHS() );
 	}
 	
 	// Homogenous case.
@@ -310,7 +310,7 @@ bool SequentialMCSolverManager<Vector,Matrix,RNG>::solve()
     {
 	// Compute the initial preconditioned residual.
 	d_problem->updatePrecResidual();
-	residual_norm = VT::normInf( *d_problem->getPrecResidual() );
+	residual_norm = VT::norm2( *d_problem->getPrecResidual() );
     }
     d_global_comm->barrier();
 
@@ -334,13 +334,14 @@ bool SequentialMCSolverManager<Vector,Matrix,RNG>::solve()
 			Teuchos::ScalarTraits<Scalar>::one() );
 
 	    d_problem->updatePrecResidual();
-	    residual_norm = VT::normInf( *d_problem->getPrecResidual() );
+	    residual_norm = VT::norm2( *d_problem->getPrecResidual() );
 
 	    // Check if we're done iterating.
 	    if ( d_num_iters % check_freq == 0 )
 	    {
-		do_iterations = (residual_norm > convergence_criteria) &&
-				(d_num_iters < max_num_iters);
+		do_iterations = 
+		    (residual_norm/source_norm > convergence_criteria) &&
+		    (d_num_iters < max_num_iters);
 	    }
 	}
 	d_global_comm->barrier();
@@ -356,7 +357,7 @@ bool SequentialMCSolverManager<Vector,Matrix,RNG>::solve()
 	if ( d_global_comm->getRank() == 0 && d_num_iters % print_freq == 0 )
 	{
 	    std::cout << "SequentialMC Iteration " << d_num_iters 
-		      << ": Residual = " 
+		      << ": ||r||_2 / ||b||_2 = " 
 		      << residual_norm/source_norm << std::endl;
 	}
 
@@ -380,7 +381,8 @@ bool SequentialMCSolverManager<Vector,Matrix,RNG>::solve()
         }
 
         // Check for convergence.
-	if ( VT::normInf(*d_problem->getPrecResidual()) <= convergence_criteria )
+	if ( VT::norm2(*d_problem->getPrecResidual())/source_norm
+	     <= convergence_criteria )
 	{
 	    d_converged_status = 1;
 	}

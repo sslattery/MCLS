@@ -153,18 +153,18 @@ MCSASolverManager<Vector,Matrix,RNG>::achievedTol() const
     {
 	typename Teuchos::ScalarTraits<Scalar>::magnitudeType source_norm = 0;
 
-	residual_norm = VT::normInf( *d_problem->getPrecResidual() );
+	residual_norm = VT::norm2( *d_problem->getPrecResidual() );
 
 	// Compute the source norm preconditioned if necessary.
 	if ( d_problem->isLeftPrec() )
 	{
 	    Teuchos::RCP<Vector> tmp = VT::clone( *d_problem->getRHS() );
 	    d_problem->applyLeftPrec( *d_problem->getRHS(), *tmp );
-	    source_norm = VT::normInf( *tmp );
+	    source_norm = VT::norm2( *tmp );
 	}
 	else
 	{
-	    source_norm = VT::normInf( *d_problem->getRHS() );
+	    source_norm = VT::norm2( *d_problem->getRHS() );
 	}
 
 	// Heterogenous case.
@@ -307,11 +307,11 @@ bool MCSASolverManager<Vector,Matrix,RNG>::solve()
 	{
 	    Teuchos::RCP<Vector> tmp = VT::clone( *d_problem->getRHS() );
 	    d_problem->applyLeftPrec( *d_problem->getRHS(), *tmp );
-	    source_norm = VT::normInf( *tmp );
+	    source_norm = VT::norm2( *tmp );
 	}
 	else
 	{
-	    source_norm = VT::normInf( *d_problem->getRHS() );
+	    source_norm = VT::norm2( *d_problem->getRHS() );
 	}
 	
 	// Homogenous case.
@@ -356,7 +356,7 @@ bool MCSASolverManager<Vector,Matrix,RNG>::solve()
     {
 	// Compute the initial preconditioned residual.
 	d_problem->updatePrecResidual();
-	residual_norm = VT::normInf( *d_problem->getPrecResidual() );
+	residual_norm = VT::norm2( *d_problem->getPrecResidual() );
     }
 
     // Print initial iteration data.
@@ -398,13 +398,14 @@ bool MCSASolverManager<Vector,Matrix,RNG>::solve()
 
 	    d_problem->updatePrecResidual();
 
-	    residual_norm = VT::normInf( *d_problem->getPrecResidual() );
+	    residual_norm = VT::norm2( *d_problem->getPrecResidual() );
 
 	    // Check if we're done iterating.
 	    if ( d_num_iters % check_freq == 0 )
 	    {
-		do_iterations = (residual_norm > convergence_criteria) &&
-				(d_num_iters < max_num_iters);
+		do_iterations = 
+		    (residual_norm/source_norm > convergence_criteria) &&
+		    (d_num_iters < max_num_iters);
 	    }
 	}
 
@@ -419,7 +420,8 @@ bool MCSASolverManager<Vector,Matrix,RNG>::solve()
 	if ( (d_global_comm->getRank() == 0 && d_num_iters % print_freq == 0) ||
              (d_global_comm->getRank() == 0 && !do_iterations) )
 	{
-	    std::cout << " Iteration " << d_num_iters << ": Residual = " 
+	    std::cout << "    Iteration " << d_num_iters 
+		      << ": ||r||_2 / ||b||_2 = " 
 		      << residual_norm/source_norm << std::endl;
 	}
 
@@ -444,7 +446,8 @@ bool MCSASolverManager<Vector,Matrix,RNG>::solve()
         }
 
         // Check for convergence.
-	if ( VT::normInf(*d_problem->getPrecResidual()) <= convergence_criteria )
+	if ( VT::norm2(*d_problem->getPrecResidual())/source_norm
+	     <= convergence_criteria )
 	{
 	    d_converged_status = 1;
 	}
@@ -503,21 +506,18 @@ void MCSASolverManager<Vector,Matrix,RNG>::buildResidualMonteCarloProblem()
     // Create the Monte Carlo direct solver for the residual problem.
     bool use_adjoint = false;
     bool use_forward = false;
-    if ( d_plist->isParameter("MC Type") )
+    if ( d_plist->get<std::string>("MC Type") == "Adjoint" )
     {
-        if ( d_plist->get<std::string>("MC Type") == "Adjoint" )
-        {
-            use_adjoint = true;
-        }
-        else if ( d_plist->get<std::string>("MC Type") == "Forward" )
-        {
-            use_forward = true;
-        }
-        else
-        {
-            MCLS_INSIST( use_forward || use_adjoint, 
-                         "MC Type not supported" );
-        }
+	use_adjoint = true;
+    }
+    else if ( d_plist->get<std::string>("MC Type") == "Forward" )
+    {
+	use_forward = true;
+    }
+    else
+    {
+	MCLS_INSIST( use_forward || use_adjoint, 
+		     "MC Type not supported" );
     }
 
     if ( use_adjoint )
@@ -567,7 +567,9 @@ void MCSASolverManager<Vector,Matrix,RNG>::printTopBanner()
         std::cout << "**********************************************" << std::endl;
         std::cout << "*     MCLS: Monte Carlo Linear Solvers       *" << std::endl;
         std::cout << "**********************************************" << std::endl;
-        std::cout << " MCSA / " << d_fixed_point->name() << std::endl << std::endl;
+	std::cout << std::endl;
+        std::cout << "    MCSA / " << d_fixed_point->name() << " / "
+		  << d_plist->get<std::string>("MC Type") << std::endl << std::endl;
     }
     d_global_comm->barrier();
   
@@ -582,6 +584,7 @@ void MCSASolverManager<Vector,Matrix,RNG>::printBottomBanner()
 {
     if ( d_global_comm->getRank() == 0 )
     {
+        std::cout << "**********************************************" << std::endl;
         std::cout << "**********************************************" << std::endl;
         std::cout << std::endl;
     } 
