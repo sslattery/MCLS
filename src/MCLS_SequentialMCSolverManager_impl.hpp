@@ -42,6 +42,8 @@
 #define MCLS_SEQUENTIALMCSOLVERMANAGER_IMPL_HPP
 
 #include <string>
+#include <iostream>
+#include <iomanip>
 
 #include "MCLS_DBC.hpp"
 #include "MCLS_AdjointSolverManager.hpp"
@@ -355,8 +357,11 @@ bool SequentialMCSolverManager<Vector,Matrix,RNG>::solve()
 	// Print iteration data.
 	if ( d_global_comm->getRank() == 0 && d_num_iters % print_freq == 0 )
 	{
-	    std::cout << "SequentialMC Iteration " << d_num_iters 
-		      << ": ||r||_2 / ||b||_2 = " 
+	    std::cout << "    Iteration " 
+		      << d_num_iters
+		      << " : |r|_2 / |b|_2 = " 
+		      << std::setprecision(4) 
+		      << std::scientific
 		      << residual_norm/source_norm << std::endl;
 	}
 
