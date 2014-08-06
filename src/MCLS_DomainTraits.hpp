@@ -130,6 +130,14 @@ class DomainTraits
     }
 
     /*!
+     * \brief Set a weight cutoff with the domain.
+     */
+    static void setCutoff( Domain& domain, const double cutoff )
+    { 
+	UndefinedDomainTraits<Domain>::notDefined(); 
+    }
+
+    /*!
      * \brief Process a history through a transition in the local domain to a
      * new state.
      */
@@ -137,6 +145,16 @@ class DomainTraits
 	Domain& domain, history_type& history )
     { 
 	UndefinedDomainTraits<Domain>::notDefined(); 
+    }
+
+    /*!
+     * \brief Deterimine if a history should be terminated.
+     */
+    static inline bool terminateHistory( 
+	Domain& domain, const history_type& history )
+    { 
+	UndefinedDomainTraits<Domain>::notDefined(); 
+	return false;
     }
 
     /*!

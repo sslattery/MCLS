@@ -58,7 +58,6 @@ DomainTransporter<Domain>::DomainTransporter(
     const Teuchos::RCP<Domain>& domain, const Teuchos::ParameterList& plist )
     : d_domain( domain )
     , d_tally( DT::domainTally(*d_domain) )
-    , d_weight_cutoff( 0.0 )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_domain) );
     MCLS_REQUIRE( Teuchos::nonnull(d_tally) );
@@ -72,9 +71,6 @@ template<class Domain>
 void DomainTransporter<Domain>::transport( HistoryType& history )
 {
     MCLS_REQUIRE( HT::alive(history) );
-    MCLS_REQUIRE( HT::weightAbs(history) >= d_weight_cutoff );
-    MCLS_REQUIRE( DT::isGlobalState(*d_domain, HT::globalState(history)) );
-    MCLS_REQUIRE( d_weight_cutoff > 0.0 );
 
     // Set the history to transition.
     HT::setEvent( history, Event::TRANSITION );
@@ -85,7 +81,7 @@ void DomainTransporter<Domain>::transport( HistoryType& history )
     while ( HT::alive(history) )
     {
 	MCLS_CHECK( Event::TRANSITION == HT::event(history) );
-	MCLS_CHECK( HT::weightAbs(history) >= d_weight_cutoff );
+	MCLS_CHECK( !DT::terminateHistory(*d_domain,history) );
 	MCLS_CHECK( HT::weightAbs(history) < std::numeric_limits<double>::max() );
 	MCLS_CHECK( DT::isGlobalState(*d_domain, HT::globalState(history)) );
 
@@ -95,9 +91,8 @@ void DomainTransporter<Domain>::transport( HistoryType& history )
 	// Transition the history one step.
 	DT::processTransition( *d_domain, history );
 
-	// If the history's weight is less than the cutoff, kill it and post
-	// process.
-	if ( HT::weightAbs(history) < d_weight_cutoff )
+	// See if we should kill the history. If so, kill it and post process.
+	if ( DT::terminateHistory(*d_domain,history) )
 	{
 	    HT::setEvent( history, Event::CUTOFF );
 	    HT::kill( history );

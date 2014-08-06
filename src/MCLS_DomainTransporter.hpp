@@ -85,9 +85,6 @@ class DomainTransporter
     // Transport a history through the domain.
     void transport( HistoryType& history );
 
-    //! Set the weight cutoff.
-    void setCutoff( const double cutoff ) { d_weight_cutoff = cutoff; }
-
   private:
 
     // Local domain.
@@ -95,9 +92,6 @@ class DomainTransporter
 
     // Domain tally.
     Teuchos::RCP<TallyType> d_tally;
-
-    // Weight cutoff.
-    double d_weight_cutoff;
 };
 
 //---------------------------------------------------------------------------//

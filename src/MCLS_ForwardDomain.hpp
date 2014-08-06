@@ -144,8 +144,16 @@ class ForwardDomain
     // Get the size of this object in packed bytes.
     std::size_t getPackedBytes() const;
 
+    //! Set the weight cutoff.
+    void setCutoff( const double weight_cutoff )
+    { d_weight_cutoff = weight_cutoff; }
+
     // Process a history through a transition to a new state.
     inline void processTransition( HistoryType& history );
+
+    //! Deterimine if a history should be terminated.
+    inline bool terminateHistory( const HistoryType& history )
+    { return HT::weightAbs(history) < d_weight_cutoff; }
 
     // Get the domain tally.
     Teuchos::RCP<TallyType> domainTally() const
@@ -197,6 +205,9 @@ class ForwardDomain
 
     // Monte Carlo estimator type.
     int d_estimator;
+
+    // History weight cutoff.
+    double d_weight_cutoff;
 
     // Domain tally.
     Teuchos::RCP<TallyType> d_tally;
@@ -342,6 +353,14 @@ class DomainTraits<ForwardDomain<Vector,Matrix,RNG> >
     }
 
     /*!
+     * \brief Set a weight cutoff with the domain.
+     */
+    static void setCutoff( domain_type& domain, const double cutoff )
+    { 
+	domain.setCutoff( cutoff );
+    }
+
+    /*!
      * \brief Process a history through a transition in the local domain to a
      * new state
      */
@@ -349,6 +368,15 @@ class DomainTraits<ForwardDomain<Vector,Matrix,RNG> >
 	domain_type& domain, history_type& history )
     { 
 	domain.processTransition( history );
+    }
+
+    /*!
+     * \brief Deterimine if a history should be terminated.
+     */
+    static inline bool terminateHistory( 
+	domain_type& domain, const history_type& history )
+    { 
+	return domain.terminateHistory( history );
     }
 
     /*!
