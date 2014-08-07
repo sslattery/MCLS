@@ -71,9 +71,13 @@ template<class Domain>
 void DomainTransporter<Domain>::transport( HistoryType& history )
 {
     MCLS_REQUIRE( HT::alive(history) );
+    MCLS_CHECK( DT::isGlobalState(*d_domain, HT::globalState(history)) );
 
     // Set the history to transition.
     HT::setEvent( history, Event::TRANSITION );
+
+    // Set the local state of the history.
+    DT::setHistoryLocalState( *d_domain, history );
 
     // While the history is alive inside of this domain, transport it. If the
     // history leaves this domain, it is not alive with respect to this
@@ -91,7 +95,9 @@ void DomainTransporter<Domain>::transport( HistoryType& history )
 	// Transition the history one step.
 	DT::processTransition( *d_domain, history );
 
-	// See if we should kill the history. If so, kill it and post process.
+	// See if we should kill the history because it has met the
+	// termination condition for the domain. If so, kill it and post
+	// process. The history is complete.
 	if ( DT::terminateHistory(*d_domain,history) )
 	{
 	    HT::setEvent( history, Event::CUTOFF );
@@ -99,10 +105,10 @@ void DomainTransporter<Domain>::transport( HistoryType& history )
 	    TT::postProcessHistory( *d_tally, history );
 	}
 
-	// If the history has left the domain, kill it.
-	else if ( !DT::isGlobalState(*d_domain,HT::globalState(history)) )
+	// If the history has left the domain, kill it. The history will
+	// continue in a different domain.
+	else if ( DT::isBoundaryState(*d_domain,HT::globalState(history)) )
 	{
-	    MCLS_CHECK( DT::isBoundaryState(*d_domain,HT::globalState(history)) );
             HT::setEvent( history, Event::BOUNDARY );
             HT::kill( history );
 	}

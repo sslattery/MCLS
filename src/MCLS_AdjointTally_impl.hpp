@@ -63,6 +63,7 @@ AdjointTally<Vector>::AdjointTally( const Teuchos::RCP<Vector>& x,
     , d_estimator( estimator )
 { 
     d_export = Teuchos::rcp( new VectorExport<Vector>(d_x_tally, d_x) );
+    d_x_tally_view = VT::viewNonConst( *d_x_tally );
     MCLS_ENSURE( Teuchos::nonnull(d_x) );
     MCLS_ENSURE( Teuchos::nonnull(d_x_tally) );
     MCLS_ENSURE( Teuchos::nonnull(d_export) );
@@ -229,16 +230,13 @@ AdjointTally<Vector>::tallyRows() const
 template<class Vector>
 void AdjointTally<Vector>::setIterationMatrix( 
     const Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >& h,
-    const Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > >& columns,
-    const Teuchos::RCP<MapType>& row_indexer )
+    const Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<int> > >& columns )
 {
     MCLS_REQUIRE( Estimator::EXPECTED_VALUE == d_estimator );
     MCLS_REQUIRE( Teuchos::nonnull(h) );
     MCLS_REQUIRE( Teuchos::nonnull(columns) );
-    MCLS_REQUIRE( Teuchos::nonnull(row_indexer) );
     d_h = h;
     d_columns = columns;
-    d_row_indexer = row_indexer;
 }
 
 //---------------------------------------------------------------------------//

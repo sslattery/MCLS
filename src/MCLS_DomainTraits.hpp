@@ -138,11 +138,21 @@ class DomainTraits
     }
 
     /*!
+     * \brief Given a history with a global state in the local domain, set the
+     * local state of that history.
+     */
+    static inline void setHistoryLocalState( 
+	const Domain& domain, history_type& history )
+    { 
+	UndefinedDomainTraits<Domain>::notDefined(); 
+    }
+
+    /*!
      * \brief Process a history through a transition in the local domain to a
      * new state.
      */
     static inline void processTransition( 
-	Domain& domain, history_type& history )
+	const Domain& domain, history_type& history )
     { 
 	UndefinedDomainTraits<Domain>::notDefined(); 
     }
@@ -151,7 +161,7 @@ class DomainTraits
      * \brief Deterimine if a history should be terminated.
      */
     static inline bool terminateHistory( 
-	Domain& domain, const history_type& history )
+	const Domain& domain, const history_type& history )
     { 
 	UndefinedDomainTraits<Domain>::notDefined(); 
 	return false;

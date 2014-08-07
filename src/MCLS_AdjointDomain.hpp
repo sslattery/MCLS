@@ -144,11 +144,15 @@ class AdjointDomain
     void setCutoff( const double weight_cutoff )
     { d_weight_cutoff = weight_cutoff; }
 
+    // Given a history with a global state in the local domain, set the local
+    // state of that history.
+    inline void setHistoryLocalState( HistoryType& history ) const;
+
     // Process a history through a transition to a new state.
-    inline void processTransition( HistoryType& history );
+    inline void processTransition( HistoryType& history ) const;
 
     //! Deterimine if a history should be terminated.
-    inline bool terminateHistory( const HistoryType& history )
+    inline bool terminateHistory( const HistoryType& history ) const
     { return HT::weightAbs(history) < d_weight_cutoff; }
 
     // Get the domain tally.
@@ -207,10 +211,13 @@ class AdjointDomain
     Teuchos::RCP<TallyType> d_tally;
 
     // Global-to-local row indexer.
-    Teuchos::RCP<std::unordered_map<Ordinal,int> > d_g2l_row_indexer;
+    std::unordered_map<Ordinal,int> d_g2l_row_indexer;
 
-    // Local CDF columns.
-    Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > > d_columns;
+    // Local CDF columns in global indexing.
+    Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > > d_global_columns;
+
+    // Local CDF columns in local indexing.
+    Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<int> > > d_local_columns;
 
     // Local CDF values.
     Teuchos::ArrayRCP<Teuchos::Array<double> > d_cdfs;
@@ -235,33 +242,51 @@ class AdjointDomain
 // Inline functions.
 //---------------------------------------------------------------------------//
 /*!
+ * \brief Given a history with a global state in the local domain, set the
+ * local state of that history.
+ */
+template<class Vector, class Matrix, class RNG>
+inline void AdjointDomain<Vector,Matrix,RNG>::setHistoryLocalState( 
+    HistoryType& history ) const
+{
+    MCLS_REQUIRE( isGlobalState(HT::globalState(history)) );
+    MCLS_REQUIRE( d_g2l_row_indexer.count(HT::globalState(history)) );
+    HT::setLocalState( 
+	history, d_g2l_row_indexer.find(HT::globalState(history))->second );
+}
+
+//---------------------------------------------------------------------------//
+/*!
  * \brief Process a history through a transition to a new state.
  */
 template<class Vector, class Matrix, class RNG>
 inline void AdjointDomain<Vector,Matrix,RNG>::processTransition( 
-    HistoryType& history )
+    HistoryType& history ) const
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_rng) );
     MCLS_REQUIRE( HT::alive(history) );
     MCLS_REQUIRE( Event::TRANSITION == HT::event(history) );
     MCLS_REQUIRE( isGlobalState(HT::globalState(history)) );
 
-    // Get the current state.
-    typename std::unordered_map<Ordinal,int>::const_iterator index = 
-	d_g2l_row_indexer->find( HT::globalState(history) );
-    MCLS_CHECK( index != d_g2l_row_indexer->end() );
+    // Get the incoming state.
+    int in_state = history.localState();
 
-    // Sample the row CDF to get a new state.
-    Ordinal new_state = 
-	SamplingTools::sampleDiscreteCDF( d_cdfs[index->second](),
+    // Sample the row CDF to get a new outgoing state.
+    int out_state = 
+	SamplingTools::sampleDiscreteCDF( d_cdfs[in_state](),
 					  d_rng->random(*d_rng_dist) );
-    HT::setGlobalState( history, (*d_columns[index->second])[new_state] );
+
+    // Set the new local state with the history.
+    HT::setLocalState( history, (*d_local_columns[in_state])[out_state] );
+
+    // Set the new global state with the history.
+    HT::setGlobalState( history, (*d_global_columns[in_state])[out_state] );
 
     // Update the history weight with the transition weight.
     HT::multiplyWeight( history,
-			d_weights[index->second] *
-			d_h[index->second][new_state] /
-			std::abs(d_h[index->second][new_state]) );
+			d_weights[in_state] *
+			d_h[in_state][out_state] /
+			std::abs(d_h[in_state][out_state]) );
 }
 
 //---------------------------------------------------------------------------//
@@ -272,7 +297,7 @@ template<class Vector, class Matrix, class RNG>
 inline bool AdjointDomain<Vector,Matrix,RNG>::isGlobalState( 
     const Ordinal& state ) const
 {
-    return d_g2l_row_indexer->count( state );
+    return d_g2l_row_indexer.count( state );
 }
 
 //---------------------------------------------------------------------------//
@@ -355,11 +380,21 @@ class DomainTraits<AdjointDomain<Vector,Matrix,RNG> >
     }
 
     /*!
+     * \brief Given a history with a global state in the local domain, set the
+     * local state of that history.
+     */
+    static inline void setHistoryLocalState( 
+	const domain_type& domain, history_type& history )
+    { 
+	domain.setHistoryLocalState( history );
+    }
+
+    /*!
      * \brief Process a history through a transition in the local domain to a
      * new state
      */
     static inline void processTransition( 
-	domain_type& domain, history_type& history )
+	const domain_type& domain, history_type& history )
     { 
 	domain.processTransition( history );
     }
@@ -368,7 +403,7 @@ class DomainTraits<AdjointDomain<Vector,Matrix,RNG> >
      * \brief Deterimine if a history should be terminated.
      */
     static inline bool terminateHistory( 
-	domain_type& domain, const history_type& history )
+	const domain_type& domain, const history_type& history )
     { 
 	return domain.terminateHistory( history );
     }

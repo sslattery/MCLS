@@ -78,6 +78,7 @@ void ForwardTally<Vector>::setSource( const Teuchos::RCP<Vector>& b )
 {
     MCLS_REQUIRE( Teuchos::nonnull(b) );
     d_b = b;
+    d_b_view = VT::view( *d_b );
 }
 
 //---------------------------------------------------------------------------//

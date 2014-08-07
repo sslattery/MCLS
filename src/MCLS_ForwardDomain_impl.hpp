@@ -66,7 +66,6 @@ ForwardDomain<Vector,Matrix,RNG>::ForwardDomain(
     const Teuchos::RCP<Vector>& x,
     const Teuchos::ParameterList& plist )
     : d_rng_dist( RDT::create(0.0, 1.0) )
-    , d_g2l_row_indexer( Teuchos::rcp(new std::unordered_map<Ordinal,int>()) )
 {
     MCLS_REQUIRE( Teuchos::nonnull(A) );
     MCLS_REQUIRE( Teuchos::nonnull(x) );
@@ -103,8 +102,10 @@ ForwardDomain<Vector,Matrix,RNG>::ForwardDomain(
         }
 
         // Allocate space in local row data arrays.
-        d_columns = 
+        d_global_columns = 
             Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > >( num_rows );
+        d_local_columns = 
+            Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<int> > >( num_rows );
         d_cdfs = Teuchos::ArrayRCP<Teuchos::Array<double> >( num_rows );
         d_weights = Teuchos::ArrayRCP<double>( num_rows );
         d_h = Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( num_rows );
@@ -130,6 +131,37 @@ ForwardDomain<Vector,Matrix,RNG>::ForwardDomain(
         {
             buildBoundary( A_overlap, A );
         }
+    }
+
+    // Make the set of local columns. If the local column is not a global row
+    // then make it invalid to indicate that we have left the domain.
+    typename Teuchos::ArrayRCP<
+	Teuchos::RCP<Teuchos::Array<Ordinal> > >::const_iterator global_it;
+    typename Teuchos::Array<Ordinal>::const_iterator gcol_it;
+    Teuchos::ArrayRCP<
+	Teuchos::RCP<Teuchos::Array<int> > >::iterator local_it;
+    Teuchos::Array<int>::iterator lcol_it;
+    for ( global_it = d_global_columns.begin(),
+	   local_it = d_local_columns.begin();
+	  global_it != d_global_columns.end();
+	  ++global_it, ++local_it )
+    {
+	*local_it = Teuchos::rcp(
+	    new Teuchos::Array<int>((*global_it)->size()) );
+	for ( gcol_it = (*global_it)->begin(),
+	      lcol_it = (*local_it)->begin();
+	      gcol_it != (*global_it)->end();
+	      ++gcol_it, ++lcol_it )
+	{
+	    if ( d_g2l_row_indexer.count(*gcol_it) )
+	    {
+		*lcol_it = d_g2l_row_indexer.find( *gcol_it )->second;
+	    }
+	    else
+	    {
+		*lcol_it = Teuchos::OrdinalTraits<int>::invalid();
+	    }
+	}
     }
 
     // By building the boundary data, now we know where we are sending
@@ -158,7 +190,6 @@ ForwardDomain<Vector,Matrix,RNG>::ForwardDomain(
     const Teuchos::ArrayView<char>& buffer,
     const Teuchos::RCP<const Comm>& set_comm )
     : d_rng_dist( RDT::create(0.0, 1.0) )
-    , d_g2l_row_indexer( Teuchos::rcp(new std::unordered_map<Ordinal,int>()) )
 {
     Ordinal num_rows = 0;
     int num_receives = 0;
@@ -200,19 +231,19 @@ ForwardDomain<Vector,Matrix,RNG>::ForwardDomain(
     for ( Ordinal n = 0; n < num_rows; ++n )
     {
 	ds >> global_row >> local_row;
-	(*d_g2l_row_indexer)[global_row] = local_row;
+	d_g2l_row_indexer[global_row] = local_row;
     }
 
     // Unpack the local columns.
     std::set<Ordinal> im_unique_cols;
-    d_columns = 
+    d_global_columns = 
         Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > >( num_rows );
     Ordinal num_cols = 0;
     typename Teuchos::ArrayRCP<
         Teuchos::RCP<Teuchos::Array<Ordinal> > >::iterator column_it;
     typename Teuchos::Array<Ordinal>::iterator index_it;
-    for( column_it = d_columns.begin(); 
-	 column_it != d_columns.end(); 
+    for( column_it = d_global_columns.begin(); 
+	 column_it != d_global_columns.end(); 
 	 ++column_it )
     {
 	// Unpack the number of column entries in the row.
@@ -318,6 +349,39 @@ ForwardDomain<Vector,Matrix,RNG>::ForwardDomain(
 	ds >> *base_it;
     }
 
+    // Make the set of local columns. If the local column is not a global row
+    // then make it invalid to indicate that we have left the domain.
+    d_local_columns = 
+        Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<int> > >( num_rows );
+    typename Teuchos::ArrayRCP<
+	Teuchos::RCP<Teuchos::Array<Ordinal> > >::const_iterator global_it;
+    typename Teuchos::Array<Ordinal>::const_iterator gcol_it;
+    Teuchos::ArrayRCP<
+	Teuchos::RCP<Teuchos::Array<int> > >::iterator local_it;
+    Teuchos::Array<int>::iterator lcol_it;
+    for ( global_it = d_global_columns.begin(),
+	   local_it = d_local_columns.begin();
+	  global_it != d_global_columns.end();
+	  ++global_it, ++local_it )
+    {
+	*local_it = Teuchos::rcp(
+	    new Teuchos::Array<int>((*global_it)->size()) );
+	for ( gcol_it = (*global_it)->begin(),
+	      lcol_it = (*local_it)->begin();
+	      gcol_it != (*global_it)->end();
+	      ++gcol_it, ++lcol_it )
+	{
+	    if ( d_g2l_row_indexer.count(*gcol_it) )
+	    {
+		*lcol_it = d_g2l_row_indexer.find( *gcol_it )->second;
+	    }
+	    else
+	    {
+		*lcol_it = Teuchos::OrdinalTraits<int>::invalid();
+	    }
+	}
+    }
+
     // Create the tally.
     Teuchos::RCP<Vector> base_x = 
 	VT::createFromRows( set_comm, base_rows() );
@@ -346,7 +410,7 @@ Teuchos::Array<char> ForwardDomain<Vector,Matrix,RNG>::pack() const
     s << Teuchos::as<int>(d_estimator);
 
     // Pack the local number of rows.
-    s << Teuchos::as<Ordinal>(d_g2l_row_indexer->size());
+    s << Teuchos::as<Ordinal>(d_g2l_row_indexer.size());
 
     // Pack in the number of receive neighbors.
     s << Teuchos::as<int>(d_receive_ranks.size());
@@ -362,8 +426,8 @@ Teuchos::Array<char> ForwardDomain<Vector,Matrix,RNG>::pack() const
 
     // Pack up the local row indexer by key-value pairs.
     typename std::unordered_map<Ordinal,int>::const_iterator row_index_it;
-    for ( row_index_it = d_g2l_row_indexer->begin();
-	  row_index_it != d_g2l_row_indexer->end();
+    for ( row_index_it = d_g2l_row_indexer.begin();
+	  row_index_it != d_g2l_row_indexer.end();
 	  ++row_index_it )
     {
 	s << row_index_it->first << row_index_it->second;
@@ -373,8 +437,8 @@ Teuchos::Array<char> ForwardDomain<Vector,Matrix,RNG>::pack() const
     typename Teuchos::ArrayRCP<
         Teuchos::RCP<Teuchos::Array<Ordinal> > >::const_iterator column_it;
     typename Teuchos::Array<Ordinal>::const_iterator index_it;
-    for( column_it = d_columns.begin(); 
-	 column_it != d_columns.end(); 
+    for( column_it = d_global_columns.begin(); 
+	 column_it != d_global_columns.end(); 
 	 ++column_it )
     {
 	// Pack the number of column entries in the row.
@@ -488,7 +552,7 @@ std::size_t ForwardDomain<Vector,Matrix,RNG>::getPackedBytes() const
     s << Teuchos::as<int>(d_estimator);
 
     // Pack the local number of rows.
-    s << Teuchos::as<Ordinal>(d_g2l_row_indexer->size());
+    s << Teuchos::as<Ordinal>(d_g2l_row_indexer.size());
 
     // Pack in the number of receive neighbors.
     s << Teuchos::as<int>(d_receive_ranks.size());
@@ -504,8 +568,8 @@ std::size_t ForwardDomain<Vector,Matrix,RNG>::getPackedBytes() const
 
     // Pack up the local row indexer by key-value pairs.
     typename std::unordered_map<Ordinal,int>::const_iterator row_index_it;
-    for ( row_index_it = d_g2l_row_indexer->begin();
-	  row_index_it != d_g2l_row_indexer->end();
+    for ( row_index_it = d_g2l_row_indexer.begin();
+	  row_index_it != d_g2l_row_indexer.end();
 	  ++row_index_it )
     {
 	s << row_index_it->first << row_index_it->second;
@@ -515,8 +579,8 @@ std::size_t ForwardDomain<Vector,Matrix,RNG>::getPackedBytes() const
     typename Teuchos::ArrayRCP<
         Teuchos::RCP<Teuchos::Array<Ordinal> > >::const_iterator column_it;
     typename Teuchos::Array<Ordinal>::const_iterator index_it;
-    for( column_it = d_columns.begin(); 
-	 column_it != d_columns.end(); 
+    for( column_it = d_global_columns.begin(); 
+	 column_it != d_global_columns.end(); 
 	 ++column_it )
     {
 	// Pack the number of column entries in the row.
@@ -622,11 +686,11 @@ template<class Vector, class Matrix, class RNG>
 Teuchos::Array<typename ForwardDomain<Vector,Matrix,RNG>::Ordinal> 
 ForwardDomain<Vector,Matrix,RNG>::localStates() const
 {
-    Teuchos::Array<Ordinal> states( d_g2l_row_indexer->size() );
+    Teuchos::Array<Ordinal> states( d_g2l_row_indexer.size() );
     typename Teuchos::Array<Ordinal>::iterator state_it;
     typename std::unordered_map<Ordinal,int>::const_iterator map_it;
-    for ( map_it = d_g2l_row_indexer->begin(), state_it = states.begin();
-          map_it != d_g2l_row_indexer->end(); 
+    for ( map_it = d_g2l_row_indexer.begin(), state_it = states.begin();
+          map_it != d_g2l_row_indexer.end(); 
           ++map_it, ++state_it )
     {
         *state_it = map_it->first;
@@ -684,7 +748,7 @@ void ForwardDomain<Vector,Matrix,RNG>::addMatrixToDomain(
 
     Ordinal local_num_rows = MT::getLocalNumRows( *A );
     Ordinal global_row = 0;
-    int offset = d_g2l_row_indexer->size();
+    int offset = d_g2l_row_indexer.size();
     int ipoffset = 0;
     int max_entries = MT::getGlobalMaxNumRowEntries( *A );
     std::size_t num_entries = 0;
@@ -697,17 +761,17 @@ void ForwardDomain<Vector,Matrix,RNG>::addMatrixToDomain(
 
 	// Add the global row id and local row id to the indexer.
 	global_row = MT::getGlobalRow(*A, i);
-	(*d_g2l_row_indexer)[global_row] = ipoffset;
+	d_g2l_row_indexer[global_row] = ipoffset;
 
 	// Allocate column and CDF memory for this row.
-        d_columns[ipoffset] = 
+        d_global_columns[ipoffset] = 
             Teuchos::rcp( new Teuchos::Array<Ordinal>(max_entries) );
 	d_cdfs[ipoffset].resize( max_entries );
 
 	// Add the columns and base PDF values for this row.
 	MT::getGlobalRowCopy( *A, 
 			      global_row,
-			      (*d_columns[ipoffset])(), 
+			      (*d_global_columns[ipoffset])(), 
 			      d_cdfs[ipoffset](),
 			      num_entries );
 
@@ -715,7 +779,7 @@ void ForwardDomain<Vector,Matrix,RNG>::addMatrixToDomain(
 	MCLS_CHECK( num_entries > 0 );
 
 	// Resize local column and CDF arrays for this row.
-	d_columns[ipoffset]->resize( num_entries );
+	d_global_columns[ipoffset]->resize( num_entries );
 	d_cdfs[ipoffset].resize( num_entries );
 
 	// Create the iteration matrix.
@@ -723,7 +787,7 @@ void ForwardDomain<Vector,Matrix,RNG>::addMatrixToDomain(
 	{
 	    // Subtract the operator from the identity matrix.
 	    d_cdfs[ipoffset][j] = 
-		( (*d_columns[ipoffset])[j] == global_row ) ?
+		( (*d_global_columns[ipoffset])[j] == global_row ) ?
 		1.0 - relaxation*d_cdfs[ipoffset][j] : 
 		-relaxation*d_cdfs[ipoffset][j];
 
@@ -732,7 +796,7 @@ void ForwardDomain<Vector,Matrix,RNG>::addMatrixToDomain(
 		 std::numeric_limits<double>::epsilon() )
 	    {
 		d_cdfs[ipoffset][j] = std::numeric_limits<double>::max();
-		(*d_columns[ipoffset])[j] = 
+		(*d_global_columns[ipoffset])[j] = 
 		    Teuchos::OrdinalTraits<Ordinal>::invalid();
 	    }
 	}
@@ -746,11 +810,11 @@ void ForwardDomain<Vector,Matrix,RNG>::addMatrixToDomain(
 	    std::distance(d_cdfs[ipoffset].begin(), cdf_remove_it) );
 
 	typename Teuchos::Array<Ordinal>::iterator col_remove_it;
-	col_remove_it = std::remove( d_columns[ipoffset]->begin(), 
-				     d_columns[ipoffset]->end(),
+	col_remove_it = std::remove( d_global_columns[ipoffset]->begin(), 
+				     d_global_columns[ipoffset]->end(),
 				     Teuchos::OrdinalTraits<Ordinal>::invalid() );
-	d_columns[ipoffset]->resize( 
-	    std::distance(d_columns[ipoffset]->begin(), col_remove_it) );
+	d_global_columns[ipoffset]->resize( 
+	    std::distance(d_global_columns[ipoffset]->begin(), col_remove_it) );
 
 	// Save the current cdf state as the iteration matrix.
         d_h[ipoffset] = Teuchos::ArrayRCP<double>( d_cdfs[ipoffset].size() );

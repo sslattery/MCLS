@@ -126,8 +126,7 @@ class AdjointTally
     // Set the iteration matrix with the tally.
     void setIterationMatrix( 
         const Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >& h,
-        const Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > >& columns,
-        const Teuchos::RCP<MapType>& row_indexer );
+        const Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<int> > >& columns );
 
   private:
 
@@ -144,6 +143,9 @@ class AdjointTally
 
     // Solution vector in tally decomposition.
     Teuchos::RCP<Vector> d_x_tally;
+
+    // View of the solution vector in the tally decomposition.
+    Teuchos::ArrayRCP<Scalar> d_x_tally_view;
    
     // Monte Carlo estimator type.
     int d_estimator;
@@ -154,11 +156,8 @@ class AdjointTally
     // Local iteration matrix values.
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > d_h;
 
-    // Local iteration matrix global columns.
-    Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > > d_columns;
-
-    // Iteration matrix global-to-local row indexer.
-    Teuchos::RCP<MapType> d_row_indexer;
+    // Local iteration matrix global columns in local indexing.
+    Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<int> > > d_columns;
 };
 
 //---------------------------------------------------------------------------//
@@ -201,8 +200,8 @@ inline void AdjointTally<Vector>::collisionEstimatorTally(
 {
     // The collision estimator tally sums the history's current weight into
     // x(i) where the index i is the history's current state.
-    MCLS_REQUIRE( VT::isGlobalRow(*d_x_tally, history.globalState()) );
-    VT::sumIntoGlobalValue( *d_x_tally, history.globalState(), history.weight() );
+    MCLS_REQUIRE( VT::isLocalRow(*d_x_tally, history.localState()) );
+    d_x_tally_view[ history.localState() ] += history.weight();
 }
 
 //---------------------------------------------------------------------------//
@@ -215,27 +214,21 @@ inline void AdjointTally<Vector>::expectedValueEstimatorTally(
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_h) );
     MCLS_REQUIRE( Teuchos::nonnull(d_columns) );
-    MCLS_REQUIRE( Teuchos::nonnull(d_row_indexer) );
-
-    // Get the local row.
-    typename MapType::const_iterator index = 
-	d_row_indexer->find( history.globalState() );
-    MCLS_CHECK( index != d_row_indexer->end() );
 
     // The expected value estimator sums the history's weight multiplied by
     // the absolute value of the transpose iteration matrix component
     // h^T_(i,j) into each tally state x(j) where the index i is the history's
     // current state.
-    typename Teuchos::Array<Ordinal>::const_iterator col_it;
+    int local_row = history.localState();
+    typename Teuchos::Array<int>::const_iterator col_it;
     Teuchos::ArrayRCP<double>::const_iterator val_it;
-    for ( col_it = d_columns[index->second]->begin(),
-          val_it = d_h[index->second].begin();
-          col_it != d_columns[index->second]->end();
+    for ( col_it = d_columns[local_row]->begin(),
+          val_it = d_h[local_row].begin();
+          col_it != d_columns[local_row]->end();
           ++col_it, ++val_it )
     {
-        MCLS_CHECK( VT::isGlobalRow(*d_x_tally, *col_it) );
-        VT::sumIntoGlobalValue( *d_x_tally, *col_it, 
-                                history.weight()*(*val_it) );
+        MCLS_CHECK( VT::isLocalRow(*d_x_tally, *col_it) );
+	d_x_tally_view[ *col_it ] += history.weight()*(*val_it);
     }
 }
 
