@@ -459,7 +459,7 @@ bool MCSASolverManager<Vector,Matrix,RNG>::solve()
     if ( d_global_comm->getRank() == 0 )
     {
         std::cout << std::endl
-		  << "         MCSA Solve: Complete in " << timer.totalElapsedTime() 
+		  << "    MCSA Solve: Complete in " << timer.totalElapsedTime() 
                   << " seconds." << std::endl;
     }
     printBottomBanner();
@@ -570,7 +570,7 @@ void MCSASolverManager<Vector,Matrix,RNG>::printTopBanner()
         std::cout << "*       MCLS: Monte Carlo Linear Solvers         *" << std::endl;
         std::cout << "**************************************************" << std::endl;
 	std::cout << std::endl;
-        std::cout << "    MCSA / " << d_fixed_point->name() << " / "
+        std::cout << "         MCSA / " << d_fixed_point->name() << " / "
 		  << d_plist->get<std::string>("MC Type") << std::endl << std::endl;
 	std::cout << std::setw(18) << "Iteration";
 	std::cout << std::setw(18) << "|r|_2 / |b|_2" << std::endl;

@@ -288,10 +288,8 @@ inline void ForwardDomain<Vector,Matrix,RNG>::processTransition(
     HT::setGlobalState( history, (*d_global_columns[in_state])[out_state] );
 
     // Update the history weight with the transition weight.
-    HT::multiplyWeight( history,
-			d_weights[in_state] *
-			d_h[in_state][out_state] /
-			std::abs(d_h[in_state][out_state]) );
+    int transition_sign = (d_h[in_state][out_state] < 0.0) ? -1 : 1;
+    HT::multiplyWeight( history, d_weights[in_state]*transition_sign );
 }
 
 //---------------------------------------------------------------------------//
