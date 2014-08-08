@@ -129,7 +129,8 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
 
     if ( 0 == d_A->Comm().MyPID() )
     {
-	std::cout << "MCLS ParaSails: Generating ParaSails Preconditioning" 
+	std::cout << std::endl
+		  << "MCLS ParaSails: Generating ParaSails Preconditioning" 
 		  << std::endl;
     }
     Teuchos::Time timer("");
