@@ -145,7 +145,6 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
 
     // Export the operator to a row decomposition that is globally
     // contiguous. ParaSails requires this unfortunately.
-    std::cout << "MCLS ParaSails: Generating Contiguous Operator" << std::endl;
     int error = 0;
     Epetra_Map linear_map( d_A->NumGlobalRows(), 0, d_A->Comm() );
     Teuchos::RCP<Epetra_CrsMatrix> contiguous_A = Teuchos::rcp( 
@@ -162,7 +161,6 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
     MCLS_CHECK( contiguous_A->MaxNumEntries() > 0 );
 
     // Create a ParaSails matrix from the row-contiguous operator.
-    std::cout << "MCLS ParaSails: Generating ParaSails Operator" << std::endl;
     Teuchos::ArrayRCP<double> values( contiguous_A->MaxNumEntries() );
     Teuchos::ArrayRCP<double>::iterator values_it;
     Teuchos::ArrayRCP<int> indices( contiguous_A->MaxNumEntries() );
@@ -228,7 +226,6 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
     MatrixComplete( epetra_matrix );
 
     // Create a ParaSails preconditioner.
-    std::cout << "MCLS ParaSails: Generating SPAINV Operator" << std::endl;
     ParaSails* parasails = ParaSailsCreate( raw_mpi_comm, beg_row, end_row, 0 );
     ParaSailsSetupPattern( parasails, epetra_matrix, threshold, num_levels );
     ParaSailsSetupValues( parasails, epetra_matrix, filter );
@@ -250,7 +247,6 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
 
     // Extract the ParaSails preconditioner into the contiguous
     // preconditioner.
-    std::cout << "MCLS ParaSails: Extracting SPAINV Operator" << std::endl;
     int num_m_entries = 0;
     Teuchos::Array<int> global_indices;
     int* m_indices_ptr;
