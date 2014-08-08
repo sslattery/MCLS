@@ -67,24 +67,24 @@ class Xorshift
     typedef uint_type result_type;
     //@}
 
-    // Constructor.
+    //! Constructor.
     Xorshift( const result_type seed )
 	: d_x( seed )
     { /* ... */ }
 
-    // Destructor.
+    //! Destructor.
     ~Xorshift()
     { /* ... */ }
 
-    // Minimum value.
+    //! Minimum value.
     result_type min () const
     { return std::numeric_limits<result_type>::min(); }
 
-    // Maximum value.
+    //! Maximum value.
     result_type max () const
     { return std::numeric_limits<result_type>::max(); }
 
-    // Seed the engine.
+    //! Seed the engine.
     void seed( const result_type seed )
     { d_x = seed; }
 
@@ -100,6 +100,9 @@ class Xorshift
 //---------------------------------------------------------------------------//
 // Inline functions.
 //---------------------------------------------------------------------------//
+/*!
+ * \brief Get a random number.
+ */
 template<class uint_type, uint_type a, uint_type b, uint_type c>
 inline uint_type Xorshift<uint_type,a,b,c>::operator()()
 {
