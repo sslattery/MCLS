@@ -46,6 +46,7 @@
 #include "MCLS_SolverManager.hpp"
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
+#include "MCLS_Xorshift.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -61,7 +62,7 @@ namespace MCLS
  * \class SequentialMCSolverManager
  * \brief Solver manager for Sequential Monte Carlo.
  */
-template<class Vector, class Matrix, class RNG = std::mt19937_64>
+template<class Vector, class Matrix, class RNG = Xorshift<> >
 class SequentialMCSolverManager : public SolverManager<Vector,Matrix>
 {
   public:

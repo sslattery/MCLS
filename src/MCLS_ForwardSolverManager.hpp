@@ -52,6 +52,7 @@
 #include "MCLS_UniformForwardSource.hpp"
 #include "MCLS_ForwardDomain.hpp"
 #include "MCLS_TallyTraits.hpp"
+#include "MCLS_Xorshift.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -66,7 +67,7 @@ namespace MCLS
  * \class ForwardSolverManager
  * \brief Solver manager for analog forward Monte Carlo.
  */
-template<class Vector, class Matrix, class RNG = std::mt19937_64>
+template<class Vector, class Matrix, class RNG = Xorshift<> >
 class ForwardSolverManager : public SolverManager<Vector,Matrix>
 {
   public:

@@ -127,7 +127,11 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
     MCLS_REQUIRE( Teuchos::nonnull(d_A) );
     MCLS_REQUIRE( d_A->Filled() );
 
-    std::cout << "MCLS ParaSails: Generating ParaSails Preconditioning" << std::endl;
+    if ( 0 == d_A->Comm().MyPID() )
+    {
+	std::cout << "MCLS ParaSails: Generating ParaSails Preconditioning" 
+		  << std::endl;
+    }
     Teuchos::Time timer("");
     timer.start(true);
 
@@ -295,8 +299,11 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
     MCLS_CHECK( 0 == error );
 
     timer.stop();
-    std::cout << "MCLS ParaSails: Complete in " << timer.totalElapsedTime() 
-              << " seconds." << std::endl;
+    if ( 0 == d_A->Comm().MyPID() )
+    {
+	std::cout << "MCLS ParaSails: Complete in " << timer.totalElapsedTime() 
+		  << " seconds." << std::endl;
+    }
 
     MCLS_ENSURE( Teuchos::nonnull(d_preconditioner) );
     MCLS_ENSURE( d_preconditioner->Filled() );

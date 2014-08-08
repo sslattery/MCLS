@@ -54,7 +54,7 @@ namespace MCLS
  * communicator.
  */
 template<class RNG>
-PRNG<RNG>::PRNG( const int comm_rank)
+PRNG<RNG>::PRNG( const int comm_rank )
 {
     // Create a random device to get an initial random number. This is
     // potentially non-deterministic.
@@ -65,12 +65,12 @@ PRNG<RNG>::PRNG( const int comm_rank)
     typename IDT::result_type seed = 0;
     Teuchos::RCP<IntDistribution> distribution =IDT::create(
 	0, std::numeric_limits<typename IDT::result_type>::max() );
-    for ( int i = 0; i < comm_rank; ++i )
+    for ( int i = -1; i < comm_rank; ++i )
     {
 	seed = RNGT::random( *master_rng, *distribution );
     }
-
-    // Seed the random number generator on this process.
+ 
+   // Seed the random number generator on this process.
     d_rng = RNGT::create( seed );
 }
 

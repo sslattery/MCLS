@@ -52,6 +52,7 @@
 #include "MCLS_UniformAdjointSource.hpp"
 #include "MCLS_AdjointDomain.hpp"
 #include "MCLS_TallyTraits.hpp"
+#include "MCLS_Xorshift.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -66,7 +67,7 @@ namespace MCLS
  * \class AdjointSolverManager
  * \brief Solver manager for analog adjoint Monte Carlo.
  */
-template<class Vector, class Matrix, class RNG = std::mt19937_64>
+template<class Vector, class Matrix, class RNG = Xorshift<> >
 class AdjointSolverManager : public SolverManager<Vector,Matrix>
 {
   public:

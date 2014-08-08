@@ -47,6 +47,7 @@
 #include "MCLS_FixedPointIteration.hpp"
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
+#include "MCLS_Xorshift.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -62,7 +63,7 @@ namespace MCLS
  * \class MCSASolverManager
  * \brief Solver manager for Monte Carlo synthetic acceleration.
  */
-template<class Vector, class Matrix, class RNG = std::mt19937_64>
+template<class Vector, class Matrix, class RNG = Xorshift<> >
 class MCSASolverManager : public SolverManager<Vector,Matrix>
 {
   public:

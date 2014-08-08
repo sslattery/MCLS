@@ -97,6 +97,7 @@ APPEND_SET(HEADERS
   MCLS_UniformForwardSource_impl.hpp
   MCLS_VectorExport.hpp
   MCLS_VectorTraits.hpp
+  MCLS_Xorshift.hpp
   ) 
 
 APPEND_SET(SOURCES
