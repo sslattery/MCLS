@@ -260,7 +260,7 @@ TEUCHOS_UNIT_TEST( MSODManager, two_by_two )
 	{
 	    if ( i >= local_num_rows*set_rank && i < 2+local_num_rows*(set_rank+1) )
 	    {
-		HistoryType history( i, i, x_val );
+		HistoryType history( i, i-local_num_rows*set_rank, x_val );
 		history.live();
 		tally->tallyHistory( history );
 	    }
@@ -395,7 +395,7 @@ TEUCHOS_UNIT_TEST( MSODManager, two_by_two )
 	{
 	    if ( i >= local_num_rows*set_rank && i < 2+local_num_rows*(set_rank+1) )
 	    {
-		HistoryType history( i, i, x_val );
+		HistoryType history( i, i-local_num_rows*set_rank, x_val );
 		history.live();
 		tally->tallyHistory( history );
 	    }

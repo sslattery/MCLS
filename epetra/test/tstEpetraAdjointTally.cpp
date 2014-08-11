@@ -153,17 +153,9 @@ TEUCHOS_UNIT_TEST( AdjointTally, TallyHistory )
     MCLS::AdjointTally<VectorType> tally( A, B, 0 );
 
     double a_val = 2;
-    double b_val = 3;
-    for ( int i = 0; i < local_num_rows; ++i )
+    for ( int i = 0; i < tally_rows.size(); ++i )
     {
-	int state = i + local_num_rows*comm_rank;
-	HistoryType history( state, state, a_val );
-	history.live();
-	tally.tallyHistory( history );
-
-	int inverse_state = 
-	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
-	history = HistoryType( inverse_state, inverse_state, b_val );
+	HistoryType history( tally_rows[i], i, a_val );
 	history.live();
 	tally.tallyHistory( history );
     }
@@ -183,7 +175,14 @@ TEUCHOS_UNIT_TEST( AdjointTally, TallyHistory )
 	  a_view_iterator != A_view.end();
 	  ++a_view_iterator )
     {
-        TEST_EQUALITY( *a_view_iterator, a_val + b_val );
+        if ( comm_size == 1 )
+        {
+            TEST_EQUALITY( *a_view_iterator, a_val );
+        }
+        else
+        {
+	    TEST_EQUALITY( *a_view_iterator, 2*a_val );
+        }
     }
 
     Teuchos::ArrayRCP<const double> B_view = VT::view( *B );
@@ -192,21 +191,7 @@ TEUCHOS_UNIT_TEST( AdjointTally, TallyHistory )
 	  b_view_iterator != B_view.end();
 	  ++b_view_iterator )
     {
-        if ( comm_size == 1 )
-        {
-            TEST_EQUALITY( *b_view_iterator, a_val+b_val );
-        }
-        else
-        {
-            if ( std::distance(B_view.begin(),b_view_iterator) < 10 )
-            {
-                TEST_EQUALITY( *b_view_iterator, a_val );
-            }
-            else
-            {
-                TEST_EQUALITY( *b_view_iterator, b_val );
-            }
-        }
+	TEST_EQUALITY( *b_view_iterator, a_val );
     }
 
     TEST_EQUALITY( tally.numBaseRows(), VT::getLocalLength(*A) );
@@ -297,17 +282,9 @@ TEUCHOS_UNIT_TEST( AdjointTally, SetCombine )
     tally.setBaseVector( C );
 
     double a_val = 2;
-    double b_val = 3;
-    for ( int i = 0; i < local_num_rows; ++i )
+    for ( int i = 0; i < tally_rows.size(); ++i )
     {
-	int state = i + local_num_rows*comm_rank;
-	HistoryType history( state, state, a_val );
-	history.live();
-	tally.tallyHistory( history );
-
-	int inverse_state = 
-	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
-	history = HistoryType( inverse_state, inverse_state, b_val );
+	HistoryType history( tally_rows[i], i, a_val );
 	history.live();
 	tally.tallyHistory( history );
     }
@@ -327,7 +304,14 @@ TEUCHOS_UNIT_TEST( AdjointTally, SetCombine )
 	  c_view_iterator != C_view.end();
 	  ++c_view_iterator )
     {
-        TEST_EQUALITY( *c_view_iterator, a_val + b_val );
+        if ( comm_size == 1 )
+        {
+	    TEST_EQUALITY( *c_view_iterator, a_val );
+	}
+	else
+        {
+	    TEST_EQUALITY( *c_view_iterator, 2*a_val );
+	}
     }
 
     Teuchos::ArrayRCP<const double> B_view = VT::view( *B );
@@ -336,21 +320,7 @@ TEUCHOS_UNIT_TEST( AdjointTally, SetCombine )
 	  b_view_iterator != B_view.end();
 	  ++b_view_iterator )
     {
-        if ( comm_size == 1 )
-        {
-            TEST_EQUALITY( *b_view_iterator, a_val+b_val );
-        }
-        else
-        {
-            if ( std::distance(B_view.begin(),b_view_iterator) < 10 )
-            {
-                TEST_EQUALITY( *b_view_iterator, a_val );
-            }
-            else
-            {
-                TEST_EQUALITY( *b_view_iterator, b_val );
-            }
-        }
+	TEST_EQUALITY( *b_view_iterator, a_val );
     }
 }
 
@@ -451,24 +421,15 @@ TEUCHOS_UNIT_TEST( AdjointTally, BlockCombine )
 	comm->barrier();
 
 	double a_val = 2;
-	double b_val = 3;
 	if ( block_rank == 1 )
 	{
 	    a_val = 4;
-	    b_val = 6;
 	}
 	comm->barrier();
 
-	for ( int i = 0; i < local_num_rows; ++i )
+	for ( int i = 0; i < tally_rows.size(); ++i )
 	{
-	    int state = i + local_num_rows*set_rank;
-	    HistoryType history( state, state, a_val );
-	    history.live();
-	    tally.tallyHistory( history );
-
-	    int inverse_state = 
-		(local_num_rows-1-i) + local_num_rows*(set_size-1-set_rank);
-	    history = HistoryType( inverse_state, inverse_state, b_val );
+	    HistoryType history( tally_rows[i], i, a_val );
 	    history.live();
 	    tally.tallyHistory( history );
 	}
@@ -486,7 +447,7 @@ TEUCHOS_UNIT_TEST( AdjointTally, BlockCombine )
 		  c_view_iterator != C_view.end();
 		  ++c_view_iterator )
 	    {
-		TEST_EQUALITY( *c_view_iterator, (2+3+4+6)/2.0 );
+		TEST_EQUALITY( *c_view_iterator, 6.0 );
 	    }
 	}
 	else
@@ -497,7 +458,7 @@ TEUCHOS_UNIT_TEST( AdjointTally, BlockCombine )
 		  a_view_iterator != A_view.end();
 		  ++a_view_iterator )
 	    {
-		TEST_EQUALITY( *a_view_iterator, 2+3+4+6 );
+		TEST_EQUALITY( *a_view_iterator, 6.0 );
 	    }
 	}
 
@@ -508,14 +469,7 @@ TEUCHOS_UNIT_TEST( AdjointTally, BlockCombine )
 	      b_view_iterator != B_view.end();
 	      ++b_view_iterator )
 	{
-            if ( std::distance(B_view.begin(),b_view_iterator) < 10 )
-            {
-                TEST_EQUALITY( *b_view_iterator, a_val );
-            }
-            else
-            {
-                TEST_EQUALITY( *b_view_iterator, b_val );
-            }
+	    TEST_EQUALITY( *b_view_iterator, a_val );
 	}
     }
 }
@@ -570,17 +524,9 @@ TEUCHOS_UNIT_TEST( AdjointTally, Normalize )
 
     MCLS::AdjointTally<VectorType> tally( A, B, 0 );
     double a_val = 2;
-    double b_val = 3;
-    for ( int i = 0; i < local_num_rows; ++i )
+    for ( int i = 0; i < tally_rows.size(); ++i )
     {
-	int state = i + local_num_rows*comm_rank;
-	HistoryType history( state, state, a_val );
-	history.live();
-	tally.tallyHistory( history );
-
-	int inverse_state = 
-	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
-	history = HistoryType( inverse_state, inverse_state, b_val );
+	HistoryType history( tally_rows[i], i, a_val );
 	history.live();
 	tally.tallyHistory( history );
     }
@@ -595,7 +541,14 @@ TEUCHOS_UNIT_TEST( AdjointTally, Normalize )
 	  a_view_iterator != A_view.end();
 	  ++a_view_iterator )
     {
-        TEST_EQUALITY( *a_view_iterator, (a_val + b_val) / nh );
+	if ( comm_size == 1 )
+	{
+	    TEST_EQUALITY( *a_view_iterator, a_val / nh );
+	}
+	else
+	{
+	    TEST_EQUALITY( *a_view_iterator, 2.0*a_val / nh );
+	}
     }
 
     Teuchos::ArrayRCP<const double> B_view = VT::view( *B );
@@ -604,21 +557,7 @@ TEUCHOS_UNIT_TEST( AdjointTally, Normalize )
 	  b_view_iterator != B_view.end();
 	  ++b_view_iterator )
     {
-        if ( comm_size == 1 )
-        {
-            TEST_EQUALITY( *b_view_iterator, a_val+b_val );
-        }
-        else
-        {
-            if ( std::distance(B_view.begin(),b_view_iterator) < 10 )
-            {
-                TEST_EQUALITY( *b_view_iterator, a_val );
-            }
-            else
-            {
-                TEST_EQUALITY( *b_view_iterator, b_val );
-            }
-        }
+	TEST_EQUALITY( *b_view_iterator, a_val );
     }
 }
 

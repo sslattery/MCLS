@@ -139,7 +139,7 @@ TEUCHOS_UNIT_TEST( ForwardSolverManager, one_by_one_prec )
     global_columns[1] = 1;
     global_columns[2] = 2;
     values[0] = 1.0/comm_size;
-    values[1] = 0.13/comm_size;
+    values[1] = -0.13/comm_size;
     values[2] = 0.0/comm_size;
     A->InsertGlobalValues( 0, global_columns.size(), 
 			   &values[0], &global_columns[0] );
@@ -148,9 +148,9 @@ TEUCHOS_UNIT_TEST( ForwardSolverManager, one_by_one_prec )
 	global_columns[0] = i-1;
 	global_columns[1] = i;
 	global_columns[2] = i+1;
-	values[0] = 0.13/comm_size;
+	values[0] = -0.13/comm_size;
 	values[1] = 1.0/comm_size;
-	values[2] = 0.13/comm_size;
+	values[2] = -0.13/comm_size;
 	A->InsertGlobalValues( i, global_columns.size(), 
 			       &values[0], &global_columns[0] );
     }
@@ -158,7 +158,7 @@ TEUCHOS_UNIT_TEST( ForwardSolverManager, one_by_one_prec )
     global_columns[1] = global_num_rows-2;
     global_columns[2] = global_num_rows-1;
     values[0] = 0.0/comm_size;
-    values[1] = 0.13/comm_size;
+    values[1] = -0.13/comm_size;
     values[2] = 1.0/comm_size;
     A->InsertGlobalValues( global_num_rows-1, global_columns.size(), 
 			   &values[0], &global_columns[0] );
@@ -322,7 +322,7 @@ TEUCHOS_UNIT_TEST( ForwardSolverManager, two_by_two_prec )
 	    global_columns[1] = 1;
 	    global_columns[2] = 2;
 	    values[0] = 1.0/comm_size;
-	    values[1] = 0.13/comm_size;
+	    values[1] = -0.13/comm_size;
 	    values[2] = 0.0/comm_size;
 	    A->InsertGlobalValues( 0, global_columns.size(), 
 				   &values[0], &global_columns[0] );
@@ -331,9 +331,9 @@ TEUCHOS_UNIT_TEST( ForwardSolverManager, two_by_two_prec )
 		global_columns[0] = i-1;
 		global_columns[1] = i;
 		global_columns[2] = i+1;
-		values[0] = 0.13/comm_size;
+		values[0] = -0.13/comm_size;
 		values[1] = 1.0/comm_size;
-		values[2] = 0.13/comm_size;
+		values[2] = -0.13/comm_size;
 		A->InsertGlobalValues( i, global_columns.size(), 
 				       &values[0], &global_columns[0] );
 	    }
@@ -341,7 +341,7 @@ TEUCHOS_UNIT_TEST( ForwardSolverManager, two_by_two_prec )
 	    global_columns[1] = global_num_rows-2;
 	    global_columns[2] = global_num_rows-1;
 	    values[0] = 0.0/comm_size;
-	    values[1] = 0.13/comm_size;
+	    values[1] = -0.13/comm_size;
 	    values[2] = 1.0/comm_size;
 	    A->InsertGlobalValues( global_num_rows-1, global_columns.size(), 
 				   &values[0], &global_columns[0] );

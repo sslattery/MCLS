@@ -122,7 +122,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_adjoint )
     global_columns[1] = 1;
     global_columns[2] = 2;
     values[0] = 1.0;
-    values[1] = 0.14;
+    values[1] = -0.14;
     values[2] = 0.0;
     A->InsertGlobalValues( 0, global_columns.size(), 
 			   &values[0], &global_columns[0] );
@@ -131,9 +131,9 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_adjoint )
 	global_columns[0] = i-1;
 	global_columns[1] = i;
 	global_columns[2] = i+1;
-	values[0] = 0.14;
+	values[0] = -0.14;
 	values[1] = 1.0;
-	values[2] = 0.14;
+	values[2] = -0.14;
 	A->InsertGlobalValues( i, global_columns.size(), 
 			       &values[0], &global_columns[0] );
     }
@@ -141,7 +141,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_adjoint )
     global_columns[1] = global_num_rows-2;
     global_columns[2] = global_num_rows-1;
     values[0] = 0.0;
-    values[1] = 0.14;
+    values[1] = -0.14;
     values[2] = 1.0;
     A->InsertGlobalValues( global_num_rows-1, global_columns.size(), 
 			   &values[0], &global_columns[0] );
@@ -165,7 +165,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_adjoint )
     double cutoff = 1.0e-8;
     plist->set<std::string>("MC Type", "Adjoint");
     plist->set<double>("Convergence Tolerance", 1.0e-8);
-    plist->set<int>("Maximum Iterations", 10);
+    plist->set<int>("Maximum Iterations", 20);
     plist->set<double>("Weight Cutoff", cutoff);
     plist->set<int>("MC Check Frequency", 50);
     plist->set<bool>("Reproducible MC Mode",true);
@@ -188,7 +188,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_adjoint )
 
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_ASSERT( solver_manager.getNumIters() < 10 );
+    TEST_ASSERT( solver_manager.getNumIters() < 20 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
 
     // Check that we got a negative solution.
@@ -206,7 +206,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_adjoint )
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_ASSERT( solver_manager.getNumIters() < 10 );
+    TEST_ASSERT( solver_manager.getNumIters() < 20 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -220,7 +220,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_adjoint )
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_ASSERT( solver_manager.getNumIters() < 10 );
+    TEST_ASSERT( solver_manager.getNumIters() < 20 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -234,7 +234,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_adjoint )
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_ASSERT( solver_manager.getNumIters() < 10 );
+    TEST_ASSERT( solver_manager.getNumIters() < 20 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -296,8 +296,8 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_adjoint )
 	    global_columns[1] = 1;
 	    global_columns[2] = 2;
 	    values[0] = 1.0;
-	    values[1] = 0.14;
-	    values[2] = 0.14;
+	    values[1] = -0.14;
+	    values[2] = -0.14;
 	    A->InsertGlobalValues( 0, global_columns.size(), 
 				   &values[0], &global_columns[0] );
 	    for ( int i = 1; i < global_num_rows-1; ++i )
@@ -305,17 +305,17 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_adjoint )
 		global_columns[0] = i-1;
 		global_columns[1] = i;
 		global_columns[2] = i+1;
-		values[0] = 0.14;
+		values[0] = -0.14;
 		values[1] = 1.0;
-		values[2] = 0.14;
+		values[2] = -0.14;
 		A->InsertGlobalValues( i, global_columns.size(), 
 				       &values[0], &global_columns[0] );
 	    }
 	    global_columns[0] = global_num_rows-3;
 	    global_columns[1] = global_num_rows-2;
 	    global_columns[2] = global_num_rows-1;
-	    values[0] = 0.14;
-	    values[1] = 0.14;
+	    values[0] = -0.14;
+	    values[1] = -0.14;
 	    values[2] = 1.0;
 	    A->InsertGlobalValues( global_num_rows-1, global_columns.size(), 
 				   &values[0], &global_columns[0] );
@@ -345,7 +345,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_adjoint )
 	double cutoff = 1.0e-4;
 	plist->set<std::string>("MC Type", "Adjoint");
 	plist->set<double>("Convergence Tolerance", 1.0e-8);
-	plist->set<int>("Maximum Iterations", 10);
+	plist->set<int>("Maximum Iterations", 20);
 	plist->set<double>("Weight Cutoff", cutoff);
 	plist->set<int>("MC Check Frequency", 50);
 	plist->set<bool>("Reproducible MC Mode",true);
@@ -363,7 +363,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_adjoint )
 
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_ASSERT( solver_manager.getNumIters() < 10 );
+	TEST_ASSERT( solver_manager.getNumIters() < 20 );
 	if ( comm_rank < 2 )
 	{
 	    // Check that we got a negative solution.
@@ -392,7 +392,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_adjoint )
 
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_ASSERT( solver_manager.getNumIters() < 10 );
+	TEST_ASSERT( solver_manager.getNumIters() < 20 );
 
 	if ( comm_rank < 2 )
 	{
@@ -416,7 +416,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_adjoint )
 	converged_status = solver_manager.solve();
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_ASSERT( solver_manager.getNumIters() < 10 );
+	TEST_ASSERT( solver_manager.getNumIters() < 20 );
 
 	if ( comm_rank < 2 )
 	{
@@ -444,7 +444,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_adjoint )
 	converged_status = solver_manager.solve();
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_ASSERT( solver_manager.getNumIters() < 10 );
+	TEST_ASSERT( solver_manager.getNumIters() < 20 );
 
 	if ( comm_rank < 2 )
 	{
@@ -487,7 +487,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_forward )
     global_columns[1] = 1;
     global_columns[2] = 2;
     values[0] = 1.0;
-    values[1] = 0.14;
+    values[1] = -0.14;
     values[2] = 0.0;
     A->InsertGlobalValues( 0, global_columns.size(), 
 			   &values[0], &global_columns[0] );
@@ -496,9 +496,9 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_forward )
 	global_columns[0] = i-1;
 	global_columns[1] = i;
 	global_columns[2] = i+1;
-	values[0] = 0.14;
+	values[0] = -0.14;
 	values[1] = 1.0;
-	values[2] = 0.14;
+	values[2] = -0.14;
 	A->InsertGlobalValues( i, global_columns.size(), 
 			       &values[0], &global_columns[0] );
     }
@@ -506,7 +506,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_forward )
     global_columns[1] = global_num_rows-2;
     global_columns[2] = global_num_rows-1;
     values[0] = 0.0;
-    values[1] = 0.14;
+    values[1] = -0.14;
     values[2] = 1.0;
     A->InsertGlobalValues( global_num_rows-1, global_columns.size(), 
 			   &values[0], &global_columns[0] );
@@ -553,7 +553,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_forward )
 
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_ASSERT( solver_manager.getNumIters() < 10 );
+    TEST_ASSERT( solver_manager.getNumIters() < 20 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
 
     // Check that we got a negative solution.
@@ -571,7 +571,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_forward )
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_ASSERT( solver_manager.getNumIters() < 10 );
+    TEST_ASSERT( solver_manager.getNumIters() < 20 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -585,7 +585,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_forward )
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_ASSERT( solver_manager.getNumIters() < 10 );
+    TEST_ASSERT( solver_manager.getNumIters() < 20 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -599,7 +599,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, one_by_one_forward )
     converged_status = solver_manager.solve();
     TEST_ASSERT( converged_status );
     TEST_ASSERT( solver_manager.getConvergedStatus() );
-    TEST_ASSERT( solver_manager.getNumIters() < 10 );
+    TEST_ASSERT( solver_manager.getNumIters() < 20 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -661,8 +661,8 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_forward )
 	    global_columns[1] = 1;
 	    global_columns[2] = 2;
 	    values[0] = 1.0;
-	    values[1] = 0.14;
-	    values[2] = 0.14;
+	    values[1] = -0.14;
+	    values[2] = -0.14;
 	    A->InsertGlobalValues( 0, global_columns.size(), 
 				   &values[0], &global_columns[0] );
 	    for ( int i = 1; i < global_num_rows-1; ++i )
@@ -670,17 +670,17 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_forward )
 		global_columns[0] = i-1;
 		global_columns[1] = i;
 		global_columns[2] = i+1;
-		values[0] = 0.14;
+		values[0] = -0.14;
 		values[1] = 1.0;
-		values[2] = 0.14;
+		values[2] = -0.14;
 		A->InsertGlobalValues( i, global_columns.size(), 
 				       &values[0], &global_columns[0] );
 	    }
 	    global_columns[0] = global_num_rows-3;
 	    global_columns[1] = global_num_rows-2;
 	    global_columns[2] = global_num_rows-1;
-	    values[0] = 0.14;
-	    values[1] = 0.14;
+	    values[0] = -0.14;
+	    values[1] = -0.14;
 	    values[2] = 1.0;
 	    A->InsertGlobalValues( global_num_rows-1, global_columns.size(), 
 				   &values[0], &global_columns[0] );
@@ -728,7 +728,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_forward )
 
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_ASSERT( solver_manager.getNumIters() < 10 );
+	TEST_ASSERT( solver_manager.getNumIters() < 20 );
 
 	if ( comm_rank < 2 )
 	{
@@ -758,7 +758,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_forward )
 
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_ASSERT( solver_manager.getNumIters() < 10 );
+	TEST_ASSERT( solver_manager.getNumIters() < 20 );
 
 	if ( comm_rank < 2 )
 	{
@@ -782,7 +782,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_forward )
 	converged_status = solver_manager.solve();
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_ASSERT( solver_manager.getNumIters() < 10 );
+	TEST_ASSERT( solver_manager.getNumIters() < 20 );
 
 	if ( comm_rank < 2 )
 	{
@@ -810,7 +810,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, two_by_two_forward )
 	converged_status = solver_manager.solve();
 	TEST_ASSERT( converged_status );
 	TEST_ASSERT( solver_manager.getConvergedStatus() );
-	TEST_ASSERT( solver_manager.getNumIters() < 10 );
+	TEST_ASSERT( solver_manager.getNumIters() < 20 );
 
 	if ( comm_rank < 2 )
 	{

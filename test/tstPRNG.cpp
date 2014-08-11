@@ -46,6 +46,7 @@
 #include <stdexcept>
 
 #include <MCLS_PRNG.hpp>
+#include <MCLS_Xorshift.hpp>
 
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_RCP.hpp"
@@ -72,11 +73,11 @@ Teuchos::RCP<const Teuchos::Comm<Ordinal> > getDefaultComm()
 //---------------------------------------------------------------------------//
 // Tests.
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST( PRNG, mt19937_test )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( PRNG, prng_test, RNG )
 {
     Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm<int>();
     
-    MCLS::PRNG<std::mt19937> prng( comm->getRank() );
+    MCLS::PRNG<RNG> prng( comm->getRank() );
     
     // Make a set of random numbers on each process.
     int num_random = 1000;
@@ -110,44 +111,13 @@ TEUCHOS_UNIT_TEST( PRNG, mt19937_test )
     }
 }
 
-//---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST( PRNG, mt19937_64_test )
-{
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm<int>();
-    
-    MCLS::PRNG<std::mt19937_64> prng( comm->getRank() );
-    
-    // Make a set of random numbers on each process.
-    int num_random = 10000;
-    Teuchos::Array<double> rands( num_random * comm->getSize(), 0.0 );
-    std::uniform_real_distribution<double> rand_dist(0.0,1.0);
-    for ( int i = 0; i < num_random; ++i )
-    {
-	rands[comm->getRank()*num_random + i] = prng.random( rand_dist );
-    }
-    
-    // Collect all random numbers on each process.
-    Teuchos::Array<double> global_rands( num_random * comm->getSize(), 0.0 );
-    Teuchos::reduceAll<int,double>( *comm, Teuchos::REDUCE_SUM, 
-				    global_rands.size(),
-				    rands.getRawPtr(), global_rands.getRawPtr() );
+typedef std::mt19937 mt19937;
+typedef std::mt19937_64 mt1993764;
+typedef MCLS::Xorshift<> Xorshift;
 
-    // Check that the random numbers on each process are unique.
-    for ( int i = 0; i < comm->getSize(); ++i )
-    {
-	for ( int j = 0; j < comm->getSize(); ++j )
-	{
-	    if ( i != j )
-	    {
-		for ( int k = 0; k < num_random; ++k )
-		{
-		    TEST_INEQUALITY( global_rands[i*num_random + k],
-				     global_rands[j*num_random + k] );
-		}
-	    }
-	}
-    }
-}
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( PRNG, prng_test, mt19937 )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( PRNG, prng_test, mt1993764 )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( PRNG, prng_test, Xorshift )
 
 //---------------------------------------------------------------------------//
 // end tstPRNG.cpp

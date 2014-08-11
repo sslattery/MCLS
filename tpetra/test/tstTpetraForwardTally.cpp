@@ -138,23 +138,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardTally, TallyHistory, LO, GO, Scalar )
     Scalar b_val = 3;
     VT::putScalar( *B, b_val );
     tally.setSource( B );
-    for ( int i = 0; i < local_num_rows; ++i )
+    for ( int i = 0; i < tally_rows.size(); ++i )
     {
-	GO state = i + local_num_rows*comm_rank;
-	HistoryType history( state, state, a_val );
+	HistoryType history( tally_rows[i], i, a_val );
 	history.live();
 	tally.tallyHistory( history );
 	TEST_EQUALITY( history.historyTally(), a_val*b_val );
-	history.kill();
-	history.setEvent( MCLS::Event::CUTOFF );
-	tally.postProcessHistory( history );
-
-	GO inverse_state = 
-	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
-	history = HistoryType( inverse_state, inverse_state, b_val );
-	history.live();
-	tally.tallyHistory( history );
-	TEST_EQUALITY( history.historyTally(), b_val*b_val );
 	history.kill();
 	history.setEvent( MCLS::Event::CUTOFF );
 	tally.postProcessHistory( history );
@@ -164,13 +153,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardTally, TallyHistory, LO, GO, Scalar )
 
     Teuchos::ArrayRCP<const Scalar> A_view = VT::view( *A );
     typename Teuchos::ArrayRCP<const Scalar>::const_iterator a_view_iterator;
-    int histories_per_state = 2;
     for ( a_view_iterator = A_view.begin();
 	  a_view_iterator != A_view.end();
 	  ++a_view_iterator )
     {
-        TEST_EQUALITY( *a_view_iterator, 
-		       (a_val*b_val+b_val*b_val) / histories_per_state );
+        TEST_EQUALITY( *a_view_iterator, a_val*b_val );
     }
 
     TEST_EQUALITY( tally.numBaseRows(), VT::getLocalLength(*A) );
@@ -248,23 +235,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardTally, SetCombine, LO, GO, Scalar )
     Scalar b_val = 3;
     VT::putScalar( *B, b_val );
     tally.setSource( B );
-    for ( int i = 0; i < local_num_rows; ++i )
+    for ( int i = 0; i < tally_rows.size(); ++i )
     {
-	GO state = i + local_num_rows*comm_rank;
-	HistoryType history( state, state, a_val );
+	HistoryType history( tally_rows[i], i, a_val );
 	history.live();
 	tally.tallyHistory( history );
 	TEST_EQUALITY( history.historyTally(), a_val*b_val );
-	history.kill();
-	history.setEvent( MCLS::Event::CUTOFF );
-	tally.postProcessHistory( history );
-
-	GO inverse_state = 
-	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
-	history = HistoryType( inverse_state, inverse_state, b_val );
-	history.live();
-	tally.tallyHistory( history );
-	TEST_EQUALITY( history.historyTally(), b_val*b_val );
 	history.kill();
 	history.setEvent( MCLS::Event::CUTOFF );
 	tally.postProcessHistory( history );
@@ -281,13 +257,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardTally, SetCombine, LO, GO, Scalar )
 
     tally.combineSetTallies( comm );
 
-    int histories_per_state = 2;
     for ( c_view_iterator = C_view.begin();
 	  c_view_iterator != C_view.end();
 	  ++c_view_iterator )
     {
-        TEST_EQUALITY( *c_view_iterator, 
-		       (a_val*b_val + b_val*b_val) / histories_per_state );
+        TEST_EQUALITY( *c_view_iterator, a_val*b_val );
     }
 }
 
@@ -394,19 +368,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardTally, BlockCombine, LO, GO, Scalar )
 
 	VT::putScalar( *B, b_val );
 	tally.setSource( B );
-	for ( int i = 0; i < local_num_rows; ++i )
+	for ( int i = 0; i < tally_rows.size(); ++i )
 	{
-	    GO state = i + local_num_rows*set_rank;
-	    HistoryType history( state, state, a_val );
-	    history.live();
-	    tally.tallyHistory( history );
-	    history.kill();
-	    history.setEvent( MCLS::Event::CUTOFF );
-	    tally.postProcessHistory( history );
-
-	    GO inverse_state = 
-		(local_num_rows-1-i) + local_num_rows*(set_size-1-set_rank);
-	    history = HistoryType( inverse_state, state, a_val );
+	    HistoryType history( tally_rows[i], i, a_val );
 	    history.live();
 	    tally.tallyHistory( history );
 	    history.kill();
@@ -421,15 +385,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardTally, BlockCombine, LO, GO, Scalar )
 	// tallied over different vectors.
 	if ( comm_rank < 2 )
 	{
-	    int histories_per_state = 2;
 	    Teuchos::ArrayRCP<const Scalar> C_view = VT::view( *C );
 	    typename Teuchos::ArrayRCP<const Scalar>::const_iterator c_view_iterator;
 	    for ( c_view_iterator = C_view.begin();
 		  c_view_iterator != C_view.end();
 		  ++c_view_iterator )
 	    {
-		TEST_EQUALITY( *c_view_iterator, 
-			       (2*3+4*6) / histories_per_state );
+		if ( comm_rank == 1 )
+		{
+		    TEST_EQUALITY( *c_view_iterator, 2.0+4.0 );
+		}
+		else
+		{
+		    TEST_EQUALITY( *c_view_iterator, 2.0+3.0+4.0+6.0 );
+		}
 	    }
 	}
 	else
@@ -440,7 +409,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardTally, BlockCombine, LO, GO, Scalar )
 		  a_view_iterator != A_view.end();
 		  ++a_view_iterator )
 	    {
-		TEST_EQUALITY( *a_view_iterator, 2*3+4*6 );
+		TEST_EQUALITY( *a_view_iterator, 6.0 );
 	    }
 	}
     }
@@ -497,19 +466,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardTally, Normalize, LO, GO, Scalar )
     Scalar b_val = 3;
     VT::putScalar( *B, b_val );
     tally.setSource( B );
-    for ( int i = 0; i < local_num_rows; ++i )
+    for ( int i = 0; i < tally_rows.size(); ++i )
     {
-	GO state = i + local_num_rows*comm_rank;
-	HistoryType history( state, state, a_val );
-	history.live();
-	tally.tallyHistory( history );
-	history.kill();
-	history.setEvent( MCLS::Event::CUTOFF );
-	tally.postProcessHistory( history );
-
-	GO inverse_state = 
-	    (local_num_rows-1-i) + local_num_rows*(comm_size-1-comm_rank);
-	history = HistoryType( inverse_state, inverse_state, b_val );
+	HistoryType history( tally_rows[i], i, a_val );
 	history.live();
 	tally.tallyHistory( history );
 	history.kill();
@@ -521,15 +480,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardTally, Normalize, LO, GO, Scalar )
     int nh = 10;
     tally.normalize( nh );
 
-    int histories_per_state = 2;
     Teuchos::ArrayRCP<const Scalar> A_view = VT::view( *A );
     typename Teuchos::ArrayRCP<const Scalar>::const_iterator a_view_iterator;
     for ( a_view_iterator = A_view.begin();
 	  a_view_iterator != A_view.end();
 	  ++a_view_iterator )
     {
-        TEST_EQUALITY( *a_view_iterator, 
-		       (a_val*b_val+b_val*b_val) / histories_per_state );
+        TEST_EQUALITY( *a_view_iterator, a_val*b_val );
     }
 }
 

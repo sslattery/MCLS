@@ -163,20 +163,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  EpetraSequentialMCSolverManager_tests
-  SOURCES tstEpetraSequentialMCSolverManager.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  EpetraSequentialMCSolverManagerPrec_tests
-  SOURCES tstEpetraSequentialMCSolverManagerPrec.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
   EpetraFixedPointSolverManager_tests
   SOURCES tstEpetraFixedPointSolverManager.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi

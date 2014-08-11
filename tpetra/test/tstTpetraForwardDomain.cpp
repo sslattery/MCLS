@@ -163,7 +163,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardDomain, NoOverlap, LO, GO, Scalar )
     {
 	if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
 	{
-	    HistoryType history( i, i, x_val );
+	    HistoryType history( i, i-comm_rank*local_num_rows, x_val );
 	    history.live();
 	    tally->tallyHistory( history );
             history.setEvent( MCLS::Event::CUTOFF );
@@ -292,7 +292,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardDomain, PackUnpack, LO, GO, Scalar )
     {
 	if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
 	{
-	    HistoryType history( i, i, x_val );
+	    HistoryType history( i, i-comm_rank*local_num_rows, x_val );
 	    history.live();
 	    tally->tallyHistory( history );
             history.setEvent( MCLS::Event::CUTOFF );
@@ -414,7 +414,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardDomain, SomeOverlap, LO, GO, Scalar )
     {
 	if ( i >= local_num_rows*comm_rank && i < 2+local_num_rows*(comm_rank+1) )
 	{
-	    HistoryType history( i, i, x_val );
+	    HistoryType history( i, i-comm_rank*local_num_rows, x_val );
 	    history.live();
 	    tally->tallyHistory( history );
             history.setEvent( MCLS::Event::CUTOFF );
@@ -564,7 +564,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardDomain, PackUnpackSomeOverlap, LO, GO,
     {
 	if ( i >= local_num_rows*comm_rank && i < 2+local_num_rows*(comm_rank+1) )
 	{
-	    HistoryType history( i, i, x_val );
+	    HistoryType history( i, i-comm_rank*local_num_rows, x_val );
 	    history.live();
 	    tally->tallyHistory( history );
             history.setEvent( MCLS::Event::CUTOFF );
@@ -697,31 +697,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardDomain, Transition, LO, GO, Scalar )
     double weight = 3.0; 
     for ( int i = 0; i < global_num_rows-1; ++i )
     {
-	if ( comm_rank == comm_size - 1 )
+	if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
 	{
-	    if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
-	    {
-		HistoryType history( i, i, weight );
-		history.live();
-		history.setEvent( MCLS::Event::TRANSITION );
-		domain.processTransition( history );
+	    HistoryType history( i, i-comm_rank*local_num_rows, weight );
+	    history.live();
+	    history.setEvent( MCLS::Event::TRANSITION );
+	    domain.processTransition( history );
 
-		TEST_EQUALITY( history.globalState(), i+1 );
-		TEST_EQUALITY( history.weight(), weight*comm_size / 2 );
-	    }
-	}
-	else
-	{
-	    if ( i >= local_num_rows*comm_rank && i < 2+local_num_rows*(comm_rank+1) )
-	    {
-		HistoryType history( i, i, weight );
-		history.live();
-		history.setEvent( MCLS::Event::TRANSITION );
-		domain.processTransition( history );
-
-		TEST_EQUALITY( history.globalState(), i+1 );
-		TEST_EQUALITY( history.weight(), weight*comm_size / 2 );
-	    }
+	    TEST_EQUALITY( history.globalState(), i+1 );
+	    TEST_EQUALITY( history.weight(), weight*comm_size / 2 );
 	}
     }
 }
@@ -775,7 +759,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardDomain, Diagonal, LO, GO, Scalar )
     {
 	if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
 	{
-	    HistoryType history( i, i, weight );
+	    HistoryType history( i, i-comm_rank*local_num_rows, weight );
 	    history.live();
 	    history.setEvent( MCLS::Event::TRANSITION );
 	    domain.processTransition( history );
