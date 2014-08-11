@@ -114,21 +114,6 @@ int main(int argc, char* argv[])
     mclsLOWSFPL_mcsa.set("Set Number of Histories",int(numHistories));
     mclsLOWSFPL_mcsa.set("Transport Type","Global");
 
-    Teuchos::ParameterList& mclsLOWSFPL_seqmc =
-      mclsLOWSFPL_solver.sublist("Sequential MC");
-    mclsLOWSFPL_seqmc.set("Maximum Iterations",int(maxIterations));
-    mclsLOWSFPL_seqmc.set("Convergence Tolerance",double(maxResid));
-    mclsLOWSFPL_seqmc.set("MC Type",std::string(mcType));
-    mclsLOWSFPL_seqmc.set("Iteration Print Frequency",int(outputFrequency));
-    mclsLOWSFPL_seqmc.set("Weight Cutoff",double(weightCutoff));
-    mclsLOWSFPL_seqmc.set("MC Check Frequency",int(mcCheckFrequency));
-    mclsLOWSFPL_seqmc.set("MC Buffer Size",int(mcBufferSize));
-    mclsLOWSFPL_seqmc.set("Reproducible MC Mode",bool(reproducibleMC));
-    mclsLOWSFPL_seqmc.set("Overlap Size",int(overlapSize));
-    mclsLOWSFPL_seqmc.set("Number of Sets",int(numSets));
-    mclsLOWSFPL_seqmc.set("Set Number of Histories",int(numHistories));
-    mclsLOWSFPL_seqmc.set("Transport Type","Global");
-
     Teuchos::ParameterList& mclsLOWSFPL_adjmc =
 	mclsLOWSFPL_solver.sublist("Adjoint MC");
     mclsLOWSFPL_adjmc.set("Convergence Tolerance",double(maxResid));

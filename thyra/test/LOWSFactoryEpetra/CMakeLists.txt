@@ -29,26 +29,26 @@ TRIBITS_ADD_TEST(
   POSTFIX_AND_ARGS_3 KheadK_adjmc_nrhs1
     --use-preconditioner --show-all-tests --num-rhs=1
     --max-fwd-error=1e-2 --max-resid=1e-2 --max-solution-error=1e-2 --max-iters=1
-    --mc-histories=100000 --matrix-file=KheadK.mtx
+    --mc-histories=500000 --matrix-file=KheadK.mtx
      --solver-type="Adjoint MC" --prec-type="Block Jacobi" --block-size=2
   POSTFIX_AND_ARGS_4 KheadK_adjmc_nrhs2
     --use-preconditioner --show-all-tests --num-rhs=2
     --max-fwd-error=1e-2 --max-resid=1e-2 --max-solution-error=1e-2 --max-iters=1
-    --mc-histories=100000 --matrix-file=KheadK.mtx
+    --mc-histories=500000 --matrix-file=KheadK.mtx
      --solver-type="Adjoint MC" --prec-type="Block Jacobi" --block-size=2
   POSTFIX_AND_ARGS_5 KheadK_mcsa_nrhs1
     --use-preconditioner --show-all-tests --num-rhs=1
-    --max-fwd-error=1e-13 --max-resid=1e-13 --max-iters=1000 --mc-histories=100
+    --max-fwd-error=1e-12 --max-resid=1e-12 --max-iters=1000 --mc-histories=1000
     --max-solution-error=1e-6 --matrix-file=KheadK.mtx --solver-type="MCSA" 
     --prec-type="Point Jacobi"
   POSTFIX_AND_ARGS_6 KheadK_mcsa_nrhs8
     --use-preconditioner --show-all-tests --num-rhs=8
-    --max-fwd-error=1e-13 --max-resid=1e-13 --max-iters=1000 --mc-histories=100
+    --max-fwd-error=1e-12 --max-resid=1e-12 --max-iters=1000 --mc-histories=1000
     --max-solution-error=1e-6 --matrix-file=KheadK.mtx --solver-type="MCSA" 
     --prec-type="Point Jacobi"
   POSTFIX_AND_ARGS_7 KheadK_richardson_nrhs1
     --use-preconditioner --show-all-tests --num-rhs=1
-    --max-fwd-error=1e-13 --max-resid=1e-13 --max-iters=1000
+    --max-fwd-error=1e-12 --max-resid=1e-12 --max-iters=1000
     --max-solution-error=1e-6 --matrix-file=KheadK.mtx --solver-type="Fixed Point" 
     --prec-type="Point Jacobi"
   COMM serial mpi
