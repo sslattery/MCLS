@@ -47,7 +47,6 @@
 #include <random>
 
 #include "MCLS_DBC.hpp"
-#include "MCLS_DomainTraits.hpp"
 #include "MCLS_SamplingTools.hpp"
 #include "MCLS_Events.hpp"
 #include "MCLS_VectorTraits.hpp"

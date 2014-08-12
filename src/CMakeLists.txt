@@ -59,6 +59,8 @@ APPEND_SET(HEADERS
   MCLS_GlobalTransporter.hpp
   MCLS_GlobalTransporterFactory.hpp
   MCLS_GlobalTransporterFactory_impl.hpp
+  MCLS_History.hpp
+  MCLS_History_impl.hpp
   MCLS_HistoryBuffer.hpp
   MCLS_HistoryBuffer_impl.hpp
   MCLS_HistoryTraits.hpp

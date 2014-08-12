@@ -44,6 +44,7 @@
 #include <cmath>
 
 #include "MCLS_HistoryTraits.hpp"
+#include "MCLS_History.hpp"
 
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
@@ -60,31 +61,23 @@ namespace MCLS
  */
 //---------------------------------------------------------------------------//
 template<class Ordinal>
-class AdjointHistory
+class AdjointHistory : public History<Ordinal>
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Ordinal                                   ordinal_type;
+    typedef Ordinal ordinal_type;
+    typedef History<Ordinal> Base;
     //@}
 
     //! Default constructor.
     AdjointHistory()
-	: d_global_state( Teuchos::OrdinalTraits<Ordinal>::invalid() )
-	, d_local_state( Teuchos::OrdinalTraits<Ordinal>::invalid() )
-	, d_weight( Teuchos::ScalarTraits<double>::one() )
-	, d_alive( false )
-	, d_event( 0 )
     { /* ... */ }
 
     //! State constructor.
     AdjointHistory( Ordinal global_state, int local_state, double weight )
-	: d_global_state( global_state )
-	, d_local_state( local_state )
-	, d_weight( weight )
-	, d_alive( false )
-	, d_event( 0 )
+	: Base( global_state, local_state, weight )
     { /* ... */ }
 
     // Deserializer constructor.
@@ -97,62 +90,6 @@ class AdjointHistory
     // Pack the history into a buffer.
     Teuchos::Array<char> pack() const;
 
-    //! Set the history state in global indexing.
-    inline void setGlobalState( const Ordinal global_state )
-    { d_global_state = global_state; }
-
-    //! Get the history state in global indexing.
-    inline Ordinal globalState() const 
-    { return d_global_state; }
-
-    //! Set the history state in local indexing.
-    inline void setLocalState( const int local_state )
-    { d_local_state = local_state; }
-
-    //! Get the history state in local indexing.
-    inline int localState() const 
-    { return d_local_state; }
-
-    //! Set the history weight.
-    inline void setWeight( const double weight )
-    { d_weight = weight; }
-
-    //! Add to the history weight.
-    inline void addWeight( const double weight )
-    { d_weight += weight; }
-
-    //! Multiply the history weight.
-    inline void multiplyWeight( const double weight )
-    { d_weight *= weight; }
-
-    //! Get the history weight.
-    inline double weight() const
-    { return d_weight; }
-
-    //! Get the absolute value of the history weight.
-    inline double weightAbs() const
-    { return std::abs(d_weight); }
-
-    //! Kill the history.
-    void kill()
-    { d_alive = false; }
-
-    //! Set the history alive.
-    void live()
-    { d_alive = true; }
-
-    //! Get the history live/dead status.
-    bool alive() const
-    { return d_alive; }
-
-    //! Set the event flag.
-    void setEvent( const int event )
-    { d_event = event; }
-
-    //! Get the last event.
-    int event() const
-    { return d_event; }
-
   public:
 
     // Set the byte size of the packed history state.
@@ -160,23 +97,6 @@ class AdjointHistory
 
     // Get the number of bytes in the packed history state.
     static std::size_t getPackedBytes();
-
-  private:
-
-    // History state in globial indexing.
-    Ordinal d_global_state;
-
-    // History state in local indexing.
-    int d_local_state;
-
-    // History weight.
-    double d_weight;
-
-    // Alive/dead status.
-    bool d_alive;
-
-    // Latest history event.
-    int d_event;
 
   private:
 

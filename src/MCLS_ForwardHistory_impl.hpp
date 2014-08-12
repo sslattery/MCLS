@@ -57,17 +57,12 @@ namespace MCLS
 template<class Ordinal>
 ForwardHistory<Ordinal>::ForwardHistory( 
     const Teuchos::ArrayView<char>& buffer )
-    : d_local_state( Teuchos::OrdinalTraits<Ordinal>::invalid() )
 {
     MCLS_REQUIRE( Teuchos::as<std::size_t>(buffer.size()) == d_packed_bytes );
-
     Deserializer ds;
     ds.setBuffer( d_packed_bytes, &buffer[0] );
-    int balive;
-    ds >> d_global_state >> d_starting_state >> d_weight >> balive 
-       >> d_event >> d_history_tally;
-    d_alive = static_cast<bool>(balive);
-
+    this->unpackHistory( ds );
+    ds >> d_starting_state >> d_history_tally;
     MCLS_ENSURE( ds.getPtr() == ds.end() );
 }
 
@@ -80,14 +75,11 @@ Teuchos::Array<char> ForwardHistory<Ordinal>::pack() const
 {
     MCLS_REQUIRE( d_packed_bytes );
     MCLS_REQUIRE( d_packed_bytes > 0 );
-
     Teuchos::Array<char> buffer( d_packed_bytes );
-
     Serializer s;
     s.setBuffer( d_packed_bytes , &buffer[0] );
-    s << d_global_state << d_starting_state << d_weight << static_cast<int>(d_alive)
-      << d_event << d_history_tally;
-
+    this->packHistory( s );
+    s << d_starting_state << d_history_tally;
     MCLS_ENSURE( s.getPtr() == s.end() );
     return buffer;
 }
@@ -105,7 +97,8 @@ std::size_t ForwardHistory<Ordinal>::d_packed_bytes = 0;
 template<class Ordinal>
 void ForwardHistory<Ordinal>::setByteSize()
 {
-    d_packed_bytes = 2*sizeof(Ordinal) + 2*sizeof(double) + 2*sizeof(int);
+    Base::setStaticSize();
+    d_packed_bytes = Base::getStaticSize() + sizeof(Ordinal) + sizeof(double);
 }
 
 //---------------------------------------------------------------------------//

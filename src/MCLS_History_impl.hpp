@@ -32,19 +32,18 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_AdjointHistory_impl.hpp
+ * \file MCLS_History_impl.hpp
  * \author Stuart R. Slattery
- * \brief AdjointHistory class declaration.
+ * \brief History class declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_ADJOINTHISTORY_IMPL_HPP
-#define MCLS_ADJOINTHISTORY_IMPL_HPP
+#ifndef MCLS_HISTORY_IMPL_HPP
+#define MCLS_HISTORY_IMPL_HPP
 
 #include <algorithm>
 
 #include "MCLS_DBC.hpp"
-#include "MCLS_Serializer.hpp"
 
 #include <Teuchos_as.hpp>
 
@@ -52,50 +51,40 @@ namespace MCLS
 {
 //---------------------------------------------------------------------------//
 /*!
- * \brief Deserializer constructor.
+ * \brief Pack the history into a buffer.
  */
 template<class Ordinal>
-AdjointHistory<Ordinal>::AdjointHistory( const Teuchos::ArrayView<char>& buffer )
+void History<Ordinal>::packHistory( Serializer& s ) const
 {
-    MCLS_REQUIRE( Teuchos::as<std::size_t>(buffer.size()) == d_packed_bytes );
-    Deserializer ds;
-    ds.setBuffer( d_packed_bytes, &buffer[0] );
-    this->unpackHistory( ds );
-    MCLS_ENSURE( ds.getPtr() == ds.end() );
+    s << b_global_state << b_weight << static_cast<int>(b_alive) << b_event;
 }
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Pack the history into a buffer.
+ * \brief Unpack the history from a buffer.
  */
 template<class Ordinal>
-Teuchos::Array<char> AdjointHistory<Ordinal>::pack() const
+void History<Ordinal>::unpackHistory( Deserializer& ds )
 {
-    MCLS_REQUIRE( d_packed_bytes );
-    MCLS_REQUIRE( d_packed_bytes > 0 );
-    Teuchos::Array<char> buffer( d_packed_bytes );
-    Serializer s;
-    s.setBuffer( d_packed_bytes, &buffer[0] );
-    this->packHistory( s );
-    MCLS_ENSURE( s.getPtr() == s.end() );
-    return buffer;
+    int alive;
+    ds >> b_global_state >> b_weight >> alive >> b_event;
+    b_alive = static_cast<bool>(alive);
 }
 
 //---------------------------------------------------------------------------//
 // Static members.
 //---------------------------------------------------------------------------//
 template<class Ordinal>
-std::size_t AdjointHistory<Ordinal>::d_packed_bytes = 0;
+std::size_t History<Ordinal>::b_packed_bytes = 0;
 
 //---------------------------------------------------------------------------//
 /*!
  * \brief Set the byte size of the packed history state.
  */
 template<class Ordinal>
-void AdjointHistory<Ordinal>::setByteSize()
+void History<Ordinal>::setStaticSize()
 {
-    Base::setStaticSize();
-    d_packed_bytes = Base::getStaticSize();
+    b_packed_bytes = sizeof(Ordinal) + sizeof(double) + 2*sizeof(int);
 }
 
 //---------------------------------------------------------------------------//
@@ -103,10 +92,10 @@ void AdjointHistory<Ordinal>::setByteSize()
  * \brief Get the number of bytes in the packed history state.
  */
 template<class Ordinal>
-std::size_t AdjointHistory<Ordinal>::getPackedBytes()
+std::size_t History<Ordinal>::getStaticSize()
 {
-    MCLS_REQUIRE( d_packed_bytes );
-    return d_packed_bytes;
+    MCLS_REQUIRE( b_packed_bytes );
+    return b_packed_bytes;
 }
 
 //---------------------------------------------------------------------------//
@@ -115,9 +104,9 @@ std::size_t AdjointHistory<Ordinal>::getPackedBytes()
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_ADJOINTHISTORY_IMPL_HPP
+#endif // end MCLS_HISTORY_IMPL_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_AdjointHistory_impl.hpp
+// end MCLS_History_impl.hpp
 //---------------------------------------------------------------------------//
 

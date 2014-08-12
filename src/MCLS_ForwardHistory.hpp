@@ -44,6 +44,7 @@
 #include <cmath>
 
 #include "MCLS_HistoryTraits.hpp"
+#include "MCLS_History.hpp"
 
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
@@ -60,34 +61,26 @@ namespace MCLS
  */
 //---------------------------------------------------------------------------//
 template<class Ordinal>
-class ForwardHistory
+class ForwardHistory : public History<Ordinal>
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Ordinal                                   ordinal_type;
+    typedef Ordinal ordinal_type;
+    typedef History<Ordinal> Base;
     //@}
 
     //! Default constructor.
     ForwardHistory()
-	: d_global_state( Teuchos::OrdinalTraits<Ordinal>::invalid() )
-	, d_local_state( Teuchos::OrdinalTraits<Ordinal>::invalid() )
-	, d_starting_state( Teuchos::OrdinalTraits<Ordinal>::zero() )
-	, d_weight( Teuchos::ScalarTraits<double>::one() )
-	, d_alive( false )
-	, d_event( 0 )
+	: d_starting_state( Teuchos::OrdinalTraits<Ordinal>::invalid() )
 	, d_history_tally( 0.0 )
     { /* ... */ }
 
     //! State constructor.
     ForwardHistory( Ordinal global_state, int local_state, double weight )
-	: d_global_state( global_state )
-	, d_local_state( local_state )
+	: Base( global_state, local_state, weight )
 	, d_starting_state( global_state )
-	, d_weight( weight )
-	, d_alive( false )
-	, d_event( 0 )
 	, d_history_tally( 0.0 )
     { /* ... */ }
 
@@ -101,22 +94,6 @@ class ForwardHistory
     // Pack the history into a buffer.
     Teuchos::Array<char> pack() const;
 
-    //! Set the history state in global indexing.
-    inline void setGlobalState( const Ordinal global_state )
-    { d_global_state = global_state; }
-
-    //! Get the history state in global indexing.
-    inline Ordinal globalState() const 
-    { return d_global_state; }
-
-    //! Set the history state in local indexing.
-    inline void setLocalState( const int local_state )
-    { d_local_state = local_state; }
-
-    //! Get the history state in local indexing.
-    inline int localState() const 
-    { return d_local_state; }
-
     //! Set the history starting state in global indexing.
     inline void setStartingState( const Ordinal starting_state )
     { d_starting_state = starting_state; }
@@ -125,48 +102,8 @@ class ForwardHistory
     inline Ordinal startingState() const 
     { return d_starting_state; }
 
-    //! Set the history weight.
-    inline void setWeight( const double weight )
-    { d_weight = weight; }
-
-    //! Add to the history weight.
-    inline void addWeight( const double weight )
-    { d_weight += weight; }
-
-    //! Multiply the history weight.
-    inline void multiplyWeight( const double weight )
-    { d_weight *= weight; }
-
-    //! Get the history weight.
-    inline double weight() const
-    { return d_weight; }
-
-    //! Get the absolute value of the history weight.
-    inline double weightAbs() const
-    { return std::abs(d_weight); }
-
-    //! Kill the history.
-    void kill()
-    { d_alive = false; }
-
-    //! Set the history alive.
-    void live()
-    { d_alive = true; }
-
-    //! Get the history live/dead status.
-    bool alive() const
-    { return d_alive; }
-
-    //! Set the event flag.
-    void setEvent( const int event )
-    { d_event = event; }
-
-    //! Get the last event.
-    int event() const
-    { return d_event; }
-
     //! Add to the history tally.
-    void addToHistoryTally( const double value ) { d_history_tally += value; }
+    inline void addToHistoryTally( const double value ) { d_history_tally += value; }
 
     //! Get the history tally.
     double historyTally() const { return d_history_tally; }
@@ -181,23 +118,8 @@ class ForwardHistory
 
   private:
 
-    // Current history state in global indexing.
-    Ordinal d_global_state;
-
-    // Current history state in local indexing.
-    int d_local_state;
-
     // History starting state.
     Ordinal d_starting_state;
-
-    // ForwardHistory weight.
-    double d_weight;
-
-    // Alive/dead status.
-    bool d_alive;
-
-    // Latest history event.
-    int d_event;
 
     // Forward tally sum for this history.
     double d_history_tally;

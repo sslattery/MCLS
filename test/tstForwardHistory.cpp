@@ -90,7 +90,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, history, Ordinal )
     TEST_EQUALITY( h_1.weight(), Teuchos::ScalarTraits<double>::one() );
     TEST_EQUALITY( h_1.globalState(), Teuchos::OrdinalTraits<Ordinal>::invalid() );
     TEST_EQUALITY( h_1.startingState(), 
-		   Teuchos::OrdinalTraits<Ordinal>::zero() );
+		   Teuchos::OrdinalTraits<Ordinal>::invalid() );
     TEST_ASSERT( !h_1.alive() );
     TEST_EQUALITY( h_1.event(), MCLS::Event::NO_EVENT );
 
