@@ -48,6 +48,7 @@
 
 #include "MCLS_DBC.hpp"
 #include "MCLS_DomainTraits.hpp"
+#include "MCLS_AlmostOptimalDomain.hpp"
 #include "MCLS_HistoryTraits.hpp"
 #include "MCLS_ForwardTally.hpp"
 #include "MCLS_SamplingTools.hpp"
@@ -98,12 +99,14 @@ namespace MCLS
  * problems. 
  */
 template<class Vector, class Matrix, class RNG>
-class ForwardDomain
+class ForwardDomain : 
+	public AlmostOptimalDomain<Vector,Matrix,RNG,ForwardTally<Vector> >
 {
   public:
 
     //@{
     //! Typedefs.
+    typedef AlmostOptimalDomain<Vector,Matrix,RNG,ForwardTally<Vector> > Base;
     typedef Vector                                        vector_type;
     typedef VectorTraits<Vector>                          VT;
     typedef Matrix                                        matrix_type;
@@ -133,186 +136,12 @@ class ForwardDomain
     ~ForwardDomain()
     { /* ... */ }
 
-    // Set the random number generator.
-    void setRNG( const Teuchos::RCP<PRNG<RNG> >& rng )
-    { d_rng = rng; }
-
     // Pack the domain into a buffer.
     Teuchos::Array<char> pack() const;
 
     // Get the size of this object in packed bytes.
     std::size_t getPackedBytes() const;
-
-    //! Set the weight cutoff.
-    void setCutoff( const double weight_cutoff )
-    { d_weight_cutoff = weight_cutoff; }
-
-    // Given a history with a global state in the local domain, set the local
-    // state of that history.
-    inline void setHistoryLocalState( HistoryType& history ) const;
-
-    // Process a history through a transition to a new state.
-    inline void processTransition( HistoryType& history ) const;
-
-    //! Deterimine if a history should be terminated.
-    inline bool terminateHistory( const HistoryType& history ) const
-    { return HT::weightAbs(history) < d_weight_cutoff; }
-
-    // Get the domain tally.
-    Teuchos::RCP<TallyType> domainTally() const
-    { return d_tally; }
-
-    // Determine if a given state is in the local domain.
-    inline bool isGlobalState( const Ordinal& state ) const;
-
-    // Determine if a given state is on the boundary.
-    inline bool isBoundaryState( const Ordinal& state ) const;
-
-    // Get the local states owned by this domain.
-    Teuchos::Array<Ordinal> localStates() const;
-
-    //! Get the number of neighboring domains from which we will receive.
-    int numReceiveNeighbors() const
-    { return d_receive_ranks.size(); }
-
-    // Get the neighbor domain process rank from which we will receive.
-    int receiveNeighborRank( int n ) const;
-
-    //! Get the number of neighboring domains to which we will send.
-    int numSendNeighbors() const
-    { return d_send_ranks.size(); }
-
-    // Get the neighbor domain process rank to which we will send.
-    int sendNeighborRank( int n ) const;
-
-    // Get the neighbor domain that owns a boundary state (local neighbor id).
-    int owningNeighbor( const Ordinal& state ) const;
-
-  private:
-
-    // Add matrix data to the local domain.
-    void addMatrixToDomain( const Teuchos::RCP<const Matrix>& A,
-			    const double relaxation );
-
-    // Build boundary data.
-    void buildBoundary( const Teuchos::RCP<const Matrix>& A,
-			const Teuchos::RCP<const Matrix>& base_A );
-
-  private:
-
-    // Random number generator.
-    Teuchos::RCP<PRNG<RNG> > d_rng;
-
-    // Random number distribution.
-    Teuchos::RCP<RandomDistribution> d_rng_dist;
-
-    // Monte Carlo estimator type.
-    int d_estimator;
-
-    // History weight cutoff.
-    double d_weight_cutoff;
-
-    // Domain tally.
-    Teuchos::RCP<TallyType> d_tally;
-
-    // Global-to-local row indexer.
-    std::unordered_map<Ordinal,int> d_g2l_row_indexer;
-
-    // Local CDF columns.
-    Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > > d_global_columns;
-
-    // Local CDF columns in local indexing.
-    Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<int> > > d_local_columns;
-
-    // Local CDF values.
-    Teuchos::ArrayRCP<Teuchos::Array<double> > d_cdfs;
-
-    // Local iteration matrix values.
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > d_h;
-
-    // Local weights.
-    Teuchos::ArrayRCP<double> d_weights;
-
-    // Neighboring domain process ranks from which we will receive.
-    Teuchos::Array<int> d_receive_ranks;
-
-    // Neighboring domain process ranks to which we will send.
-    Teuchos::Array<int> d_send_ranks;
-
-    // Boundary state to owning neighbor local id table.
-    std::unordered_map<Ordinal,int> d_bnd_to_neighbor;
 };
-
-//---------------------------------------------------------------------------//
-// Inline functions.
-//---------------------------------------------------------------------------//
-/*!
- * \brief Given a history with a global state in the local domain, set the
- * local state of that history.
- */
-template<class Vector, class Matrix, class RNG>
-inline void ForwardDomain<Vector,Matrix,RNG>::setHistoryLocalState( 
-    HistoryType& history ) const
-{
-    MCLS_REQUIRE( isGlobalState(HT::globalState(history)) );
-    MCLS_REQUIRE( d_g2l_row_indexer.count(HT::globalState(history)) );
-    HT::setLocalState( 
-	history, d_g2l_row_indexer.find(HT::globalState(history))->second );
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Process a history through a transition to a new state.
- */
-template<class Vector, class Matrix, class RNG>
-inline void ForwardDomain<Vector,Matrix,RNG>::processTransition( 
-    HistoryType& history ) const
-{
-    MCLS_REQUIRE( Teuchos::nonnull(d_rng) );
-    MCLS_REQUIRE( HT::alive(history) );
-    MCLS_REQUIRE( Event::TRANSITION == HT::event(history) );
-    MCLS_REQUIRE( isGlobalState(HT::globalState(history)) );
-
-    // Get the incoming state.
-    int in_state = history.localState();
-
-    // Sample the row CDF to get a new outgoing state.
-    int out_state = 
-	SamplingTools::sampleDiscreteCDF( d_cdfs[in_state](),
-					  d_rng->random(*d_rng_dist) );
-
-    // Set the new local state with the history.
-    HT::setLocalState( history, (*d_local_columns[in_state])[out_state] );
-
-    // Set the new global state with the history.
-    HT::setGlobalState( history, (*d_global_columns[in_state])[out_state] );
-
-    // Update the history weight with the transition weight.
-    int transition_sign = (d_h[in_state][out_state] < 0.0) ? -1 : 1;
-    HT::multiplyWeight( history, d_weights[in_state]*transition_sign );
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Determine if a given state is in the local domain.
- */
-template<class Vector, class Matrix, class RNG>
-inline bool ForwardDomain<Vector,Matrix,RNG>::isGlobalState( 
-    const Ordinal& state ) const
-{
-    return d_g2l_row_indexer.count( state );
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Determine if a given state is on the boundary.
- */
-template<class Vector, class Matrix, class RNG>
-inline bool ForwardDomain<Vector,Matrix,RNG>::isBoundaryState( 
-    const Ordinal& state ) const
-{
-    return d_bnd_to_neighbor.count( state );
-}
 
 //---------------------------------------------------------------------------//
 // DomainTraits implementation.
