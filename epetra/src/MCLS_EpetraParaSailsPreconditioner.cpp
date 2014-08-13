@@ -41,6 +41,8 @@
 #include "MCLS_EpetraParaSailsPreconditioner.hpp"
 #include <MCLS_DBC.hpp>
 
+#include <limits>
+
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ArrayRCP.hpp>
@@ -174,6 +176,7 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
     int local_row = 0;
     int beg_row = contiguous_A->RowMatrixRowMap().MinMyGID();
     int end_row = contiguous_A->RowMatrixRowMap().MaxMyGID();
+    double tol = 10.0*std::numeric_limits<double>::epsilon();
     Teuchos::ArrayRCP<int>::iterator col_it, col_it_2;
     Matrix* epetra_matrix = MatrixCreate( raw_mpi_comm, beg_row, end_row );
     for ( int i = beg_row; i < end_row+1; ++i )
@@ -191,7 +194,6 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
         MCLS_CHECK( num_entries > 0 );
 
         // Get rid of the zero entries.
-        double tol = 1.0e-15;
         for ( values_it = values.begin(), indices_it = indices.begin();
               values_it != values.begin()+num_entries;
               ++values_it, ++indices_it )
