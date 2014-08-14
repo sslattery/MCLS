@@ -119,8 +119,6 @@ class ForwardDomain :
     typedef Teuchos::Comm<int>                            Comm;
     typedef RNG                                           rng_type;
     typedef RNGTraits<RNG>                                RNGT;
-    typedef typename RNGT::uniform_real_distribution_type RandomDistribution;
-    typedef RandomDistributionTraits<RandomDistribution>  RDT;
     //@}
 
     // Matrix constructor.

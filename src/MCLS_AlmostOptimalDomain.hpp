@@ -89,12 +89,6 @@ namespace MCLS
  * transitions, cumulative distribution functions for each local state in the
  * system that can be sampled, and the associated states for those CDFs to
  * which a given initial state in the local system can transition to.
- *
- * If the expected value estimator is used, an additional copy of the
- * iteration matrix values are constructed. No other information is copied as
- * this data has the same non-zero structure and parallel distribution as the
- * CDFs generated for each state as the CDFs are derived from the iteration
- * matrix.
  */
 template<class Vector, class Matrix, class RNG, class Tally>
 class AlmostOptimalDomain

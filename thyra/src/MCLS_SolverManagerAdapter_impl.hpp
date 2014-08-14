@@ -86,7 +86,6 @@ SolverManagerAdapter<MultiVector,Matrix>::solve(
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_problem) );
-
     Teuchos::Time timer("");
     bool converged = true;
     int num_iters = 0;
@@ -94,7 +93,7 @@ SolverManagerAdapter<MultiVector,Matrix>::solve(
 	Teuchos::ScalarTraits<Scalar>::zero();
     int num_problems = d_problem->getNumSubProblems();
     Teuchos::RCP<LinearProblem<Vector,Matrix> > linear_problem;
-
+ 
     // Solve the individual linear problems.
     timer.start(true);
     for ( int n = 0; n < num_problems; ++n )
