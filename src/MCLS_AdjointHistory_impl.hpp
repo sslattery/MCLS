@@ -59,7 +59,7 @@ AdjointHistory<Ordinal>::AdjointHistory( const Teuchos::ArrayView<char>& buffer 
 {
     MCLS_REQUIRE( Teuchos::as<std::size_t>(buffer.size()) == d_packed_bytes );
     Deserializer ds;
-    ds.setBuffer( d_packed_bytes, &buffer[0] );
+    ds.setBuffer( buffer );
     this->unpackHistory( ds );
     MCLS_ENSURE( ds.getPtr() == ds.end() );
 }
@@ -75,7 +75,7 @@ Teuchos::Array<char> AdjointHistory<Ordinal>::pack() const
     MCLS_REQUIRE( d_packed_bytes > 0 );
     Teuchos::Array<char> buffer( d_packed_bytes );
     Serializer s;
-    s.setBuffer( d_packed_bytes, &buffer[0] );
+    s.setBuffer( buffer() );
     this->packHistory( s );
     MCLS_ENSURE( s.getPtr() == s.end() );
     return buffer;
