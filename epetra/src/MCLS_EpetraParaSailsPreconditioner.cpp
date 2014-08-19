@@ -142,6 +142,8 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
     double threshold = d_plist->get<double>("ParaSails: Threshold");
     int num_levels = d_plist->get<int>("ParaSails: Number of Levels");
     double filter = d_plist->get<double>("ParaSails: Filter");
+    int symmetry = d_plist->get<int>("ParaSails: Symmetry");
+    int load_balance = d_plist->get<int>("ParaSails: Load Balance");
 
     // Extract the raw MPI handle.
     Teuchos::RCP<const Epetra_Comm> epetra_comm = 
@@ -233,13 +235,11 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
     MatrixComplete( epetra_matrix );
 
     // Create a ParaSails preconditioner.
-    ParaSails* parasails = ParaSailsCreate( raw_mpi_comm, beg_row, end_row, 0 );
+    ParaSails* parasails = ParaSailsCreate( raw_mpi_comm, beg_row, end_row, symmetry );
+    parasails->loadbal_beta = load_balance;
     ParaSailsSetupPattern( parasails, epetra_matrix, threshold, num_levels );
+    ParaSailsStatsPattern( parasails, epetra_matrix );
     ParaSailsSetupValues( parasails, epetra_matrix, filter );
-
-    // Parasails timing output - only if DBC is enabled.
-    MCLS_REMEMBER( std::cout << std::endl );
-    MCLS_REMEMBER( ParaSailsStatsPattern(parasails, epetra_matrix) );
     MCLS_REMEMBER( ParaSailsStatsValues(parasails, epetra_matrix) );
 
     // Destroy the ParaSails copy of the operator.
