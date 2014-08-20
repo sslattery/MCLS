@@ -181,37 +181,7 @@ template<class Vector, class Matrix>
 Teuchos::RCP<const Matrix> 
 LinearProblem<Vector,Matrix>::getTransposeCompositeOperator() const
 {
-    const bool left_prec = Teuchos::nonnull( d_PL );
-    const bool right_prec = Teuchos::nonnull( d_PR );
-
-    Teuchos::RCP<Matrix> composite;
-
-    if ( left_prec && right_prec )
-    {
-        Teuchos::RCP<Matrix> temp;
-        {
-            temp = MT::clone( *d_A );
-            MT::multiply( d_A, true, d_PL, true, temp );
-        }
-        composite = MT::clone( *d_PR );        
-	MT::multiply( d_PR, true, temp, false, composite );
-    }
-    else if ( right_prec )
-    {
-        composite = MT::clone( *d_PR );
-	MT::multiply( d_PR, true, d_A, true, composite );
-    }
-    else if ( left_prec )
-    {
-        composite = MT::clone( *d_A );
-	MT::multiply( d_A, true, d_PL, true, composite );
-    }
-    else
-    {
-	composite = MT::copyTranspose( *d_A );
-    }
-
-    return composite;
+    return MT::copyTranspose( *getCompositeOperator() );
 }
 
 //---------------------------------------------------------------------------//
