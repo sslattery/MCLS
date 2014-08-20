@@ -109,7 +109,7 @@ class AlmostOptimalDomain
     typedef Teuchos::Comm<int>                            Comm;
     typedef RNG                                           rng_type;
     typedef RNGTraits<RNG>                                RNGT;
-    typedef typename RNGT::uniform_real_distribution_type RandomDistribution;
+    typedef typename RNGT::uniform_int_distribution_type  RandomDistribution;
     typedef RandomDistributionTraits<RandomDistribution>  RDT;
     //@}
 
@@ -197,8 +197,8 @@ class AlmostOptimalDomain
     // Random number generator.
     Teuchos::RCP<PRNG<RNG> > b_rng;
 
-    // Random number distribution.
-    Teuchos::RCP<RandomDistribution> b_rng_dist;
+    // Random number distributions.
+    Teuchos::ArrayRCP<Teuchos::RCP<RandomDistribution> > b_rng_dists;
 
     // Monte Carlo estimator type.
     int b_estimator;
@@ -218,14 +218,8 @@ class AlmostOptimalDomain
     // Local CDF columns in local indexing.
     Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<int> > > b_local_columns;
 
-    // Local CDF values.
-    Teuchos::ArrayRCP<Teuchos::Array<double> > b_cdfs;
-
     // Local iteration matrix values.
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > b_h;
-
-    // Local weights.
-    Teuchos::ArrayRCP<double> b_weights;
 
     // Neighboring domain process ranks from which we will receive.
     Teuchos::Array<int> b_receive_ranks;
@@ -271,9 +265,7 @@ inline void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::processTransition(
     int in_state = history.localState();
 
     // Sample the row CDF to get a new outgoing state.
-    int out_state = 
-	SamplingTools::sampleDiscreteCDF( b_cdfs[in_state](),
-					  b_rng->random(*b_rng_dist) );
+    int out_state = b_rng->random( *b_rng_dists[in_state] );
 
     // Set the new local state with the history.
     HT::setLocalState( history, (*b_local_columns[in_state])[out_state] );
@@ -282,8 +274,7 @@ inline void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::processTransition(
     HT::setGlobalState( history, (*b_global_columns[in_state])[out_state] );
 
     // Update the history weight with the transition weight.
-    int transition_sign = (b_h[in_state][out_state] < 0.0) ? -1 : 1;
-    HT::multiplyWeight( history, b_weights[in_state]*transition_sign );
+    HT::multiplyWeight( history, b_h[in_state][out_state] );
 }
 
 //---------------------------------------------------------------------------//

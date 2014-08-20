@@ -61,7 +61,6 @@ namespace MCLS
  */
 template<class Vector, class Matrix, class RNG, class Tally>
 AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::AlmostOptimalDomain()
-    : b_rng_dist( RDT::create(0.0, 1.0) )
 { /* ... */ }
 
 //---------------------------------------------------------------------------//
@@ -118,15 +117,14 @@ void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::buildDomain(
         }
 
         // Allocate space in local row data arrays.
+        b_rng_dists = Teuchos::ArrayRCP<Teuchos::RCP<RandomDistribution> >( num_rows );
         b_global_columns = 
             Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > >( num_rows );
         b_local_columns = 
             Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<int> > >( num_rows );
-        b_cdfs = Teuchos::ArrayRCP<Teuchos::Array<double> >( num_rows );
-        b_weights = Teuchos::ArrayRCP<double>( num_rows );
         b_h = Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( num_rows );
 
-        // Build the local CDFs and weights.
+        // Build the iteration matrix.
 	double relaxation = 1.0;
 	if ( plist.isParameter("Neumann Relaxation") )
 	{
@@ -150,8 +148,11 @@ void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::buildDomain(
         }
     }
 
-    // Make the set of local columns. If the local column is not a global row
-    // then make it invalid to indicate that we have left the domain.
+    // Make the set of local columns and row distributions. If the local
+    // column is not a global row then make it invalid to indicate that we
+    // have left the domain.
+    typename Teuchos::ArrayRCP<Teuchos::RCP<RandomDistribution> >::iterator
+	rng_dist_it;
     typename Teuchos::ArrayRCP<
 	Teuchos::RCP<Teuchos::Array<Ordinal> > >::const_iterator global_it;
     typename Teuchos::Array<Ordinal>::const_iterator gcol_it;
@@ -159,10 +160,12 @@ void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::buildDomain(
 	Teuchos::RCP<Teuchos::Array<int> > >::iterator local_it;
     Teuchos::Array<int>::iterator lcol_it;
     for ( global_it = b_global_columns.begin(),
-	   local_it = b_local_columns.begin();
+	   local_it = b_local_columns.begin(),
+	rng_dist_it = b_rng_dists.begin();
 	  global_it != b_global_columns.end();
-	  ++global_it, ++local_it )
+	  ++global_it, ++local_it, ++rng_dist_it )
     {
+	*rng_dist_it = RDT::create( 0, (*global_it)->size()-1 );
 	*local_it = Teuchos::rcp(
 	    new Teuchos::Array<int>((*global_it)->size()) );
 	for ( gcol_it = (*global_it)->begin(),
@@ -180,6 +183,7 @@ void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::buildDomain(
 	    }
 	}
     }
+
     // By building the boundary data, now we know where we are sending
     // data. Find out who we are receiving from.
     Tpetra::Distributor distributor( MT::getComm(*A) );
@@ -247,23 +251,6 @@ AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::packDomain( Serializer& s ) const
 	}
     }
 
-    // Pack up the local cdfs.
-    Teuchos::ArrayRCP<Teuchos::Array<double> >::const_iterator cdf_it;
-    Teuchos::Array<double>::const_iterator value_it;
-    for( cdf_it = b_cdfs.begin(); cdf_it != b_cdfs.end(); ++cdf_it )
-    {
-	// Pack the number of entries in the row cdf.
-	s << Teuchos::as<Ordinal>( cdf_it->size() );
-
-	// Pack in the column indices.
-	for ( value_it = cdf_it->begin();
-	      value_it != cdf_it->end();
-	      ++value_it )
-	{
-	    s << *value_it;
-	}
-    }
-
     // Pack the iteration matrix values.
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >::const_iterator h_it;
     Teuchos::ArrayRCP<double>::const_iterator h_val_it;
@@ -279,15 +266,6 @@ AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::packDomain( Serializer& s ) const
         {
             s << *h_val_it;
         }
-    }
-
-    // Pack up the local weights.
-    Teuchos::ArrayRCP<double>::const_iterator weight_it;
-    for ( weight_it = b_weights.begin();
-	  weight_it != b_weights.end();
-	  ++weight_it )
-    {
-	s << *weight_it;
     }
 
     // Pack up the receive ranks.
@@ -402,29 +380,9 @@ void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::unpackDomain(
 	}
     }
 
-    // Unpack the local cdfs.
-    b_cdfs = Teuchos::ArrayRCP<Teuchos::Array<double> >( num_rows );
-    Ordinal num_values = 0;
-    Teuchos::ArrayRCP<Teuchos::Array<double> >::iterator cdf_it;
-    Teuchos::Array<double>::iterator value_it;
-    for( cdf_it = b_cdfs.begin(); cdf_it != b_cdfs.end(); ++cdf_it )
-    {
-	// Unpack the number of entries in the row cdf.
-	ds >> num_values;
-	cdf_it->resize( num_values );
-
-	// Unpack the cdf values.
-	for ( value_it = cdf_it->begin();
-	      value_it != cdf_it->end();
-	      ++value_it )
-	{
-	    ds >> *value_it;
-	}
-    }
-
     // Unpack the iteration matrix values.
     b_h = Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >( num_rows );
-    num_values = 0;
+    int num_values = 0;
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >::iterator h_it;
     Teuchos::ArrayRCP<double>::iterator h_val_it;
     for( h_it = b_h.begin(); h_it != b_h.end(); ++h_it )
@@ -440,16 +398,6 @@ void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::unpackDomain(
         {
             ds >> *h_val_it;
         }
-    }
-
-    // Unpack the local weights.
-    b_weights = Teuchos::ArrayRCP<double>( num_rows );
-    Teuchos::ArrayRCP<double>::iterator weight_it;
-    for ( weight_it = b_weights.begin();
-	  weight_it != b_weights.end();
-	  ++weight_it )
-    {
-	ds >> *weight_it;
     }
 
     // Unpack the receive ranks.
@@ -491,8 +439,12 @@ void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::unpackDomain(
 	ds >> *base_it;
     }
 
-    // Make the set of local columns. If the local column is not a global row
-    // then make it invalid to indicate that we have left the domain.
+    // Make the set of local columns and row distributions. If the local
+    // column is not a global row then make it invalid to indicate that we
+    // have left the domain.
+    b_rng_dists = Teuchos::ArrayRCP<Teuchos::RCP<RandomDistribution> >( num_rows );
+    typename Teuchos::ArrayRCP<Teuchos::RCP<RandomDistribution> >::iterator
+	rng_dist_it;
     b_local_columns = 
         Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<int> > >( num_rows );
     typename Teuchos::ArrayRCP<
@@ -502,10 +454,12 @@ void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::unpackDomain(
 	Teuchos::RCP<Teuchos::Array<int> > >::iterator local_it;
     Teuchos::Array<int>::iterator lcol_it;
     for ( global_it = b_global_columns.begin(),
-	   local_it = b_local_columns.begin();
+	   local_it = b_local_columns.begin(),
+	rng_dist_it = b_rng_dists.begin();
 	  global_it != b_global_columns.end();
-	  ++global_it, ++local_it )
+	  ++global_it, ++local_it, ++rng_dist_it )
     {
+	*rng_dist_it = RDT::create( 0, (*global_it)->size()-1 );
 	*local_it = Teuchos::rcp(
 	    new Teuchos::Array<int>((*global_it)->size()) );
 	for ( gcol_it = (*global_it)->begin(),
@@ -600,7 +554,7 @@ void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::addMatrixToDomain(
     int ipoffset = 0;
     int max_entries = MT::getGlobalMaxNumRowEntries( *A );
     std::size_t num_entries = 0;
-    Teuchos::Array<double>::iterator cdf_iterator;
+    Teuchos::Array<double> values( max_entries );
 
     // Add row-by-row.
     for ( Ordinal i = 0; i < local_num_rows; ++i )
@@ -612,51 +566,46 @@ void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::addMatrixToDomain(
 	global_row = MT::getGlobalRow(*A, i);
 	b_g2l_row_indexer[global_row] = ipoffset;
 
-	// Allocate column and CDF memory for this row.
+	// Allocate column and value memory for this row.
         b_global_columns[ipoffset] = 
             Teuchos::rcp( new Teuchos::Array<Ordinal>(max_entries) );
-	b_cdfs[ipoffset].resize( max_entries );
+	values.resize( max_entries );
 
 	// Add the columns and base PDF values for this row.
 	MT::getGlobalRowCopy( *A, 
 			      global_row,
 			      (*b_global_columns[ipoffset])(), 
-			      b_cdfs[ipoffset](),
+			      values(),
 			      num_entries );
 
 	// Check for degeneracy.
 	MCLS_CHECK( num_entries > 0 );
 
-	// Resize local column and CDF arrays for this row.
+	// Resize local column array for this row.
 	b_global_columns[ipoffset]->resize( num_entries );
-	b_cdfs[ipoffset].resize( num_entries );
 
 	// Create the iteration matrix.
 	for ( std::size_t j = 0; j < num_entries; ++j )
 	{
 	    // Subtract the operator from the identity matrix.
-	    b_cdfs[ipoffset][j] = 
-		( (*b_global_columns[ipoffset])[j] == global_row ) ?
-		1.0 - relaxation*b_cdfs[ipoffset][j] : 
-		-relaxation*b_cdfs[ipoffset][j];
+	    values[j] = ( (*b_global_columns[ipoffset])[j] == global_row ) ?
+		1.0 - relaxation*values[j] : -relaxation*values[j];
 
 	    // Mark any zero entries.
-	    if ( std::abs(b_cdfs[ipoffset][j]) < 
+	    if ( std::abs(values[j]) < 
 		 std::numeric_limits<double>::epsilon() )
 	    {
-		b_cdfs[ipoffset][j] = std::numeric_limits<double>::max();
+		values[j] = std::numeric_limits<double>::max();
 		(*b_global_columns[ipoffset])[j] = 
 		    Teuchos::OrdinalTraits<Ordinal>::invalid();
 	    }
 	}
 
 	// Extract any zero entries from the iteration matrix.
-	Teuchos::Array<double>::iterator cdf_remove_it;
-	cdf_remove_it = std::remove( b_cdfs[ipoffset].begin(), 
-				     b_cdfs[ipoffset].end(),
-				     std::numeric_limits<double>::max() );
-	b_cdfs[ipoffset].resize( 
-	    std::distance(b_cdfs[ipoffset].begin(), cdf_remove_it) );
+	Teuchos::Array<double>::iterator value_remove_it;
+	value_remove_it = std::remove( 
+	    values.begin(), values.end(), std::numeric_limits<double>::max() );
+	values.resize( std::distance(values.begin(),value_remove_it) );
 
 	typename Teuchos::Array<Ordinal>::iterator col_remove_it;
 	col_remove_it = std::remove( b_global_columns[ipoffset]->begin(), 
@@ -665,35 +614,9 @@ void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::addMatrixToDomain(
 	b_global_columns[ipoffset]->resize( 
 	    std::distance(b_global_columns[ipoffset]->begin(), col_remove_it) );
 
-        // Save the current cdf state as the iteration matrix.
-        b_h[ipoffset] = Teuchos::ArrayRCP<double>( b_cdfs[ipoffset].size() );
-        std::copy( b_cdfs[ipoffset].begin(), b_cdfs[ipoffset].end(),
-                   b_h[ipoffset].begin() );
-
-	// Accumulate the absolute value of the PDF values to get a
-	// non-normalized CDF for the row.
-	b_cdfs[ipoffset].front() = std::abs( b_cdfs[ipoffset].front() );
-	for ( cdf_iterator = b_cdfs[ipoffset].begin()+1;
-	      cdf_iterator != b_cdfs[ipoffset].end();
-	      ++cdf_iterator )
-	{
-	    *cdf_iterator = std::abs( *cdf_iterator ) + *(cdf_iterator-1);
-	}
-
-	// The final value in the non-normalized CDF is the weight for this
-	// row. This is the absolute value row sum of the iteration matrix.
-	b_weights[ipoffset] = b_cdfs[ipoffset].back();
-	MCLS_CHECK( b_weights[ipoffset] > 0.0 );
-
-	// Normalize the CDF for the row.
-	for ( cdf_iterator = b_cdfs[ipoffset].begin();
-	      cdf_iterator != b_cdfs[ipoffset].end();
-	      ++cdf_iterator )
-	{
-	    *cdf_iterator /= b_weights[ipoffset];
-	    MCLS_CHECK( *cdf_iterator >= 0.0 );
-	}
-	MCLS_CHECK( 1.0 == b_cdfs[ipoffset].back() );
+        // Save the current values as the iteration matrix.
+        b_h[ipoffset] = Teuchos::ArrayRCP<double>( values.size() );
+        std::copy( values.begin(), values.end(), b_h[ipoffset].begin() );
 
         // If we're using the collision estimator, add the global row as a
         // local tally state.
