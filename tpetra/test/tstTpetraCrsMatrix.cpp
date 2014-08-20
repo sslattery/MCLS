@@ -929,7 +929,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, multiply, LO, GO, Scalar )
     Teuchos::RCP<MatrixType> B = A;
     Teuchos::RCP<MatrixType> C = MT::copyTranspose( *B );
     Teuchos::RCP<MatrixType> D = MT::clone( *A );
-    MT::multiply( B, C, D, false );
+    MT::multiply( B, false, C, false, D );
 
     std::size_t num_entries;
     Teuchos::Array<LO> view_columns(3);

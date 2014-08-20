@@ -151,19 +151,19 @@ LinearProblem<Vector,Matrix>::getCompositeOperator() const
     if ( left_prec && right_prec )
     {
         Teuchos::RCP<Matrix> temp = MT::clone( *d_A );
-	MT::multiply( d_A, d_PR, temp, false );
+	MT::multiply( d_A, false, d_PR, false, temp );
         composite = MT::clone( *d_PL );
-	MT::multiply( d_PL, temp, composite, false );
+	MT::multiply( d_PL, false, temp, false, composite );
     }
     else if ( left_prec )
     {
         composite = MT::clone( *d_PL );
-	MT::multiply( d_PL, d_A, composite, false );
+	MT::multiply( d_PL, false, d_A, false, composite );
     }
     else if ( right_prec )
     {
         composite = MT::clone( *d_A );
-	MT::multiply( d_A, d_PR, composite, false );
+	MT::multiply( d_A, false, d_PR, false, composite );
     }
     else
     {
@@ -190,73 +190,26 @@ LinearProblem<Vector,Matrix>::getTransposeCompositeOperator() const
     {
         Teuchos::RCP<Matrix> temp;
         {
-            Teuchos::RCP<Matrix> PL_T = MT::copyTranspose( *d_PL );
-            Teuchos::RCP<Matrix> A_T = MT::copyTranspose( *d_A );
-            temp = MT::clone( *A_T );
-            MT::multiply( A_T, PL_T, temp, false );
+            temp = MT::clone( *d_A );
+            MT::multiply( d_A, true, d_PL, true, temp );
         }
-        Teuchos::RCP<Matrix> PR_T = MT::copyTranspose( *d_PR );
-        composite = MT::clone( *PR_T );        
-	MT::multiply( PR_T, temp, composite, false );
+        composite = MT::clone( *d_PR );        
+	MT::multiply( d_PR, true, temp, false, composite );
     }
     else if ( right_prec )
     {
-        Teuchos::RCP<Matrix> A_T = MT::copyTranspose( *d_A );
-        Teuchos::RCP<Matrix> PR_T = MT::copyTranspose( *d_PR );
-        composite = MT::clone( *PR_T );
-	MT::multiply( PR_T, A_T, composite, false );
+        composite = MT::clone( *d_PR );
+	MT::multiply( d_PR, true, d_A, true, composite );
     }
     else if ( left_prec )
     {
-        Teuchos::RCP<Matrix> A_T = MT::copyTranspose( *d_A );
-        composite = MT::clone( *A_T );
-        Teuchos::RCP<Matrix> PL_T = MT::copyTranspose( *d_PL );
-	MT::multiply( A_T, PL_T, composite, false );
+        composite = MT::clone( *d_A );
+	MT::multiply( d_A, true, d_PL, true, composite );
     }
     else
     {
 	composite = MT::copyTranspose( *d_A );
     }
-
-    return composite;
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Get the symmetric part of the composite linear operator.
- */
-template<class Vector, class Matrix>
-Teuchos::RCP<const Matrix> 
-LinearProblem<Vector,Matrix>::getCompositeOperatorSymmetricPart() const
-{
-    const bool left_prec = Teuchos::nonnull( d_PL );
-    const bool right_prec = Teuchos::nonnull( d_PR );
-
-    Teuchos::RCP<Matrix> composite;
-
-    if ( left_prec && right_prec )
-    {
-        Teuchos::RCP<Matrix> temp = MT::clone( *d_A );
-	MT::multiply( d_A, d_PR, temp, false );
-        composite = MT::clone( *d_PL );
-	MT::multiply( d_PL, temp, composite, false );
-    }
-    else if ( left_prec )
-    {
-        composite = MT::clone( *d_PL );
-	MT::multiply( d_PL, d_A, composite, false );
-    }
-    else if ( right_prec )
-    {
-        composite = MT::clone( *d_A );
-	MT::multiply( d_A, d_PR, composite, false );
-    }
-    else
-    {
-	composite = Teuchos::rcp_const_cast<Matrix>( d_A );
-    }
-
-    MT::add( composite, true, 0.5, composite, 0.5 );
 
     return composite;
 }

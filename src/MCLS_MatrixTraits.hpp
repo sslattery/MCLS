@@ -354,10 +354,11 @@ class MatrixTraits
     /*!
      * \brief Matrix-Matrix multiply C = A*B.
      */
-    static void multiply( const Teuchos::RCP<const Matrix>& A, 
-			  const Teuchos::RCP<const Matrix>& B, 
-			  const Teuchos::RCP<Matrix>& C,
-                          bool use_transpose )
+    static void multiply( const Teuchos::RCP<const Matrix>& A,
+			  bool tranpose_A,
+			  const Teuchos::RCP<const Matrix>& B,
+			  bool transpose_B,
+			  const Teuchos::RCP<Matrix>& C )
     { UndefinedMatrixTraits<Vector,Matrix>::notDefined(); }
 
     /*!

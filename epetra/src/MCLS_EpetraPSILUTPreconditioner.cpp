@@ -165,9 +165,9 @@ void EpetraPSILUTPreconditioner::buildPreconditioner()
     Teuchos::RCP<Epetra_RowMatrix> composite;
     {
         Teuchos::RCP<Epetra_RowMatrix> temp = MT::clone( *d_A );
-        MT::multiply( d_A, d_u_inv, temp, false );
+        MT::multiply( d_A, false, d_u_inv, false, temp );
         composite = MT::clone( *l_inv );
-        MT::multiply( l_inv, temp, composite, false );
+        MT::multiply( l_inv, false, temp, false, composite );
     }
 
     std::cout << "MCLS PSILUT: Computing SPAINV Preconditioner" << std::endl;
@@ -180,7 +180,7 @@ void EpetraPSILUTPreconditioner::buildPreconditioner()
 
     // Build the composite left preconditioner.
     d_m_inv = MT::clone( *spainv );
-    MT::multiply( spainv, l_inv, d_m_inv, false );
+    MT::multiply( spainv, false, l_inv, false, d_m_inv );
 
     timer.stop();
     std::cout << "MCLS PSILUT: Complete in " << timer.totalElapsedTime() 

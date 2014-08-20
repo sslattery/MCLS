@@ -122,10 +122,11 @@ class EpetraMatrixHelpers
     /*!
      * \brief Matrix-Matrix multiply C = A*B
      */
-    static void multiply( const Teuchos::RCP<const matrix_type>& A, 
-			  const Teuchos::RCP<const matrix_type>& B, 
-			  const Teuchos::RCP<matrix_type>& C,
-                          bool use_transpose )
+    static void multiply( const Teuchos::RCP<const matrix_type>& A,
+			  bool transpose_A,
+			  const Teuchos::RCP<const matrix_type>& B,
+			  bool transpose_B,
+			  const Teuchos::RCP<matrix_type>& C )
     { UndefinedEpetraHelpers<Matrix>::notDefined(); }
 
     /*!
@@ -285,10 +286,11 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
     /*!
      * \brief Matrix-Matrix multiply C = A*B
      */
-    static void multiply( const Teuchos::RCP<const matrix_type>& A, 
-			  const Teuchos::RCP<const matrix_type>& B, 
-			  const Teuchos::RCP<matrix_type>& C,
-                          bool use_transpose )
+    static void multiply( const Teuchos::RCP<const matrix_type>& A,
+			  bool transpose_A,
+			  const Teuchos::RCP<const matrix_type>& B,
+			  bool transpose_B,
+			  const Teuchos::RCP<matrix_type>& C )
     {
 	Teuchos::RCP<const Epetra_CrsMatrix> A_crs =
 	    Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>( A );
@@ -316,7 +318,7 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
 	}
 
 	int error = EpetraExt::MatrixMatrix::Multiply( 
-	    *A_crs, use_transpose, *B_crs, use_transpose, *C_crs );
+	    *A_crs, transpose_A, *B_crs, transpose_B, *C_crs );
         MCLS_CHECK( error == 0 );
     }
 

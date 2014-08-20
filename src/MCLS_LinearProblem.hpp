@@ -112,9 +112,6 @@ class LinearProblem
     // Get the transposed composite linear operator.
     Teuchos::RCP<const Matrix> getTransposeCompositeOperator() const;
 
-    // Get the symmetric part of the composite linear operator.
-    Teuchos::RCP<const Matrix> getCompositeOperatorSymmetricPart() const;
-
     //! Get the residual vector. 
     Teuchos::RCP<const Vector> getResidual() const { return d_r; }
 
