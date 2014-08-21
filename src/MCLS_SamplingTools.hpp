@@ -64,22 +64,19 @@ class SamplingTools
      * \brief Given a discrete CDF and random number, sample it to get the
      * output state. 
      */
-    static inline Teuchos::ArrayView<const double>::size_type
-    sampleDiscreteCDF( const Teuchos::ArrayView<const double>& cdf, 
-		       const double& random )
+    template<class T>
+    static inline int
+    sampleDiscreteCDF( const T* cdf,
+		       const int size,
+		       const T& random )
     {
-	MCLS_REQUIRE( cdf.size() > 0 );
-	MCLS_REQUIRE( std::abs( cdf[cdf.size()-1] - 1.0 ) < 1.0e-8 );
+	MCLS_REQUIRE( size > 0 );
+	MCLS_REQUIRE( std::abs( cdf[size-1] - 1.0 ) < 1.0e-6 );
 	MCLS_REQUIRE( random >= 0.0 && random <= 1.0 );
-
-	Teuchos::ArrayView<const double>::iterator bin_iterator =
-	    std::lower_bound( cdf.begin(), cdf.end(), random );
-
-	Teuchos::ArrayView<const double>::size_type bin =
-	    std::distance( cdf.begin(), bin_iterator );
-
-	MCLS_ENSURE( bin >= 0 && bin < cdf.size() );
-	return bin;
+	MCLS_REMEMBER( const T *bin = std::lower_bound(cdf, cdf+size, random) );
+	MCLS_ENSURE( bin - cdf >= 0 && bin - cdf < size );
+	
+	return std::lower_bound( cdf, cdf+size, random ) - cdf;
     }
 };
 

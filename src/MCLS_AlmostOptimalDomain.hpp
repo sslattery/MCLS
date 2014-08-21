@@ -272,7 +272,8 @@ inline void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::processTransition(
 
     // Sample the row CDF to get a new outgoing state.
     int out_state = 
-	SamplingTools::sampleDiscreteCDF( b_cdfs[in_state](),
+	SamplingTools::sampleDiscreteCDF( b_cdfs[in_state].getRawPtr(),
+					  b_cdfs[in_state].size(),
 					  b_rng->random(*b_rng_dist) );
 
     // Set the new local state with the history.
@@ -282,7 +283,8 @@ inline void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::processTransition(
     HT::setGlobalState( history, (*b_global_columns[in_state])[out_state] );
 
     // Update the history weight with the transition weight.
-    int transition_sign = (b_h[in_state][out_state] < 0.0) ? -1 : 1;
+    int transition_sign = (b_h[in_state][out_state] > 0.0) - 
+			  (b_h[in_state][out_state] < 0.0);
     HT::multiplyWeight( history, b_weights[in_state]*transition_sign );
 }
 
