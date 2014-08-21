@@ -32,6 +32,8 @@ APPEND_SET(HEADERS
   MCLS_AdjointTally_impl.hpp
   MCLS_AlmostOptimalDomain.hpp
   MCLS_AlmostOptimalDomain_impl.hpp
+  MCLS_AndersonSolverManager.hpp
+  MCLS_AndersonSolverManager_impl.hpp
   MCLS_CommHistoryBuffer.hpp
   MCLS_CommHistoryBuffer_impl.hpp
   MCLS_CommTools.hpp
