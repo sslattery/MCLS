@@ -60,7 +60,7 @@ namespace MCLS
 //---------------------------------------------------------------------------//
 template<class Vector, class Matrix>
 MCSAStatusTest<Vector,Matrix>::MCSAStatusTest( double itolerance, 
-					      const NOX::Utils* u ) 
+					       const NOX::Utils* u ) 
     : tolerance( d_tolerance )
 {
     if (u != NULL)

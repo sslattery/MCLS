@@ -90,8 +90,15 @@ class ThyraVectorExtraction
     }
 
     static Teuchos::RCP<vector_type>
-    getVector( const Teuchos::RCP<Thyra::VectorBase<scalar_type>& thyra_vector,
+    getVector( const Teuchos::RCP<Thyra::VectorBase<scalar_type> >& thyra_vector,
 	       const vector_type& vector )
+    {
+	UndefinedThyraVectorExtraction<vector_type>::notDefined();
+	return Teuchos::null;
+    }
+
+    static Teuchos::RCP<Thyra::VectorBase<scalar_type> >
+    createThyraVector( const vector_type& vector )
     {
 	UndefinedThyraVectorExtraction<vector_type>::notDefined();
 	return Teuchos::null;
@@ -117,10 +124,16 @@ class ThyraVectorExtraction<Epetra_Vector>
     }
 
     static Teuchos::RCP<vector_type>
-    getVector( const Teuchos::RCP<Thyra::VectorBase<scalar_type>& thyra_vector,
+    getVector( const Teuchos::RCP<Thyra::VectorBase<scalar_type> >& thyra_vector,
 	       const vector_type& vector )
     {
 	return Thyra::get_Epetra_Vector( vector.Map(), thyra_vector );
+    }
+
+    static Teuchos::RCP<Thyra::VectorBase<scalar_type> >
+    createThyraVector( const Teuchos::RCP<vector_type>& vector )
+    {
+	return Thyra::create_Vector( vector, createVectorSpace(*vector) );
     }
 };
 
@@ -143,11 +156,17 @@ class ThyraVectorExtraction<Tpetra::Vector<Scalar,LO,GO> >
     }
 
     static Teuchos::RCP<vector_type>
-    getVector( const Teuchos::RCP<Thyra::VectorBase<scalar_type>& thyra_vector,
+    getVector( const Teuchos::RCP<Thyra::VectorBase<scalar_type> >& thyra_vector,
 	       const vector_type& vector )
     {
 	return TpetraOperatorVectorExtraction<Scalar,LO,GO>::getTpetraVector(
 	    thyra_vector );
+    }
+
+    static Teuchos::RCP<Thyra::VectorBase<scalar_type> >
+    createThyraVector( const Teuchos::RCP<vector_type>& vector )
+    {
+	return Thyra::create_Vector( vector, createVectorSpace(*vector) );
     }
 };
 

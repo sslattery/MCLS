@@ -75,7 +75,7 @@ class MCSAModelEvaluator :
     typedef Vector                                       vector_type;
     typedef VectorTraits<vector_type>                    VT;
     typedef typename VT::scalar_type                     Scalar;
-    typedef ::Thyra::StateFuncModelEvaluatorBase<double> Base;
+    typedef ::Thyra::StateFuncModelEvaluatorBase<Scalar> Base;
     typedef Matrix                                       matrix_type;
     typedef MatrixTraits<vector_type,matrix_type>        MT;
     typedef LinearProblem<vector_type,matrix_type>       LinearProblemType;
@@ -132,8 +132,8 @@ class MCSAModelEvaluator :
 
   private:
 
-    Teuchos::RCP<const Thyra::VectorSpaceBase<double> > d_x_space;
-    Teuchos::RCP<const Thyra::VectorSpaceBase<double> > d_f_space;
+    Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > d_x_space;
+    Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > d_f_space;
 
   private:
 
@@ -154,6 +154,9 @@ class MCSAModelEvaluator :
 
     // Preconditioner.
     Teuchos::RCP<const matrix_type> d_M;
+
+    // Residual
+    Teuchos::RCP<vector_type> d_r;
 
     // Residual linear problem
     Teuchos::RCP<LinearProblemType> d_mc_problem;

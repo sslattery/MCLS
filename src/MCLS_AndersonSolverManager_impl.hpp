@@ -47,6 +47,7 @@
 
 #include "MCLS_DBC.hpp"
 #include "MCLS_ThyraVectorExtraction.hpp"
+#include "MCLS_MCSAStatusTest.hpp"
 
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_Ptr.hpp>
@@ -67,12 +68,10 @@ AndersonSolverManager<Vector,Matrix,RNG>::AndersonSolverManager(
     : d_global_comm( global_comm )
     , d_plist( plist )
     , d_model_evaluator( global_comm, plist )
-    , d_nox_solver( new ::Thyra::NOXNonlinearSolver )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
     d_plist->set( "Nonlinear Solver", "Anderson Accelerated Fixed-Point" );
-    d_nox_solver->setParameterList( d_plist );
 }
 
 //---------------------------------------------------------------------------//
@@ -175,16 +174,43 @@ bool AndersonSolverManager<Vector,Matrix,RNG>::solve()
 
     // Create a Thyra vector from our initial guess.
     Teuchos::RCP< ::Thyra::VectorBase<double> > x0 = 
-	Thyra::create_Vector(
-	    d_problem->getLHS(),
-	    Thyra::createVectorSpace(d_problem->getLHS()->Map()) );
-	
+	ThyraVectorExtraction<Vector>::createThyraVector( d_problem->getLHS() );
+    NOX::Thyra::Vector nox_x0( x0 );
+
     // Create the solve criteria.
-    ::Thyra::SolveCriteria<double> solve_criteria;
-    ::Thyra::SolveStatus<double> solve_status;
+    typename Teuchos::ScalarTraits<double>::magnitudeType tolerance = 1.0e-8;
+    if ( d_plist->isParameter("Convergence Tolerance") )
+    {
+	tolerance = d_plist->get<double>("Convergence Tolerance");
+    }
+    Teuchos::RCP<MCSAStatusTest<Vector,Matrix> > tol_test= Teuchos::rcp(
+	new MCSAStatusTest<Vector,Matrix>(tolerance) );
+    int max_num_iters = 1000;
+    if ( d_plist->isParameter("Maximum Iterations") )
+    {
+        max_num_iters = d_plist->get<int>("Maximum Iterations");
+    }
+    Teuchos::RCP<NOX::StatusTest::MaxIters> max_iter_test =
+	Teuchos::rcp( new NOX::StatusTest::MaxIters(max_num_iters) );
+    Teuchos::RCP<NOX::StatusTest::FiniteValue> finite_test =
+	Teuchos::rcp(new NOX::StatusTest::FiniteValue);
+    Teuchos::RCP<NOX::StatusTest::Combo> status_test =
+	Teuchos::rcp( new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR) );
+    status_test->add( tol_test );
+    status_test->add( max_iter_test );
+    status_test->add( finite_test );
+
+    // Create the NOX group.
+    Teuchos::RCP<NOX::Abstract::Group> nox_group = Teuchos::rcp(
+	new NOX::Thyra::Group(nox_X0, d_model_evaluator) );
+
+    // Create the NOX solver.
+    NOX::Solver::Factory nox_factory;
+    Teuchos::RCP<NOX::Solver::Generic> nox_solver = 
+	nox_factory.buildSolver( nox_group, status_test, d_plist );
 
     // Solve the problem.
-    solve_status = solver->solve(initial_guess.get(), &solve_criteria);
+    NOX::StatusTest::StatusType solve_status = solver->solve();
 
     // Extract the solution.
     Teuchos::RCP< ::Thyra::NOXNonlinearSolver> thyra_nox_solver =

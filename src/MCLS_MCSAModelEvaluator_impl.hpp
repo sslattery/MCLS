@@ -101,6 +101,10 @@ MCSAModelEvaluator::MCSAModelEvaluator(
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
+    // Create the resiudal.
+    d_r = MT::cloneVectorFromMatrixDomain( *d_A );
+
+    // Create the vector space for the LHS.
     Teuchos::RCP<Vector> domain_vector = MT::cloneVectorFromMatrixDomain( *d_A );
     d_x_space = 
 	ThyraVectorExtraction<Vector>::createVectorSpace( *domain_vector );
@@ -130,6 +134,9 @@ void MCSAModelEvaluator::setProblem(
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
+    // Create the resiudal.
+    d_r = MT::cloneVectorFromMatrixDomain( *d_A );
+
     // Determine if the linear operator has changed. It is presumed the
     // preconditioners are bound to the linear operator and will therefore
     // change when the operator changes. The mechanism here for determining if
@@ -146,6 +153,7 @@ void MCSAModelEvaluator::setProblem(
     d_b = b;
     d_M = M;
 
+    // Create the vector space for the LHS.
     Teuchos::RCP<Vector> domain_vector = MT::cloneVectorFromMatrixDomain( *d_A );
     d_x_space = 
 	ThyraVectorExtraction<Vector>::createVectorSpace( *domain_vector );
@@ -208,24 +216,23 @@ MCSAModelEvaluator::getPrecResidual( const Teuchos::RCP<vector_type>& x ) const
     MCLS_REQUIRE( Teuchos::nonnull(x) );
     MCLS_REQUIRE( Teuchos::nonnull(d_b) );
 
-    Teuchos::RCP<vector_type> r = VT::clone( *x );
-    MT::apply( *d_A, *x, *r );
-    VT::update( *r, -1.0, *d_b, 1.0 );
+    MT::apply( *d_A, *x, *d_r );
+    VT::update( *d_r, -1.0, *d_b, 1.0 );
 
     // Apply left preconditioning if necessary.
     if ( Teuchos::nonnull(d_M) )
     {
-        Teuchos::RCP<Vector> temp = VT::deepCopy( *r );
-	MT::apply( *d_M, *temp, *r );
+        Teuchos::RCP<Vector> temp = VT::deepCopy( *d_r );
+	MT::apply( *d_M, *temp, *d_r );
     }
 
-    return r;
+    return d_r;
 }
 
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
 template<class Vector, class Matrix, class RNG>
-Teuchos::RCP<const Thyra::VectorSpaceBase<double> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 MCSAModelEvaluator::get_x_space() const
 {
   return d_x_space;
@@ -234,7 +241,7 @@ MCSAModelEvaluator::get_x_space() const
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
 template<class Vector, class Matrix, class RNG>
-Teuchos::RCP<const Thyra::VectorSpaceBase<double> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 MCSAModelEvaluator::get_f_space() const
 {
   return d_f_space;
@@ -243,7 +250,7 @@ MCSAModelEvaluator::get_f_space() const
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
 template<class Vector, class Matrix, class RNG>
-Thyra::ModelEvaluatorBase::InArgs<double>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
 MCSAModelEvaluator::getNominalValues() const
 {
     ::Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
@@ -256,7 +263,7 @@ MCSAModelEvaluator::getNominalValues() const
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
 template<class Vector, class Matrix, class RNG>
-Thyra::ModelEvaluatorBase::InArgs<double>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
 MCSAModelEvaluator::createInArgs() const
 {
     ::Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
@@ -268,7 +275,7 @@ MCSAModelEvaluator::createInArgs() const
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
 template<class Vector, class Matrix, class RNG>
-Thyra::ModelEvaluatorBase::OutArgs<double>
+Thyra::ModelEvaluatorBase::OutArgs<Scalar>
 MCSAModelEvaluator::createOutArgsImpl() const
 {
     ::Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
@@ -319,6 +326,9 @@ bool MCSAModelEvaluator::evalModelImpl(
 
     // Apply the correction.
     VT::update( *f, 1.0, *d_mc_problem->getLHS(), 1.0 );
+
+    // Compute the resiudal.
+    VT::update( *f, 1.0, *x, -1.0 );
 
     // Barrier before proceeding.
     d_global_comm->barrier();

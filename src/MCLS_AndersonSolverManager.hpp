@@ -56,7 +56,7 @@
 
 #include <NOX.H>
 #include <NOX_Abstract_PrePostOperator.H>
-#include <NOX_Thyra.H>
+#include <NOX_Solver_Generic.H>
 
 namespace MCLS
 {
@@ -142,7 +142,7 @@ class AndersonSolverManager : public SolverManager<Vector,Matrix>
     Teuchos::RCP<Teuchos::ParameterList> d_plist;
 
     // NOX solver.
-    Teuchos::RCP< ::Thyra::NonlinearSolverBase<double> > d_nox_solver;
+    Teuchos::RCP<NOX::Solver::Generic> d_nox_solver;
 };
 
 //---------------------------------------------------------------------------//
