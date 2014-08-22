@@ -43,6 +43,7 @@
 
 #include "MCLS_MCSAModelEvaluator.hpp"
 #include "MCLS_VectorTraits.hpp"
+#include "MCLS_ThyraVectorExtraction.hpp"
 
 #include <NOX_Common.H>
 #include <NOX_Abstract_Vector.H>
@@ -59,19 +60,17 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 template<class Vector, class Matrix>
-MCSAStatusTest<Vector,Matrix>::MCSAStatusTest( double itolerance, 
+MCSAStatusTest<Vector,Matrix>::MCSAStatusTest( double tolerance, 
 					       const NOX::Utils* u ) 
-    : tolerance( d_tolerance )
+    : d_tolerance( tolerance )
 {
-    if (u != NULL)
-	d_utils = *u;
+    if (u != NULL) d_utils = *u;
 }
 
 //---------------------------------------------------------------------------//
 template<class Vector, class Matrix>
-NOX::StatusTest::StatusType MCSAStatusTest<Vector,Matrix>::
-checkStatus(const NOX::Solver::Generic& problem,
-            NOX::StatusTest::CheckType checkType)
+NOX::StatusTest::StatusType MCSAStatusTest<Vector,Matrix>::checkStatus(
+    const NOX::Solver::Generic& problem, NOX::StatusTest::CheckType checkType )
 {
     const NOX::Thyra::Group& group
 	= dynamic_cast< const NOX::Thyra::Group& >(problem.getSolutionGroup());
@@ -85,7 +84,20 @@ checkStatus(const NOX::Solver::Generic& problem,
 	d_b_norm = VectorTraits<Vector>::norm2( *model->getRHS() );
     }
 
-    d_r_norm = VectorTraits<Vector>::norm2( *model->getPrecResidual(group.getX()) );
+    // Compute the preconditioned residual of the linear system.
+    Teuchos::RCP<const NOX::Abstract::Vector> x = group.getXPtr();
+    Teuchos::RCP<const NOX::Thyra::Vector> nox_thyra_x =
+	Teuchos::rcp_dynamic_cast<const NOX::Thyra::Vector>(x,true);
+    Teuchos::RCP< ::Thyra::VectorBase<double> > thyra_x =
+	Teuchos::rcp_const_cast< ::Thyra::VectorBase<double> >(
+	    nox_thyra_x->getThyraRCPVector());
+    Teuchos::RCP<Vector> x_space_vector = 
+	MatrixTraits<Vector,Matrix>::cloneVectorFromMatrixDomain( 
+	    *model->getOperator() );
+    Teuchos::RCP<Vector> x_vector = 
+	ThyraVectorExtraction<Vector>::getVectorNonConst( 
+	    thyra_x, *x_space_vector );
+    d_r_norm = VectorTraits<Vector>::norm2( *model->getPrecResidual(x_vector) );
 
     if (checkType == NOX::StatusTest::None)
     {
@@ -93,7 +105,7 @@ checkStatus(const NOX::Solver::Generic& problem,
     }
     else
     {
-	d_status = (d_r_norm < tolerance * d_b_norm) ? 
+	d_status = (d_r_norm < d_tolerance * d_b_norm) ? 
 		   NOX::StatusTest::Converged : NOX::StatusTest::Unconverged;
     }
 
@@ -113,12 +125,12 @@ template<class Vector, class Matrix>
 std::ostream& MCSAStatusTest<Vector,Matrix>::
 print(std::ostream& stream, int indent) const
 {
-    for (int j = 0; j < indent; j ++)
-	stream << ' ';
+    for (int j = 0; j < indent; j ++) stream << ' ';
+
     stream << d_status;
     stream << "MCSA |r|_2 / |b|_2 = " 
 	   << NOX::Utils::sciformat(d_r_norm/d_b_norm,3);
-    stream << " < " << NOX::Utils::sciformat(tolerance);
+    stream << " < " << NOX::Utils::sciformat(d_tolerance,3);
 
     return stream;
 }

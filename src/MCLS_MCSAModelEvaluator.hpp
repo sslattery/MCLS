@@ -38,8 +38,8 @@
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_MCSASOLVERMANAGER_HPP
-#define MCLS_MCSASOLVERMANAGER_HPP
+#ifndef MCLS_MCSAMODELEVALUATOR_HPP
+#define MCLS_MCSAMODELEVALUATOR_HPP
 
 #include <random>
 
@@ -89,28 +89,28 @@ class MCSAModelEvaluator :
     // Constructor.
     MCSAModelEvaluator( const Teuchos::RCP<const Comm>& global_comm,
 			const Teuchos::RCP<Teuchos::ParameterList>& plist,
-			const Teuchos::RCP<const matrix_type>& A,
-			const Teuchos::RCP<const vector_type>& b,
-			const Teuchos::RCP<const matrix_type>& M = Teuchos::null );
+			const Teuchos::RCP<const Matrix>& A,
+			const Teuchos::RCP<const Vector>& b,
+			const Teuchos::RCP<const Matrix>& M = Teuchos::null );
 
     //! Destructor.
     ~MCSAModelEvaluator() { /* ... */ }
 
     // Set the linear problem with the manager.
-    void setProblem( const Teuchos::RCP<const matrix_type>& A,
-		     const Teuchos::RCP<const vector_type>& b,
-		     const Teuchos::RCP<const matrix_type>& M = Teuchos::null );
+    void setProblem( const Teuchos::RCP<const Matrix>& A,
+		     const Teuchos::RCP<const Vector>& b,
+		     const Teuchos::RCP<const Matrix>& M = Teuchos::null );
 
     // Set the parameters for the manager. The manager will modify this list
     // with default parameters that are not defined.
     void setParameters( const Teuchos::RCP<Teuchos::ParameterList>& params );
 
     // Get the preconditioned residual given a LHS.
-    Teuchos::RCP<vector_type> 
-    getPrecResidual( const Teuchos::RCP<vector_type>& x ) const;
+    Teuchos::RCP<Vector> 
+    getPrecResidual( const Teuchos::RCP<Vector>& x ) const;
 
     // Get the RHS.
-    Teuchos::RCP<vector_type> getRHS() const
+    Teuchos::RCP<Vector> getRHS() const
     { return d_b; }
 
   public:
@@ -137,26 +137,22 @@ class MCSAModelEvaluator :
 
   private:
 
-    // Build the preconditioned residual given the current state.
-    Teuchos::RCP<vector_type> getPrecResidual( 
-	const Teuchos::RCP<vector_type>& x ) const;
-
     // Build the residual Monte Carlo problem from the input problem.
     void buildResidualMonteCarloProblem();
 
   private:
 
     // Linear operator.
-    Teuchos::RCP<const matrix_type> d_A;
+    Teuchos::RCP<const Matrix> d_A;
 
     // Right-hand side.
-    Teuchos::RCP<const vector_type> d_b;
+    Teuchos::RCP<const Vector> d_b;
 
     // Preconditioner.
-    Teuchos::RCP<const matrix_type> d_M;
+    Teuchos::RCP<const Matrix> d_M;
 
     // Residual
-    Teuchos::RCP<vector_type> d_r;
+    Teuchos::RCP<Vector> d_r;
 
     // Residual linear problem
     Teuchos::RCP<LinearProblemType> d_mc_problem;
@@ -168,10 +164,7 @@ class MCSAModelEvaluator :
     Teuchos::RCP<Teuchos::ParameterList> d_plist;
 
     // Monte Carlo solver manager.
-    Teuchos::RCP<SolverManager<vector_type,matrix_type> > d_mc_solver;
-
-    // Fixed point iteration.
-    Teuchos::RCP<FixedPointType> d_fixed_point;
+    Teuchos::RCP<SolverManager<Vector,Matrix> > d_mc_solver;
 
     // Number of smoothing steps.
     int d_num_smooth;

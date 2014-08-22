@@ -67,11 +67,12 @@ AndersonSolverManager<Vector,Matrix,RNG>::AndersonSolverManager(
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
     : d_global_comm( global_comm )
     , d_plist( plist )
-    , d_model_evaluator( global_comm, plist )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
     d_plist->set( "Nonlinear Solver", "Anderson Accelerated Fixed-Point" );
+    d_model_evaluator = Teuchos::rcp( 
+	new MCSAModelEvaluator<Vector,Matrix,RNG>(d_global_comm, d_plist) );
 }
 
 //---------------------------------------------------------------------------//
@@ -84,11 +85,6 @@ AndersonSolverManager<Vector,Matrix,RNG>::AndersonSolverManager(
     const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
     : d_problem( problem )
-    , d_model_evaluator( global_comm,
-			 plist,
-			 d_problem->getOperator(), 
-			 d_problem->getRHS(),
-			 d_problem->getLeftPrec() )
     , d_global_comm( global_comm )
     , d_plist( plist )
     , d_nox_solver( new ::Thyra::NOXNonlinearSolver )
@@ -96,7 +92,17 @@ AndersonSolverManager<Vector,Matrix,RNG>::AndersonSolverManager(
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
     d_plist->set( "Nonlinear Solver", "Anderson Accelerated Fixed-Point" );
-    d_nox_solver->setParameterList( d_plist );
+
+    // Create the model evaluator.
+    d_model_evaluator = Teuchos::rcp( 
+	new MCSAModelEvaluator<Vector,Matrix,RNG>(
+	    d_global_comm, d_plist, 
+	    d_problem->getOperator(), d_problem->getRHS(),
+	    d_problem->getLeftPrec()) );
+
+    // Create the nonlinear solver.
+    createNonlinearSolver();
+    MCLS_ENSURE( Teuchos::nonnull(d_nox_solver) );
 }
 
 //---------------------------------------------------------------------------//
@@ -136,9 +142,10 @@ void AndersonSolverManager<Vector,Matrix,RNG>::setProblem(
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_model_evaluator) );
 
     d_problem = problem;
-    d_model_evaluator->setProblem( d_prolem->getOperator(),
+    d_model_evaluator->setProblem( d_problem->getOperator(),
 				   d_problem->getRHS(),
 				   d_problem->getLeftPrec() );
 }
@@ -158,7 +165,10 @@ void AndersonSolverManager<Vector,Matrix,RNG>::setParameters(
     d_plist = params;
     d_model_evaluator->setParameters( params );
     d_plist->set( "Nonlinear Solver", "Anderson Accelerated Fixed-Point" );
-    d_nox_solver->setParameterList( params );
+
+    // Create the nonlinear solver.
+    createNonlinearSolver();
+    MCLS_ENSURE( Teuchos::nonnull(d_nox_solver) );
 }
 
 //---------------------------------------------------------------------------//
@@ -169,14 +179,38 @@ void AndersonSolverManager<Vector,Matrix,RNG>::setParameters(
 template<class Vector, class Matrix, class RNG>
 bool AndersonSolverManager<Vector,Matrix,RNG>::solve()
 {
-    // Set the MCSA model evaluator with NOX.
-    d_nox_solver->setModel(d_model_evaluator);
-
     // Create a Thyra vector from our initial guess.
     Teuchos::RCP< ::Thyra::VectorBase<double> > x0 = 
 	ThyraVectorExtraction<Vector>::createThyraVector( d_problem->getLHS() );
     NOX::Thyra::Vector nox_x0( x0 );
+    d_nox_solver->reset( nox_x0 );
 
+    // Solve the problem.
+    NOX::StatusTest::StatusType solve_status = d_nox_solver->solve();
+
+    // Extract the solution.
+    Teuchos::RCP<const NOX::Abstract::Vector> x = 
+	d_nox_solver->getSolutionGroup().getXPtr();
+    Teuchos::RCP<const NOX::Thyra::Vector> nox_thyra_x =
+	Teuchos::rcp_dynamic_cast<const NOX::Thyra::Vector>(x,true);
+    Teuchos::RCP< ::Thyra::VectorBase<double> > thyra_x =
+	Teuchos::rcp_const_cast< ::Thyra::VectorBase<double> >(
+	    nox_thyra_x->getThyraRCPVector());
+    d_problem->setLHS(
+	ThyraVectorExtraction<Vector>::getVectorNonConst( 
+	    thyra_x, *d_problem->getLHS()) );
+
+    // Return the status of the solve.
+    return solve_status;
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Create the nonlinear solver.
+ */
+template<class Vector, class Matrix, class RNG>
+void AndersonSolverManager<Vector,Matrix,RNG>::createNonlinearSolver()
+{
     // Create the solve criteria.
     typename Teuchos::ScalarTraits<double>::magnitudeType tolerance = 1.0e-8;
     if ( d_plist->isParameter("Convergence Tolerance") )
@@ -188,7 +222,7 @@ bool AndersonSolverManager<Vector,Matrix,RNG>::solve()
     int max_num_iters = 1000;
     if ( d_plist->isParameter("Maximum Iterations") )
     {
-        max_num_iters = d_plist->get<int>("Maximum Iterations");
+	max_num_iters = d_plist->get<int>("Maximum Iterations");
     }
     Teuchos::RCP<NOX::StatusTest::MaxIters> max_iter_test =
 	Teuchos::rcp( new NOX::StatusTest::MaxIters(max_num_iters) );
@@ -196,35 +230,22 @@ bool AndersonSolverManager<Vector,Matrix,RNG>::solve()
 	Teuchos::rcp(new NOX::StatusTest::FiniteValue);
     Teuchos::RCP<NOX::StatusTest::Combo> status_test =
 	Teuchos::rcp( new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR) );
-    status_test->add( tol_test );
-    status_test->add( max_iter_test );
-    status_test->add( finite_test );
+    status_test->addStatusTest( tol_test );
+    status_test->addStatusTest( max_iter_test );
+    status_test->addStatusTest( finite_test );
 
     // Create the NOX group.
+    Teuchos::RCP< ::Thyra::VectorBase<double> > x0 = 
+	ThyraVectorExtraction<Vector>::createThyraVector( d_problem->getLHS() );
+    NOX::Thyra::Vector nox_x0( x0 );
+    MCLS_CHECK( Teuchos::nonnull(d_problem) );
     Teuchos::RCP<NOX::Abstract::Group> nox_group = Teuchos::rcp(
-	new NOX::Thyra::Group(nox_X0, d_model_evaluator) );
+	new NOX::Thyra::Group(nox_x0, d_model_evaluator) );
 
     // Create the NOX solver.
     NOX::Solver::Factory nox_factory;
     Teuchos::RCP<NOX::Solver::Generic> nox_solver = 
 	nox_factory.buildSolver( nox_group, status_test, d_plist );
-
-    // Solve the problem.
-    NOX::StatusTest::StatusType solve_status = solver->solve();
-
-    // Extract the solution.
-    Teuchos::RCP< ::Thyra::NOXNonlinearSolver> thyra_nox_solver =
-	Teuchos::rcp_dynamic_cast< ::Thyra::NOXNonlinearSolver>(solver);
-
-    Teuchos::RCP<const NOX::Abstract::Vector> x = 
-	thyra_nox_solver->getNOXSolver()->getSolutionGroup().getXPtr();
-
-    Teuchos::RCP<const NOX::Thyra::Vector> nox_thyra_x =
-	Teuchos::rcp_dynamic_cast<const NOX::Thyra::Vector>(x,true);
-
-    d_problem->setLHS(
-	ThyraVectorExtraction<Vector>::getVector( 
-	    nox_thyra_x->getThyraRCPVector(), *d_problem->getLHS() );
 }
 
 //---------------------------------------------------------------------------//

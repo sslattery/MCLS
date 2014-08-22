@@ -472,7 +472,7 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
                 "Fixed point iteration. Iteration type determined by "
                 "'Fixed Point Type' parameter",
 
-		"Anderson acclerated MCSA"
+		"Anderson accelerated MCSA "
 		),
 	    tuple<EMCLSSolverType>(
 		SOLVER_TYPE_MCSA,

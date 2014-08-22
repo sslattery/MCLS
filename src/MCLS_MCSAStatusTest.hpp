@@ -61,7 +61,7 @@ namespace MCLS
  * \brief NOX status test for MCSA.
  */
 template<class Vector, class Matrix>
-class MCSATest : public NOX::StatusTest::Generic 
+class MCSAStatusTest : public NOX::StatusTest::Generic 
 {
 
   public:

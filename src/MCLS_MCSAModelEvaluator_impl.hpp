@@ -62,7 +62,7 @@ namespace MCLS
  * \brief Comm constructor. setProblem() must be called before solve().
  */
 template<class Vector, class Matrix, class RNG>
-MCSAModelEvaluator::MCSAModelEvaluator( 
+MCSAModelEvaluator<Vector,Matrix,RNG>::MCSAModelEvaluator( 
     const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
     : d_global_comm( global_comm )
@@ -73,7 +73,7 @@ MCSAModelEvaluator::MCSAModelEvaluator(
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
     // Set the number of smoothing steps.
-    int d_num_smooth = 1;
+    d_num_smooth = 1;
     if ( d_plist->isParameter("Smoother Steps") )
     {
 	d_num_smooth = d_plist->get<int>("Smoother Steps");
@@ -85,12 +85,12 @@ MCSAModelEvaluator::MCSAModelEvaluator(
  * \brief Constructor.
  */
 template<class Vector, class Matrix, class RNG>
-MCSAModelEvaluator::MCSAModelEvaluator( 
+MCSAModelEvaluator<Vector,Matrix,RNG>::MCSAModelEvaluator( 
     const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist,
-    const Teuchos::RCP<const matrix_type>& A,
-    const Teuchos::RCP<const vector_type>& b,
-    const Teuchos::RCP<const matrix_type>& M )
+    const Teuchos::RCP<const Matrix>& A,
+    const Teuchos::RCP<const Vector>& b,
+    const Teuchos::RCP<const Matrix>& M )
     : d_global_comm( global_comm )
     , d_plist( plist )
     , d_A( A )
@@ -111,7 +111,7 @@ MCSAModelEvaluator::MCSAModelEvaluator(
     d_f_space = d_x_space;
 
     // Set the number of smoothing steps.
-    int d_num_smooth = 1;
+    d_num_smooth = 1;
     if ( d_plist->isParameter("Smoother Steps") )
     {
 	d_num_smooth = d_plist->get<int>("Smoother Steps");
@@ -126,10 +126,10 @@ MCSAModelEvaluator::MCSAModelEvaluator(
  * \brief Set the linear problem with the manager.
  */
 template<class Vector, class Matrix, class RNG>
-void MCSAModelEvaluator::setProblem( 
-    const Teuchos::RCP<const matrix_type>& A,
-    const Teuchos::RCP<const vector_type>& b,
-    const Teuchos::RCP<const matrix_type>& M )
+void MCSAModelEvaluator<Vector,Matrix,RNG>::setProblem( 
+    const Teuchos::RCP<const Matrix>& A,
+    const Teuchos::RCP<const Vector>& b,
+    const Teuchos::RCP<const Matrix>& M )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
@@ -184,14 +184,14 @@ void MCSAModelEvaluator::setProblem(
  * list with default parameters that are not defined.
  */
 template<class Vector, class Matrix, class RNG>
-void MCSAModelEvaluator::setParameters( 
+void MCSAModelEvaluator<Vector,Matrix,RNG>::setParameters( 
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
     MCLS_REQUIRE( Teuchos::nonnull(params) );
     MCLS_REQUIRE( Teuchos::nonnull(d_mc_solver) );
 
     // Set the number of smoothing steps.
-    int d_num_smooth = 1;
+    d_num_smooth = 1;
     if ( d_plist->isParameter("Smoother Steps") )
     {
 	d_num_smooth = d_plist->get<int>("Smoother Steps");
@@ -209,8 +209,9 @@ void MCSAModelEvaluator::setParameters(
  * \brief Get the preconditioned residual given a LHS.
  */
 template<class Vector, class Matrix, class RNG>
-Teuchos::RCP<vector_type> 
-MCSAModelEvaluator::getPrecResidual( const Teuchos::RCP<vector_type>& x ) const
+Teuchos::RCP<Vector> 
+MCSAModelEvaluator<Vector,Matrix,RNG>::getPrecResidual( 
+    const Teuchos::RCP<Vector>& x ) const
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_A) );
     MCLS_REQUIRE( Teuchos::nonnull(x) );
@@ -232,8 +233,8 @@ MCSAModelEvaluator::getPrecResidual( const Teuchos::RCP<vector_type>& x ) const
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
 template<class Vector, class Matrix, class RNG>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-MCSAModelEvaluator::get_x_space() const
+Teuchos::RCP<const Thyra::VectorSpaceBase<typename VectorTraits<Vector>::scalar_type> >
+MCSAModelEvaluator<Vector,Matrix,RNG>::get_x_space() const
 {
   return d_x_space;
 }
@@ -241,8 +242,8 @@ MCSAModelEvaluator::get_x_space() const
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
 template<class Vector, class Matrix, class RNG>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-MCSAModelEvaluator::get_f_space() const
+Teuchos::RCP<const Thyra::VectorSpaceBase<typename VectorTraits<Vector>::scalar_type> >
+MCSAModelEvaluator<Vector,Matrix,RNG>::get_f_space() const
 {
   return d_f_space;
 }
@@ -250,8 +251,8 @@ MCSAModelEvaluator::get_f_space() const
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
 template<class Vector, class Matrix, class RNG>
-Thyra::ModelEvaluatorBase::InArgs<Scalar>
-MCSAModelEvaluator::getNominalValues() const
+Thyra::ModelEvaluatorBase::InArgs<typename VectorTraits<Vector>::scalar_type>
+MCSAModelEvaluator<Vector,Matrix,RNG>::getNominalValues() const
 {
     ::Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
     inArgs.setModelEvalDescription(this->description());
@@ -263,8 +264,8 @@ MCSAModelEvaluator::getNominalValues() const
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
 template<class Vector, class Matrix, class RNG>
-Thyra::ModelEvaluatorBase::InArgs<Scalar>
-MCSAModelEvaluator::createInArgs() const
+Thyra::ModelEvaluatorBase::InArgs<typename VectorTraits<Vector>::scalar_type>
+MCSAModelEvaluator<Vector,Matrix,RNG>::createInArgs() const
 {
     ::Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
     inArgs.setModelEvalDescription(this->description());
@@ -275,8 +276,8 @@ MCSAModelEvaluator::createInArgs() const
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
 template<class Vector, class Matrix, class RNG>
-Thyra::ModelEvaluatorBase::OutArgs<Scalar>
-MCSAModelEvaluator::createOutArgsImpl() const
+Thyra::ModelEvaluatorBase::OutArgs<typename VectorTraits<Vector>::scalar_type>
+MCSAModelEvaluator<Vector,Matrix,RNG>::createOutArgsImpl() const
 {
     ::Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
     outArgs.setModelEvalDescription(this->description());
@@ -286,11 +287,10 @@ MCSAModelEvaluator::createOutArgsImpl() const
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Solve the linear problem. Return true if the solution
- * converged. False if it did not.
+ * \brief Solve the linear problem.
  */
 template<class Vector, class Matrix, class RNG>
-bool MCSAModelEvaluator::evalModelImpl(
+void MCSAModelEvaluator<Vector,Matrix,RNG>::evalModelImpl(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs ) const
 {
@@ -300,19 +300,18 @@ bool MCSAModelEvaluator::evalModelImpl(
 
     // Get the input argument.
     Teuchos::RCP<Vector> domain_vector = MT::cloneVectorFromMatrixDomain( *d_A );
-    Teuchos::RCP<const vector_type> x = 
+    Teuchos::RCP<const Vector> x = 
 	ThyraVectorExtraction<Vector>::getVector( inArgs.get_x(), *domain_vector );
 
     // Get the output argument.
-    Teuchos::RCP<vector_type> f = 
-	ThyraVectorExtraction<Vector>::getVector( outArgs.get_f(), *domain_vector );
+    Teuchos::RCP<Vector> f = ThyraVectorExtraction<Vector>::getVectorNonConst(
+	outArgs.get_f(), *domain_vector );
     VT::update( *f, 0.0, *x, 1.0 );
 
     // Get the preconditioned residual.
-    Teuchos::RCP<vector_type> r = getPrecResidual( f );
+    Teuchos::RCP<Vector> r = getPrecResidual( f );
 
     // Do the fixed point iterations.
-    d_fp_problem->setLHS( f );
     for ( int l = 0; l < d_num_smooth; ++l )
     {
 	VT::update( *f, 1.0, *r, 1.0 );
@@ -339,7 +338,7 @@ bool MCSAModelEvaluator::evalModelImpl(
  * \brief Build the residual Monte Carlo problem.
  */
 template<class Vector, class Matrix, class RNG>
-void MCSAModelEvaluator::buildResidualMonteCarloProblem()
+void MCSAModelEvaluator<Vector,Matrix,RNG>::buildResidualMonteCarloProblem()
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
@@ -389,7 +388,6 @@ void MCSAModelEvaluator::buildResidualMonteCarloProblem()
     }
 
     MCLS_ENSURE( Teuchos::nonnull(d_mc_solver) );
-    MCLS_ENSURE( Teuchos::nonnull(d_block_comm) );
 }
 
 //---------------------------------------------------------------------------//

@@ -110,7 +110,7 @@ class AndersonSolverManager : public SolverManager<Vector,Matrix>
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType achievedTol() const;
 
     // Get the number of iterations from the last linear solve.
-    int getNumIters() const { return d_num_iters; };
+    int getNumIters() const { return d_nox_solver->getNumIterations(); };
 
     // Set the linear problem with the manager.
     void setProblem( const Teuchos::RCP<LinearProblemType >& problem );
@@ -125,21 +125,26 @@ class AndersonSolverManager : public SolverManager<Vector,Matrix>
 
     //! Return if the last linear solve converged. 
     bool getConvergedStatus() const 
-    { return Teuchos::as<bool>(d_converged_status); }
+    { return d_nox_solver->getStatus(); }
+
+  private:
+
+    // Create the nox solver.
+    void createNonlinearSolver();
 
   private:
 
     // Linear problem
     Teuchos::RCP<LinearProblemType> d_problem;
 
-    // MCSA model evaluator.
-    Teuchos::RCP<MCSAModelEvaluator<Vector,Matrix,RNG> d_model_evaluator;
-
     // Global communicator.
     Teuchos::RCP<const Comm> d_global_comm;
 
     // Parameters.
     Teuchos::RCP<Teuchos::ParameterList> d_plist;
+
+    // MCSA model evaluator.
+    Teuchos::RCP<MCSAModelEvaluator<Vector,Matrix,RNG> > d_model_evaluator;
 
     // NOX solver.
     Teuchos::RCP<NOX::Solver::Generic> d_nox_solver;
