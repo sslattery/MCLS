@@ -64,7 +64,8 @@ namespace MCLS
 /*!
  * \brief Comm constructor. setProblem() must be called before solve().
  */
-AndersonSolverManager::AndersonSolverManager( 
+template<class Vector, class Matrix>
+AndersonSolverManager<Vector,Matrix>::AndersonSolverManager( 
     const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
     : d_global_comm( global_comm )
@@ -82,7 +83,8 @@ AndersonSolverManager::AndersonSolverManager(
 /*!
  * \brief Constructor.
  */
-AndersonSolverManager::AndersonSolverManager( 
+template<class Vector, class Matrix>
+AndersonSolverManager<Vector,Matrix>::AndersonSolverManager( 
     const Teuchos::RCP<LinearProblemType>& problem,
     const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
@@ -106,8 +108,9 @@ AndersonSolverManager::AndersonSolverManager(
 /*!
  * \brief Get the valid parameters for this manager.
  */
+template<class Vector, class Matrix>
 Teuchos::RCP<const Teuchos::ParameterList> 
-AndersonSolverManager::getValidParameters() const
+AndersonSolverManager<Vector,Matrix>::getValidParameters() const
 {
     // Create a parameter list with the Monte Carlo solver parameters as a
     // starting point.
@@ -120,9 +123,10 @@ AndersonSolverManager::getValidParameters() const
  * \brief Get the tolerance achieved on the last linear solve. This may be
  * less or more than the set convergence tolerance. 
  */
+template<class Vector, class Matrix>
 typename Teuchos::ScalarTraits<
-    typename AndersonSolverManager::Scalar>::magnitudeType 
-AndersonSolverManager::achievedTol() const
+    typename AndersonSolverManager<Vector,Matrix>::Scalar>::magnitudeType 
+AndersonSolverManager<Vector,Matrix>::achievedTol() const
 {
     return 0.0;
 }
@@ -131,7 +135,8 @@ AndersonSolverManager::achievedTol() const
 /*!
  * \brief Set the linear problem with the manager.
  */
-void AndersonSolverManager::setProblem( 
+template<class Vector, class Matrix>
+void AndersonSolverManager<Vector,Matrix>::setProblem( 
     const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
@@ -148,7 +153,8 @@ void AndersonSolverManager::setProblem(
  * \brief Set the parameters for the manager. The manager will modify this
  * list with default parameters that are not defined.
  */
-void AndersonSolverManager::setParameters( 
+template<class Vector, class Matrix>
+void AndersonSolverManager<Vector,Matrix>::setParameters( 
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
     MCLS_REQUIRE( Teuchos::nonnull(params) );
@@ -165,7 +171,8 @@ void AndersonSolverManager::setParameters(
  * \brief Solve the linear problem. Return true if the solution
  * converged. False if it did not.
  */
-bool AndersonSolverManager::solve()
+template<class Vector, class Matrix>
+bool AndersonSolverManager<Vector,Matrix>::solve()
 {
     // Set the MCSA model evaluator with NOX.
     d_nox_solver->setModel(d_model_evaluator);

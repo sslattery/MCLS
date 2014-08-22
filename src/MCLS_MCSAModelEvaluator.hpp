@@ -107,6 +107,14 @@ class MCSAModelEvaluator :
     // with default parameters that are not defined.
     void setParameters( const Teuchos::RCP<Teuchos::ParameterList>& params );
 
+    // Get the preconditioned residual given a LHS.
+    Teuchos::RCP<vector_type> 
+    getPrecResidual( const Teuchos::RCP<vector_type>& x ) const;
+
+    // Get the RHS.
+    Teuchos::RCP<vector_type> getRHS() const
+    { return d_b; }
+
   public:
 
     // Public functions overridden from ModelEvaulator.

@@ -73,6 +73,8 @@ APPEND_SET(HEADERS
   MCLS_MCSAModelEvaluator_impl.hpp
   MCLS_MCSASolverManager.hpp
   MCLS_MCSASolverManager_impl.hpp
+  MCLS_MCSAStatusTest.hpp
+  MCLS_MCSAStatusTest_impl.hpp
   MCLS_MCSolver.hpp
   MCLS_MCSolver_impl.hpp
   MCLS_MinimalResidualIteration.hpp

@@ -192,6 +192,31 @@ void MCSAModelEvaluator::setParameters(
 }
 
 //---------------------------------------------------------------------------//
+/*!
+ * \brief Get the preconditioned residual given a LHS.
+ */
+Teuchos::RCP<vector_type> 
+MCSAModelEvaluator::getPrecResidual( const Teuchos::RCP<vector_type>& x ) const
+{
+    MCLS_REQUIRE( Teuchos::nonnull(d_A) );
+    MCLS_REQUIRE( Teuchos::nonnull(x) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_b) );
+
+    Teuchos::RCP<vector_type> r = VT::clone( *x );
+    MT::apply( *d_A, *x, *r );
+    VT::update( *r, -1.0, *d_b, 1.0 );
+
+    // Apply left preconditioning if necessary.
+    if ( Teuchos::nonnull(d_M) )
+    {
+        Teuchos::RCP<Vector> temp = VT::deepCopy( *r );
+	MT::apply( *d_M, *temp, *r );
+    }
+
+    return r;
+}
+
+//---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
 Teuchos::RCP<const Thyra::VectorSpaceBase<double> >
 MCSAModelEvaluator::get_x_space() const

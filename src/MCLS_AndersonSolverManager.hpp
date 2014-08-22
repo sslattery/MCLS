@@ -69,7 +69,8 @@ namespace MCLS
  * \class AndersonSolverManager
  * \brief Solver manager for Monte Carlo synthetic acceleration.
  */
-class AndersonSolverManager : public SolverManager<Epetra_Vector,Epetra_RowMatrix>
+template<class Vector, class Matrix>
+class AndersonSolverManager : public SolverManager<Vector,Matrix>
 {
   public:
 
