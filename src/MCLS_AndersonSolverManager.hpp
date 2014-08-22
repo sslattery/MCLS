@@ -54,9 +54,6 @@
 #include <Teuchos_as.hpp>
 #include <Teuchos_Comm.hpp>
 
-#include <Epetra_Vector.h>
-#include <Epetra_RowMatrix.h>
-
 #include <NOX.H>
 #include <NOX_Abstract_PrePostOperator.H>
 #include <NOX_Thyra.H>
@@ -69,15 +66,15 @@ namespace MCLS
  * \class AndersonSolverManager
  * \brief Solver manager for Monte Carlo synthetic acceleration.
  */
-template<class Vector, class Matrix>
+template<class Vector, class Matrix, class RNG = Xorshift<> >
 class AndersonSolverManager : public SolverManager<Vector,Matrix>
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef Epetra_Vector                                  vector_type;
-    typedef Epetra_RowMatrix                               matrix_type;
+    typedef Vector                                         vector_type;
+    typedef Matrix                                         matrix_type;
     typedef SolverManager<vector_type,matrix_type>         Base;
     typedef VectorTraits<vector_type>                      VT;
     typedef typename VT::scalar_type                       Scalar;
@@ -136,7 +133,7 @@ class AndersonSolverManager : public SolverManager<Vector,Matrix>
     Teuchos::RCP<LinearProblemType> d_problem;
 
     // MCSA model evaluator.
-    Teuchos::RCP<MCSAModelEvaluator> d_model_evaluator;
+    Teuchos::RCP<MCSAModelEvaluator<Vector,Matrix,RNG> d_model_evaluator;
 
     // Global communicator.
     Teuchos::RCP<const Comm> d_global_comm;

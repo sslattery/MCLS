@@ -101,6 +101,7 @@ APPEND_SET(HEADERS
   MCLS_SubdomainTransporter.hpp
   MCLS_SubdomainTransporter_impl.hpp
   MCLS_TallyTraits.hpp
+  MCLS_ThyraVectorExtraction.hpp
   MCLS_UniformAdjointSource.hpp
   MCLS_UniformAdjointSource_impl.hpp
   MCLS_UniformForwardSource.hpp

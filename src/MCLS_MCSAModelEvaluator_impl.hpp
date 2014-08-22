@@ -48,15 +48,12 @@
 #include "MCLS_DBC.hpp"
 #include "MCLS_AdjointSolverManager.hpp"
 #include "MCLS_ForwardSolverManager.hpp"
-#include "MCLS_Xorshift.hpp"
+#include "MCLS_ThyraVectorExtraction.hpp"
 
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_Ptr.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_Time.hpp>
-
-#include <Thyra_MultiVectorBase.hpp>
-#include <Thyra_EpetraThyraWrappers.hpp>
 
 namespace MCLS
 {
@@ -64,6 +61,7 @@ namespace MCLS
 /*!
  * \brief Comm constructor. setProblem() must be called before solve().
  */
+template<class Vector, class Matrix, class RNG>
 MCSAModelEvaluator::MCSAModelEvaluator( 
     const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
@@ -86,6 +84,7 @@ MCSAModelEvaluator::MCSAModelEvaluator(
 /*!
  * \brief Constructor.
  */
+template<class Vector, class Matrix, class RNG>
 MCSAModelEvaluator::MCSAModelEvaluator( 
     const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist,
@@ -102,7 +101,9 @@ MCSAModelEvaluator::MCSAModelEvaluator(
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
-    d_x_space = Thyra::create_VectorSpace( d_A->OperatorDomainMap() );
+    Teuchos::RCP<Vector> domain_vector = MT::cloneVectorFromMatrixDomain( *d_A );
+    d_x_space = 
+	ThyraVectorExtraction<Vector>::createVectorSpace( *domain_vector );
     d_f_space = d_x_space;
 
     // Set the number of smoothing steps.
@@ -120,6 +121,7 @@ MCSAModelEvaluator::MCSAModelEvaluator(
 /*!
  * \brief Set the linear problem with the manager.
  */
+template<class Vector, class Matrix, class RNG>
 void MCSAModelEvaluator::setProblem( 
     const Teuchos::RCP<const matrix_type>& A,
     const Teuchos::RCP<const vector_type>& b,
@@ -144,7 +146,9 @@ void MCSAModelEvaluator::setProblem(
     d_b = b;
     d_M = M;
 
-    d_x_space = Thyra::create_VectorSpace( d_A->OperatorDomainMap() );
+    Teuchos::RCP<Vector> domain_vector = MT::cloneVectorFromMatrixDomain( *d_A );
+    d_x_space = 
+	ThyraVectorExtraction<Vector>::createVectorSpace( *domain_vector );
     d_f_space = d_x_space;
 
     // Update the residual problem if it already exists.
@@ -171,6 +175,7 @@ void MCSAModelEvaluator::setProblem(
  * \brief Set the parameters for the manager. The manager will modify this
  * list with default parameters that are not defined.
  */
+template<class Vector, class Matrix, class RNG>
 void MCSAModelEvaluator::setParameters( 
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
@@ -195,6 +200,7 @@ void MCSAModelEvaluator::setParameters(
 /*!
  * \brief Get the preconditioned residual given a LHS.
  */
+template<class Vector, class Matrix, class RNG>
 Teuchos::RCP<vector_type> 
 MCSAModelEvaluator::getPrecResidual( const Teuchos::RCP<vector_type>& x ) const
 {
@@ -218,6 +224,7 @@ MCSAModelEvaluator::getPrecResidual( const Teuchos::RCP<vector_type>& x ) const
 
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
+template<class Vector, class Matrix, class RNG>
 Teuchos::RCP<const Thyra::VectorSpaceBase<double> >
 MCSAModelEvaluator::get_x_space() const
 {
@@ -226,6 +233,7 @@ MCSAModelEvaluator::get_x_space() const
 
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
+template<class Vector, class Matrix, class RNG>
 Teuchos::RCP<const Thyra::VectorSpaceBase<double> >
 MCSAModelEvaluator::get_f_space() const
 {
@@ -234,6 +242,7 @@ MCSAModelEvaluator::get_f_space() const
 
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
+template<class Vector, class Matrix, class RNG>
 Thyra::ModelEvaluatorBase::InArgs<double>
 MCSAModelEvaluator::getNominalValues() const
 {
@@ -246,6 +255,7 @@ MCSAModelEvaluator::getNominalValues() const
 
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
+template<class Vector, class Matrix, class RNG>
 Thyra::ModelEvaluatorBase::InArgs<double>
 MCSAModelEvaluator::createInArgs() const
 {
@@ -257,6 +267,7 @@ MCSAModelEvaluator::createInArgs() const
 
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
+template<class Vector, class Matrix, class RNG>
 Thyra::ModelEvaluatorBase::OutArgs<double>
 MCSAModelEvaluator::createOutArgsImpl() const
 {
@@ -271,6 +282,7 @@ MCSAModelEvaluator::createOutArgsImpl() const
  * \brief Solve the linear problem. Return true if the solution
  * converged. False if it did not.
  */
+template<class Vector, class Matrix, class RNG>
 bool MCSAModelEvaluator::evalModelImpl(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs ) const
@@ -280,12 +292,13 @@ bool MCSAModelEvaluator::evalModelImpl(
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
     // Get the input argument.
+    Teuchos::RCP<Vector> domain_vector = MT::cloneVectorFromMatrixDomain( *d_A );
     Teuchos::RCP<const vector_type> x = 
-	Thyra::get_Epetra_MultiVector( d_A->OperatorDomainMap(), inArgs.get_x() );
+	ThyraVectorExtraction<Vector>::getVector( inArgs.get_x(), *domain_vector );
 
     // Get the output argument.
     Teuchos::RCP<vector_type> f = 
-	Thyra::get_Epetra_MultiVector( d_A->OperatorDomainMap(), outArgs.get_f() );
+	ThyraVectorExtraction<Vector>::getVector( outArgs.get_f(), *domain_vector );
     VT::update( *f, 0.0, *x, 1.0 );
 
     // Get the preconditioned residual.
@@ -315,6 +328,7 @@ bool MCSAModelEvaluator::evalModelImpl(
 /*!
  * \brief Build the residual Monte Carlo problem.
  */
+template<class Vector, class Matrix, class RNG>
 void MCSAModelEvaluator::buildResidualMonteCarloProblem()
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
@@ -349,13 +363,13 @@ void MCSAModelEvaluator::buildResidualMonteCarloProblem()
     if ( use_adjoint )
     {
 	d_mc_solver = Teuchos::rcp( 
-	    new AdjointSolverManager<vector_type,matrix_type,Xorshift<> >(
+	    new AdjointSolverManager<Vector,Matrix,RNG>(
 		d_mc_problem, d_global_comm, d_plist, true) );
     }
     else if ( use_forward )
     {
 	d_mc_solver = Teuchos::rcp( 
-	    new ForwardSolverManager<vector_type,matrix_type,Xorshift<> >(
+	    new ForwardSolverManager<Vector,Matrix,RNG>(
 		d_mc_problem, d_global_comm, d_plist, true) );
     }
     else

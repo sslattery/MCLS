@@ -114,6 +114,30 @@ class MatrixTraits
     /*!
      * \brief Create a reference-counted pointer to a new empty vector from a
      * matrix to give the vector the same parallel distribution as the
+     * matrix parallel domain.
+     */
+    static Teuchos::RCP<Vector> 
+    cloneVectorFromMatrixDomain( const Matrix& matrix )
+    { 
+	UndefinedMatrixTraits<Vector,Matrix>::notDefined(); 
+	return Teuchos::null; 
+    }
+
+    /*!
+     * \brief Create a reference-counted pointer to a new empty vector from a
+     * matrix to give the vector the same parallel distribution as the
+     * matrix range.
+     */
+    static Teuchos::RCP<Vector> 
+    cloneVectorFromMatrixRange( const Matrix& matrix )
+    { 
+	UndefinedMatrixTraits<Vector,Matrix>::notDefined(); 
+	return Teuchos::null; 
+    }
+
+    /*!
+     * \brief Create a reference-counted pointer to a new empty vector from a
+     * matrix to give the vector the same parallel distribution as the
      * matrix parallel row distribution.
      */
     static Teuchos::RCP<Vector> 

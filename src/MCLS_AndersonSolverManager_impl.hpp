@@ -46,16 +46,12 @@
 #include <iomanip>
 
 #include "MCLS_DBC.hpp"
-#include "MCLS_AdjointSolverManager.hpp"
-#include "MCLS_ForwardSolverManager.hpp"
-#include "MCLS_FixedPointIterationFactory.hpp"
+#include "MCLS_ThyraVectorExtraction.hpp"
 
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_Ptr.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_Time.hpp>
-
-#include <Thyra_EpetraThyraWrappers.hpp>
 
 namespace MCLS
 {
@@ -64,8 +60,8 @@ namespace MCLS
 /*!
  * \brief Comm constructor. setProblem() must be called before solve().
  */
-template<class Vector, class Matrix>
-AndersonSolverManager<Vector,Matrix>::AndersonSolverManager( 
+template<class Vector, class Matrix, class RNG>
+AndersonSolverManager<Vector,Matrix,RNG>::AndersonSolverManager( 
     const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
     : d_global_comm( global_comm )
@@ -83,8 +79,8 @@ AndersonSolverManager<Vector,Matrix>::AndersonSolverManager(
 /*!
  * \brief Constructor.
  */
-template<class Vector, class Matrix>
-AndersonSolverManager<Vector,Matrix>::AndersonSolverManager( 
+template<class Vector, class Matrix, class RNG>
+AndersonSolverManager<Vector,Matrix,RNG>::AndersonSolverManager( 
     const Teuchos::RCP<LinearProblemType>& problem,
     const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
@@ -108,9 +104,9 @@ AndersonSolverManager<Vector,Matrix>::AndersonSolverManager(
 /*!
  * \brief Get the valid parameters for this manager.
  */
-template<class Vector, class Matrix>
+template<class Vector, class Matrix, class RNG>
 Teuchos::RCP<const Teuchos::ParameterList> 
-AndersonSolverManager<Vector,Matrix>::getValidParameters() const
+AndersonSolverManager<Vector,Matrix,RNG>::getValidParameters() const
 {
     // Create a parameter list with the Monte Carlo solver parameters as a
     // starting point.
@@ -123,10 +119,10 @@ AndersonSolverManager<Vector,Matrix>::getValidParameters() const
  * \brief Get the tolerance achieved on the last linear solve. This may be
  * less or more than the set convergence tolerance. 
  */
-template<class Vector, class Matrix>
+template<class Vector, class Matrix, class RNG>
 typename Teuchos::ScalarTraits<
-    typename AndersonSolverManager<Vector,Matrix>::Scalar>::magnitudeType 
-AndersonSolverManager<Vector,Matrix>::achievedTol() const
+    typename AndersonSolverManager<Vector,Matrix,RNG>::Scalar>::magnitudeType 
+AndersonSolverManager<Vector,Matrix,RNG>::achievedTol() const
 {
     return 0.0;
 }
@@ -135,9 +131,9 @@ AndersonSolverManager<Vector,Matrix>::achievedTol() const
 /*!
  * \brief Set the linear problem with the manager.
  */
-template<class Vector, class Matrix>
-void AndersonSolverManager<Vector,Matrix>::setProblem( 
-    const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem )
+template<class Vector, class Matrix, class RNG>
+void AndersonSolverManager<Vector,Matrix,RNG>::setProblem( 
+    const Teuchos::RCP<LinearProblemType>& problem )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
@@ -153,8 +149,8 @@ void AndersonSolverManager<Vector,Matrix>::setProblem(
  * \brief Set the parameters for the manager. The manager will modify this
  * list with default parameters that are not defined.
  */
-template<class Vector, class Matrix>
-void AndersonSolverManager<Vector,Matrix>::setParameters( 
+template<class Vector, class Matrix, class RNG>
+void AndersonSolverManager<Vector,Matrix,RNG>::setParameters( 
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
     MCLS_REQUIRE( Teuchos::nonnull(params) );
@@ -171,8 +167,8 @@ void AndersonSolverManager<Vector,Matrix>::setParameters(
  * \brief Solve the linear problem. Return true if the solution
  * converged. False if it did not.
  */
-template<class Vector, class Matrix>
-bool AndersonSolverManager<Vector,Matrix>::solve()
+template<class Vector, class Matrix, class RNG>
+bool AndersonSolverManager<Vector,Matrix,RNG>::solve()
 {
     // Set the MCSA model evaluator with NOX.
     d_nox_solver->setModel(d_model_evaluator);
@@ -200,9 +196,9 @@ bool AndersonSolverManager<Vector,Matrix>::solve()
     Teuchos::RCP<const NOX::Thyra::Vector> nox_thyra_x =
 	Teuchos::rcp_dynamic_cast<const NOX::Thyra::Vector>(x,true);
 
-    d_problem->setLHS( 
-	Thyra::get_Epetra_Vector(d_problem->getLHS()->Map(),
-				 nox_thyra_x->getThyraRCPVector()) );
+    d_problem->setLHS(
+	ThyraVectorExtraction<Vector>::getVector( 
+	    nox_thyra_x->getThyraRCPVector(), *d_problem->getLHS() );
 }
 
 //---------------------------------------------------------------------------//

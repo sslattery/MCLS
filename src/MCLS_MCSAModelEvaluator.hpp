@@ -46,16 +46,13 @@
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_MatrixTraits.hpp"
+#include "MCLS_Xorshift.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_Comm.hpp>
-
-#include <Epetra_Map.h>
-#include <Epetra_Vector.h>
-#include <Epetra_RowMatrix.h>
 
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
 
@@ -67,18 +64,19 @@ namespace MCLS
  * \class MCSAModelEvaluator
  * \brief Solver manager for Monte Carlo synthetic acceleration.
  */
+template<class Vector, class Matrix, class RNG = Xorshift<> >
 class MCSAModelEvaluator : 
-    public ::Thyra::StateFuncModelEvaluatorBase<double>
+	public ::Thyra::StateFuncModelEvaluatorBase<typename VectorTraits<Vector>::scalar_type>
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef ::Thyra::StateFuncModelEvaluatorBase<double> Base;
-    typedef Epetra_Vector                                vector_type;
+    typedef Vector                                       vector_type;
     typedef VectorTraits<vector_type>                    VT;
     typedef typename VT::scalar_type                     Scalar;
-    typedef Epetra_RowMatrix                             matrix_type;
+    typedef ::Thyra::StateFuncModelEvaluatorBase<double> Base;
+    typedef Matrix                                       matrix_type;
     typedef MatrixTraits<vector_type,matrix_type>        MT;
     typedef LinearProblem<vector_type,matrix_type>       LinearProblemType;
     typedef Teuchos::Comm<int>                           Comm;

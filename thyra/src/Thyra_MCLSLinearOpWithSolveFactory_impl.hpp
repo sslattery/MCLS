@@ -954,7 +954,8 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 	    }
 	    // Create the solver
 	    solver = 
-		rcp(new MCLS::AndersonSolverManager(global_comm, solverPL) );
+		rcp(new MCLS::AndersonSolverManager<Vector,Matrix>(
+			global_comm, solverPL) );
 	    iterativeSolver = Teuchos::rcp( 
 		new MCLS::SolverManagerAdapter<MultiVector,Matrix>(solver) );
 	    iterativeSolver->setProblem( lp );
