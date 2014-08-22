@@ -172,7 +172,7 @@ class ThyraVectorExtraction<Tpetra::Vector<Scalar,LO,GO> >
     static Teuchos::RCP<const Thyra::VectorSpaceBase<scalar_type> >
     createVectorSpace( const vector_type& vector )
     {
-	return Thyra::createVectorSpace( vector.getMap() );
+	return Thyra::createVectorSpace<Scalar>( vector.getMap() );
     }
 
     static Teuchos::RCP<vector_type>
@@ -187,7 +187,7 @@ class ThyraVectorExtraction<Tpetra::Vector<Scalar,LO,GO> >
     getVector( const Teuchos::RCP<const Thyra::VectorBase<scalar_type> >& thyra_vector,
 	       const vector_type& vector )
     {
-	return Thyra::TpetraOperatorVectorExtraction<Scalar,LO,GO>::getTpetraVector(
+	return Thyra::TpetraOperatorVectorExtraction<Scalar,LO,GO>::getConstTpetraVector(
 	    thyra_vector );
     }
 

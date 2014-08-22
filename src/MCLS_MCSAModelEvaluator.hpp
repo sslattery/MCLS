@@ -109,8 +109,12 @@ class MCSAModelEvaluator :
     Teuchos::RCP<Vector> 
     getPrecResidual( const Teuchos::RCP<Vector>& x ) const;
 
+    // Get the linear operator.
+    Teuchos::RCP<const Matrix> getOperator() const
+    { return d_A; }
+
     // Get the RHS.
-    Teuchos::RCP<Vector> getRHS() const
+    Teuchos::RCP<const Vector> getRHS() const
     { return d_b; }
 
   public:
