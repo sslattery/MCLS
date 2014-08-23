@@ -197,9 +197,10 @@ bool AndersonSolverManager<Vector,Matrix,RNG>::solve()
     Teuchos::RCP< ::Thyra::VectorBase<double> > thyra_x =
 	Teuchos::rcp_const_cast< ::Thyra::VectorBase<double> >(
 	    nox_thyra_x->getThyraRCPVector());
-    d_problem->setLHS(
+    Teuchos::RCP<Vector> x_vector = 
 	ThyraVectorExtraction<Vector,Matrix>::getVectorNonConstFromDomain( 
-	    thyra_x, *d_problem->getOperator()) );
+	    thyra_x, *d_problem->getOperator() );
+    VT::update( *d_problem->getLHS(), 0.0, *x_vector, 1.0 );
 
     // Return the status of the solve.
     return solve_status;

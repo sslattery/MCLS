@@ -330,7 +330,7 @@ void MCSAModelEvaluator<Vector,Matrix,RNG>::evalModelImpl(
     // Apply the correction.
     VT::update( *f, 1.0, *d_mc_problem->getLHS(), 1.0 );
 
-    // Compute the resiudal.
+    // Compute the residual.
     VT::update( *f, 1.0, *x, -1.0 );
 }
 
