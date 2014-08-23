@@ -332,9 +332,6 @@ void MCSAModelEvaluator<Vector,Matrix,RNG>::evalModelImpl(
 
     // Compute the resiudal.
     VT::update( *f, 1.0, *x, -1.0 );
-
-    // Barrier before proceeding.
-    d_global_comm->barrier();
 }
 
 //---------------------------------------------------------------------------//
