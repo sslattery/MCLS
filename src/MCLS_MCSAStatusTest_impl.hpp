@@ -91,12 +91,9 @@ NOX::StatusTest::StatusType MCSAStatusTest<Vector,Matrix>::checkStatus(
     Teuchos::RCP< ::Thyra::VectorBase<double> > thyra_x =
 	Teuchos::rcp_const_cast< ::Thyra::VectorBase<double> >(
 	    nox_thyra_x->getThyraRCPVector());
-    Teuchos::RCP<Vector> x_space_vector = 
-	MatrixTraits<Vector,Matrix>::cloneVectorFromMatrixDomain( 
-	    *model->getOperator() );
     Teuchos::RCP<Vector> x_vector = 
-	ThyraVectorExtraction<Vector>::getVectorNonConst( 
-	    thyra_x, *x_space_vector );
+	ThyraVectorExtraction<Vector,Matrix>::getVectorNonConstFromDomain( 
+	    thyra_x, *model->getOperator() );
     d_r_norm = VectorTraits<Vector>::norm2( *model->getPrecResidual(x_vector) );
 
     if (checkType == NOX::StatusTest::None)

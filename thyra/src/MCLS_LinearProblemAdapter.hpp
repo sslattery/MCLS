@@ -120,13 +120,6 @@ class LinearProblemBase : public virtual Teuchos::Describable
 
     // Right preconditioner.
     Teuchos::RCP<const linear_op_type> b_PR;
-
-    // Left hand side.
-    Teuchos::RCP<multivector_type> b_x;
-
-    // Right hand side.
-    Teuchos::RCP<const multivector_type> b_b;
-
 };
 
 //---------------------------------------------------------------------------//
@@ -154,12 +147,7 @@ class LinearProblemAdapter : public LinearProblemBase<
 
     //! Default constructor.
     LinearProblemAdapter()
-        : d_A( Teuchos::null )
-        , d_x( Teuchos::null )
-        , d_b( Teuchos::null )
-        , d_PL( Teuchos::null )
-        , d_PR( Teuchos::null )
-	, d_num_problems(0)
+	: d_num_problems(0)
     { /* ... */ }
 
     //! Constructor.
@@ -170,8 +158,6 @@ class LinearProblemAdapter : public LinearProblemBase<
 	: d_A( A )
 	, d_x( x )
 	, d_b( b )
-        , d_PL( Teuchos::null )
-        , d_PR( Teuchos::null )
 	, d_num_problems( num_problems )
     { /* ... */ }
 

@@ -528,7 +528,7 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 	{
 	    MCLS::AndersonSolverManager<Epetra_Vector,Epetra_RowMatrix> mgr(
 		Teuchos::DefaultComm<int>::getComm(), Teuchos::parameterList() );
-	    solverTypesSL.sublist(FixedPoint_name).setParameters(
+	    solverTypesSL.sublist(Anderson_name).setParameters(
 		*(mgr.getValidParameters()) );
 	}
     }

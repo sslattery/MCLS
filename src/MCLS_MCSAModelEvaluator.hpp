@@ -158,6 +158,9 @@ class MCSAModelEvaluator :
     // Residual
     Teuchos::RCP<Vector> d_r;
 
+    // Work vector.
+    Teuchos::RCP<Vector> d_work_vec;
+
     // Residual linear problem
     Teuchos::RCP<LinearProblemType> d_mc_problem;
 
@@ -166,6 +169,9 @@ class MCSAModelEvaluator :
 
     // Parameters.
     Teuchos::RCP<Teuchos::ParameterList> d_plist;
+
+    // Nominal values.
+    mutable ::Thyra::ModelEvaluatorBase::InArgs<Scalar> d_nominal_values;
 
     // Monte Carlo solver manager.
     Teuchos::RCP<SolverManager<Vector,Matrix> > d_mc_solver;

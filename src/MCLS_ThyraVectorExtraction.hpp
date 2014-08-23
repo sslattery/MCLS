@@ -44,8 +44,10 @@
 #include <Teuchos_RCP.hpp>
 
 #include <Epetra_Vector.h>
+#include <Epetra_RowMatrix.h>
 
 #include <Tpetra_Vector.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 
 #include <Thyra_VectorBase.hpp>
 #include <Thyra_VectorSpaceBase.hpp>
@@ -74,39 +76,76 @@ struct UndefinedThyraVectorExtraction
 /*!
  * \class ThyraVectorExtraction
  */
-template<class Vector>
+template<class Vector, class Matrix>
 class ThyraVectorExtraction
 {
   public:
 
     typedef Vector                            vector_type;
     typedef typename vector_type::scalar_type scalar_type;
+    typedef Matrix                            matrix_type;
 
     static Teuchos::RCP<const Thyra::VectorSpaceBase<scalar_type> >
-    createVectorSpace( const vector_type& vector )
+    createVectorSpaceFromDomain( const matrix_type& matrix )
+    {
+	UndefinedThyraVectorExtraction<vector_type>::notDefined();
+	return Teuchos::null;
+    }
+
+    static Teuchos::RCP<const Thyra::VectorSpaceBase<scalar_type> >
+    createVectorSpaceFromRange( const matrix_type& matrix )
     {
 	UndefinedThyraVectorExtraction<vector_type>::notDefined();
 	return Teuchos::null;
     }
 
     static Teuchos::RCP<vector_type>
-    getVector( const Teuchos::RCP<Thyra::VectorBase<scalar_type> >& thyra_vector,
-	       const vector_type& vector )
+    getVectorFromDomain( 
+	const Teuchos::RCP<Thyra::VectorBase<scalar_type> >& thyra_vector,
+	const matrix_type& matrix )
+    {
+	UndefinedThyraVectorExtraction<vector_type>::notDefined();
+	return Teuchos::null;
+    }
+
+    static Teuchos::RCP<vector_type>
+    getVectorFromRange( 
+	const Teuchos::RCP<Thyra::VectorBase<scalar_type> >& thyra_vector,
+	const matrix_type& matrix )
     {
 	UndefinedThyraVectorExtraction<vector_type>::notDefined();
 	return Teuchos::null;
     }
 
     static Teuchos::RCP<const vector_type>
-    getVectorNonConst( const Teuchos::RCP<const Thyra::VectorBase<scalar_type> >& thyra_vector,
-	       const vector_type& vector )
+    getVectorNonConstFromDomain( 
+	const Teuchos::RCP<const Thyra::VectorBase<scalar_type> >& thyra_vector,
+	const matrix_type& matrix )
+    {
+	UndefinedThyraVectorExtraction<vector_type>::notDefined();
+	return Teuchos::null;
+    }
+
+    static Teuchos::RCP<const vector_type>
+    getVectorNonConstFromRange( 
+	const Teuchos::RCP<const Thyra::VectorBase<scalar_type> >& thyra_vector,
+	const matrix_type& matrix )
     {
 	UndefinedThyraVectorExtraction<vector_type>::notDefined();
 	return Teuchos::null;
     }
 
     static Teuchos::RCP<Thyra::VectorBase<scalar_type> >
-    createThyraVector( const vector_type& vector )
+    createThyraVectorFromDomain( const Teuchos::RCP<vector_type>& vector,
+				 const matrix_type& matrix )
+    {
+	UndefinedThyraVectorExtraction<vector_type>::notDefined();
+	return Teuchos::null;
+    }
+
+    static Teuchos::RCP<Thyra::VectorBase<scalar_type> >
+    createThyraVectorFromRange( const Teuchos::RCP<vector_type>& vector,
+				const matrix_type& matrix )
     {
 	UndefinedThyraVectorExtraction<vector_type>::notDefined();
 	return Teuchos::null;
@@ -118,42 +157,76 @@ class ThyraVectorExtraction
  * \class Epetra specialization.
  */
 template<>
-class ThyraVectorExtraction<Epetra_Vector>
+class ThyraVectorExtraction<Epetra_Vector,Epetra_RowMatrix>
 {
   public:
 
-    typedef Epetra_Vector vector_type;
-    typedef double        scalar_type;
+    typedef Epetra_Vector   vector_type;
+    typedef double          scalar_type;
+    typedef Epetra_RowMatrix matrix_type;
 
     static Teuchos::RCP<const Thyra::VectorSpaceBase<scalar_type> >
-    createVectorSpace( const vector_type& vector )
+    createVectorSpaceFromDomain( const matrix_type& matrix )
     {
 	return Thyra::create_VectorSpace( 
-	    Teuchos::rcp_dynamic_cast<const Epetra_Map>(Teuchos::rcpFromRef(vector.Map())) );
+	    Teuchos::rcpFromRef(matrix.OperatorDomainMap()) );
+    }
+
+    static Teuchos::RCP<const Thyra::VectorSpaceBase<scalar_type> >
+    createVectorSpaceFromRange( const matrix_type& matrix )
+    {
+	return Thyra::create_VectorSpace( 
+	    Teuchos::rcpFromRef(matrix.OperatorRangeMap()) );
     }
 
     static Teuchos::RCP<vector_type>
-    getVectorNonConst( const Teuchos::RCP<Thyra::VectorBase<scalar_type> >& thyra_vector,
-	       const vector_type& vector )
+    getVectorNonConstFromDomain( 
+	const Teuchos::RCP<Thyra::VectorBase<scalar_type> >& thyra_vector,
+	const matrix_type& matrix )
     {
 	return Thyra::get_Epetra_Vector( 
-	    *Teuchos::rcp_dynamic_cast<const Epetra_Map>(Teuchos::rcpFromRef(vector.Map())),
-	    thyra_vector );
+	    matrix.OperatorDomainMap(), thyra_vector );
+    }
+
+    static Teuchos::RCP<vector_type>
+    getVectorNonConstFromRange( 
+	const Teuchos::RCP<Thyra::VectorBase<scalar_type> >& thyra_vector,
+	const matrix_type& matrix )
+    {
+	return Thyra::get_Epetra_Vector( 
+	    matrix.OperatorRangeMap(), thyra_vector );
     }
 
     static Teuchos::RCP<const vector_type>
-    getVector( const Teuchos::RCP<const Thyra::VectorBase<scalar_type> >& thyra_vector,
-	       const vector_type& vector )
+    getVectorFromDomain( 
+	const Teuchos::RCP<const Thyra::VectorBase<scalar_type> >& thyra_vector,
+	const matrix_type& matrix )
     {
 	return Thyra::get_Epetra_Vector( 
-	    *Teuchos::rcp_dynamic_cast<const Epetra_Map>(Teuchos::rcpFromRef(vector.Map())),
-	    thyra_vector );
+	    matrix.OperatorDomainMap(), thyra_vector );
+    }
+
+    static Teuchos::RCP<const vector_type>
+    getVectorFromRange( 
+	const Teuchos::RCP<const Thyra::VectorBase<scalar_type> >& thyra_vector,
+	const matrix_type& matrix )
+    {
+	return Thyra::get_Epetra_Vector( 
+	    matrix.OperatorRangeMap(), thyra_vector );
     }
 
     static Teuchos::RCP<Thyra::VectorBase<scalar_type> >
-    createThyraVector( const Teuchos::RCP<vector_type>& vector )
+    createThyraVectorFromDomain( const Teuchos::RCP<vector_type>& vector,
+				 const matrix_type& matrix )
     {
-	return Thyra::create_Vector( vector, createVectorSpace(*vector) );
+	return Thyra::create_Vector( vector, createVectorSpaceFromDomain(matrix) );
+    }
+
+    static Teuchos::RCP<Thyra::VectorBase<scalar_type> >
+    createThyraVectorFromRange( const Teuchos::RCP<vector_type>& vector,
+				const matrix_type& matrix )
+    {
+	return Thyra::create_Vector( vector, createVectorSpaceFromRange(matrix) );
     }
 };
 
@@ -162,39 +235,75 @@ class ThyraVectorExtraction<Epetra_Vector>
  * \class Tpetra specialization
  */
 template<class Scalar, class LO, class GO>
-class ThyraVectorExtraction<Tpetra::Vector<Scalar,LO,GO> >
+class ThyraVectorExtraction<Tpetra::Vector<Scalar,LO,GO>,Tpetra::CrsMatrix<Scalar,LO,GO> >
 {
   public:
 
     typedef Tpetra::Vector<Scalar,LO,GO>      vector_type;
     typedef typename vector_type::scalar_type scalar_type;
+    typedef Tpetra::CrsMatrix<Scalar,LO,GO>   matrix_type;
 
     static Teuchos::RCP<const Thyra::VectorSpaceBase<scalar_type> >
-    createVectorSpace( const vector_type& vector )
+    createVectorSpaceFromDomain( const matrix_type& matrix )
     {
-	return Thyra::createVectorSpace<Scalar>( vector.getMap() );
+	return Thyra::createVectorSpace<Scalar>( matrix.getDomainMap() );
+    }
+
+    static Teuchos::RCP<const Thyra::VectorSpaceBase<scalar_type> >
+    createVectorSpaceFromRange( const matrix_type& matrix )
+    {
+	return Thyra::createVectorSpace<Scalar>( matrix.getRangeMap() );
     }
 
     static Teuchos::RCP<vector_type>
-    getVectorNonConst( const Teuchos::RCP<Thyra::VectorBase<scalar_type> >& thyra_vector,
-	       const vector_type& vector )
+    getVectorNonConstFromDomain( 
+	const Teuchos::RCP<Thyra::VectorBase<scalar_type> >& thyra_vector,
+	const matrix_type& matrix )
+    {
+	return Thyra::TpetraOperatorVectorExtraction<Scalar,LO,GO>::getTpetraVector(
+	    thyra_vector );
+    }
+
+    static Teuchos::RCP<vector_type>
+    getVectorNonConstFromRange( 
+	const Teuchos::RCP<Thyra::VectorBase<scalar_type> >& thyra_vector,
+	const matrix_type& matrix )
     {
 	return Thyra::TpetraOperatorVectorExtraction<Scalar,LO,GO>::getTpetraVector(
 	    thyra_vector );
     }
 
     static Teuchos::RCP<const vector_type>
-    getVector( const Teuchos::RCP<const Thyra::VectorBase<scalar_type> >& thyra_vector,
-	       const vector_type& vector )
+    getVectorFromDomain( 
+	const Teuchos::RCP<const Thyra::VectorBase<scalar_type> >& thyra_vector,
+	const matrix_type& matrix )
+    {
+	return Thyra::TpetraOperatorVectorExtraction<Scalar,LO,GO>::getConstTpetraVector(
+	    thyra_vector );
+    }
+
+
+    static Teuchos::RCP<const vector_type>
+    getVectorFromRange( 
+	const Teuchos::RCP<const Thyra::VectorBase<scalar_type> >& thyra_vector,
+	const matrix_type& matrix )
     {
 	return Thyra::TpetraOperatorVectorExtraction<Scalar,LO,GO>::getConstTpetraVector(
 	    thyra_vector );
     }
 
     static Teuchos::RCP<Thyra::VectorBase<scalar_type> >
-    createThyraVector( const Teuchos::RCP<vector_type>& vector )
+    createThyraVectorFromDomain( const Teuchos::RCP<vector_type>& vector,
+				 const matrix_type& matrix )
     {
-	return Thyra::createVector( vector, createVectorSpace(*vector) );
+	return Thyra::createVector( vector, createVectorSpaceFromDomain(matrix) );
+    }
+
+    static Teuchos::RCP<Thyra::VectorBase<scalar_type> >
+    createThyraVectorFromRange( const Teuchos::RCP<vector_type>& vector,
+				const matrix_type& matrix )
+    {
+	return Thyra::createVector( vector, createVectorSpaceFromRange(matrix) );
     }
 };
 

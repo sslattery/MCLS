@@ -181,7 +181,8 @@ bool AndersonSolverManager<Vector,Matrix,RNG>::solve()
 {
     // Create a Thyra vector from our initial guess.
     Teuchos::RCP< ::Thyra::VectorBase<double> > x0 = 
-	ThyraVectorExtraction<Vector>::createThyraVector( d_problem->getLHS() );
+	ThyraVectorExtraction<Vector,Matrix>::createThyraVectorFromDomain( 
+	    d_problem->getLHS(), *d_problem->getOperator() );
     NOX::Thyra::Vector nox_x0( x0 );
     d_nox_solver->reset( nox_x0 );
 
@@ -197,8 +198,8 @@ bool AndersonSolverManager<Vector,Matrix,RNG>::solve()
 	Teuchos::rcp_const_cast< ::Thyra::VectorBase<double> >(
 	    nox_thyra_x->getThyraRCPVector());
     d_problem->setLHS(
-	ThyraVectorExtraction<Vector>::getVectorNonConst( 
-	    thyra_x, *d_problem->getLHS()) );
+	ThyraVectorExtraction<Vector,Matrix>::getVectorNonConstFromDomain( 
+	    thyra_x, *d_problem->getOperator()) );
 
     // Return the status of the solve.
     return solve_status;
@@ -235,17 +236,20 @@ void AndersonSolverManager<Vector,Matrix,RNG>::createNonlinearSolver()
     status_test->addStatusTest( finite_test );
 
     // Create the NOX group.
-    Teuchos::RCP< ::Thyra::VectorBase<double> > x0 = 
-	ThyraVectorExtraction<Vector>::createThyraVector( d_problem->getLHS() );
-    NOX::Thyra::Vector nox_x0( x0 );
     MCLS_CHECK( Teuchos::nonnull(d_problem) );
+    MCLS_CHECK( Teuchos::nonnull(d_model_evaluator) );
+    Teuchos::RCP< ::Thyra::VectorBase<double> > x0 = 
+	ThyraVectorExtraction<Vector,Matrix>::createThyraVectorFromDomain( 
+	    d_problem->getLHS(), *d_problem->getOperator() );
+    MCLS_CHECK( Teuchos::nonnull(x0) );
+    NOX::Thyra::Vector nox_x0( x0 );
     Teuchos::RCP<NOX::Abstract::Group> nox_group = Teuchos::rcp(
-	new NOX::Thyra::Group(nox_x0, d_model_evaluator) );
-
+	new NOX::Thyra::Group(nox_x0, d_model_evaluator,
+			      Teuchos::null,Teuchos::null,Teuchos::null,
+			      Teuchos::null,Teuchos::null) );
     // Create the NOX solver.
     NOX::Solver::Factory nox_factory;
-    Teuchos::RCP<NOX::Solver::Generic> nox_solver = 
-	nox_factory.buildSolver( nox_group, status_test, d_plist );
+    d_nox_solver = nox_factory.buildSolver( nox_group, status_test, d_plist );
 }
 
 //---------------------------------------------------------------------------//

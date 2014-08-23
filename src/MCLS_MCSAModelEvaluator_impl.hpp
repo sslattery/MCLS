@@ -103,11 +103,11 @@ MCSAModelEvaluator<Vector,Matrix,RNG>::MCSAModelEvaluator(
 
     // Create the resiudal.
     d_r = MT::cloneVectorFromMatrixDomain( *d_A );
+    d_work_vec = VT::clone( *d_r );
 
     // Create the vector space for the LHS.
-    Teuchos::RCP<Vector> domain_vector = MT::cloneVectorFromMatrixDomain( *d_A );
     d_x_space = 
-	ThyraVectorExtraction<Vector>::createVectorSpace( *domain_vector );
+	ThyraVectorExtraction<Vector,Matrix>::createVectorSpaceFromDomain( *d_A );
     d_f_space = d_x_space;
 
     // Set the number of smoothing steps.
@@ -134,9 +134,6 @@ void MCSAModelEvaluator<Vector,Matrix,RNG>::setProblem(
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
-    // Create the resiudal.
-    d_r = MT::cloneVectorFromMatrixDomain( *d_A );
-
     // Determine if the linear operator has changed. It is presumed the
     // preconditioners are bound to the linear operator and will therefore
     // change when the operator changes. The mechanism here for determining if
@@ -153,10 +150,13 @@ void MCSAModelEvaluator<Vector,Matrix,RNG>::setProblem(
     d_b = b;
     d_M = M;
 
+    // Create the resiudal.
+    d_r = MT::cloneVectorFromMatrixDomain( *d_A );
+    d_work_vec = VT::clone( *d_r );
+
     // Create the vector space for the LHS.
-    Teuchos::RCP<Vector> domain_vector = MT::cloneVectorFromMatrixDomain( *d_A );
     d_x_space = 
-	ThyraVectorExtraction<Vector>::createVectorSpace( *domain_vector );
+	ThyraVectorExtraction<Vector,Matrix>::createVectorSpaceFromDomain( *d_A );
     d_f_space = d_x_space;
 
     // Update the residual problem if it already exists.
@@ -223,8 +223,8 @@ MCSAModelEvaluator<Vector,Matrix,RNG>::getPrecResidual(
     // Apply left preconditioning if necessary.
     if ( Teuchos::nonnull(d_M) )
     {
-        Teuchos::RCP<Vector> temp = VT::deepCopy( *d_r );
-	MT::apply( *d_M, *temp, *d_r );
+	VT::update( *d_work_vec, 0.0, *d_r, 1.0 );
+	MT::apply( *d_M, *d_work_vec, *d_r );
     }
 
     return d_r;
@@ -233,7 +233,7 @@ MCSAModelEvaluator<Vector,Matrix,RNG>::getPrecResidual(
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
 template<class Vector, class Matrix, class RNG>
-Teuchos::RCP<const Thyra::VectorSpaceBase<typename VectorTraits<Vector>::scalar_type> >
+Teuchos::RCP<const ::Thyra::VectorSpaceBase<typename VectorTraits<Vector>::scalar_type> >
 MCSAModelEvaluator<Vector,Matrix,RNG>::get_x_space() const
 {
   return d_x_space;
@@ -242,7 +242,7 @@ MCSAModelEvaluator<Vector,Matrix,RNG>::get_x_space() const
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
 template<class Vector, class Matrix, class RNG>
-Teuchos::RCP<const Thyra::VectorSpaceBase<typename VectorTraits<Vector>::scalar_type> >
+Teuchos::RCP<const ::Thyra::VectorSpaceBase<typename VectorTraits<Vector>::scalar_type> >
 MCSAModelEvaluator<Vector,Matrix,RNG>::get_f_space() const
 {
   return d_f_space;
@@ -251,20 +251,23 @@ MCSAModelEvaluator<Vector,Matrix,RNG>::get_f_space() const
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
 template<class Vector, class Matrix, class RNG>
-Thyra::ModelEvaluatorBase::InArgs<typename VectorTraits<Vector>::scalar_type>
+::Thyra::ModelEvaluatorBase::InArgs<typename VectorTraits<Vector>::scalar_type>
 MCSAModelEvaluator<Vector,Matrix,RNG>::getNominalValues() const
 {
-    ::Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
-    inArgs.setModelEvalDescription(this->description());
-    inArgs.setSupports(::Thyra::ModelEvaluatorBase::IN_ARG_x);
-    inArgs.set_x( ::Thyra::createMember(d_x_space) );
-    return inArgs;
+    MCLS_REQUIRE( Teuchos::nonnull(d_A) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_b) );
+    d_nominal_values = this->createInArgs();
+    Teuchos::RCP<Vector> x0 = VT::clone( *d_b );
+    d_nominal_values.set_x( 
+	ThyraVectorExtraction<Vector,Matrix>::createThyraVectorFromDomain(
+	    x0, *d_A) );
+    return d_nominal_values;
 }
 
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
 template<class Vector, class Matrix, class RNG>
-Thyra::ModelEvaluatorBase::InArgs<typename VectorTraits<Vector>::scalar_type>
+::Thyra::ModelEvaluatorBase::InArgs<typename VectorTraits<Vector>::scalar_type>
 MCSAModelEvaluator<Vector,Matrix,RNG>::createInArgs() const
 {
     ::Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
@@ -276,7 +279,7 @@ MCSAModelEvaluator<Vector,Matrix,RNG>::createInArgs() const
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
 template<class Vector, class Matrix, class RNG>
-Thyra::ModelEvaluatorBase::OutArgs<typename VectorTraits<Vector>::scalar_type>
+::Thyra::ModelEvaluatorBase::OutArgs<typename VectorTraits<Vector>::scalar_type>
 MCSAModelEvaluator<Vector,Matrix,RNG>::createOutArgsImpl() const
 {
     ::Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
@@ -291,21 +294,22 @@ MCSAModelEvaluator<Vector,Matrix,RNG>::createOutArgsImpl() const
  */
 template<class Vector, class Matrix, class RNG>
 void MCSAModelEvaluator<Vector,Matrix,RNG>::evalModelImpl(
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs ) const
+    const ::Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+    const ::Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs ) const
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_mc_solver) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
     // Get the input argument.
-    Teuchos::RCP<Vector> domain_vector = MT::cloneVectorFromMatrixDomain( *d_A );
     Teuchos::RCP<const Vector> x = 
-	ThyraVectorExtraction<Vector>::getVector( inArgs.get_x(), *domain_vector );
+	ThyraVectorExtraction<Vector,Matrix>::getVectorFromDomain( 
+	    inArgs.get_x(), *d_A );
 
     // Get the output argument.
-    Teuchos::RCP<Vector> f = ThyraVectorExtraction<Vector>::getVectorNonConst(
-	outArgs.get_f(), *domain_vector );
+    Teuchos::RCP<Vector> f = 
+	ThyraVectorExtraction<Vector,Matrix>::getVectorNonConstFromDomain(
+	    outArgs.get_f(), *d_A );
     VT::update( *f, 0.0, *x, 1.0 );
 
     // Get the preconditioned residual.
