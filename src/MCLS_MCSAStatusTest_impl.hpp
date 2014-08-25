@@ -76,7 +76,8 @@ NOX::StatusTest::StatusType MCSAStatusTest<Vector,Matrix>::checkStatus(
 	= dynamic_cast< const NOX::Thyra::Group& >(problem.getSolutionGroup());
 
     Teuchos::RCP<const MCSAModelEvaluator<Vector,Matrix> > model = 
-	Teuchos::rcp_dynamic_cast<const MCSAModelEvaluator<Vector,Matrix> >(group.getModel());
+	Teuchos::rcp_dynamic_cast<const MCSAModelEvaluator<Vector,Matrix> >(
+	    group.getModel());
 
     // On initial iteration, compute initial RHS norm.
     if (problem.getNumIterations() == 0) 
