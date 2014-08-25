@@ -118,6 +118,28 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
     /*!
      * \brief Create a reference-counted pointer to a new empty vector from a
      * matrix to give the vector the same parallel distribution as the
+     * matrix parallel domain.
+     */
+    static Teuchos::RCP<vector_type> 
+    cloneVectorFromMatrixDomain( const matrix_type& matrix )
+    { 
+	return Tpetra::createVector<Scalar,LO,GO>( matrix.getDomainMap() );
+    }
+
+    /*!
+     * \brief Create a reference-counted pointer to a new empty vector from a
+     * matrix to give the vector the same parallel distribution as the
+     * matrix range.
+     */
+    static Teuchos::RCP<vector_type> 
+    cloneVectorFromMatrixRange( const matrix_type& matrix )
+    { 
+	return Tpetra::createVector<Scalar,LO,GO>( matrix.getRangeMap() );
+    }
+
+    /*!
+     * \brief Create a reference-counted pointer to a new empty vector from a
+     * matrix to give the vector the same parallel distribution as the
      * matrix parallel row distribution.
      */
     static Teuchos::RCP<vector_type> 

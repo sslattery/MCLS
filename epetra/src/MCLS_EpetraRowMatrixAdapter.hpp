@@ -136,12 +136,34 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
     /*!
      * \brief Create a reference-counted pointer to a new empty vector from a
      * matrix to give the vector the same parallel distribution as the
+     * matrix parallel domain.
+     */
+    static Teuchos::RCP<vector_type> 
+    cloneVectorFromMatrixDomain( const matrix_type& matrix )
+    { 
+	return Teuchos::rcp( new vector_type(matrix.OperatorDomainMap()) );
+    }
+
+    /*!
+     * \brief Create a reference-counted pointer to a new empty vector from a
+     * matrix to give the vector the same parallel distribution as the
+     * matrix range.
+     */
+    static Teuchos::RCP<vector_type> 
+    cloneVectorFromMatrixRange( const matrix_type& matrix )
+    { 
+	return Teuchos::rcp( new vector_type(matrix.OperatorRangeMap()) );
+    }
+
+    /*!
+     * \brief Create a reference-counted pointer to a new empty vector from a
+     * matrix to give the vector the same parallel distribution as the
      * matrix parallel row distribution.
      */
     static Teuchos::RCP<vector_type> 
     cloneVectorFromMatrixRows( const matrix_type& matrix )
     { 
-	return Teuchos::rcp( new vector_type( matrix.RowMatrixRowMap() ) );
+	return Teuchos::rcp( new vector_type(matrix.RowMatrixRowMap()) );
     }
 
     /*!
@@ -153,7 +175,7 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
     cloneVectorFromMatrixCols( const matrix_type& matrix )
     { 
 	MCLS_REQUIRE( matrix.Filled() );
-	return Teuchos::rcp( new vector_type( matrix.RowMatrixColMap() ) );
+	return Teuchos::rcp( new vector_type(matrix.RowMatrixColMap()) );
     }
 
     /*!

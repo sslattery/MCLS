@@ -41,6 +41,7 @@
 #include <MCLS_Preconditioner.hpp>
 #include <MCLS_TpetraPointJacobiPreconditioner.hpp>
 #include <MCLS_TpetraBlockJacobiPreconditioner.hpp>
+#include <MCLS_TpetraParaSailsPreconditioner.hpp>
 #include <MCLS_EpetraPointJacobiPreconditioner.hpp>
 #include <MCLS_EpetraBlockJacobiPreconditioner.hpp>
 #include <MCLS_EpetraILUTPreconditioner.hpp>
@@ -156,10 +157,9 @@ MCLSPreconditionerFactory<Scalar>::createPrec() const
 //---------------------------------------------------------------------------//
 template<class Scalar>
 void MCLSPreconditionerFactory<Scalar>::initializePrec(
-    const Teuchos::RCP<const LinearOpSourceBase<Scalar> >    &fwdOpSrc
-    ,PreconditionerBase<Scalar>                                      *prec
-    ,const ESupportSolveUse                                           supportSolveUse
-    ) const
+    const Teuchos::RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+    PreconditionerBase<Scalar> *prec,
+    const ESupportSolveUse supportSolveUse ) const
 {
     using Teuchos::outArg;
     using Teuchos::OSTab;
@@ -400,6 +400,19 @@ void MCLSPreconditionerFactory<Scalar>::initializePrec(
 		Teuchos::rcp( &blockJacobiPL, false );
 	    mcls_prec = Teuchos::rcp( 
 		new MCLS::TpetraBlockJacobiPreconditioner<Scalar,LO,GO>(prec_plist) );
+	}
+
+        // ParaSails.
+	else if ( d_prec_type == PREC_TYPE_PARASAILS )
+	{
+	    Teuchos::ParameterList &precTypesPL = 
+		d_plist->sublist(PrecTypes_name);
+	    Teuchos::ParameterList &parasailsPL = 
+		precTypesPL.sublist(ParaSails_name);
+	    Teuchos::RCP<Teuchos::ParameterList> prec_plist = 
+		Teuchos::rcp( &parasailsPL, false );
+	    mcls_prec = Teuchos::rcp( 
+		new MCLS::TpetraParaSailsPreconditioner<Scalar,LO,GO>(prec_plist) );
 	}
 
 	// For now, we just have left preconditioners implemented so we do

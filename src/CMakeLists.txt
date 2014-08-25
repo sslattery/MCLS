@@ -32,6 +32,8 @@ APPEND_SET(HEADERS
   MCLS_AdjointTally_impl.hpp
   MCLS_AlmostOptimalDomain.hpp
   MCLS_AlmostOptimalDomain_impl.hpp
+  MCLS_AndersonSolverManager.hpp
+  MCLS_AndersonSolverManager_impl.hpp
   MCLS_CommHistoryBuffer.hpp
   MCLS_CommHistoryBuffer_impl.hpp
   MCLS_CommTools.hpp
@@ -67,8 +69,12 @@ APPEND_SET(HEADERS
   MCLS_LinearProblem.hpp
   MCLS_LinearProblem_impl.hpp
   MCLS_MatrixTraits.hpp
+  MCLS_MCSAModelEvaluator.hpp
+  MCLS_MCSAModelEvaluator_impl.hpp
   MCLS_MCSASolverManager.hpp
   MCLS_MCSASolverManager_impl.hpp
+  MCLS_MCSAStatusTest.hpp
+  MCLS_MCSAStatusTest_impl.hpp
   MCLS_MCSolver.hpp
   MCLS_MCSolver_impl.hpp
   MCLS_MinimalResidualIteration.hpp
@@ -95,6 +101,7 @@ APPEND_SET(HEADERS
   MCLS_SubdomainTransporter.hpp
   MCLS_SubdomainTransporter_impl.hpp
   MCLS_TallyTraits.hpp
+  MCLS_ThyraVectorExtraction.hpp
   MCLS_UniformAdjointSource.hpp
   MCLS_UniformAdjointSource_impl.hpp
   MCLS_UniformForwardSource.hpp

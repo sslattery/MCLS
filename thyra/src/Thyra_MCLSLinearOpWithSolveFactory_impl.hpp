@@ -45,6 +45,7 @@
 
 #include <MCLS_DBC.hpp>
 #include <MCLS_SolverManager.hpp>
+#include <MCLS_AndersonSolverManager.hpp>
 #include <MCLS_MCSASolverManager.hpp>
 #include <MCLS_AdjointSolverManager.hpp>
 #include <MCLS_ForwardSolverManager.hpp>
@@ -91,6 +92,9 @@ const std::string MCLSLinearOpWithSolveFactory<Scalar>::SolverTypes_name =
 
 template<class Scalar>
 const std::string MCLSLinearOpWithSolveFactory<Scalar>::MCSA_name = "MCSA";
+
+template<class Scalar>
+const std::string MCLSLinearOpWithSolveFactory<Scalar>::Anderson_name = "Anderson";
 
 template<class Scalar>
 const std::string MCLSLinearOpWithSolveFactory<Scalar>::AdjointMC_name = 
@@ -449,7 +453,8 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 		"MCSA",
 		"Adjoint MC",
 		"Forward MC",
-                "Fixed Point"
+                "Fixed Point",
+		"Anderson"
 		),
 	    tuple<std::string>(
 		"Monte Carlo Synthetic Acceleration solver for nonsymmetric linear "
@@ -465,13 +470,16 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 		"right-hand sides sequentially.",
 
                 "Fixed point iteration. Iteration type determined by "
-                "'Fixed Point Type' parameter"
+                "'Fixed Point Type' parameter",
+
+		"Anderson accelerated MCSA "
 		),
 	    tuple<EMCLSSolverType>(
 		SOLVER_TYPE_MCSA,
 		SOLVER_TYPE_ADJOINT_MC,
 		SOLVER_TYPE_FORWARD_MC,
-                SOLVER_TYPE_FIXED_POINT
+                SOLVER_TYPE_FIXED_POINT,
+		SOLVER_TYPE_ANDERSON
 		),
 	    &*validParamList
 	    );
@@ -515,6 +523,12 @@ MCLSLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 	    MCLS::FixedPointSolverManager<Epetra_Vector,Epetra_RowMatrix> mgr(
 		Teuchos::DefaultComm<int>::getComm(), Teuchos::parameterList() );
 	    solverTypesSL.sublist(FixedPoint_name).setParameters(
+		*(mgr.getValidParameters()) );
+	}
+	{
+	    MCLS::AndersonSolverManager<Epetra_Vector,Epetra_RowMatrix> mgr(
+		Teuchos::DefaultComm<int>::getComm(), Teuchos::parameterList() );
+	    solverTypesSL.sublist(Anderson_name).setParameters(
 		*(mgr.getValidParameters()) );
 	}
     }
@@ -919,6 +933,28 @@ void MCLSLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 	    // Create the solver
 	    solver = 
 		rcp(new MCLS::FixedPointSolverManager<Vector,Matrix>(
+			global_comm, solverPL) );
+	    iterativeSolver = Teuchos::rcp( 
+		new MCLS::SolverManagerAdapter<MultiVector,Matrix>(solver) );
+	    iterativeSolver->setProblem( lp );
+
+	    break;
+	}
+
+	case SOLVER_TYPE_ANDERSON: 
+	{
+	    // Set the PL
+	    if( d_plist.get() ) 
+	    {
+		Teuchos::ParameterList &solverTypesPL = 
+		    d_plist->sublist(SolverTypes_name);
+		Teuchos::ParameterList &andersonPL = 
+		    solverTypesPL.sublist(Anderson_name);
+		solverPL = Teuchos::rcp( &andersonPL, false );
+	    }
+	    // Create the solver
+	    solver = 
+		rcp(new MCLS::AndersonSolverManager<Vector,Matrix>(
 			global_comm, solverPL) );
 	    iterativeSolver = Teuchos::rcp( 
 		new MCLS::SolverManagerAdapter<MultiVector,Matrix>(solver) );

@@ -32,52 +32,69 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_SamplingTools.hpp
+ * \file MCLS_MCSAStatusTest.hpp
  * \author Stuart R. Slattery
- * \brief SamplingTools definition.
+ * \brief MCSA NOX status test.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_SAMPLINGTOOLS_HPP
-#define MCLS_SAMPLINGTOOLS_HPP
+#ifndef MCLS_MCSASTATUSTEST_HPP
+#define MCLS_MCSASTATUSTEST_HPP
 
-#include <algorithm>
-#include <cmath>
+#include <NOX_StatusTest_Generic.H>
+#include <NOX_Abstract_Vector.H>
+#include <NOX_Utils.H>
 
-#include "MCLS_DBC.hpp"
+// Forward declaration
+namespace NOX {
+namespace Abstract {
+class Group;
+}
+}
 
-#include <Teuchos_ArrayView.hpp>
-
-namespace MCLS
+namespace MCLS 
 {
 
 //---------------------------------------------------------------------------//
 /*!
- * \class SamplingTools
- * \brief Tools for sampling distributions.
+ * \class MCSAStatusTest
+ * \brief NOX status test for MCSA.
  */
-class SamplingTools
+template<class Vector, class Matrix>
+class MCSAStatusTest : public NOX::StatusTest::Generic 
 {
+
   public:
 
-    /*
-     * \brief Given a discrete CDF and random number, sample it to get the
-     * output state. 
-     */
-    template<class T>
-    static inline int
-    sampleDiscreteCDF( const T* cdf,
-		       const int size,
-		       const T& random )
-    {
-	MCLS_REQUIRE( size > 0 );
-	MCLS_REQUIRE( std::abs( cdf[size-1] - 1.0 ) < 1.0e-6 );
-	MCLS_REQUIRE( random >= 0.0 && random <= 1.0 );
-	MCLS_REMEMBER( const T *bin = std::lower_bound(cdf, cdf+size, random) );
-	MCLS_ENSURE( bin - cdf >= 0 && bin - cdf < size );
-	
-	return std::lower_bound( cdf, cdf+size, random ) - cdf;
-    }
+    MCSAStatusTest( double tolerance,
+		    const NOX::Utils* u = NULL );
+
+    // derived
+    virtual NOX::StatusTest::StatusType
+    checkStatus( const NOX::Solver::Generic& problem,
+		 NOX::StatusTest::CheckType checkType );
+
+    // derived
+    virtual NOX::StatusTest::StatusType getStatus() const;
+
+    virtual std::ostream& print(std::ostream& stream, int indent = 0) const;
+
+  private:
+
+    // Status
+    NOX::StatusTest::StatusType d_status;
+
+    //! Tolerance required for convergence
+    double d_tolerance;
+
+    //! Ostream used to print errors
+    NOX::Utils d_utils;
+
+    //! Current residual norm.
+    double d_r_norm;
+
+    //! RHS norm.
+    double d_b_norm;
 };
 
 //---------------------------------------------------------------------------//
@@ -85,10 +102,15 @@ class SamplingTools
 } // end namespace MCLS
 
 //---------------------------------------------------------------------------//
+// Template includes.
+//---------------------------------------------------------------------------//
 
-#endif // end MCLS_SAMPLINGTOOLS_HPP
+#include "MCLS_MCSAStatusTest_impl.hpp"
 
 //---------------------------------------------------------------------------//
-// end MCLS_SamplingTools.hpp
-// ---------------------------------------------------------------------------//
 
+#endif // end MCLS_MCSASTATUSTEST_HPP
+
+//---------------------------------------------------------------------------//
+// end MCLS_MCSAStatusTest.hpp
+//---------------------------------------------------------------------------//

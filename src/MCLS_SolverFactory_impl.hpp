@@ -62,6 +62,7 @@ SolverFactory<Vector,Matrix>::SolverFactory()
     d_name_map["Forward MC"] = FORWARD_MC;
     d_name_map["MCSA"] = MCSA;
     d_name_map["Fixed Point"] = FIXED_POINT;
+    d_name_map["Anderson"] = ANDERSON;
 }
 
 //---------------------------------------------------------------------------//
@@ -106,6 +107,12 @@ SolverFactory<Vector,Matrix>::create(
 	case FIXED_POINT:
 
 	    solver = Teuchos::rcp( new FixedPointSolverManager<Vector,Matrix>( 
+				       global_comm, solver_parameters ) );
+	    break;
+
+	case ANDERSON:
+
+	    solver = Teuchos::rcp( new AndersonSolverManager<Vector,Matrix>( 
 				       global_comm, solver_parameters ) );
 	    break;
 

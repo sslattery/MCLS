@@ -425,7 +425,8 @@ template<class Domain>
 int UniformAdjointSource<Domain>::sampleRandomSource( const double random )
 {
     // Sample the local source cdf to get a starting state.
-    return SamplingTools::sampleDiscreteCDF( d_cdf(), random );
+    return SamplingTools::sampleDiscreteCDF( 
+	d_cdf.getRawPtr(), d_cdf.size(), random );
 }
 
 //---------------------------------------------------------------------------//
