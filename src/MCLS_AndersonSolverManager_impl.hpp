@@ -187,7 +187,10 @@ bool AndersonSolverManager<Vector,Matrix,RNG>::solve()
     d_nox_solver->reset( nox_x0 );
 
     // Solve the problem.
+    Teuchos::Time timer("");
+    timer.start(true);
     NOX::StatusTest::StatusType solve_status = d_nox_solver->solve();
+    timer.stop();
 
     // Extract the solution.
     Teuchos::RCP<const NOX::Abstract::Vector> x = 
@@ -201,6 +204,15 @@ bool AndersonSolverManager<Vector,Matrix,RNG>::solve()
 	ThyraVectorExtraction<Vector,Matrix>::getVectorNonConstFromDomain( 
 	    thyra_x, *d_problem->getOperator() );
     VT::update( *d_problem->getLHS(), 0.0, *x_vector, 1.0 );
+
+    // Print final iteration data.
+    if ( d_global_comm->getRank() == 0 )
+    {
+        std::cout << std::endl
+		  << "    Anderson-MCSA Solve: Complete in " 
+		  << timer.totalElapsedTime() 
+                  << " seconds." << std::endl;
+    }
 
     // Return the status of the solve.
     return solve_status;

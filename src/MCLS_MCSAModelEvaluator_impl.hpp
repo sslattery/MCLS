@@ -327,11 +327,8 @@ void MCSAModelEvaluator<Vector,Matrix,RNG>::evalModelImpl(
     VT::putScalar( *d_mc_problem->getLHS(), 0.0 );
     d_mc_solver->solve();
 
-    // Apply the correction.
-    VT::update( *f, 1.0, *d_mc_problem->getLHS(), 1.0 );
-
-    // Compute the residual.
-    VT::update( *f, 1.0, *x, -1.0 );
+    // Compute the new nonlinear residual.
+    VT::update( *f, 1.0, *d_mc_problem->getLHS(), 1.0, *x, -1.0 );
 }
 
 //---------------------------------------------------------------------------//
