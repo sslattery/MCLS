@@ -45,6 +45,7 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_Time.hpp>
 
 #include <Epetra_RowMatrix.h>
 #include <Epetra_CrsMatrix.h>
@@ -111,6 +112,9 @@ class EpetraParaSailsPreconditioner : public Preconditioner<Epetra_RowMatrix>
 
     // Preconditioner (M^-1)
     Teuchos::RCP<Epetra_CrsMatrix> d_preconditioner;
+
+    // Preconditioner creation timer.
+    Teuchos::RCP<Teuchos::Time> d_prec_timer;
 };
 
 //---------------------------------------------------------------------------//

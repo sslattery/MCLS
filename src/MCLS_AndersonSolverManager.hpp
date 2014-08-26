@@ -53,6 +53,7 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_Comm.hpp>
+#include <Teuchos_Time.hpp>
 
 #include <NOX.H>
 #include <NOX_Abstract_PrePostOperator.H>
@@ -148,6 +149,9 @@ class AndersonSolverManager : public SolverManager<Vector,Matrix>
 
     // NOX solver.
     Teuchos::RCP<NOX::Solver::Generic> d_nox_solver;
+
+    // Total solve timer.
+    Teuchos::RCP<Teuchos::Time> d_solve_timer;
 };
 
 //---------------------------------------------------------------------------//

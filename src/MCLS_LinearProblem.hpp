@@ -45,6 +45,7 @@
 #include "MCLS_MatrixTraits.hpp"
 
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_Time.hpp>
 
 namespace MCLS
 {
@@ -174,6 +175,9 @@ class LinearProblem
 
     // Preconditioned residual rp = PL*(b - A*PR*x).
     Teuchos::RCP<Vector> d_rp;
+
+    // Matrix-matrix multiply timer.
+    Teuchos::RCP<Teuchos::Time> d_mm_timer;
 };
 
 //---------------------------------------------------------------------------//

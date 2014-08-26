@@ -61,6 +61,7 @@ LinearProblem<Vector,Matrix>::LinearProblem(
     , d_b( b )
     , d_r( MT::cloneVectorFromMatrixRows(*d_A) )
     , d_rp( MT::cloneVectorFromMatrixRows(*d_A) )
+    , d_mm_timer( Teuchos::TimeMonitor::getNewCounter("MM Multiply") )
 {
     MCLS_ENSURE( Teuchos::nonnull(d_A) );
     MCLS_ENSURE( Teuchos::nonnull(d_x) );
@@ -143,6 +144,8 @@ template<class Vector, class Matrix>
 Teuchos::RCP<const Matrix> 
 LinearProblem<Vector,Matrix>::getCompositeOperator() const
 {
+    Teuchos::TimeMonitor mm_monitor( *d_mm_timer );
+
     const bool left_prec = Teuchos::nonnull( d_PL );
     const bool right_prec = Teuchos::nonnull( d_PR );
 
@@ -181,6 +184,8 @@ template<class Vector, class Matrix>
 Teuchos::RCP<const Matrix> 
 LinearProblem<Vector,Matrix>::getTransposeCompositeOperator() const
 {
+    Teuchos::TimeMonitor mm_monitor( *d_mm_timer );
+
     const bool left_prec = Teuchos::nonnull( d_PL );
     const bool right_prec = Teuchos::nonnull( d_PR );
 

@@ -62,6 +62,7 @@ MCSolver<Source>::MCSolver( const Teuchos::RCP<const Comm>& set_comm,
     , d_plist( plist )
     , d_relative_weight_cutoff( 0.0 )
     , d_rng( Teuchos::rcp(new PRNG<rng_type>(global_rank)) )
+    , d_mc_timer( Teuchos::TimeMonitor::getNewCounter("Monte Carlo") )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
     MCLS_REQUIRE( Teuchos::nonnull(d_set_comm) );
@@ -92,7 +93,10 @@ void MCSolver<Source>::solve()
     d_transporter->assignSource( d_source, d_relative_weight_cutoff );
 
     // Transport the source to solve the problem.
-    d_transporter->transport();
+    {
+	Teuchos::TimeMonitor mc_monitor( *d_mc_timer );
+	d_transporter->transport();
+    }
 
     // Update the set tallies.
     TT::combineSetTallies( *d_tally, d_set_comm );

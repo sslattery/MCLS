@@ -52,7 +52,6 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_Ptr.hpp>
 #include <Teuchos_TimeMonitor.hpp>
-#include <Teuchos_Time.hpp>
 
 namespace MCLS
 {
@@ -67,6 +66,7 @@ AndersonSolverManager<Vector,Matrix,RNG>::AndersonSolverManager(
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
     : d_global_comm( global_comm )
     , d_plist( plist )
+    , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS Solve") )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
@@ -88,6 +88,7 @@ AndersonSolverManager<Vector,Matrix,RNG>::AndersonSolverManager(
     , d_global_comm( global_comm )
     , d_plist( plist )
     , d_nox_solver( new ::Thyra::NOXNonlinearSolver )
+    , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS Solve") )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
@@ -179,6 +180,9 @@ void AndersonSolverManager<Vector,Matrix,RNG>::setParameters(
 template<class Vector, class Matrix, class RNG>
 bool AndersonSolverManager<Vector,Matrix,RNG>::solve()
 {
+    // Start the solve timer.
+    Teuchos::TimeMonitor solve_monitor( *d_solve_timer );
+
     // Create a Thyra vector from our initial guess.
     Teuchos::RCP< ::Thyra::VectorBase<double> > x0 = 
 	ThyraVectorExtraction<Vector,Matrix>::createThyraVectorFromDomain( 
@@ -187,10 +191,7 @@ bool AndersonSolverManager<Vector,Matrix,RNG>::solve()
     d_nox_solver->reset( nox_x0 );
 
     // Solve the problem.
-    Teuchos::Time timer("");
-    timer.start(true);
     NOX::StatusTest::StatusType solve_status = d_nox_solver->solve();
-    timer.stop();
 
     // Extract the solution.
     Teuchos::RCP<const NOX::Abstract::Vector> x = 
@@ -204,15 +205,6 @@ bool AndersonSolverManager<Vector,Matrix,RNG>::solve()
 	ThyraVectorExtraction<Vector,Matrix>::getVectorNonConstFromDomain( 
 	    thyra_x, *d_problem->getOperator() );
     VT::update( *d_problem->getLHS(), 0.0, *x_vector, 1.0 );
-
-    // Print final iteration data.
-    if ( d_global_comm->getRank() == 0 )
-    {
-        std::cout << std::endl
-		  << "    Anderson-MCSA Solve: Complete in " 
-		  << timer.totalElapsedTime() 
-                  << " seconds." << std::endl;
-    }
 
     // Return the status of the solve.
     return solve_status;
