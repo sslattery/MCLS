@@ -114,8 +114,10 @@ class TpetraParaSailsPreconditioner :
     // Preconditioner (M^-1)
     Teuchos::RCP<matrix_type> d_preconditioner;
 
+#if HAVE_MCLS_TIMERS
     // Preconditioner creation timer.
     Teuchos::RCP<Teuchos::Time> d_prec_timer;
+#endif
 };
 
 //---------------------------------------------------------------------------//

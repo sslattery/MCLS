@@ -43,6 +43,7 @@
 
 #include <random>
 
+#include "MCLS_config.hpp"
 #include "MCLS_SolverManager.hpp"
 #include "MCLS_FixedPointIteration.hpp"
 #include "MCLS_LinearProblem.hpp"
@@ -170,8 +171,10 @@ class MCSASolverManager : public SolverManager<Vector,Matrix>
     // Converged status. True if last solve converged.
     int d_converged_status;
 
+#if HAVE_MCLS_TIMERS
     // Total solve timer.
     Teuchos::RCP<Teuchos::Time> d_solve_timer;
+#endif
 };
 
 //---------------------------------------------------------------------------//

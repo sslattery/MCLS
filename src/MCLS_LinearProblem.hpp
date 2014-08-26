@@ -176,8 +176,10 @@ class LinearProblem
     // Preconditioned residual rp = PL*(b - A*PR*x).
     Teuchos::RCP<Vector> d_rp;
 
+#if HAVE_MCLS_TIMERS
     // Matrix-matrix multiply timer.
     Teuchos::RCP<Teuchos::Time> d_mm_timer;
+#endif
 };
 
 //---------------------------------------------------------------------------//

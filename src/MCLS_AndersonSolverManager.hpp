@@ -150,8 +150,10 @@ class AndersonSolverManager : public SolverManager<Vector,Matrix>
     // NOX solver.
     Teuchos::RCP<NOX::Solver::Generic> d_nox_solver;
 
+#if HAVE_MCLS_TIMERS
     // Total solve timer.
     Teuchos::RCP<Teuchos::Time> d_solve_timer;
+#endif
 };
 
 //---------------------------------------------------------------------------//

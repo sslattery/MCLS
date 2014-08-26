@@ -67,7 +67,9 @@ MCSASolverManager<Vector,Matrix,RNG>::MCSASolverManager(
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
     : d_global_comm( global_comm )
     , d_plist( plist )
+#if HAVE_MCLS_TIMERS
     , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS Solve") )
+#endif
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
@@ -88,7 +90,9 @@ MCSASolverManager<Vector,Matrix,RNG>::MCSASolverManager(
     , d_primary_set( Teuchos::nonnull(d_problem) )
     , d_num_iters( 0 )
     , d_converged_status( 0 )
+#if HAVE_MCLS_TIMERS
     , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS Solve") )
+#endif
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
@@ -293,8 +297,10 @@ bool MCSASolverManager<Vector,Matrix,RNG>::solve()
     MCLS_REQUIRE( Teuchos::nonnull(d_mc_solver) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
+#if HAVE_MCLS_TIMERS
     // Start the solve timer.
     Teuchos::TimeMonitor solve_monitor( *d_solve_timer );
+#endif
 
     // Get the convergence parameters on the primary set.
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType 

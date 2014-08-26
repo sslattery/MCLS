@@ -62,7 +62,9 @@ MCSolver<Source>::MCSolver( const Teuchos::RCP<const Comm>& set_comm,
     , d_plist( plist )
     , d_relative_weight_cutoff( 0.0 )
     , d_rng( Teuchos::rcp(new PRNG<rng_type>(global_rank)) )
+#if HAVE_MCLS_TIMERS
     , d_mc_timer( Teuchos::TimeMonitor::getNewCounter("Monte Carlo") )
+#endif
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
     MCLS_REQUIRE( Teuchos::nonnull(d_set_comm) );
@@ -94,7 +96,9 @@ void MCSolver<Source>::solve()
 
     // Transport the source to solve the problem.
     {
+#if HAVE_MCLS_TIMERS
 	Teuchos::TimeMonitor mc_monitor( *d_mc_timer );
+#endif
 	d_transporter->transport();
     }
 

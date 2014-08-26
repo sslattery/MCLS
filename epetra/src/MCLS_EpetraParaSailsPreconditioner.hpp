@@ -113,8 +113,10 @@ class EpetraParaSailsPreconditioner : public Preconditioner<Epetra_RowMatrix>
     // Preconditioner (M^-1)
     Teuchos::RCP<Epetra_CrsMatrix> d_preconditioner;
 
+#if HAVE_MCLS_TIMERS
     // Preconditioner creation timer.
     Teuchos::RCP<Teuchos::Time> d_prec_timer;
+#endif
 };
 
 //---------------------------------------------------------------------------//

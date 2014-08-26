@@ -68,7 +68,9 @@ namespace MCLS
 EpetraParaSailsPreconditioner::EpetraParaSailsPreconditioner(
     const Teuchos::RCP<Teuchos::ParameterList>& params )
     : d_plist( params )
+#if HAVE_MCLS_TIMERS
     , d_prec_timer( Teuchos::TimeMonitor::getNewCounter("ParaSails Create") )
+#endif
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 }
@@ -131,7 +133,9 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
     MCLS_REQUIRE( Teuchos::nonnull(d_A) );
     MCLS_REQUIRE( d_A->Filled() );
 
+#if HAVE_MCLS_TIMERS
     Teuchos::TimeMonitor prec_monitor( *d_prec_timer );
+#endif
 
     // Get the ParaSails parameters.
     double threshold = d_plist->get<double>("ParaSails: Threshold");

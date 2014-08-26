@@ -143,6 +143,7 @@ void insist( const std::string& cond, const std::string& msg,
 #define MCLS_ENSURE(c) if (!(c)) MCLS::throwAssertion( #c, __FILE__, __LINE__ )
 #define MCLS_CHECK(c) if (!(c)) MCLS::throwAssertion( #c, __FILE__, __LINE__ )
 #define MCLS_REMEMBER(c) c
+#define MCLS_CHECK_ERROR_CODE(c) if (0!=(c)) MCLS::throwAssertion( #c, __FILE__, __LINE__ )
 
 #else
 
@@ -150,6 +151,7 @@ void insist( const std::string& cond, const std::string& msg,
 #define MCLS_ENSURE(c)
 #define MCLS_CHECK(c)
 #define MCLS_REMEMBER(c)
+#define MCLS_CHECK_ERROR_CODE(c) c
 
 #endif
 

@@ -127,8 +127,10 @@ class MCSolver
     // Source.
     Teuchos::RCP<Source> d_source;
 
+#if HAVE_MCLS_TIMERS
     // Monte Carlo timer.
     Teuchos::RCP<Teuchos::Time> d_mc_timer;
+#endif
 };
 
 //---------------------------------------------------------------------------//
