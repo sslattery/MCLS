@@ -44,6 +44,7 @@
 #include "MCLS_DBC.hpp"
 
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_TimeMonitor.hpp>
 
 namespace MCLS
 {

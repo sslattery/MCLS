@@ -41,6 +41,7 @@
 #ifndef MCLS_LINEARPROBLEM_HPP
 #define MCLS_LINEARPROBLEM_HPP
 
+#include "MCLS_config.hpp"
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_MatrixTraits.hpp"
 

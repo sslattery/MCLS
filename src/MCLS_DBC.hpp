@@ -107,6 +107,10 @@ void throwAssertion( const std::string& cond, const std::string& file,
 void insist( const std::string& cond, const std::string& msg,
 	     const std::string& file, const int line );
 
+// Throw an assertion based on an error code failure.
+void errorCodeFailure( const std::string& cond, const std::string& file,
+		       const int line, const int error_code );
+
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
@@ -143,7 +147,7 @@ void insist( const std::string& cond, const std::string& msg,
 #define MCLS_ENSURE(c) if (!(c)) MCLS::throwAssertion( #c, __FILE__, __LINE__ )
 #define MCLS_CHECK(c) if (!(c)) MCLS::throwAssertion( #c, __FILE__, __LINE__ )
 #define MCLS_REMEMBER(c) c
-#define MCLS_CHECK_ERROR_CODE(c) if (0!=(c)) MCLS::throwAssertion( #c, __FILE__, __LINE__ )
+#define MCLS_CHECK_ERROR_CODE(c) do{int ec=c; if (0!=ec) MCLS::errorCodeFailure( #c, __FILE__, __LINE__, ec );} while(0)
 
 #else
 

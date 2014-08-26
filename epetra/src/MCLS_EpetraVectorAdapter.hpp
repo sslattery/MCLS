@@ -203,8 +203,9 @@ class VectorTraits<Epetra_Vector>
     				    global_ordinal_type global_row,
     				    const scalar_type& value )
     {
-	int error = vector.ReplaceGlobalValue( global_row, 0, value );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    vector.ReplaceGlobalValue( global_row, 0, value )
+	    );
     }
 
     /*!
@@ -215,8 +216,9 @@ class VectorTraits<Epetra_Vector>
     				   local_ordinal_type local_row,
     				   const scalar_type& value )
     {
-	int error = vector.ReplaceMyValue( local_row, 0, value );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    vector.ReplaceMyValue( local_row, 0, value )
+	    );
     }
 
     /*!
@@ -227,8 +229,9 @@ class VectorTraits<Epetra_Vector>
     				    global_ordinal_type global_row,
     				    const scalar_type& value )
     {
-	int error = vector.SumIntoGlobalValue( global_row, 0, value );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    vector.SumIntoGlobalValue( global_row, 0, value )
+	    );
     }
 
     /*!
@@ -239,8 +242,9 @@ class VectorTraits<Epetra_Vector>
     				   local_ordinal_type local_row,
     				   const scalar_type& value )
     {
-	int error = vector.SumIntoMyValue( local_row, 0, value );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    vector.SumIntoMyValue( local_row, 0, value )
+	    );
     }
 
     /*!
@@ -248,8 +252,9 @@ class VectorTraits<Epetra_Vector>
      */
     static void putScalar( vector_type& vector, const scalar_type& value )
     { 
-	int error = vector.PutScalar( value );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    vector.PutScalar( value )
+	    );
     }
 
     /*!
@@ -257,8 +262,9 @@ class VectorTraits<Epetra_Vector>
      */
     static void randomize( vector_type& vector )
     {
-        int error = vector.Random();
-        MCLS_CHECK( 0 == error );
+        MCLS_CHECK_ERROR_CODE(
+	    vector.Random()
+	    );
     }
 
     /*!
@@ -267,8 +273,9 @@ class VectorTraits<Epetra_Vector>
     static Teuchos::ArrayRCP<const scalar_type> view( const vector_type& vector )
     { 
 	scalar_type* view_pointer;
-	int error = vector.ExtractView( &view_pointer );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    vector.ExtractView( &view_pointer )
+	    );
 	return Teuchos::ArrayRCP<const scalar_type>( 
 	    view_pointer, 0, vector.MyLength(), false );
     }
@@ -280,8 +287,9 @@ class VectorTraits<Epetra_Vector>
     viewNonConst( vector_type& vector )
     { 
 	scalar_type* view_pointer;
-	int error = vector.ExtractView( &view_pointer );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    vector.ExtractView( &view_pointer )
+	    );
 	return Teuchos::ArrayRCP<scalar_type>( 
 	    view_pointer, 0, vector.MyLength(), false );
     }
@@ -293,8 +301,9 @@ class VectorTraits<Epetra_Vector>
     dot( const vector_type& A, const vector_type& B )
     { 
 	scalar_type product;
-	int error = A.Dot( B, &product );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    A.Dot( B, &product )
+	    );
 	return product;
     }
 
@@ -305,8 +314,9 @@ class VectorTraits<Epetra_Vector>
     norm1( const vector_type& vector )
     {
 	scalar_type norm;
-	int error = vector.Norm1( &norm );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    vector.Norm1( &norm )
+	    );
 	return norm;
     }
 
@@ -317,8 +327,9 @@ class VectorTraits<Epetra_Vector>
     norm2( const vector_type& vector )
     {
 	scalar_type norm;
-	int error = vector.Norm2( &norm );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    vector.Norm2( &norm )
+	    );
 	return norm;
     }
 
@@ -329,8 +340,9 @@ class VectorTraits<Epetra_Vector>
     normInf( const vector_type& vector )
     {
 	scalar_type norm;
-	int error = vector.NormInf( &norm );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    vector.NormInf( &norm )
+	    );
 	return norm;
     }
 
@@ -340,8 +352,9 @@ class VectorTraits<Epetra_Vector>
     static scalar_type meanValue( const vector_type& vector )
     {
 	scalar_type mean;
-	int error = vector.MeanValue( &mean );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    vector.MeanValue( &mean )
+	    );
 	return mean;
     }
 
@@ -351,8 +364,9 @@ class VectorTraits<Epetra_Vector>
      */
     static void abs( vector_type& A, const vector_type& B )
     {
-	int error = A.Abs( B );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    A.Abs( B )
+	    );
     }
 
     /*!
@@ -360,8 +374,9 @@ class VectorTraits<Epetra_Vector>
      */
     static void scale( vector_type& A, const scalar_type value )
     {
-	int error = A.Scale( value );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    A.Scale( value )
+	    );
     }
 
     /*!
@@ -370,8 +385,9 @@ class VectorTraits<Epetra_Vector>
     static void 
     scaleCopy( vector_type& A, const scalar_type value, const vector_type& B )
     {
-	int error = A.Scale( value, B );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    A.Scale( value, B )
+	    );
     }
     
     /*!
@@ -380,8 +396,9 @@ class VectorTraits<Epetra_Vector>
      */
     static void reciprocal( vector_type& A, const vector_type& B )
     { 
-	int error = A.Reciprocal( B );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    A.Reciprocal( B )
+	    );
     }
 
     /*!
@@ -390,8 +407,9 @@ class VectorTraits<Epetra_Vector>
     static void update( vector_type& A, const scalar_type& alpha,
     			const vector_type& B, const scalar_type& beta )
     {
-	int error = A.Update( beta, B, alpha );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    A.Update( beta, B, alpha )
+	    );
     }
 
     /*!
@@ -401,8 +419,9 @@ class VectorTraits<Epetra_Vector>
     			const vector_type& B, const scalar_type& beta,
     			const vector_type& C, const scalar_type& gamma )
     {
-	int error = A.Update( beta, B, gamma, C, alpha );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    A.Update( beta, B, gamma, C, alpha )
+	    );
     }
 
     /*!
@@ -413,8 +432,9 @@ class VectorTraits<Epetra_Vector>
 				     const vector_type& B, const vector_type& C, 
 				     const scalar_type& beta)
     { 
-	int error = A.Multiply( beta, B, C, alpha );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    A.Multiply( beta, B, C, alpha )
+	    );
     }
 };
 

@@ -41,6 +41,7 @@
 #ifndef MCLS_TPETRAPARASAILS_HPP
 #define MCLS_TPETRAPARASAILS_HPP
 
+#include <MCLS_config.hpp>
 #include <MCLS_Preconditioner.hpp>
 
 #include <Teuchos_RCP.hpp>

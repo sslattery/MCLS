@@ -41,6 +41,7 @@
 #ifndef MCLS_MCSOLVER_HPP
 #define MCLS_MCSOLVER_HPP
 
+#include "MCLS_config.hpp"
 #include "MCLS_SourceTraits.hpp"
 #include "MCLS_DomainTraits.hpp"
 #include "MCLS_TallyTraits.hpp"

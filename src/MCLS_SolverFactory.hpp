@@ -94,7 +94,8 @@ class SolverFactory : public virtual Teuchos::Describable
         FORWARD_MC,
 	MCSA,
 	SEQUENTIAL_MC,
-        FIXED_POINT
+        FIXED_POINT,
+	ANDERSON
     };
 
     // String name to enum/integer map.

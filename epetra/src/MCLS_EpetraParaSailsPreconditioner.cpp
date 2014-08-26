@@ -153,15 +153,16 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
 
     // Export the operator to a row decomposition that is globally
     // contiguous. ParaSails requires this unfortunately.
-    int error = 0;
     Epetra_Map linear_map( d_A->NumGlobalRows(), 0, d_A->Comm() );
     Teuchos::RCP<Epetra_CrsMatrix> contiguous_A = Teuchos::rcp( 
         new Epetra_CrsMatrix(Copy,linear_map,d_A->MaxNumEntries()) );
     Epetra_Export linear_export( d_A->RowMatrixRowMap(), linear_map );
-    error = contiguous_A->Export( *d_A, linear_export, Insert );
-    MCLS_CHECK( 0 == error );
-    error = contiguous_A->FillComplete();
-    MCLS_CHECK( 0 == error );
+    MCLS_CHECK_ERROR_CODE(
+	contiguous_A->Export( *d_A, linear_export, Insert )
+	);
+    MCLS_CHECK_ERROR_CODE(
+	contiguous_A->FillComplete()
+	);
     MCLS_CHECK( contiguous_A->Filled() );
 
     // Check that the global ids are contiguous in the new operator.
@@ -183,13 +184,13 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
     {
         // Get the Epetra row.
 	MCLS_CHECK( contiguous_A->RowMatrixRowMap().MyGID(i) );
-	error = 
+	MCLS_CHECK_ERROR_CODE( 
 	    contiguous_A->ExtractGlobalRowCopy( i,
 						Teuchos::as<int>(values.size()), 
 						num_entries,
 						values.getRawPtr(), 
-						indices.getRawPtr() );
-        MCLS_CHECK( 0 == error );
+						indices.getRawPtr() )
+	    );
         MCLS_CHECK( num_entries > 0 );
 
         // Get rid of the zero entries.
@@ -260,9 +261,10 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
                                 m_indices_ptr, global_indices.getRawPtr() );
 
         MCLS_CHECK( contiguous_M->RowMatrixRowMap().MyGID(i) );
-        error = contiguous_M->InsertGlobalValues(
-            i, num_m_entries, m_values_ptr, global_indices.getRawPtr() );
-        MCLS_CHECK( 0 == error );
+        MCLS_CHECK_ERROR_CODE(
+	    contiguous_M->InsertGlobalValues(
+		i, num_m_entries, m_values_ptr, global_indices.getRawPtr() )
+	    );
     }
     global_indices.clear();
     
@@ -273,23 +275,26 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
     ParaSailsDestroy( parasails );
 
     // Finalize extracted inverse.
-    error = contiguous_M->FillComplete();
-    MCLS_CHECK( 0 == error );
+    MCLS_CHECK_ERROR_CODE(
+	contiguous_M->FillComplete()
+	);
     MCLS_CHECK( contiguous_M->Filled() );
 
     // Export the contiguous preconditioner into the operator decomposition.
     d_preconditioner = Teuchos::rcp(
 	new Epetra_CrsMatrix(Copy,d_A->RowMatrixRowMap(),max_m_entries) );
     Epetra_Export base_export( linear_map, d_A->RowMatrixRowMap() );
-    error = d_preconditioner->Export( *contiguous_M, base_export, Insert );
-    MCLS_CHECK( 0 == error );
+    MCLS_CHECK_ERROR_CODE(
+	d_preconditioner->Export( *contiguous_M, base_export, Insert )
+	);
 
     // Free the contiguous copy of the preconditioner.
     contiguous_M = Teuchos::null;
 
     // Finalize the preconditioner.
-    error = d_preconditioner->FillComplete();
-    MCLS_CHECK( 0 == error );
+    MCLS_CHECK_ERROR_CODE(
+	d_preconditioner->FillComplete()
+	);
 
     MCLS_ENSURE( Teuchos::nonnull(d_preconditioner) );
     MCLS_ENSURE( d_preconditioner->Filled() );

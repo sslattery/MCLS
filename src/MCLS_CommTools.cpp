@@ -101,7 +101,7 @@ void CommTools::reduceSum<float>(
 	MPI_SUM,
 	root,
 	raw_mpi_comm );
-    MCLS_CHECK( MPI_SUCCESS == error );
+    MCLS_INSIST( MPI_SUCCESS == error, "Reduce Sum Failed" );
 #else
     std::copy( send_buffer, send_buffer+count, global_reducts );
 #endif

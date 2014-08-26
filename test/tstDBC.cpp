@@ -69,6 +69,14 @@ Teuchos::RCP<const Teuchos::Comm<Ordinal> > getDefaultComm()
 }
 
 //---------------------------------------------------------------------------//
+int error_code_function( int& value )
+{
+    int code = value;
+    ++value;
+    return code;
+}
+
+//---------------------------------------------------------------------------//
 // Tests.
 //---------------------------------------------------------------------------//
 // Check that a MCLS::Assertion looks different than a
@@ -287,6 +295,46 @@ TEUCHOS_UNIT_TEST( Assertion, _test )
 	{
 	    TEST_ASSERT( 0 );
 	}
+    }
+    catch( ... )
+    {
+	TEST_ASSERT( 0 );
+    }
+}
+
+//---------------------------------------------------------------------------//
+// Test the error code check.
+TEUCHOS_UNIT_TEST( Assertion, errorcode_test_1 )
+{
+    int value = 1;
+    try 
+    {
+	MCLS_CHECK_ERROR_CODE( error_code_function(value) );
+	TEST_EQUALITY( value, 2 );
+    }
+    catch( const MCLS::Assertion& assertion )
+    {
+#if HAVE_MCLS_DBC
+	TEST_EQUALITY( value, 2 );
+#else
+	TEST_ASSERT( 0 );
+#endif
+    }
+    catch( ... )
+    {
+	TEST_ASSERT( 0 );
+    }
+}
+
+//---------------------------------------------------------------------------//
+// Test the error code check.
+TEUCHOS_UNIT_TEST( Assertion, errorcode_test_2 )
+{
+    int value = 0;
+    try 
+    {
+	MCLS_CHECK_ERROR_CODE( error_code_function(value) );
+	TEST_EQUALITY( value, 1 );
     }
     catch( ... )
     {

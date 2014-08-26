@@ -46,6 +46,7 @@
 #include "MCLS_ForwardSolverManager.hpp"
 #include "MCLS_MCSASolverManager.hpp"
 #include "MCLS_FixedPointSolverManager.hpp"
+#include "MCLS_AndersonSolverManager.hpp"
 
 namespace MCLS
 {

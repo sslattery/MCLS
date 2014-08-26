@@ -282,12 +282,13 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
 	const Teuchos::ArrayView<int>& ranks )
     {
 	Teuchos::Array<local_ordinal_type> local_rows( global_rows.size() );
-	int error = matrix.RowMatrixRowMap().RemoteIDList( 
-            global_rows.size(),
-            global_rows.getRawPtr(),
-            ranks.getRawPtr(),
-            local_rows.getRawPtr() );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    matrix.RowMatrixRowMap().RemoteIDList( 
+		global_rows.size(),
+		global_rows.getRawPtr(),
+		ranks.getRawPtr(),
+		local_rows.getRawPtr() )
+	    );
     }
 
     /*!
@@ -297,9 +298,10 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
 	const matrix_type& matrix,
 	const Teuchos::ArrayView<global_ordinal_type>& global_rows )
     {
-        int error = matrix.RowMatrixRowMap().MyGlobalElements( 
-            global_rows.getRawPtr() );
-        MCLS_CHECK( 0 == error );
+        MCLS_CHECK_ERROR_CODE(
+	    matrix.RowMatrixRowMap().MyGlobalElements( 
+		global_rows.getRawPtr() )
+	    );
     }
 
     /*!
@@ -309,9 +311,10 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
 	const matrix_type& matrix,
 	const Teuchos::ArrayView<global_ordinal_type>& global_cols )
     {
-        int error = matrix.RowMatrixColMap().MyGlobalElements( 
-            global_cols.getRawPtr() );
-        MCLS_CHECK( 0 == error );
+        MCLS_CHECK_ERROR_CODE(
+	    matrix.RowMatrixColMap().MyGlobalElements( 
+		global_cols.getRawPtr() )
+	    );
     }
 
     /*!
@@ -366,13 +369,14 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
 	MCLS_REQUIRE( matrix.RowMatrixRowMap().MyGID( global_row ) );
 	local_ordinal_type local_row = matrix.RowMatrixRowMap().LID( global_row );
 	int num_entries_int = 0;
-	int error = matrix.ExtractMyRowCopy( 
-            local_row, 
-            Teuchos::as<local_ordinal_type>(values.size()), 
-            num_entries_int,
-            values.getRawPtr(), indices.getRawPtr() );
+	MCLS_CHECK_ERROR_CODE(
+	    matrix.ExtractMyRowCopy( 
+		local_row, 
+		Teuchos::as<local_ordinal_type>(values.size()), 
+		num_entries_int,
+            values.getRawPtr(), indices.getRawPtr() )
+	    );
 	num_entries = num_entries_int;
-        MCLS_CHECK( 0 == error );
 
 	Teuchos::ArrayView<global_ordinal_type>::iterator col_it;
 	for ( col_it = indices.begin(); col_it != indices.end(); ++col_it )
@@ -394,13 +398,14 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
 	MCLS_REQUIRE( matrix.Filled() );
 	MCLS_REQUIRE( matrix.RowMatrixRowMap().MyLID( local_row ) );
 	int num_entries_int = 0;
-	int error = matrix.ExtractMyRowCopy( 
-            local_row, 
-            Teuchos::as<local_ordinal_type>(values.size()), 
-            num_entries_int,
-            values.getRawPtr(), indices.getRawPtr() );
+	MCLS_CHECK_ERROR_CODE(
+	    matrix.ExtractMyRowCopy( 
+		local_row, 
+		Teuchos::as<local_ordinal_type>(values.size()), 
+		num_entries_int,
+            values.getRawPtr(), indices.getRawPtr() )
+	    );
 	num_entries = num_entries_int;
-        MCLS_CHECK( 0 == error );
     }
 
     /*!
@@ -409,8 +414,9 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
     static void getLocalDiagCopy( const matrix_type& matrix, 
 				  vector_type& vector )
     { 
-	int error = matrix.ExtractDiagonalCopy( vector );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    matrix.ExtractDiagonalCopy( vector )
+	    );
     }
 
     /*!
@@ -444,8 +450,9 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
      */
     static void leftScale( matrix_type& A, const vector_type& x )
     { 
-	int error = A.LeftScale( x );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    A.LeftScale( x )
+	    );
     }
 
     /*!
@@ -453,8 +460,9 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
      */
     static void rightScale( matrix_type& A, const vector_type& x )
     { 
-	int error = A.RightScale( x );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    A.RightScale( x )
+	    );
     }
 
     /*!
@@ -464,8 +472,9 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
 		       const vector_type& x, 
 		       vector_type& y )
     {
-	int error = A.Apply( x, y );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    A.Apply( x, y )
+	    );
     }
 
     /*!
@@ -476,13 +485,16 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
                                  vector_type& y )
     {
         bool init_state = A.UseTranspose();
-        int error = const_cast<matrix_type&>(A).SetUseTranspose( true );
-        MCLS_CHECK( 0 == error );
+        MCLS_CHECK_ERROR_CODE(
+	    const_cast<matrix_type&>(A).SetUseTranspose( true )
+	    );
         MCLS_CHECK( A.UseTranspose() );
-	error = A.Apply( x, y );
-        MCLS_CHECK( 0 == error );
-        error = const_cast<matrix_type&>(A).SetUseTranspose( init_state );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE( 
+	    A.Apply( x, y )
+	    );
+        MCLS_CHECK_ERROR_CODE(
+	    const_cast<matrix_type&>(A).SetUseTranspose( init_state )
+	    );
         MCLS_ENSURE( A.UseTranspose() == init_state );
     }
 

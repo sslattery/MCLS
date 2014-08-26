@@ -43,6 +43,7 @@
 
 #include <random>
 
+#include "MCLS_config.hpp"
 #include "MCLS_MCSAModelEvaluator.hpp"
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
