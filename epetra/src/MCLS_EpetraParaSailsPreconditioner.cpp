@@ -220,7 +220,6 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
     MatrixComplete( epetra_matrix );
 
     // Create a ParaSails preconditioner.
-    std::cout << std::endl;
     ParaSails* parasails = ParaSailsCreate( raw_mpi_comm, beg_row, end_row, symmetry );
     parasails->loadbal_beta = load_balance;
     ParaSailsSetupPattern( parasails, epetra_matrix, threshold, num_levels );

@@ -221,7 +221,6 @@ void TpetraParaSailsPreconditioner<Scalar,LO,GO>::buildPreconditioner()
     MatrixComplete( tpetra_matrix );
 
     // Create a ParaSails preconditioner.
-    std::cout << std::endl;
     ParaSails* parasails = 
 	ParaSailsCreate( raw_mpi_comm, beg_row, end_row, symmetry );
     parasails->loadbal_beta = load_balance;
