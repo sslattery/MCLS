@@ -66,7 +66,9 @@ AndersonSolverManager<Vector,Matrix,RNG>::AndersonSolverManager(
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
     : d_global_comm( global_comm )
     , d_plist( plist )
+#if HAVE_MCLS_TIMERS
     , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS Solve") )
+#endif
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
@@ -88,7 +90,9 @@ AndersonSolverManager<Vector,Matrix,RNG>::AndersonSolverManager(
     , d_global_comm( global_comm )
     , d_plist( plist )
     , d_nox_solver( new ::Thyra::NOXNonlinearSolver )
+#if HAVE_MCLS_TIMERS
     , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS Solve") )
+#endif
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
@@ -180,8 +184,10 @@ void AndersonSolverManager<Vector,Matrix,RNG>::setParameters(
 template<class Vector, class Matrix, class RNG>
 bool AndersonSolverManager<Vector,Matrix,RNG>::solve()
 {
+#if HAVE_MCLS_TIMERS
     // Start the solve timer.
     Teuchos::TimeMonitor solve_monitor( *d_solve_timer );
+#endif
 
     // Create a Thyra vector from our initial guess.
     Teuchos::RCP< ::Thyra::VectorBase<double> > x0 = 

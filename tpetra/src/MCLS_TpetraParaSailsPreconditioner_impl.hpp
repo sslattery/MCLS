@@ -67,7 +67,9 @@ template<class Scalar, class LO, class GO>
 TpetraParaSailsPreconditioner<Scalar,LO,GO>::TpetraParaSailsPreconditioner(
     const Teuchos::RCP<Teuchos::ParameterList>& params )
     : d_plist( params )
+#if HAVE_MCLS_TIMERS
     , d_prec_timer( Teuchos::TimeMonitor::getNewCounter("ParaSails Create") )
+#endif
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 }
@@ -135,7 +137,9 @@ void TpetraParaSailsPreconditioner<Scalar,LO,GO>::buildPreconditioner()
     MCLS_REQUIRE( Teuchos::nonnull(d_A) );
     MCLS_REQUIRE( d_A->isFillComplete() );
 
+#if HAVE_MCLS_TIMERS
     Teuchos::TimeMonitor prec_monitor( *d_prec_timer );
+#endif
 
     // Get the ParaSails parameters.
     double threshold = d_plist->get<double>("ParaSails: Threshold");

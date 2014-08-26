@@ -41,6 +41,7 @@
 #ifndef MCLS_TPETRAPARASAILS_HPP
 #define MCLS_TPETRAPARASAILS_HPP
 
+#include <MCLS_config.hpp>
 #include <MCLS_Preconditioner.hpp>
 
 #include <Teuchos_RCP.hpp>
@@ -114,8 +115,10 @@ class TpetraParaSailsPreconditioner :
     // Preconditioner (M^-1)
     Teuchos::RCP<matrix_type> d_preconditioner;
 
+#if HAVE_MCLS_TIMERS
     // Preconditioner creation timer.
     Teuchos::RCP<Teuchos::Time> d_prec_timer;
+#endif
 };
 
 //---------------------------------------------------------------------------//

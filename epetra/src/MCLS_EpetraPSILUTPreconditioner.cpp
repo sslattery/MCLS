@@ -141,13 +141,16 @@ void EpetraPSILUTPreconditioner::buildPreconditioner()
     Teuchos::RCP<Epetra_CrsMatrix> l_inv;
     {
         Ifpack_ILUT ifpack( d_A.getRawPtr() );
-        int error = ifpack.SetParameters( *d_plist );
-        MCLS_CHECK( 0 == error );
-        error = ifpack.Initialize();
-        MCLS_CHECK( 0 == error );
+        MCLS_CHECK_ERROR_CODE(
+	    ifpack.SetParameters( *d_plist )
+	    );
+        MCLS_CHECK_ERROR_CODE(
+	    ifpack.Initialize()
+	    );
         MCLS_CHECK( ifpack.IsInitialized() );
-        error = ifpack.Compute();
-        MCLS_CHECK( 0 == error );
+        MCLS_CHECK_ERROR_CODE(
+	    ifpack.Compute()
+	    );
         MCLS_CHECK( ifpack.IsComputed() );
 
         // Invert L and U.
@@ -213,7 +216,6 @@ EpetraPSILUTPreconditioner::computeTriInverse( const Epetra_CrsMatrix& A,
     }
 
     // Invert the matrix row-by-row.
-    int error = 0;
     for ( int i = 0; i < num_rows; ++i )
     {
         // Set the basis for this row.
@@ -221,8 +223,9 @@ EpetraPSILUTPreconditioner::computeTriInverse( const Epetra_CrsMatrix& A,
         basis[i] = 1.0;
             
         // Get the row for the inverse.
-        error = A.Solve( is_upper, true, false, basis, inverse_row );
-        MCLS_CHECK( 0 == error );
+        MCLS_CHECK_ERROR_CODE(
+	    A.Solve( is_upper, true, false, basis, inverse_row )
+	    );
 
         // Get the non-zero elements of the row larger than the drop
         // tolerance.
@@ -236,18 +239,20 @@ EpetraPSILUTPreconditioner::computeTriInverse( const Epetra_CrsMatrix& A,
         }
 
         // Populate the row in the inverse matrix.
-        error = inverse->InsertGlobalValues( prec_map.GID(i),
-                                             values.size(),
-                                             values.getRawPtr(),
-                                             indices.getRawPtr() );
-        MCLS_CHECK( 0 == error );
+        MCLS_CHECK_ERROR_CODE(
+	    inverse->InsertGlobalValues( prec_map.GID(i),
+					 values.size(),
+					 values.getRawPtr(),
+					 indices.getRawPtr() )
+	    );
 
         values.clear();
         indices.clear();
     }
 
-    error = inverse->FillComplete();
-    MCLS_CHECK( 0 == error );
+    MCLS_CHECK_ERROR_CODE(
+	inverse->FillComplete()
+	);
 
     return inverse;
 }
@@ -275,15 +280,16 @@ EpetraPSILUTPreconditioner::computeSparseInverse(
 
     // Export the operator to a row decomposition that is globally
     // contiguous. ParaSails requires this unfortunately.
-    int error = 0;
     Epetra_Map linear_map( A->NumGlobalRows(), 0, A->Comm() );
     Teuchos::RCP<Epetra_CrsMatrix> contiguous_A = Teuchos::rcp( 
         new Epetra_CrsMatrix(Copy,linear_map,A->MaxNumEntries()) );
     Epetra_Export linear_export( A->RowMatrixRowMap(), linear_map );
-    error = contiguous_A->Export( *A, linear_export, Insert );
-    MCLS_CHECK( 0 == error );
-    error = contiguous_A->FillComplete();
-    MCLS_CHECK( 0 == error );
+    MCLS_CHECK_ERROR_CODE(
+	contiguous_A->Export( *A, linear_export, Insert )
+	);
+    MCLS_CHECK_ERROR_CODE(
+	contiguous_A->FillComplete();
+	);
     MCLS_CHECK( contiguous_A->Filled() );
 
     // Check that the global ids are contiguous in the new operator.
@@ -307,12 +313,13 @@ EpetraPSILUTPreconditioner::computeSparseInverse(
 	MCLS_CHECK( contiguous_A->RowMatrixRowMap().MyGID(i) );
 	local_row = contiguous_A->RowMatrixRowMap().LID(i);
 
-	error = contiguous_A->ExtractMyRowCopy( local_row, 
-                                                Teuchos::as<int>(values.size()), 
-                                                num_entries,
-                                                values.getRawPtr(), 
-                                                indices.getRawPtr() );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    contiguous_A->ExtractMyRowCopy( local_row, 
+					    Teuchos::as<int>(values.size()), 
+					    num_entries,
+					    values.getRawPtr(), 
+					    indices.getRawPtr() )
+	    );
         MCLS_CHECK( num_entries > 0 );
 
         // Get rid of the zero entries.
@@ -392,9 +399,10 @@ EpetraPSILUTPreconditioner::computeSparseInverse(
                                 m_indices_ptr, global_indices.getRawPtr() );
 
         MCLS_CHECK( contiguous_M->RowMatrixRowMap().MyGID(i) );
-        error = contiguous_M->InsertGlobalValues(
-            i, num_m_entries, m_values_ptr, global_indices.getRawPtr() );
-        MCLS_CHECK( 0 == error );
+        MCLS_CHECK_ERROR_CODE(
+	    contiguous_M->InsertGlobalValues(
+		i, num_m_entries, m_values_ptr, global_indices.getRawPtr() )
+	    );
     }
     global_indices.clear();
     
@@ -405,23 +413,26 @@ EpetraPSILUTPreconditioner::computeSparseInverse(
     ParaSailsDestroy( parasails );
 
     // Finalize extracted inverse.
-    error = contiguous_M->FillComplete();
-    MCLS_CHECK( 0 == error );
+    MCLS_CHECK_ERROR_CODE(
+	contiguous_M->FillComplete()
+	);
     MCLS_CHECK( contiguous_M->Filled() );
 
     // Export the contiguous preconditioner into the operator decomposition.
     Teuchos::RCP<Epetra_CrsMatrix> ainv_prec = Teuchos::rcp(
 	new Epetra_CrsMatrix(Copy,A->RowMatrixRowMap(),max_m_entries) );
     Epetra_Export base_export( linear_map, A->RowMatrixRowMap() );
-    error = ainv_prec->Export( *contiguous_M, base_export, Insert );
-    MCLS_CHECK( 0 == error );
+    MCLS_CHECK_ERROR_CODE(
+	ainv_prec->Export( *contiguous_M, base_export, Insert )
+	);
 
     // Free the contiguous copy of the preconditioner.
     contiguous_M = Teuchos::null;
 
     // Finalize the preconditioner.
-    error = ainv_prec->FillComplete();
-    MCLS_CHECK( 0 == error );
+    MCLS_CHECK_ERROR_CODE(
+	ainv_prec->FillComplete()
+	);
 
     MCLS_ENSURE( Teuchos::nonnull(ainv_prec) );
     MCLS_ENSURE( ainv_prec->Filled() );

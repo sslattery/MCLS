@@ -44,6 +44,7 @@
 #include "MCLS_DBC.hpp"
 
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_TimeMonitor.hpp>
 
 namespace MCLS
 {
@@ -61,7 +62,9 @@ LinearProblem<Vector,Matrix>::LinearProblem(
     , d_b( b )
     , d_r( MT::cloneVectorFromMatrixRows(*d_A) )
     , d_rp( MT::cloneVectorFromMatrixRows(*d_A) )
+#if HAVE_MCLS_TIMERS
     , d_mm_timer( Teuchos::TimeMonitor::getNewCounter("MM Multiply") )
+#endif
 {
     MCLS_ENSURE( Teuchos::nonnull(d_A) );
     MCLS_ENSURE( Teuchos::nonnull(d_x) );
@@ -144,7 +147,9 @@ template<class Vector, class Matrix>
 Teuchos::RCP<const Matrix> 
 LinearProblem<Vector,Matrix>::getCompositeOperator() const
 {
+#if HAVE_MCLS_TIMERS
     Teuchos::TimeMonitor mm_monitor( *d_mm_timer );
+#endif
 
     const bool left_prec = Teuchos::nonnull( d_PL );
     const bool right_prec = Teuchos::nonnull( d_PR );
@@ -184,7 +189,9 @@ template<class Vector, class Matrix>
 Teuchos::RCP<const Matrix> 
 LinearProblem<Vector,Matrix>::getTransposeCompositeOperator() const
 {
+#if HAVE_MCLS_TIMERS
     Teuchos::TimeMonitor mm_monitor( *d_mm_timer );
+#endif
 
     const bool left_prec = Teuchos::nonnull( d_PL );
     const bool right_prec = Teuchos::nonnull( d_PR );

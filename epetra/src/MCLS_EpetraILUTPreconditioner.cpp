@@ -127,14 +127,21 @@ void EpetraILUTPreconditioner::buildPreconditioner()
 
     // Build the Ifpack ILUT preconditioner.
     Ifpack_ILUT ifpack( d_A.getRawPtr() );
-    int error = ifpack.SetParameters( *d_plist );
-    MCLS_CHECK( 0 == error );
-    error = ifpack.Initialize();
-    MCLS_CHECK( 0 == error );
-    MCLS_CHECK( ifpack.IsInitialized() );
-    error = ifpack.Compute();
-    MCLS_CHECK( 0 == error );
-    MCLS_CHECK( ifpack.IsComputed() );
+    MCLS_CHECK_ERROR_CODE(
+	ifpack.SetParameters( *d_plist ) 
+	);
+    MCLS_CHECK_ERROR_CODE(
+	ifpack.Initialize()
+	);
+    MCLS_CHECK_ERROR_CODE( 
+	ifpack.IsInitialized()
+	);
+    MCLS_CHECK_ERROR_CODE(
+	ifpack.Compute()
+	);
+    MCLS_CHECK_ERROR_CODE( 
+	ifpack.IsComputed() 
+	);
 
     // Invert L and U.
     std::cout << "MCLS ILUT: Inverting ILUT Factorization" << std::endl;
@@ -173,7 +180,6 @@ EpetraILUTPreconditioner::computeTriInverse( const Epetra_CrsMatrix& A,
     }
 
     // Invert the matrix row-by-row.
-    int error = 0;
     for ( int i = 0; i < num_rows; ++i )
     {
         // Set the basis for this row.
@@ -181,8 +187,9 @@ EpetraILUTPreconditioner::computeTriInverse( const Epetra_CrsMatrix& A,
         basis[i] = 1.0;
             
         // Get the row for the inverse.
-        error = A.Solve( is_upper, true, false, basis, inverse_row );
-        MCLS_CHECK( 0 == error );
+        MCLS_CHECK_ERROR_CODE(
+	    A.Solve( is_upper, true, false, basis, inverse_row )
+	    );
 
         // Get the non-zero elements of the row larger than the drop
         // tolerance.
@@ -196,18 +203,20 @@ EpetraILUTPreconditioner::computeTriInverse( const Epetra_CrsMatrix& A,
         }
 
         // Populate the row in the inverse matrix.
-        error = inverse->InsertGlobalValues( prec_map.GID(i),
-                                             values.size(),
-                                             values.getRawPtr(),
-                                             indices.getRawPtr() );
-        MCLS_CHECK( 0 == error );
+        MCLS_CHECK_ERROR_CODE(
+	    inverse->InsertGlobalValues( prec_map.GID(i),
+					 values.size(),
+					 values.getRawPtr(),
+					 indices.getRawPtr() )
+	    );
 
         values.clear();
         indices.clear();
     }
 
-    error = inverse->FillComplete();
-    MCLS_CHECK( 0 == error );
+    MCLS_CHECK_ERROR_CODE(
+	inverse->FillComplete()
+	);
 
     return inverse;
 }

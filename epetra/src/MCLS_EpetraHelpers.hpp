@@ -192,8 +192,9 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
 	Epetra_RowMatrixTransposer transposer( const_cast<matrix_type*>(&matrix) );
 
 	Epetra_CrsMatrix* transpose_matrix;
-	int error = transposer.CreateTranspose( true, transpose_matrix );
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    transposer.CreateTranspose( true, transpose_matrix )
+	    );
 
 	MCLS_ENSURE( transpose_matrix->Filled() );
 	return Teuchos::RCP<matrix_type>( transpose_matrix );
@@ -213,8 +214,9 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
 	    new Epetra_Map( 0, 0, matrix.Comm() ) );
 	Teuchos::RCP<Epetra_CrsMatrix> neighbor_matrix = 
 	    Teuchos::rcp( new Epetra_CrsMatrix( Copy, *empty_map, 0 ) );
-	int error = neighbor_matrix->FillComplete();
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    neighbor_matrix->FillComplete() 
+	    );
 
 	Teuchos::ArrayView<const int> global_rows;
 	Teuchos::ArrayView<const int>::const_iterator global_rows_it;
@@ -269,10 +271,12 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
 	    neighbor_matrix = Teuchos::rcp( 
 		new Epetra_CrsMatrix( Copy, *ghost_map, 0 ) );
 
-	    error = neighbor_matrix->Export( matrix, ghost_exporter, Insert );
-            MCLS_CHECK( 0 == error );
-	    error = neighbor_matrix->FillComplete();
-            MCLS_CHECK( 0 == error );
+	    MCLS_CHECK_ERROR_CODE(
+		neighbor_matrix->Export( matrix, ghost_exporter, Insert )
+		);
+	    MCLS_CHECK_ERROR_CODE(
+		neighbor_matrix->FillComplete()
+		);
 
 	    // Get the next rows in the graph.
 	    ghost_global_rows = getOffProcColsAsRows( *neighbor_matrix );
@@ -317,9 +321,10 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
 		new Epetra_CrsMatrix(Copy, A->RowMatrixRowMap(), 0) );
 	}
 
-	int error = EpetraExt::MatrixMatrix::Multiply( 
-	    *A_crs, transpose_A, *B_crs, transpose_B, *C_crs );
-        MCLS_CHECK( error == 0 );
+	MCLS_CHECK_ERROR_CODE(
+	    EpetraExt::MatrixMatrix::Multiply( 
+		*A_crs, transpose_A, *B_crs, transpose_B, *C_crs )
+	    );
     }
 
     /*!
@@ -347,9 +352,10 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
 	    B_crs = createCrsMatrix( B );
 	}
 
-	int error = EpetraExt::MatrixMatrix::Add( 
-	    *A_crs, transpose_A, scalar_A, *B_crs, scalar_B);
-        MCLS_CHECK( 0 == error );
+	MCLS_CHECK_ERROR_CODE(
+	    EpetraExt::MatrixMatrix::Add( 
+		*A_crs, transpose_A, scalar_A, *B_crs, scalar_B)
+	    );
     }
 
     /*!
@@ -378,30 +384,32 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
         Teuchos::Array<int> global_indices(max_entries);
         Teuchos::Array<double> values(max_entries); 
 
-        int error = 0;
         for( int local_row = 0; local_row < num_local_rows; ++local_row ) 
         {
-            error = A->ExtractMyRowCopy( local_row, 
-                                             max_entries,
-                                             num_entries, 
-                                             values.getRawPtr(),
-                                             local_indices.getRawPtr() );
-            MCLS_CHECK( 0 == error );
+            MCLS_CHECK_ERROR_CODE( 
+		A->ExtractMyRowCopy( local_row, 
+				     max_entries,
+				     num_entries, 
+				     values.getRawPtr(),
+				     local_indices.getRawPtr() )
+		);
       
             for (int j = 0 ; j < num_entries; ++j ) 
             { 
                 global_indices[j] = my_global_cols[ local_indices[j] ];
             }
       
-            error = A_crs->InsertGlobalValues( my_global_rows[local_row], 
-                                                   num_entries, 
-                                                   values.getRawPtr(),
-                                                   global_indices.getRawPtr() );
-            MCLS_CHECK( 0 == error );
+	    MCLS_CHECK_ERROR_CODE(
+		A_crs->InsertGlobalValues( my_global_rows[local_row], 
+					   num_entries, 
+					   values.getRawPtr(),
+					   global_indices.getRawPtr() )
+		);
         }
 
-        error = A_crs->FillComplete();
-        MCLS_CHECK( 0 == error );
+        MCLS_CHECK_ERROR_CODE(
+	    A_crs->FillComplete() 
+	    );
         return A_crs;
     }
 };

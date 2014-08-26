@@ -43,6 +43,7 @@
 
 #include <random>
 
+#include "MCLS_config.hpp"
 #include "MCLS_MCSAModelEvaluator.hpp"
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
@@ -150,8 +151,10 @@ class AndersonSolverManager : public SolverManager<Vector,Matrix>
     // NOX solver.
     Teuchos::RCP<NOX::Solver::Generic> d_nox_solver;
 
+#if HAVE_MCLS_TIMERS
     // Total solve timer.
     Teuchos::RCP<Teuchos::Time> d_solve_timer;
+#endif
 };
 
 //---------------------------------------------------------------------------//

@@ -45,6 +45,7 @@
 
 #include <Epetra_Vector.h>
 #include <Epetra_RowMatrix.h>
+#include <Epetra_Map.h>
 
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
