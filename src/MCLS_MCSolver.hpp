@@ -51,6 +51,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_Time.hpp>
 
 namespace MCLS
 {
@@ -125,6 +126,9 @@ class MCSolver
 
     // Source.
     Teuchos::RCP<Source> d_source;
+
+    // Monte Carlo timer.
+    Teuchos::RCP<Teuchos::Time> d_mc_timer;
 };
 
 //---------------------------------------------------------------------------//

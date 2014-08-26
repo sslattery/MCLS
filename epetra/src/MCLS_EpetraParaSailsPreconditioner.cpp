@@ -47,7 +47,6 @@
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
-#include <Teuchos_Time.hpp>
 
 #include <Epetra_Vector.h>
 #include <Epetra_Map.h>
@@ -69,6 +68,7 @@ namespace MCLS
 EpetraParaSailsPreconditioner::EpetraParaSailsPreconditioner(
     const Teuchos::RCP<Teuchos::ParameterList>& params )
     : d_plist( params )
+    , d_prec_timer( Teuchos::TimeMonitor::getNewCounter("ParaSails Create") )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 }
@@ -131,14 +131,7 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
     MCLS_REQUIRE( Teuchos::nonnull(d_A) );
     MCLS_REQUIRE( d_A->Filled() );
 
-    if ( 0 == d_A->Comm().MyPID() )
-    {
-	std::cout << std::endl
-		  << "MCLS ParaSails: Generating ParaSails Preconditioning" 
-		  << std::endl;
-    }
-    Teuchos::Time timer("");
-    timer.start(true);
+    Teuchos::TimeMonitor prec_monitor( *d_prec_timer );
 
     // Get the ParaSails parameters.
     double threshold = d_plist->get<double>("ParaSails: Threshold");
@@ -293,13 +286,6 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
     // Finalize the preconditioner.
     error = d_preconditioner->FillComplete();
     MCLS_CHECK( 0 == error );
-
-    timer.stop();
-    if ( 0 == d_A->Comm().MyPID() )
-    {
-	std::cout << "MCLS ParaSails: Complete in " << timer.totalElapsedTime() 
-		  << " seconds." << std::endl;
-    }
 
     MCLS_ENSURE( Teuchos::nonnull(d_preconditioner) );
     MCLS_ENSURE( d_preconditioner->Filled() );

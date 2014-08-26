@@ -53,7 +53,6 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_Ptr.hpp>
 #include <Teuchos_TimeMonitor.hpp>
-#include <Teuchos_Time.hpp>
 
 namespace MCLS
 {
@@ -68,6 +67,7 @@ MCSASolverManager<Vector,Matrix,RNG>::MCSASolverManager(
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
     : d_global_comm( global_comm )
     , d_plist( plist )
+    , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS Solve") )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
@@ -88,6 +88,7 @@ MCSASolverManager<Vector,Matrix,RNG>::MCSASolverManager(
     , d_primary_set( Teuchos::nonnull(d_problem) )
     , d_num_iters( 0 )
     , d_converged_status( 0 )
+    , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS Solve") )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
@@ -292,6 +293,9 @@ bool MCSASolverManager<Vector,Matrix,RNG>::solve()
     MCLS_REQUIRE( Teuchos::nonnull(d_mc_solver) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
+    // Start the solve timer.
+    Teuchos::TimeMonitor solve_monitor( *d_solve_timer );
+
     // Get the convergence parameters on the primary set.
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType 
 	convergence_criteria = 0;
@@ -367,8 +371,6 @@ bool MCSASolverManager<Vector,Matrix,RNG>::solve()
     // Iterate.
     d_num_iters = 0;
     int do_iterations = 1;
-    Teuchos::Time timer("");
-    timer.start(true);
     while( do_iterations )
     {
 	// Update the iteration count.
@@ -433,7 +435,6 @@ bool MCSASolverManager<Vector,Matrix,RNG>::solve()
     }
 
     // Finalize.
-    timer.stop();
     if ( d_primary_set )
     {
         // Recover the original solution if right preconditioned.
@@ -456,12 +457,6 @@ bool MCSASolverManager<Vector,Matrix,RNG>::solve()
     }
 
     // Print final iteration data.
-    if ( d_global_comm->getRank() == 0 )
-    {
-        std::cout << std::endl
-		  << "    MCSA Solve: Complete in " << timer.totalElapsedTime() 
-                  << " seconds." << std::endl;
-    }
     printBottomBanner();
     d_global_comm->barrier();
 

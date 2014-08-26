@@ -54,6 +54,7 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_Comm.hpp>
+#include <Teuchos_Time.hpp>
 
 namespace MCLS
 {
@@ -167,7 +168,10 @@ class MCSASolverManager : public SolverManager<Vector,Matrix>
     int d_num_iters;
 
     // Converged status. True if last solve converged.
-    int d_converged_status;    
+    int d_converged_status;
+
+    // Total solve timer.
+    Teuchos::RCP<Teuchos::Time> d_solve_timer;
 };
 
 //---------------------------------------------------------------------------//

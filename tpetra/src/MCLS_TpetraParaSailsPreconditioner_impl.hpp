@@ -49,7 +49,6 @@
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
-#include <Teuchos_Time.hpp>
 
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_Map.hpp>
@@ -68,6 +67,7 @@ template<class Scalar, class LO, class GO>
 TpetraParaSailsPreconditioner<Scalar,LO,GO>::TpetraParaSailsPreconditioner(
     const Teuchos::RCP<Teuchos::ParameterList>& params )
     : d_plist( params )
+    , d_prec_timer( Teuchos::TimeMonitor::getNewCounter("ParaSails Create") )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 }
@@ -135,15 +135,7 @@ void TpetraParaSailsPreconditioner<Scalar,LO,GO>::buildPreconditioner()
     MCLS_REQUIRE( Teuchos::nonnull(d_A) );
     MCLS_REQUIRE( d_A->isFillComplete() );
 
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = d_A->getComm();
-    if ( 0 == comm->getRank() )
-    {
-	std::cout << std::endl
-		  << "MCLS ParaSails: Generating ParaSails Preconditioning" 
-		  << std::endl;
-    }
-    Teuchos::Time timer("");
-    timer.start(true);
+    Teuchos::TimeMonitor prec_monitor( *d_prec_timer );
 
     // Get the ParaSails parameters.
     double threshold = d_plist->get<double>("ParaSails: Threshold");
@@ -153,6 +145,7 @@ void TpetraParaSailsPreconditioner<Scalar,LO,GO>::buildPreconditioner()
     int load_balance = d_plist->get<int>("ParaSails: Load Balance");
 
     // Extract the raw MPI handle.
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = d_A->getComm();
     Teuchos::RCP< const Teuchos::MpiComm<int> > mpi_comm = 
 	Teuchos::rcp_dynamic_cast< const Teuchos::MpiComm<int> >( comm );
     Teuchos::RCP< const Teuchos::OpaqueWrapper<MPI_Comm> > opaque_comm = 
@@ -293,13 +286,6 @@ void TpetraParaSailsPreconditioner<Scalar,LO,GO>::buildPreconditioner()
 
     // Finalize the preconditioner.
     d_preconditioner->fillComplete();
-
-    timer.stop();
-    if ( 0 == comm->getRank() )
-    {
-	std::cout << "MCLS ParaSails: Complete in " << timer.totalElapsedTime() 
-		  << " seconds." << std::endl;
-    }
 
     MCLS_ENSURE( Teuchos::nonnull(d_preconditioner) );
     MCLS_ENSURE( d_preconditioner->isFillComplete() );
