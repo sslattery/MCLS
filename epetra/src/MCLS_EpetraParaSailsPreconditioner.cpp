@@ -84,6 +84,8 @@ EpetraParaSailsPreconditioner::getValidParameters() const
     plist->set<double>("ParaSails: Threshold", 0.0);
     plist->set<int>("ParaSails: Number of Levels", 0.0);
     plist->set<double>("ParaSails: Filter", 0.0);
+    plist->set<int>("ParaSails: Symmetry", 0 );
+    plist->set<int>("ParaSails: Load Balance", 1 );
     return plist;
 }
 

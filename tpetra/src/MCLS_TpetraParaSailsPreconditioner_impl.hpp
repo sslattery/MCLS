@@ -32,11 +32,14 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_TpetraParaSailsPreconditioner.cpp
+ * \file MCLS_TpetraParaSailsPreconditioner_impl.hpp
  * \author Stuart R. Slattery
  * \brief ParaSails preconditioning for Tpetra.
  */
 //---------------------------------------------------------------------------//
+
+#ifndef MCLS_TPETRAPARASAILS_IMPL_HPP
+#define MCLS_TPETRAPARASAILS_IMPL_HPP
 
 #include <MCLS_DBC.hpp>
 
@@ -81,6 +84,8 @@ TpetraParaSailsPreconditioner<Scalar,LO,GO>::getValidParameters() const
     plist->set<double>("ParaSails: Threshold", 0.0);
     plist->set<int>("ParaSails: Number of Levels", 0.0);
     plist->set<double>("ParaSails: Filter", 0.0);
+    plist->set<int>("ParaSails: Symmetry", 0 );
+    plist->set<int>("ParaSails: Load Balance", 1 );
     return plist;
 }
 
@@ -171,7 +176,8 @@ void TpetraParaSailsPreconditioner<Scalar,LO,GO>::buildPreconditioner()
     MCLS_CHECK( contiguous_A->getGlobalMaxNumRowEntries() > 0 );
 
     // Create a ParaSails matrix from the row-contiguous operator.
-    Teuchos::ArrayRCP<double> values( contiguous_A->getGlobalMaxNumRowEntries() );
+    Teuchos::ArrayRCP<double> values( 
+	contiguous_A->getGlobalMaxNumRowEntries() );
     Teuchos::ArrayRCP<double>::iterator values_it;
     Teuchos::ArrayRCP<GO> indices( contiguous_A->getGlobalMaxNumRowEntries() );
     typename Teuchos::ArrayRCP<GO>::iterator indices_it;
@@ -207,7 +213,7 @@ void TpetraParaSailsPreconditioner<Scalar,LO,GO>::buildPreconditioner()
             std::remove( indices.begin(), indices.begin()+num_entries, -1 );
 
         // Insert it into the Tpetra ParaSails matrix.
-        MCLS_CHECK( comm->getRank() == MatrixRowPe(tpetra_matrix, i) );
+        MCLS_CHECK( comm->getRank() == MatrixRowPe(tpetra_matrix,i) );
         num_entries = std::distance( values.begin(), values_it );
         MatrixSetRow( tpetra_matrix, i, num_entries, 
                       indices.getRawPtr(), values.getRawPtr() );
@@ -222,7 +228,8 @@ void TpetraParaSailsPreconditioner<Scalar,LO,GO>::buildPreconditioner()
     MatrixComplete( tpetra_matrix );
 
     // Create a ParaSails preconditioner.
-    ParaSails* parasails = ParaSailsCreate( raw_mpi_comm, beg_row, end_row, symmetry );
+    ParaSails* parasails = 
+	ParaSailsCreate( raw_mpi_comm, beg_row, end_row, symmetry );
     parasails->loadbal_beta = load_balance;
     ParaSailsSetupPattern( parasails, tpetra_matrix, threshold, num_levels );
     ParaSailsStatsPattern( parasails, tpetra_matrix );
@@ -249,14 +256,14 @@ void TpetraParaSailsPreconditioner<Scalar,LO,GO>::buildPreconditioner()
     for ( int i = beg_row; i < end_row+1; ++i )
     {
         local_row = i-beg_row;
-        MCLS_CHECK( comm->getRank() == MatrixRowPe(parasails->M, i) );
+        MCLS_CHECK( comm->getRank() == MatrixRowPe(parasails->M,i) );
         MatrixGetRow( parasails->M, local_row, &num_m_entries, 
                       &m_indices_ptr, &m_values_ptr );
 
         NumberingLocalToGlobal( parasails->M->numb, num_m_entries,
                                 m_indices_ptr, global_indices.getRawPtr() );
 
-        MCLS_CHECK( contiguous_M->getMap()->getGlobalElement(i) );
+        MCLS_CHECK( contiguous_M->getMap()->isNodeGlobalElement(i) );
         contiguous_M->insertGlobalValues(
             i, 
 	    global_indices(0,num_m_entries),
@@ -302,6 +309,8 @@ void TpetraParaSailsPreconditioner<Scalar,LO,GO>::buildPreconditioner()
 
 } // end namespace MCLS
 
+#endif // end MCLS_TPETRAPARASAILS_IMPL_HPP
+
 //---------------------------------------------------------------------------//
-// end MCLS_TpetraParaSailsPreconditioner.cpp
+// end MCLS_TpetraParaSailsPreconditioner_impl.hpp
 //---------------------------------------------------------------------------//

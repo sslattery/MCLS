@@ -38,6 +38,8 @@
  */
 //---------------------------------------------------------------------------//
 
+#include <exception>
+
 #include <MCLS_Preconditioner.hpp>
 #include <MCLS_TpetraPointJacobiPreconditioner.hpp>
 #include <MCLS_TpetraBlockJacobiPreconditioner.hpp>
@@ -671,13 +673,20 @@ template<class Scalar>
 bool MCLSPreconditionerFactory<Scalar>::isEpetraCompatible(
     const LinearOpSourceBase<Scalar> &fwdOpSrc ) const
 {
-    // MCLS interfaces are currently only implemented for Epetra_RowMatrix.
-    RCP<const Epetra_RowMatrix> epetraFwdOp = 
-	getEpetraRowMatrix( fwdOpSrc );
+    // Try the cast and catch a bad_cast. Interpret the bad_cast as
+    // incompatibility.
+    try
+    {
+	// MCLS interfaces are currently only implemented for Epetra_RowMatrix.
+	RCP<const Epetra_RowMatrix> epetraFwdOp = 
+	    getEpetraRowMatrix( fwdOpSrc );
 
-    bool row_matrix_compatible = Teuchos::nonnull( epetraFwdOp );
-
-    return row_matrix_compatible;
+	return Teuchos::nonnull( epetraFwdOp );
+    }
+    catch( std::bad_cast& except )
+    {
+	return false;
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -707,21 +716,29 @@ template<class LO, class GO>
 bool MCLSPreconditionerFactory<Scalar>::isTpetraCompatible( 
     const LinearOpSourceBase<Scalar> &fwdOpSrc ) const
 {
-    typedef Thyra::TpetraLinearOp<Scalar,LO,GO> TpetraOpType; 
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO> CrsType;
-
-    RCP<const TpetraOpType> tpetra_op =	
-	Teuchos::rcp_dynamic_cast<const TpetraOpType>( fwdOpSrc.getOp() );
-
-    bool operator_compatible = Teuchos::nonnull(tpetra_op);
-
-    if( operator_compatible )
+    // Try the cast and catch a bad_cast. Interpret the bad_cast as
+    // incompatibility.
+    try
     {
-	RCP<const CrsType> crs = getTpetraCrsMatrix<LO,GO>( fwdOpSrc );
-	return Teuchos::nonnull(crs);
-    }
+	typedef Thyra::TpetraLinearOp<Scalar,LO,GO> TpetraOpType; 
+	typedef Tpetra::CrsMatrix<Scalar,LO,GO> CrsType;
 
-    return false;
+	RCP<const TpetraOpType> tpetra_op =	
+	    Teuchos::rcp_dynamic_cast<const TpetraOpType>( fwdOpSrc.getOp() );
+
+	bool operator_compatible = Teuchos::nonnull(tpetra_op);
+
+	if( operator_compatible )
+	{
+	    RCP<const CrsType> crs = getTpetraCrsMatrix<LO,GO>( fwdOpSrc );
+	    return Teuchos::nonnull(crs);
+	}
+	return false;
+    }
+    catch( std::bad_cast& except )
+    {
+	return false;
+    }
 }
 
 //---------------------------------------------------------------------------//
