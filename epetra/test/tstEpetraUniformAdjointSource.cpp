@@ -276,6 +276,7 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, PackUnpack )
 
     // Pack and unpack the source.
     Teuchos::Array<char> source_buffer = primary_source.pack();
+
     MCLS::UniformAdjointSource<DomainType> 
 	source( source_buffer, domain,
 		comm, comm->getSize(), comm->getRank() );

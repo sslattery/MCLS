@@ -85,8 +85,10 @@ class UniformAdjointSource
     typedef typename Domain::rng_type                     rng_type;
     typedef Teuchos::Comm<int>                            Comm;
     typedef RNGTraits<rng_type>                           RNGT;
-    typedef typename RNGT::uniform_real_distribution_type RandomDistribution;
-    typedef RandomDistributionTraits<RandomDistribution>  RDT;
+    typedef typename RNGT::uniform_real_distribution_type RealDistribution;
+    typedef RandomDistributionTraits<RealDistribution>    RealDT;
+    typedef typename RNGT::uniform_int_distribution_type  IntDistribution;
+    typedef RandomDistributionTraits<IntDistribution>     IntDT;
     //@}
 
     // Constructor.
@@ -154,7 +156,7 @@ class UniformAdjointSource
     void buildStratifiedSource();
 
     // Sample the random source.
-    int sampleRandomSource( const double random );
+    int sampleRandomSource( const int random_int, const double random_dbl );
 
     // Sample the stratified source.
     int sampleStratifiedSource();
@@ -173,8 +175,11 @@ class UniformAdjointSource
     // Random number generator.
     Teuchos::RCP<PRNG<rng_type> > d_rng;
     
-    // Random number distribution.
-    Teuchos::RCP<RandomDistribution> d_rng_dist;
+    // Random real number distribution.
+    Teuchos::RCP<RealDistribution> d_real_dist;
+
+    // Random int number distribution.
+    Teuchos::RCP<IntDistribution> d_int_dist;
 
     // Communicator for this set.
     Teuchos::RCP<const Comm> d_set_comm;
@@ -211,8 +216,11 @@ class UniformAdjointSource
     // Random/stratified sampling boolean.
     int d_random_sampling;
 
-    // Local source cdf for random histories.
-    Teuchos::ArrayRCP<double> d_cdf;
+    // Local source alias cdf for random histories.
+    Teuchos::ArrayRCP<double> d_alias_cdf;
+
+    // Local source alias indices for random histories.
+    Teuchos::ArrayRCP<int> d_alias_indices;
 };
 
 //---------------------------------------------------------------------------//

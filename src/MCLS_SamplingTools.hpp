@@ -98,6 +98,9 @@ class SamplingTools
 	int hi_idx = 0;
 	int lo_idx = 0;
 
+	// First sort the probabilities by those that are greater than (1/N)
+	// and those that are smaller. This will tell us which ones go in the
+	// bins first.
 	for ( int i = 0; i < np; ++i )
 	{
 	    alias_cdfs[i] = np * probs[i];
@@ -110,6 +113,11 @@ class SamplingTools
 		hi_indices.push_back( i );
 	    }
 	}
+
+	// Now start creating the bins. If a probability of greater than (1/N)
+	// goes in the bin, figure out the leftover probability. Sort the
+	// leftover probabilities based on if they are larger or smaller than
+	// (1/N).
 	while ( !lo_indices.empty() && !hi_indices.empty() )
 	{
 	    hi_idx = hi_indices.back();
