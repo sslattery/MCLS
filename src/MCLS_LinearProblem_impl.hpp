@@ -63,7 +63,8 @@ LinearProblem<Vector,Matrix>::LinearProblem(
     , d_r( MT::cloneVectorFromMatrixRows(*d_A) )
     , d_rp( MT::cloneVectorFromMatrixRows(*d_A) )
 #if HAVE_MCLS_TIMERS
-    , d_mm_timer( Teuchos::TimeMonitor::getNewCounter("MM Multiply") )
+    , d_mm_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: Matrix-Matrix Multiply") )
+    , d_mv_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: Matrix-Vector Multiply") )
 #endif
 {
     MCLS_ENSURE( Teuchos::nonnull(d_A) );
@@ -264,6 +265,10 @@ void LinearProblem<Vector,Matrix>::updateSolution(
 template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::apply( const Vector& x, Vector& y )
 {
+#if HAVE_MCLS_TIMERS
+    Teuchos::TimeMonitor mm_monitor( *d_mv_timer );
+#endif
+
     const bool left_prec = Teuchos::nonnull( d_PL );
     const bool right_prec = Teuchos::nonnull( d_PR );
 
@@ -300,6 +305,10 @@ void LinearProblem<Vector,Matrix>::apply( const Vector& x, Vector& y )
 template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::applyTranspose( const Vector& x, Vector& y )
 {
+#if HAVE_MCLS_TIMERS
+    Teuchos::TimeMonitor mm_monitor( *d_mv_timer );
+#endif
+
     const bool left_prec = Teuchos::nonnull( d_PL );
     const bool right_prec = Teuchos::nonnull( d_PR );
 
@@ -336,6 +345,10 @@ void LinearProblem<Vector,Matrix>::applyTranspose( const Vector& x, Vector& y )
 template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::applyOp( const Vector& x, Vector& y )
 {
+#if HAVE_MCLS_TIMERS
+    Teuchos::TimeMonitor mm_monitor( *d_mv_timer );
+#endif
+
     if ( Teuchos::nonnull(d_A) )
     {
 	MT::apply( *d_A, x, y );
@@ -390,6 +403,10 @@ void LinearProblem<Vector,Matrix>::applyRightPrec( const Vector& x, Vector& y )
 template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::updateResidual()
 {
+#if HAVE_MCLS_TIMERS
+    Teuchos::TimeMonitor mm_monitor( *d_mv_timer );
+#endif
+
     MCLS_REQUIRE( Teuchos::nonnull(d_A) );
     MCLS_REQUIRE( Teuchos::nonnull(d_x) );
     MCLS_REQUIRE( Teuchos::nonnull(d_b) );
@@ -407,6 +424,10 @@ void LinearProblem<Vector,Matrix>::updateResidual()
 template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::updatePrecResidual()
 {
+#if HAVE_MCLS_TIMERS
+    Teuchos::TimeMonitor mm_monitor( *d_mv_timer );
+#endif
+
     MCLS_REQUIRE( Teuchos::nonnull(d_A) );
     MCLS_REQUIRE( Teuchos::nonnull(d_x) );
     MCLS_REQUIRE( Teuchos::nonnull(d_b) );

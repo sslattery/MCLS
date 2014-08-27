@@ -43,6 +43,7 @@
 
 #include <random>
 
+#include "MCLS_config.hpp"
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_MatrixTraits.hpp"
@@ -53,6 +54,7 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_Comm.hpp>
+#include <Teuchos_Time.hpp>
 
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
 
@@ -178,6 +180,14 @@ class MCSAModelEvaluator :
 
     // Number of smoothing steps.
     int d_num_smooth;
+
+#if HAVE_MCLS_TIMERS
+    // Total evaluation timer.
+    Teuchos::RCP<Teuchos::Time> d_eval_timer;
+
+    // Matrix-vector multiply timer.
+    Teuchos::RCP<Teuchos::Time> d_mv_timer;
+#endif
 };
 
 //---------------------------------------------------------------------------//

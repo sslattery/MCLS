@@ -53,7 +53,6 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_Ptr.hpp>
 #include <Teuchos_TimeMonitor.hpp>
-#include <Teuchos_Time.hpp>
 
 namespace MCLS
 {
@@ -68,6 +67,10 @@ MCSAModelEvaluator<Vector,Matrix,RNG>::MCSAModelEvaluator(
     : d_global_comm( global_comm )
     , d_plist( plist )
     , d_num_smooth( 1 )
+#if HAVE_MCLS_TIMERS
+    , d_eval_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: Model Evaluation") )
+    , d_mv_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: Matrix-Vector Multiply") )
+#endif
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
@@ -97,6 +100,10 @@ MCSAModelEvaluator<Vector,Matrix,RNG>::MCSAModelEvaluator(
     , d_b( b )
     , d_M( M )
     , d_num_smooth( 1 )
+#if HAVE_MCLS_TIMERS
+    , d_eval_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: Model Evaluation") )
+    , d_mv_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: Matrix-Vector Multiply") )
+#endif
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
@@ -213,6 +220,10 @@ Teuchos::RCP<Vector>
 MCSAModelEvaluator<Vector,Matrix,RNG>::getPrecResidual( 
     const Teuchos::RCP<Vector>& x ) const
 {
+#if HAVE_MCLS_TIMERS
+    Teuchos::TimeMonitor mm_monitor( *d_mv_timer );
+#endif
+
     MCLS_REQUIRE( Teuchos::nonnull(d_A) );
     MCLS_REQUIRE( Teuchos::nonnull(x) );
     MCLS_REQUIRE( Teuchos::nonnull(d_b) );
@@ -297,6 +308,11 @@ void MCSAModelEvaluator<Vector,Matrix,RNG>::evalModelImpl(
     const ::Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     const ::Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs ) const
 {
+#if HAVE_MCLS_TIMERS
+    // Start the eval timer.
+    Teuchos::TimeMonitor eval_monitor( *d_eval_timer );
+#endif
+
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_mc_solver) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );

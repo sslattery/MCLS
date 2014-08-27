@@ -68,7 +68,7 @@ MCSASolverManager<Vector,Matrix,RNG>::MCSASolverManager(
     : d_global_comm( global_comm )
     , d_plist( plist )
 #if HAVE_MCLS_TIMERS
-    , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS Solve") )
+    , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: MCSA Solve") )
 #endif
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
@@ -91,7 +91,7 @@ MCSASolverManager<Vector,Matrix,RNG>::MCSASolverManager(
     , d_num_iters( 0 )
     , d_converged_status( 0 )
 #if HAVE_MCLS_TIMERS
-    , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS Solve") )
+    , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: MCSA Solve") )
 #endif
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );

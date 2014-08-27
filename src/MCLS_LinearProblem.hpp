@@ -180,6 +180,9 @@ class LinearProblem
 #if HAVE_MCLS_TIMERS
     // Matrix-matrix multiply timer.
     Teuchos::RCP<Teuchos::Time> d_mm_timer;
+
+    // Matrix-vector multiply timer.
+    Teuchos::RCP<Teuchos::Time> d_mv_timer;
 #endif
 };
 
