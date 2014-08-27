@@ -55,6 +55,9 @@ namespace MCLS
  */
 template<class RNG>
 PRNG<RNG>::PRNG( const int comm_rank )
+#if HAVE_MCLS_TIMERS
+    : d_rng_timer( Teuchos::TimeMonitor::getNewCounter("RNG") )
+#endif
 {
     // Create a random device to get an initial random number. This is
     // potentially non-deterministic.

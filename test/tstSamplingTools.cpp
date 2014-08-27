@@ -46,6 +46,9 @@
 
 #include <MCLS_config.hpp>
 #include <MCLS_SamplingTools.hpp>
+#include <MCLS_PRNG.hpp>
+#include <MCLS_RNGTraits.hpp>
+#include <MCLS_Xorshift.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCP.hpp>
@@ -54,6 +57,7 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_Time.hpp>
 
 //---------------------------------------------------------------------------//
 // Tests.
@@ -85,6 +89,7 @@ TEUCHOS_UNIT_TEST( SamplingTools, multi_bin )
     TEST_EQUALITY( 4, MCLS::SamplingTools::sampleDiscreteCDF( cdf.getRawPtr(), cdf.size(), 0.99999999 ) );
 }
 
+//---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST( SamplingTools, one_bin )
 {
     Teuchos::Array<double> cdf( 1, 1.0 );
@@ -95,6 +100,7 @@ TEUCHOS_UNIT_TEST( SamplingTools, one_bin )
     TEST_EQUALITY( 0, MCLS::SamplingTools::sampleDiscreteCDF( cdf.getRawPtr(), cdf.size(), 1.00 ) );
 }
 
+//---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST( AliasTable, table )
 {
     Teuchos::Array<double> cdf( 5, 0.0 );
@@ -117,6 +123,201 @@ TEUCHOS_UNIT_TEST( AliasTable, table )
     TEST_EQUALITY( 0, MCLS::SamplingTools::sampleAliasTable(
 		       cdf.getRawPtr(), indices.getRawPtr(), cdf.size(),
 		       3, 0.73) );
+}
+
+//---------------------------------------------------------------------------//
+TEUCHOS_UNIT_TEST( AliasTable, time_test )
+{
+    typedef MCLS::Xorshift<> RNG;
+    typedef MCLS::RNGTraits<RNG> RNGT;
+    typedef RNGT::uniform_int_distribution_type IntDist;
+    typedef MCLS::RandomDistributionTraits<IntDist> IntTraits;
+    typedef RNGT::uniform_real_distribution_type RealDist;
+    typedef MCLS::RandomDistributionTraits<RealDist> RealTraits;
+
+    int nrand = 10000000;
+    MCLS::PRNG<RNG> prng( 0 );
+    Teuchos::RCP<RealDist> real_dist = RealTraits::create( 0.0, 1.0 );
+    Teuchos::RCP<IntDist> int_dist;
+    double rand_real = 0.0;
+    double rand_int = 0;
+    std::cout << std::endl;
+
+    // N = 10.
+    int psize = 10;
+    Teuchos::Array<double> prob( psize );
+    Teuchos::Array<int> table( psize );
+    for ( int i = 0; i < psize; ++i )
+    {
+	prob[i] = (i+1.0) / psize;
+	table[i] = i;
+    }
+
+    Teuchos::Time timer("sampling");
+    timer.start( true );
+    for ( int n = 0; n < nrand; ++n )
+    {
+	rand_real = prng.random( *real_dist );
+	MCLS::SamplingTools::sampleDiscreteCDF( 
+	    prob.getRawPtr(), psize, rand_real );
+    }
+    timer.stop();
+    std::cout << "Discrete Sampling N = 10: " 
+	      << timer.totalElapsedTime() << std::endl;
+
+    int_dist = IntTraits::create( 0, psize-1 );
+    timer.start( true );
+    for ( int n = 0; n < nrand; ++n )
+    {
+	rand_real = prng.random( *real_dist );
+	rand_int = prng.random( *int_dist );
+	MCLS::SamplingTools::sampleAliasTable( 
+	    prob.getRawPtr(), table.getRawPtr(), psize, rand_int, rand_real );
+    }
+    timer.stop();
+    std::cout << "Alias Sampling N = 10: " 
+	      << timer.totalElapsedTime() << std::endl;
+    std::cout << std::endl;
+
+    // N = 100.
+    psize = 100;
+    prob.resize( psize );
+    table.resize( psize );
+    for ( int i = 0; i < psize; ++i )
+    {
+	prob[i] = (i+1.0) / psize;
+	table[i] = i;
+    }
+
+    timer.start( true );
+    for ( int n = 0; n < nrand; ++n )
+    {
+	rand_real = prng.random( *real_dist );
+	MCLS::SamplingTools::sampleDiscreteCDF( 
+	    prob.getRawPtr(), psize, rand_real );
+    }
+    timer.stop();
+    std::cout << "Discrete Sampling N = 100: " 
+	      << timer.totalElapsedTime() << std::endl;
+
+    int_dist = IntTraits::create( 0, psize-1 );
+    timer.start( true );
+    for ( int n = 0; n < nrand; ++n )
+    {
+	rand_real = prng.random( *real_dist );
+	rand_int = prng.random( *int_dist );
+	MCLS::SamplingTools::sampleAliasTable( 
+	    prob.getRawPtr(), table.getRawPtr(), psize, rand_int, rand_real );
+    }
+    timer.stop();
+    std::cout << "Alias Sampling N = 100: " 
+	      << timer.totalElapsedTime() << std::endl;
+    std::cout << std::endl;
+
+    // N = 1,000.
+    psize = 1000;
+    prob.resize( psize );
+    table.resize( psize );
+    for ( int i = 0; i < psize; ++i )
+    {
+	prob[i] = (i+1.0) / psize;
+	table[i] = i;
+    }
+
+    timer.start( true );
+    for ( int n = 0; n < nrand; ++n )
+    {
+	rand_real = prng.random( *real_dist );
+	MCLS::SamplingTools::sampleDiscreteCDF( 
+	    prob.getRawPtr(), psize, rand_real );
+    }
+    timer.stop();
+    std::cout << "Discrete Sampling N = 1,000: " 
+	      << timer.totalElapsedTime() << std::endl;
+
+    int_dist = IntTraits::create( 0, psize-1 );
+    timer.start( true );
+    for ( int n = 0; n < nrand; ++n )
+    {
+	rand_real = prng.random( *real_dist );
+	rand_int = prng.random( *int_dist );
+	MCLS::SamplingTools::sampleAliasTable( 
+	    prob.getRawPtr(), table.getRawPtr(), psize, rand_int, rand_real );
+    }
+    timer.stop();
+    std::cout << "Alias Sampling N = 1,000: " 
+	      << timer.totalElapsedTime() << std::endl;
+    std::cout << std::endl;
+
+    // N = 10,000.
+    psize = 10000;
+    prob.resize( psize );
+    table.resize( psize );
+    for ( int i = 0; i < psize; ++i )
+    {
+	prob[i] = (i+1.0) / psize;
+	table[i] = i;
+    }
+
+    timer.start( true );
+    for ( int n = 0; n < nrand; ++n )
+    {
+	rand_real = prng.random( *real_dist );
+	MCLS::SamplingTools::sampleDiscreteCDF( 
+	    prob.getRawPtr(), psize, rand_real );
+    }
+    timer.stop();
+    std::cout << "Discrete Sampling N = 10,000: " 
+	      << timer.totalElapsedTime() << std::endl;
+
+    int_dist = IntTraits::create( 0, psize-1 );
+    timer.start( true );
+    for ( int n = 0; n < nrand; ++n )
+    {
+	rand_real = prng.random( *real_dist );
+	rand_int = prng.random( *int_dist );
+	MCLS::SamplingTools::sampleAliasTable( 
+	    prob.getRawPtr(), table.getRawPtr(), psize, rand_int, rand_real );
+    }
+    timer.stop();
+    std::cout << "Alias Sampling N = 10,000: " 
+	      << timer.totalElapsedTime() << std::endl;
+    std::cout << std::endl;
+
+    // N = 100,000.
+    psize = 100000;
+    prob.resize( psize );
+    table.resize( psize );
+    for ( int i = 0; i < psize; ++i )
+    {
+	prob[i] = (i+1.0) / psize;
+	table[i] = i;
+    }
+
+    timer.start( true );
+    for ( int n = 0; n < nrand; ++n )
+    {
+	rand_real = prng.random( *real_dist );
+	MCLS::SamplingTools::sampleDiscreteCDF( 
+	    prob.getRawPtr(), psize, rand_real );
+    }
+    timer.stop();
+    std::cout << "Discrete Sampling N = 100,000: " 
+	      << timer.totalElapsedTime() << std::endl;
+
+    int_dist = IntTraits::create( 0, psize-1 );
+    timer.start( true );
+    for ( int n = 0; n < nrand; ++n )
+    {
+	rand_real = prng.random( *real_dist );
+	rand_int = prng.random( *int_dist );
+	MCLS::SamplingTools::sampleAliasTable( 
+	    prob.getRawPtr(), table.getRawPtr(), psize, rand_int, rand_real );
+    }
+    timer.stop();
+    std::cout << "Alias Sampling N = 100,000: " 
+	      << timer.totalElapsedTime() << std::endl;
+    std::cout << std::endl;
 }
 
 //---------------------------------------------------------------------------//
