@@ -328,8 +328,8 @@ UniformAdjointSource<Domain>::getHistory()
     MCLS_CHECK( DT::isGlobalState(*d_domain,starting_state) );
 
     // Set the history state.
-    int weight_sign = (local_source[local_state] > 0.0) -
-		      (local_source[local_state] < 0.0);
+    Ordinal weight_sign = 
+	local_source[local_state] / std::abs(local_source[local_state]);
     history->setWeight( d_weight * weight_sign );
     history->setGlobalState( starting_state );
     history->live();

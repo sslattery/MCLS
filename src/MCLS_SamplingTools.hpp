@@ -46,9 +46,6 @@
 
 #include "MCLS_DBC.hpp"
 
-#include <Teuchos_ArrayView.hpp>
-#include <Teuchos_Array.hpp>
-
 namespace MCLS
 {
 
@@ -78,60 +75,6 @@ class SamplingTools
 	MCLS_ENSURE( bin - cdf >= 0 && bin - cdf < size );
 	
 	return std::lower_bound( cdf, cdf+size, random ) - cdf;
-    }
-
-    /*!
-     * \brief Given a set of discreate probabilities, construct an alias
-     * table.
-     */
-    static inline void createAliasTable( 
-	const Teuchos::ArrayView<const double>& probs,
-	const Teuchos::ArrayView<double>& alias_cdfs,
-	const Teuchos::ArrayView<int>& alias_indices )
-    {
-	MCLS_CHECK( probs.size() == alias_cdfs.size() );
-	MCLS_CHECK( probs.size() == alias_indices.size() );
-	
-	int np = probs.size();
-	Teuchos::Array<int> lo_indices;
-	Teuchos::Array<int> hi_indices;
-	int hi_idx = 0;
-	int lo_idx = 0;
-
-	for ( int i = 0; i < np; ++i )
-	{
-	    alias_cdfs[i] = np * probs[i];
-	    if ( alias_cdfs[i] < 1.0 )
-	    {
-		lo_indices.push_back( i );
-	    }
-	    else
-	    {
-		hi_indices.push_back( i );
-	    }
-	}
-	while ( !lo_indices.empty() && !hi_indices.empty() )
-	{
-	    hi_idx = hi_indices.back();
-	    hi_indices.pop_back();
-
-	    lo_idx = lo_indices.back();
-	    lo_indices.pop_back();
-
-	    alias_indices[lo_idx] = hi_idx;
-	    alias_cdfs[hi_idx] = 
-		alias_cdfs[hi_idx] + 
-		alias_cdfs[lo_idx] - 1.0;
-
-	    if ( alias_cdfs[hi_idx] < 1.0 )
-	    {
-		lo_indices.push_back( hi_idx );
-	    }
-	    else
-	    {
-		hi_indices.push_back( hi_idx );
-	    }
-	}
     }
 
     /*!

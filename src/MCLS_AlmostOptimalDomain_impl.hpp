@@ -648,6 +648,8 @@ void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::addMatrixToDomain(
     Ordinal local_num_rows = MT::getLocalNumRows( *A );
     Ordinal global_row = 0;
     int row_nnz = 0;
+    int hi_idx = 0;
+    int lo_idx = 0;
     int offset = b_g2l_row_indexer.size();
     int ipoffset = 0;
     int max_entries = MT::getGlobalMaxNumRowEntries( *A );
@@ -736,8 +738,42 @@ void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::addMatrixToDomain(
 	// Create the alias table for this row.
 	b_alias_cdfs[ipoffset] = Teuchos::ArrayRCP<double>( row_nnz );
 	b_alias_indices[ipoffset] = Teuchos::ArrayRCP<int>( row_nnz );
-	SamplingTools::createAliasTable( 
-	    values(), b_alias_cdfs[ipoffset](), b_alias_indices[ipoffset]() );
+	Teuchos::Array<int> lo_indices;
+	Teuchos::Array<int> hi_indices;
+	for ( int i = 0; i < row_nnz; ++i )
+	{
+	    b_alias_cdfs[ipoffset][i] = row_nnz * values[i];
+	    if ( b_alias_cdfs[ipoffset][i] < 1.0 )
+	    {
+		lo_indices.push_back( i );
+	    }
+	    else
+	    {
+		hi_indices.push_back( i );
+	    }
+	}
+	while ( !lo_indices.empty() && !hi_indices.empty() )
+	{
+	    hi_idx = hi_indices.back();
+	    hi_indices.pop_back();
+
+	    lo_idx = lo_indices.back();
+	    lo_indices.pop_back();
+
+	    b_alias_indices[ipoffset][lo_idx] = hi_idx;
+	    b_alias_cdfs[ipoffset][hi_idx] = 
+		b_alias_cdfs[ipoffset][hi_idx] + 
+		b_alias_cdfs[ipoffset][lo_idx] - 1.0;
+
+	    if ( b_alias_cdfs[ipoffset][hi_idx] < 1.0 )
+	    {
+		lo_indices.push_back( hi_idx );
+	    }
+	    else
+	    {
+		hi_indices.push_back( hi_idx );
+	    }
+	}
 
         // If we're using the collision estimator, add the global row as a
         // local tally state.

@@ -41,11 +41,7 @@
 #ifndef MCLS_PRNG_HPP
 #define MCLS_PRNG_HPP
 
-#include <MCLS_config.hpp>
 #include <MCLS_RNGTraits.hpp>
-
-#include <Teuchos_Time.hpp>
-#include <Teuchos_TimeMonitor.hpp>
 
 namespace MCLS
 {
@@ -84,11 +80,6 @@ class PRNG
 
     // Random number generator.
     Teuchos::RCP<RNG> d_rng;
-
-#if HAVE_MCLS_TIMERS
-    // Total random number generation timer.
-    Teuchos::RCP<Teuchos::Time> d_rng_timer;
-#endif
 };
 
 //---------------------------------------------------------------------------//
@@ -102,9 +93,6 @@ template<class RandomDistribution>
 inline typename RandomDistributionTraits<RandomDistribution>::result_type
 PRNG<RNG>::random( RandomDistribution& distribution )
 {
-#if HAVE_MCLS_TIMERS
-    Teuchos::TimeMonitor rng_monitor( *d_rng_timer );
-#endif
     return RNGT::random( *d_rng, distribution );
 }
 
