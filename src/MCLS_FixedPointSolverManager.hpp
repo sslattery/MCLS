@@ -41,6 +41,7 @@
 #ifndef MCLS_FIXEDPOINTSOLVERMANAGER_HPP
 #define MCLS_FIXEDPOINTSOLVERMANAGER_HPP
 
+#include "MCLS_config.hpp"
 #include "MCLS_SolverManager.hpp"
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
@@ -51,6 +52,7 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_Comm.hpp>
+#include <Teuchos_Time.hpp>
 
 namespace MCLS
 {
@@ -142,6 +144,11 @@ class FixedPointSolverManager : public SolverManager<Vector,Matrix>
 
     // Converged status. True if last solve converged.
     int d_converged_status;    
+
+#if HAVE_MCLS_TIMERS
+    // Total solve timer.
+    Teuchos::RCP<Teuchos::Time> d_solve_timer;
+#endif
 };
 
 //---------------------------------------------------------------------------//

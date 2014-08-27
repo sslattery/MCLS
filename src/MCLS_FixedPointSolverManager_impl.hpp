@@ -48,6 +48,7 @@
 
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_Ptr.hpp>
+#include <Teuchos_TimeMonitor.hpp>
 
 namespace MCLS
 {
@@ -62,6 +63,9 @@ FixedPointSolverManager<Vector,Matrix>::FixedPointSolverManager(
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
     : d_global_comm( global_comm )
     , d_plist( plist )
+#if HAVE_MCLS_TIMERS
+    , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: Fixed-Point Solve") )
+#endif
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
@@ -81,6 +85,9 @@ FixedPointSolverManager<Vector,Matrix>::FixedPointSolverManager(
     , d_plist( plist )
     , d_num_iters( 0 )
     , d_converged_status( 0 )
+#if HAVE_MCLS_TIMERS
+    , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: Fixed-Point Solve") )
+#endif
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_problem) );
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
@@ -133,6 +140,11 @@ typename Teuchos::ScalarTraits<
     typename FixedPointSolverManager<Vector,Matrix>::Scalar>::magnitudeType 
 FixedPointSolverManager<Vector,Matrix>::achievedTol() const
 {
+#if HAVE_MCLS_TIMERS
+    // Start the solve timer.
+    Teuchos::TimeMonitor solve_monitor( *d_solve_timer );
+#endif
+
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType residual_norm = 
 	Teuchos::ScalarTraits<Scalar>::zero();
     residual_norm = VT::normInf( *d_problem->getPrecResidual() );
