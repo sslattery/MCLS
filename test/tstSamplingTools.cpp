@@ -111,10 +111,10 @@ TEUCHOS_UNIT_TEST( AliasTable, table )
     indices[3] = 0;
     indices[4] = 2;
 
-    TEST_EQUALITY( 3, MCLS::SamplingTools::sampleAliasTable(
+    TEST_EQUALITY( 3, MCLS::SamplingTools::sampleDiscreteCDF(
 		       cdf.getRawPtr(), indices.getRawPtr(), cdf.size(),
 		       3, 0.43) );
-    TEST_EQUALITY( 0, MCLS::SamplingTools::sampleAliasTable(
+    TEST_EQUALITY( 0, MCLS::SamplingTools::sampleDiscreteCDF(
 		       cdf.getRawPtr(), indices.getRawPtr(), cdf.size(),
 		       3, 0.73) );
 }
