@@ -140,11 +140,6 @@ typename Teuchos::ScalarTraits<
     typename FixedPointSolverManager<Vector,Matrix>::Scalar>::magnitudeType 
 FixedPointSolverManager<Vector,Matrix>::achievedTol() const
 {
-#if HAVE_MCLS_TIMERS
-    // Start the solve timer.
-    Teuchos::TimeMonitor solve_monitor( *d_solve_timer );
-#endif
-
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType residual_norm = 
 	Teuchos::ScalarTraits<Scalar>::zero();
     residual_norm = VT::normInf( *d_problem->getPrecResidual() );
@@ -219,6 +214,11 @@ void FixedPointSolverManager<Vector,Matrix>::setParameters(
 template<class Vector, class Matrix>
 bool FixedPointSolverManager<Vector,Matrix>::solve()
 {
+#if HAVE_MCLS_TIMERS
+    // Start the solve timer.
+    Teuchos::TimeMonitor solve_monitor( *d_solve_timer );
+#endif
+
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
