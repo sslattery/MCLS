@@ -46,6 +46,8 @@
 
 #include "MCLS_DBC.hpp"
 
+#include <Teuchos_ArrayView.hpp>
+
 namespace MCLS
 {
 
@@ -58,7 +60,7 @@ class SamplingTools
 {
   public:
 
-    /*!
+    /*
      * \brief Given a discrete CDF and random number, sample it to get the
      * output state. 
      */
@@ -75,24 +77,6 @@ class SamplingTools
 	MCLS_ENSURE( bin - cdf >= 0 && bin - cdf < size );
 	
 	return std::lower_bound( cdf, cdf+size, random ) - cdf;
-    }
-
-    /*!
-     * \brief Given an alias table and a random number, sample it to get the
-     * output state.
-     */
-    static inline int sampleAliasTable( const double* alias_cdf,
-					const int* alias_states,
-					const int size,
-					const int& rand_int,
-					const double& rand_dbl )
-    {
-	MCLS_REQUIRE( size > 0 );
-	MCLS_REQUIRE( 0 <= rand_int && rand_int < size );
-	MCLS_REQUIRE( rand_dbl >= 0.0 && rand_dbl <= 1.0 );
-
-	return ( rand_dbl < alias_cdf[rand_int] ) 
-	    ? rand_int : alias_states[rand_int];
     }
 };
 

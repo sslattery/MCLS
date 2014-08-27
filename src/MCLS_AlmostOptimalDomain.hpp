@@ -109,10 +109,8 @@ class AlmostOptimalDomain
     typedef Teuchos::Comm<int>                            Comm;
     typedef RNG                                           rng_type;
     typedef RNGTraits<RNG>                                RNGT;
-    typedef typename RNGT::uniform_real_distribution_type RealDistribution;
-    typedef RandomDistributionTraits<RealDistribution>    RealDT;
-    typedef typename RNGT::uniform_int_distribution_type  IntDistribution;
-    typedef RandomDistributionTraits<IntDistribution>     IntDT;
+    typedef typename RNGT::uniform_real_distribution_type RandomDistribution;
+    typedef RandomDistributionTraits<RandomDistribution>  RDT;
     //@}
 
     // Default constructor.
@@ -199,11 +197,8 @@ class AlmostOptimalDomain
     // Random number generator.
     Teuchos::RCP<PRNG<RNG> > b_rng;
 
-    // Real random number distribution.
-    Teuchos::RCP<RealDistribution> b_real_rng_dist;
-
-    // Alias table random integer distributions.
-    Teuchos::ArrayRCP<Teuchos::RCP<IntDistribution> > b_int_rng_dists;
+    // Random number distribution.
+    Teuchos::RCP<RandomDistribution> b_rng_dist;
 
     // Monte Carlo estimator type.
     int b_estimator;
@@ -223,14 +218,11 @@ class AlmostOptimalDomain
     // Local CDF columns in local indexing.
     Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<int> > > b_local_columns;
 
+    // Local CDF values.
+    Teuchos::ArrayRCP<Teuchos::Array<double> > b_cdfs;
+
     // Local iteration matrix values.
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > b_h;
-
-    // Local alias table cdfs
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > b_alias_cdfs;
-
-    // Local alias table indices.
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<int> > b_alias_indices;
 
     // Local weights.
     Teuchos::ArrayRCP<double> b_weights;
@@ -279,12 +271,10 @@ inline void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::processTransition(
     int in_state = history.localState();
 
     // Sample the row CDF to get a new outgoing state.
-    int out_state = SamplingTools::sampleAliasTable( 
-	b_alias_cdfs[in_state].getRawPtr(),
-	b_alias_indices[in_state].getRawPtr(),
-	b_alias_cdfs[in_state].size(),
-	b_rng->random(*b_int_rng_dists[in_state]),
-	b_rng->random(*b_real_rng_dist) );
+    int out_state = 
+	SamplingTools::sampleDiscreteCDF( b_cdfs[in_state].getRawPtr(),
+					  b_cdfs[in_state].size(),
+					  b_rng->random(*b_rng_dist) );
 
     // Set the new local state with the history.
     HT::setLocalState( history, (*b_local_columns[in_state])[out_state] );

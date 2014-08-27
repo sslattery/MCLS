@@ -95,30 +95,6 @@ TEUCHOS_UNIT_TEST( SamplingTools, one_bin )
     TEST_EQUALITY( 0, MCLS::SamplingTools::sampleDiscreteCDF( cdf.getRawPtr(), cdf.size(), 1.00 ) );
 }
 
-TEUCHOS_UNIT_TEST( AliasTable, table )
-{
-    Teuchos::Array<double> cdf( 5, 0.0 );
-    cdf[0] = 0.13;
-    cdf[1] = 0.37;
-    cdf[2] = 0.24;
-    cdf[3] = 0.69;
-    cdf[4] = 0.03;
-
-    Teuchos::Array<int> indices( 5, 0 );
-    indices[0] = 1;
-    indices[1] = 3;
-    indices[2] = 2;
-    indices[3] = 0;
-    indices[4] = 2;
-
-    TEST_EQUALITY( 3, MCLS::SamplingTools::sampleDiscreteCDF(
-		       cdf.getRawPtr(), indices.getRawPtr(), cdf.size(),
-		       3, 0.43) );
-    TEST_EQUALITY( 0, MCLS::SamplingTools::sampleDiscreteCDF(
-		       cdf.getRawPtr(), indices.getRawPtr(), cdf.size(),
-		       3, 0.73) );
-}
-
 //---------------------------------------------------------------------------//
 // end tstSamplingTools.cpp
 //---------------------------------------------------------------------------//
