@@ -67,7 +67,7 @@ AndersonSolverManager<Vector,Matrix,RNG>::AndersonSolverManager(
     : d_global_comm( global_comm )
     , d_plist( plist )
 #if HAVE_MCLS_TIMERS
-    , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS Solve") )
+    , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: Anderson Solve") )
 #endif
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
@@ -91,7 +91,7 @@ AndersonSolverManager<Vector,Matrix,RNG>::AndersonSolverManager(
     , d_plist( plist )
     , d_nox_solver( new ::Thyra::NOXNonlinearSolver )
 #if HAVE_MCLS_TIMERS
-    , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS Solve") )
+    , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: Anderson Solve") )
 #endif
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );

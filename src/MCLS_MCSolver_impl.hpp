@@ -63,7 +63,7 @@ MCSolver<Source>::MCSolver( const Teuchos::RCP<const Comm>& set_comm,
     , d_relative_weight_cutoff( 0.0 )
     , d_rng( Teuchos::rcp(new PRNG<rng_type>(global_rank)) )
 #if HAVE_MCLS_TIMERS
-    , d_mc_timer( Teuchos::TimeMonitor::getNewCounter("Monte Carlo") )
+    , d_mc_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: Monte Carlo") )
 #endif
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );

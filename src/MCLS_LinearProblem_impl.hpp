@@ -63,7 +63,7 @@ LinearProblem<Vector,Matrix>::LinearProblem(
     , d_r( MT::cloneVectorFromMatrixRows(*d_A) )
     , d_rp( MT::cloneVectorFromMatrixRows(*d_A) )
 #if HAVE_MCLS_TIMERS
-    , d_mm_timer( Teuchos::TimeMonitor::getNewCounter("MM Multiply") )
+    , d_mm_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: MM Multiply") )
 #endif
 {
     MCLS_ENSURE( Teuchos::nonnull(d_A) );

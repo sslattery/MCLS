@@ -68,7 +68,7 @@ TpetraParaSailsPreconditioner<Scalar,LO,GO>::TpetraParaSailsPreconditioner(
     const Teuchos::RCP<Teuchos::ParameterList>& params )
     : d_plist( params )
 #if HAVE_MCLS_TIMERS
-    , d_prec_timer( Teuchos::TimeMonitor::getNewCounter("ParaSails Create") )
+    , d_prec_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: ParaSails") )
 #endif
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
