@@ -53,7 +53,7 @@
 #include <Teuchos_Array.hpp>
 
 #include <Tpetra_Distributor.hpp>
-#include <EpetraExt_RowMatrixOut.h>
+
 namespace MCLS
 {
 //---------------------------------------------------------------------------//
@@ -72,9 +72,7 @@ AdjointDomain<Vector,Matrix,RNG>::AdjointDomain(
     // Build the domain data.
     Teuchos::Array<Ordinal> local_tally_states;
     this->buildDomain( A, x, plist, local_tally_states );
-    std::string name("composite_spn.mtx");
-    Teuchos::RCP<const Epetra_RowMatrix> Arow = Teuchos::rcp_dynamic_cast<const Epetra_RowMatrix>(A);
-    EpetraExt::RowMatrixToMatrixMarketFile( name.c_str(), *Arow );
+
     // Create the tally vector.
     Teuchos::RCP<Vector> x_tally =
         VT::createFromRows( MT::getComm(*A), local_tally_states() );
