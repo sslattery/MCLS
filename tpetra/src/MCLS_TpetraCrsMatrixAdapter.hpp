@@ -385,13 +385,16 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
     /*!
      * \brief Matrix-Matrix multiply C = A*B
      */
-    static void multiply( const Teuchos::RCP<const matrix_type>& A,
-			  bool transpose_A,
-			  const Teuchos::RCP<const matrix_type>& B,
-			  bool transpose_B,
-			  const Teuchos::RCP<matrix_type>& C )
+    static Teuchos::RCP<matrix_type>
+    multiply( const Teuchos::RCP<const matrix_type>& A,
+	      bool transpose_A,
+	      const Teuchos::RCP<const matrix_type>& B,
+	      bool transpose_B,
+	      const double threshold = 0.0 )
     {
+	Teuchos::RCP<matrix_type> C = clone( *A );
 	Tpetra::MatrixMatrix::Multiply( *A, transpose_A, *B, transpose_B, *C );
+	return C;
     }
 
     /*!

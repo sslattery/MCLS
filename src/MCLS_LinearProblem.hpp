@@ -109,10 +109,12 @@ class LinearProblem
     Teuchos::RCP<const Matrix> getRightPrec() const { return d_PR; }
 
     // Get the composite linear operator.
-    Teuchos::RCP<const Matrix> getCompositeOperator() const;
+    Teuchos::RCP<const Matrix> getCompositeOperator( 
+	const double threshold = 0.0 ) const;
 
     // Get the transposed composite linear operator.
-    Teuchos::RCP<const Matrix> getTransposeCompositeOperator() const;
+    Teuchos::RCP<const Matrix> getTransposeCompositeOperator(
+	const double threshold = 0.0 ) const;
 
     //! Get the residual vector. 
     Teuchos::RCP<const Vector> getResidual() const { return d_r; }

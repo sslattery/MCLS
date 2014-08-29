@@ -120,13 +120,14 @@ class EpetraMatrixHelpers
     }
 
     /*!
-     * \brief Matrix-Matrix multiply C = A*B
+     * \brief Matrix-Matrix multiply return A*B
      */
-    static void multiply( const Teuchos::RCP<const matrix_type>& A,
-			  bool transpose_A,
-			  const Teuchos::RCP<const matrix_type>& B,
-			  bool transpose_B,
-			  const Teuchos::RCP<matrix_type>& C )
+    static Teuchos::RCP<matrix_type>
+    multiply( const Teuchos::RCP<const matrix_type>& A,
+	      bool transpose_A,
+	      const Teuchos::RCP<const matrix_type>& B,
+	      bool transpose_B,
+	      const double threshold = 0.0 )
     { UndefinedEpetraHelpers<Matrix>::notDefined(); }
 
     /*!
@@ -138,6 +139,16 @@ class EpetraMatrixHelpers
                      const Teuchos::RCP<matrix_type>& B,
                      double scalar_B )
     { UndefinedEpetraHelpers<Matrix>::notDefined(); }
+
+    /*!
+     * \brief Filter values out of a matrix below a certain threshold.
+     */
+    static Teuchos::RCP<Epetra_CrsMatrix> filter(
+    	const Epetra_CrsMatrix& matrix, const double& threshold )
+    {
+	UndefinedEpetraHelpers<Matrix>::notDefined(); 
+	return Teuchos::null;
+    }
 };
 
 //---------------------------------------------------------------------------//
@@ -288,22 +299,20 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
     }
 
     /*!
-     * \brief Matrix-Matrix multiply C = A*B
+     * \brief Matrix-Matrix multiply return A*B
      */
-    static void multiply( const Teuchos::RCP<const matrix_type>& A,
-			  bool transpose_A,
-			  const Teuchos::RCP<const matrix_type>& B,
-			  bool transpose_B,
-			  const Teuchos::RCP<matrix_type>& C )
+    static Teuchos::RCP<matrix_type>
+    multiply( const Teuchos::RCP<const matrix_type>& A,
+	      bool transpose_A,
+	      const Teuchos::RCP<const matrix_type>& B,
+	      bool transpose_B,
+	      const double threshold = 0.0 )
     {
 	Teuchos::RCP<const Epetra_CrsMatrix> A_crs =
 	    Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>( A );
 
 	Teuchos::RCP<const Epetra_CrsMatrix> B_crs =
 	    Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>( B );
-
-	Teuchos::RCP<Epetra_CrsMatrix> C_crs =
-	    Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>( C );
 
 	if ( Teuchos::is_null(A_crs) )
 	{
@@ -315,16 +324,16 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
 	    B_crs = createCrsMatrix( B );
 	}
 
-	if ( Teuchos::is_null(C_crs) )
-	{
-	    C_crs = Teuchos::rcp( 
-		new Epetra_CrsMatrix(Copy, A->RowMatrixRowMap(), 0) );
-	}
+	Teuchos::RCP<Epetra_CrsMatrix> C_crs = Teuchos::rcp( 
+	    new Epetra_CrsMatrix(Copy, A->RowMatrixRowMap(), 0) );
 
 	MCLS_CHECK_ERROR_CODE(
 	    EpetraExt::MatrixMatrix::Multiply( 
 		*A_crs, transpose_A, *B_crs, transpose_B, *C_crs )
 	    );
+
+	C_crs =	filter( *C_crs, threshold );
+	return C_crs;
     }
 
     /*!
@@ -371,12 +380,11 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
             new Epetra_CrsMatrix( Copy, row_map, col_map, 0 ) );
 
         int num_local_rows = row_map.NumMyElements();
-        Teuchos::Array<int> my_global_rows( num_local_rows );
-        row_map.MyGlobalElements( my_global_rows.getRawPtr() );
+        int* my_global_rows;
+        row_map.MyGlobalElementsPtr( my_global_rows );
 
-        int num_local_cols = col_map.NumMyElements() ;
-        Teuchos::Array<int> my_global_cols( num_local_cols );
-        col_map.MyGlobalElements( my_global_cols.getRawPtr() );
+        int* my_global_cols;
+        col_map.MyGlobalElementsPtr( my_global_cols );
 
         int max_entries = A->MaxNumEntries();
         int num_entries = 0;
@@ -410,8 +418,89 @@ class EpetraMatrixHelpers<Epetra_RowMatrix>
         MCLS_CHECK_ERROR_CODE(
 	    A_crs->FillComplete() 
 	    );
+
         return A_crs;
     }
+
+    /*!
+     * \brief Filter values out of a matrix below a certain threshold. The
+     * threshold is relative to the maximum value in each row of the matrix.
+     */
+    static Teuchos::RCP<Epetra_CrsMatrix> filter(
+    	const Epetra_CrsMatrix& A, const double& threshold )
+    {
+	const Epetra_Map &row_map = A.RowMatrixRowMap(); 
+    
+        Teuchos::RCP<Epetra_CrsMatrix> A_filter = Teuchos::rcp(
+            new Epetra_CrsMatrix(Copy, row_map, 0) );
+
+        int num_local_rows = row_map.NumMyElements();
+
+        int max_entries = A.MaxNumEntries();
+        int num_entries = 0;
+        Teuchos::Array<int> local_indices(max_entries);
+        Teuchos::Array<int> global_indices(max_entries);
+        Teuchos::Array<double> values(max_entries);
+	Teuchos::Array<int>::iterator index_it;
+	Teuchos::Array<double>::iterator value_it;
+	double row_threshold = 0.0;
+
+	// Process row-by-row.
+        for( int local_row = 0; local_row < num_local_rows; ++local_row ) 
+        {
+	    // Extract a copy of the row.
+            MCLS_CHECK_ERROR_CODE( 
+		A.ExtractMyRowCopy( local_row, 
+				    max_entries,
+				    num_entries, 
+				    values.getRawPtr(),
+				    local_indices.getRawPtr() )
+		);
+
+	    // Get the threshold for this row.
+	    row_threshold = 
+		*std::max_element(values.getRawPtr(),
+				  values.getRawPtr()+num_entries)*threshold;
+
+	    // Find values below the threshold.
+            for (int j = 0 ; j < num_entries; ++j ) 
+            { 
+		if ( std::abs(values[j]) <= row_threshold )
+		{
+		    values[j] = 0.0;
+		    global_indices[j] = -1;
+		}
+		else
+		{
+		    global_indices[j] = A.GCID( local_indices[j] );
+		}
+            }
+
+	    // Remove values below the threshold.
+	    value_it = std::remove( values.begin(), values.begin()+num_entries, 0.0 );
+	    index_it = std::remove( 
+		global_indices.begin(), global_indices.begin()+num_entries, -1 );
+	    num_entries = std::distance( values.begin(), value_it );
+	    MCLS_CHECK( std::distance(global_indices.begin(), index_it) == 
+			num_entries );
+
+	    // Create a new row in the filtered matrix.
+	    MCLS_CHECK_ERROR_CODE(
+		A_filter->InsertGlobalValues( A.GRID(local_row), 
+					      num_entries, 
+					      values.getRawPtr(),
+					      global_indices.getRawPtr() )
+		);
+        }
+
+        MCLS_CHECK_ERROR_CODE(
+	    A_filter->FillComplete() 
+	    );
+        MCLS_ENSURE( A_filter->Filled() );
+
+        return A_filter;
+    }
+
 };
 
 //---------------------------------------------------------------------------//

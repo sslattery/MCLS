@@ -43,9 +43,12 @@
 #include <cmath>
 #include <sstream>
 #include <stdexcept>
+#include <limits>
 
 #include <MCLS_config.hpp>
 #include <MCLS_SamplingTools.hpp>
+#include <MCLS_PRNG.hpp>
+#include <MCLS_Xorshift.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCP.hpp>
@@ -54,6 +57,7 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_Time.hpp>
 
 //---------------------------------------------------------------------------//
 // Tests.
@@ -85,6 +89,7 @@ TEUCHOS_UNIT_TEST( SamplingTools, multi_bin )
     TEST_EQUALITY( 4, MCLS::SamplingTools::sampleDiscreteCDF( cdf.getRawPtr(), cdf.size(), 0.99999999 ) );
 }
 
+//---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST( SamplingTools, one_bin )
 {
     Teuchos::Array<double> cdf( 1, 1.0 );

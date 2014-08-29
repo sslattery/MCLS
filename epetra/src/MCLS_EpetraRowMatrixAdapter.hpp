@@ -420,16 +420,17 @@ class MatrixTraits<Epetra_Vector,Epetra_RowMatrix>
     }
 
     /*!
-     * \brief Matrix-Matrix multiply C = A*B
+     * \brief Matrix-Matrix return C = A*B
      */
-    static void multiply( const Teuchos::RCP<const matrix_type>& A,
-			  bool transpose_A,
-			  const Teuchos::RCP<const matrix_type>& B,
-			  bool transpose_B,
-			  const Teuchos::RCP<matrix_type>& C )
+    static Teuchos::RCP<matrix_type>
+    multiply( const Teuchos::RCP<const matrix_type>& A,
+	      bool transpose_A,
+	      const Teuchos::RCP<const matrix_type>& B,
+	      bool transpose_B,
+	      const double threshold = 0.0 )
     { 
-	EpetraMatrixHelpers<matrix_type>::multiply( 
-	    A, transpose_A, B, transpose_B, C );
+	return EpetraMatrixHelpers<matrix_type>::multiply( 
+	    A, transpose_A, B, transpose_B, threshold );
     }
 
     /*!
