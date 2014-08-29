@@ -146,7 +146,7 @@ void LinearProblem<Vector,Matrix>::setRightPrec(
  */
 template<class Vector, class Matrix>
 Teuchos::RCP<const Matrix> 
-LinearProblem<Vector,Matrix>::getCompositeOperator() const
+LinearProblem<Vector,Matrix>::getCompositeOperator( const double threshold ) const
 {
 #if HAVE_MCLS_TIMERS
     Teuchos::TimeMonitor mm_monitor( *d_mm_timer );
@@ -159,20 +159,17 @@ LinearProblem<Vector,Matrix>::getCompositeOperator() const
 
     if ( left_prec && right_prec )
     {
-        Teuchos::RCP<Matrix> temp = MT::clone( *d_A );
-	MT::multiply( d_A, false, d_PR, false, temp );
-        composite = MT::clone( *d_PL );
-	MT::multiply( d_PL, false, temp, false, composite );
+        Teuchos::RCP<Matrix> temp = 
+	    MT::multiply( d_A, false, d_PR, false, threshold );
+	composite = MT::multiply( d_PL, false, temp, false, threshold );
     }
     else if ( left_prec )
     {
-        composite = MT::clone( *d_PL );
-	MT::multiply( d_PL, false, d_A, false, composite );
+	composite = MT::multiply( d_PL, false, d_A, false, threshold );
     }
     else if ( right_prec )
     {
-        composite = MT::clone( *d_A );
-	MT::multiply( d_A, false, d_PR, false, composite );
+	composite = MT::multiply( d_A, false, d_PR, false, threshold );
     }
     else
     {
@@ -188,7 +185,8 @@ LinearProblem<Vector,Matrix>::getCompositeOperator() const
  */
 template<class Vector, class Matrix>
 Teuchos::RCP<const Matrix> 
-LinearProblem<Vector,Matrix>::getTransposeCompositeOperator() const
+LinearProblem<Vector,Matrix>::getTransposeCompositeOperator(
+    const double threshold ) const
 {
 #if HAVE_MCLS_TIMERS
     Teuchos::TimeMonitor mm_monitor( *d_mm_timer );
@@ -205,26 +203,22 @@ LinearProblem<Vector,Matrix>::getTransposeCompositeOperator() const
 	{
 	    Teuchos::RCP<Matrix> PL_T = MT::copyTranspose( *d_PL );
 	    Teuchos::RCP<Matrix> A_T = MT::copyTranspose( *d_A );
-	    temp = MT::clone( *A_T );
-	    MT::multiply( A_T, false, PL_T, false, temp );
+	    temp = MT::multiply( A_T, false, PL_T, false, threshold );
 	}
 	Teuchos::RCP<Matrix> PR_T = MT::copyTranspose( *d_PR );
-	composite = MT::clone( *PR_T );        
-	MT::multiply( PR_T, false, temp, false, composite );
+	composite = MT::multiply( PR_T, false, temp, false, threshold );
     }
     else if ( right_prec )
     {
 	Teuchos::RCP<Matrix> A_T = MT::copyTranspose( *d_A );
 	Teuchos::RCP<Matrix> PR_T = MT::copyTranspose( *d_PR );
-	composite = MT::clone( *PR_T );
-	MT::multiply( PR_T, false, A_T, false, composite );
+	composite = MT::multiply( PR_T, false, A_T, false, threshold );
     }
     else if ( left_prec )
     {
 	Teuchos::RCP<Matrix> A_T = MT::copyTranspose( *d_A );
-	composite = MT::clone( *A_T );
 	Teuchos::RCP<Matrix> PL_T = MT::copyTranspose( *d_PL );
-	MT::multiply( A_T, false, PL_T, false, composite );
+	composite = MT::multiply( A_T, false, PL_T, false, threshold );
     }
     else
     {

@@ -347,8 +347,13 @@ void AdjointSolverManager<Vector,Matrix,RNG>::buildMonteCarloDomain()
     // composite operator.
     if ( d_primary_set )
     {
+	double threshold = 0.0;
+	if ( d_plist->isParameter("Composite Operator Threshold") )
+	{
+	    threshold =  d_plist->get<double>("Composite Operator Threshold");
+	}
         primary_domain = Teuchos::rcp( 
-            new DomainType( d_problem->getTransposeCompositeOperator(),
+            new DomainType( d_problem->getTransposeCompositeOperator(threshold),
                             d_problem->getLHS(),
                             *d_plist ) );
     }

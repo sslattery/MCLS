@@ -174,6 +174,82 @@ TEUCHOS_UNIT_TEST( EpetraHelpers, OffProcCols )
 }
 
 //---------------------------------------------------------------------------//
+// Test templates
+//---------------------------------------------------------------------------//
+TEUCHOS_UNIT_TEST( EpetraHelpers, MatrixFilter )
+{
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+	Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<Epetra_Comm> epetra_comm = getEpetraComm( comm );
+    int comm_size = comm->getSize();
+
+    int local_num_rows = 10;
+    int global_num_rows = local_num_rows*comm_size;
+    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(
+	new Epetra_Map( global_num_rows, 0, *epetra_comm ) );
+
+    // Build the linear operator and solution vector.
+    Teuchos::RCP<Epetra_CrsMatrix> A = 	
+	Teuchos::rcp( new Epetra_CrsMatrix( Copy, *map, 0 ) );
+    Teuchos::Array<int> first_columns( 1, 0 );
+    Teuchos::Array<double> first_values( 1, 2.0 );
+    A->InsertGlobalValues( 0, first_columns().size(), 
+                           &first_values[0], &first_columns[0] );
+    Teuchos::Array<int> global_columns( 2 );
+    Teuchos::Array<double> values( 2 );
+    for ( int i = 1; i < global_num_rows; ++i )
+    {
+	global_columns[0] = i-1;
+	global_columns[1] = i;
+	values[0] = 2;
+	values[1] = 3;
+	A->InsertGlobalValues( i, global_columns().size(), 
+			       &values[0], &global_columns[0] );
+    }
+    A->FillComplete();
+
+    Teuchos::RCP<Epetra_CrsMatrix> filter_A =
+	MCLS::EpetraMatrixHelpers<Epetra_RowMatrix>::filter( *A, 0.0 );
+
+    TEST_ASSERT( filter_A->Filled() );
+    TEST_EQUALITY( A->MaxNumEntries(), filter_A->MaxNumEntries() );
+    TEST_EQUALITY( A->NumMyRows(), filter_A->NumMyRows() );
+    TEST_EQUALITY( A->NumMyCols(), filter_A->NumMyCols() );
+    int max_size = A->MaxNumEntries();
+    Teuchos::Array<double> A_values( max_size );
+    Teuchos::Array<int> A_indices( max_size );
+    Teuchos::Array<double> filter_A_values( max_size );
+    Teuchos::Array<int> filter_A_indices( max_size );
+    int error = 0;
+    int num_entries_A = 0;
+    int num_entries_filter_A = 0;
+    for ( int i = 0; i < A->NumMyRows(); ++i )
+    {
+	TEST_EQUALITY( A->GRID(i), filter_A->GRID(i) );
+
+	error = A->ExtractMyRowCopy( i, max_size, num_entries_A,
+				     A_values.getRawPtr(),
+				     A_indices.getRawPtr() );
+	TEST_EQUALITY( 0, error );
+
+	error = filter_A->ExtractMyRowCopy( i, max_size, num_entries_filter_A,
+					    filter_A_values.getRawPtr(),
+					    filter_A_indices.getRawPtr() );
+	TEST_EQUALITY( 0, error );
+
+	TEST_EQUALITY( num_entries_A, num_entries_filter_A );
+
+	for ( int j = 0; j < num_entries_A; ++j )
+	{
+	    TEST_EQUALITY( A_values[j], filter_A_values[j] );
+	    TEST_EQUALITY( A_indices[j], filter_A_indices[j] );
+	    TEST_EQUALITY( A->GCID(A_indices[j]),
+			   filter_A->GCID(filter_A_indices[j]) );
+	}
+    }
+}
+
+//---------------------------------------------------------------------------//
 // end tstEpetraHelpers.cpp
 //---------------------------------------------------------------------------//
 
