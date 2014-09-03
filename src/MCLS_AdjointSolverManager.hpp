@@ -43,6 +43,7 @@
 
 #include <random>
 
+#include "MCLS_config.hpp"
 #include "MCLS_SolverManager.hpp"
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
@@ -58,6 +59,7 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_Comm.hpp>
+#include <Teuchos_Time.hpp>
 
 namespace MCLS
 {
@@ -172,6 +174,11 @@ class AdjointSolverManager : public SolverManager<Vector,Matrix>
 
     // Monte Carlo set solver.
     Teuchos::RCP<MCSolver<SourceType> > d_mc_solver;
+
+#if HAVE_MCLS_TIMERS
+    // Total solve timer.
+    Teuchos::RCP<Teuchos::Time> d_solve_timer;
+#endif
 };
 
 //---------------------------------------------------------------------------//

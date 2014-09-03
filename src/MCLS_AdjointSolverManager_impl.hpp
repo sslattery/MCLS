@@ -46,6 +46,7 @@
 
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_Ptr.hpp>
+#include <Teuchos_TimeMonitor.hpp>
 
 namespace MCLS
 {
@@ -63,6 +64,9 @@ AdjointSolverManager<Vector,Matrix,RNG>::AdjointSolverManager(
     : d_global_comm( global_comm )
     , d_plist( plist )
     , d_internal_solver( internal_solver )
+#if HAVE_MCLS_TIMERS
+    , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: Adjoint MC Solve") )
+#endif
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
@@ -83,6 +87,9 @@ AdjointSolverManager<Vector,Matrix,RNG>::AdjointSolverManager(
     , d_plist( plist )
     , d_internal_solver( internal_solver )
     , d_primary_set( Teuchos::nonnull(d_problem) )
+#if HAVE_MCLS_TIMERS
+    , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: Adjoint MC Solve") )
+#endif
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
@@ -232,6 +239,11 @@ bool AdjointSolverManager<Vector,Matrix,RNG>::solve()
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
     MCLS_REQUIRE( Teuchos::nonnull(d_msod_manager) );
     MCLS_REQUIRE( Teuchos::nonnull(d_mc_solver) );
+
+#if HAVE_MCLS_TIMERS
+    // Start the solve timer.
+    Teuchos::TimeMonitor solve_monitor( *d_solve_timer );
+#endif
 
     // Get the domain tally.
     Teuchos::RCP<TallyType> tally = 
