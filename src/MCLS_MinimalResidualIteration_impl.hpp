@@ -120,8 +120,7 @@ void MinimalResidualIteration<Vector,Matrix>::doOneIteration()
     d_problem->apply( *d_problem->getPrecResidual(), *d_p );
 
     // Petrov-Galerkin condition.
-    Scalar alpha = VT::dot( *d_problem->getPrecResidual(), 
-                            *d_problem->getPrecResidual() ) /
+    Scalar alpha = VT::dot( *d_p, *d_problem->getPrecResidual() ) /
                    VT::dot( *d_p, *d_p );
 
     // Fixed point update.
