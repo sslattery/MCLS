@@ -373,7 +373,7 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_set_pu )
     // Create the adjoint source with a set number of histories.
     int mult = 10;
     double cutoff = 1.0e-8;
-    plist.set<int>("Set Number of Histories", mult*global_num_rows);
+    plist.set<double>("Sample Ratio", mult);
     plist.set<double>("Weight Cutoff", cutoff);
     MCLS::UniformAdjointSource<DomainType> 
 	primary_source( b, domain, comm, comm->getSize(), 
@@ -478,7 +478,7 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_set )
     // Create the adjoint source with a set number of histories.
     int mult = 10;
     double cutoff = 1.0e-8;
-    plist.set<int>("Set Number of Histories", mult*global_num_rows);
+    plist.set<double>("Sample Ratio", mult);
     plist.set<double>("Weight Cutoff", cutoff);
     MCLS::UniformAdjointSource<DomainType> 
 	source( b, domain, comm, comm->getSize(), comm->getRank(), plist );

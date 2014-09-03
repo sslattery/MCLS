@@ -80,11 +80,13 @@ UniformForwardSource<Domain>::UniformForwardSource(
     MCLS_REQUIRE( Teuchos::nonnull(d_domain) );
     MCLS_REQUIRE( Teuchos::nonnull(d_set_comm) );
 
-    // Get the requested number of histories. The default value is the
-    // length of the source vector in this set.
-    if ( plist.isParameter("Set Number of Histories") )
+    // Get the requested number of histories. The default value is a sample
+    // ratio of 1.
+    // 
+    if ( plist.isParameter("Sample Ratio") )
     {
-	d_nh_requested = plist.get<int>("Set Number of Histories");
+	d_nh_requested = 
+	    VT::getGlobalLength(*d_b) * plist.get<double>("Sample Ratio");
     }
     
     // Set the total to the requested amount. This may change based on the

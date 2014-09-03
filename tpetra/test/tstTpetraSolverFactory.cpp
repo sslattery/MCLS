@@ -179,7 +179,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, mcsa_two_by_two, LO, GO, Scala
 	plist->set<bool>("Reproducible MC Mode",true);
 	plist->set<int>("Overlap Size", 2);
 	plist->set<int>("Number of Sets", 2);
-	plist->set<int>("Set Number of Histories", 100 );
+	plist->set<double>("Sample Ratio",10.0);
 	plist->set<std::string>("Transport Type", "Global" );
 
 	// Create the solver.
@@ -426,7 +426,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, adjmc_two_by_two, LO, GO, Scal
 	plist->set<bool>("Reproducible MC Mode",true);
 	plist->set<int>("Overlap Size", 2);
 	plist->set<int>("Number of Sets", 2);
-	plist->set<int>("Set Number of Histories", 100 );
+	plist->set<double>("Sample Ratio",10.0);
 	plist->set<std::string>("Transport Type", "Global" );
 
 	// Create the solver.

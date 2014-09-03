@@ -12,7 +12,7 @@
   <Parameter name="Reproducible MC Mode" type="bool" value="true"/>
   <Parameter name="Overlap Size" type="int" value="0"/>
   <Parameter name="Number of Sets" type="int" value="1"/>
-  <Parameter name="Set Number of Histories" type="int" value="10000"/>
+  <Parameter name="Sample Ratio" type="double" value="10.0"/>
   <Parameter name="Problem Size" type="int" value="100"/>
   <Parameter name="Wave Number 1" type="int" value="2"/>
   <Parameter name="Wave Number 2" type="int" value="0"/>

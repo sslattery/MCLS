@@ -351,7 +351,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformForwardSource, nh_set, LO, GO, Scalar 
     // Create the forward source with a set number of histories.
     int mult = 10;
     double cutoff = 1.0e-8;
-    plist.set<int>("Set Number of Histories", mult*global_num_rows);
+    plist.set<double>("Sample Ratio",mult);
     plist.set<double>("Weight Cutoff", cutoff);
     MCLS::UniformForwardSource<DomainType> 
 	source( b, domain, comm, comm->getSize(), comm->getRank(), plist );
@@ -446,7 +446,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformForwardSource, nh_set_pu, LO, GO, Scal
     // Create the forward source with a set number of histories.
     int mult = 10;
     double cutoff = 1.0e-8;
-    plist.set<int>("Set Number of Histories", mult*global_num_rows);
+    plist.set<double>("Sample Ratio",mult);
     plist.set<double>("Weight Cutoff", cutoff);
     MCLS::UniformForwardSource<DomainType> 
 	primary_source( b, domain, comm, comm->getSize(), 

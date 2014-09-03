@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
     bool            reproducibleMC         = true;
     int             overlapSize            = 0;
     int             numSets                = 1;
-    int             numHistories           = 1000;
+    double             sampleRatio           = 1000;
     std::string     mcType                 = "Adjoint";
     int             blockSize              = 1;
     std::string     solverType             = "MCSA";
@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
 		   "Determines whether or not to communicate RNG with MC histories." );
     clp.setOption( "mc-overlap", &overlapSize, "Determines the size of overlap in MC problem." );
     clp.setOption( "mc-sets", &numSets, "Determines the number of sets in the MC problem." );
-    clp.setOption( "mc-histories", &numHistories, "Determines the number of histories in the MC problem." );
+    clp.setOption( "mc-sample-ratio", &sampleRatio, "Determines the number of histories in the MC problem." );
     clp.setOption( "block-size", &blockSize, "Block Jacobi preconditioning block size." );
     clp.setOption( "solver-type", &solverType, "Determines MCLS solver." );
     clp.setOption( "prec-type", &precType, "Determines MCLS preconditioner." );
@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
     mclsLOWSFPL_mcsa.set("Reproducible MC Mode",bool(reproducibleMC));
     mclsLOWSFPL_mcsa.set("Overlap Size",int(overlapSize));
     mclsLOWSFPL_mcsa.set("Number of Sets",int(numSets));
-    mclsLOWSFPL_mcsa.set("Set Number of Histories",int(numHistories));
+    mclsLOWSFPL_mcsa.set("Sample Ratio", double(sampleRatio));
     mclsLOWSFPL_mcsa.set("Transport Type","Global");
 
     Teuchos::ParameterList& mclsLOWSFPL_adjmc =
@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
     mclsLOWSFPL_adjmc.set("Reproducible MC Mode",bool(reproducibleMC));
     mclsLOWSFPL_adjmc.set("Overlap Size",int(overlapSize));
     mclsLOWSFPL_adjmc.set("Number of Sets",int(numSets));
-    mclsLOWSFPL_adjmc.set("Set Number of Histories",int(numHistories));
+    mclsLOWSFPL_adjmc.set("Sample Ratio", double(sampleRatio));
     mclsLOWSFPL_adjmc.set("Transport Type","Global");
 
     Teuchos::ParameterList& mclsLOWSFPL_fwdmc =
@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
     mclsLOWSFPL_fwdmc.set("Reproducible MC Mode",bool(reproducibleMC));
     mclsLOWSFPL_fwdmc.set("Overlap Size",int(overlapSize));
     mclsLOWSFPL_fwdmc.set("Number of Sets",int(numSets));
-    mclsLOWSFPL_fwdmc.set("Set Number of Histories",int(numHistories));
+    mclsLOWSFPL_fwdmc.set("Sample Ratio", double(sampleRatio));
     mclsLOWSFPL_fwdmc.set("Transport Type","Global");
 
     success

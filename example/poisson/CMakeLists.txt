@@ -2,20 +2,8 @@ INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(TribitsCopyFilesToBinaryDir)
 
 TRIBITS_ADD_EXECUTABLE(
-  poisson_multilevel
-  SOURCES poisson_ml_driver.cpp
-  COMM serial mpi
-  )
-
-TRIBITS_ADD_EXECUTABLE(
   poisson
   SOURCES poisson_driver.cpp
-  COMM serial mpi
-  )
-
-TRIBITS_ADD_EXECUTABLE(
-  poisson_mlmcsa
-  SOURCES poisson_mlmcsa.cpp
   COMM serial mpi
   )
 

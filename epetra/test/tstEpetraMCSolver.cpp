@@ -183,7 +183,7 @@ TEUCHOS_UNIT_TEST( MCSolver, solve )
 
     // Create the adjoint source with a set number of histories.
     int mult = 10;
-    plist->set<int>("Set Number of Histories", mult*global_num_rows);
+    plist->set<double>("Sample Ratio", mult);
     Teuchos::RCP<SourceType> source = Teuchos::rcp(
 	new SourceType( b, domain, comm, 
 			comm->getSize(), comm->getRank(), *plist ) );

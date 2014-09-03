@@ -1022,8 +1022,7 @@ TEUCHOS_UNIT_TEST( MatrixTraits, multiply )
 
     Teuchos::RCP<MatrixType> B = A;
     Teuchos::RCP<MatrixType> C = MT::copyTranspose( *B );
-    Teuchos::RCP<MatrixType> D = MT::clone( *A );
-    MT::multiply( B, false, C, false, D );
+    Teuchos::RCP<MatrixType> D = MT::multiply( B, false, C, false, 0.0 );
 
     std::size_t num_entries;
     Teuchos::Array<int> view_columns(3);

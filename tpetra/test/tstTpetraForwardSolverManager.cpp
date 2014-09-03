@@ -146,7 +146,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardSolverManager, one_by_one, LO, GO, Sca
     plist->set<bool>("Reproducible MC Mode",true);
     plist->set<int>("Overlap Size", 2);
     plist->set<int>("Number of Sets", 1);
-    plist->set<int>("Set Number of Histories", 1000 );
+    plist->set<double>("Sample Ratio",10.0);
     plist->set<std::string>("Transport Type", "Global" );
 	
     // Create the linear problem.
@@ -311,7 +311,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardSolverManager, two_by_two, LO, GO, Sca
 	plist->set<bool>("Reproducible MC Mode",true);
 	plist->set<int>("Overlap Size", 2);
 	plist->set<int>("Number of Sets", 2);
-	plist->set<int>("Set Number of Histories", 1000 );
+	plist->set<double>("Sample Ratio",10.0);
 	plist->set<std::string>("Transport Type", "Global" );
 
 	// Create the solver.
@@ -526,7 +526,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardSolverManager, one_by_one_prec, LO, GO
     plist->set<bool>("Reproducible MC Mode",true);
     plist->set<int>("Overlap Size", 2);
     plist->set<int>("Number of Sets", 1);
-    plist->set<int>("Set Number of Histories", 1000 );
+    plist->set<double>("Sample Ratio",10.0);
     plist->set<std::string>("Transport Type", "Global" );
 
     // Create the linear problem.
@@ -710,7 +710,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardSolverManager, two_by_two_prec, LO, GO
 	plist->set<bool>("Reproducible MC Mode",true);
 	plist->set<int>("Overlap Size", 2);
 	plist->set<int>("Number of Sets", 2);
-	plist->set<int>("Set Number of Histories", 1000 );
+	plist->set<double>("Sample Ratio",10.0);
 	plist->set<std::string>("Transport Type", "Global" );
 
 	// Create the solver.

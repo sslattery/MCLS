@@ -184,7 +184,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SourceTransporter, transport, LO, GO, Scalar 
     // Create the adjoint source with a set number of histories.
     int mult = 100;
     double cutoff = 1.0e-6;
-    plist.set<int>("Set Number of Histories", mult*global_num_rows);
+    plist.set<double>("Sample Ratio",mult);
     plist.set<double>("Weight Cutoff", cutoff);
     Teuchos::RCP<SourceType> source = Teuchos::rcp(
 	new SourceType( b, domain, comm, 
