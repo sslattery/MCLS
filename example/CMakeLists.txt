@@ -1,1 +1,2 @@
 ADD_SUBDIRECTORY(poisson)
+ADD_SUBDIRECTORY(neutron_diffusion)
