@@ -33,7 +33,7 @@ Partitioner::Partitioner( const RCP_Comm &comm, const RCP_ParameterList &plist )
     unsigned int my_size = comm->getSize();
 
     // Check that the block specification and communicator are consistent.
-    MCLS_INSIST( d_num_blocks.first * d_num_blocks.second == my_size );
+    MCLS_REQUIRE( d_num_blocks.first * d_num_blocks.second == my_size );
 
     // Block indices.
     int my_j_block = std::floor( my_rank / d_num_blocks.first );

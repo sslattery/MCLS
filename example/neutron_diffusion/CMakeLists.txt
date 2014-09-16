@@ -3,9 +3,9 @@ INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE(
   neutron_diffusion
-  SOURCES Partitioner.cpp DiffusionProblem.cpp Mesh.cpp VTKOutput.cpp neutron_diffusion.cpp
+  SOURCES Partitioner.cpp DiffusionProblem.cpp neutron_diffusion.cpp
   COMM serial mpi
   )
 

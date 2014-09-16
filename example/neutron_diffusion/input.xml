@@ -1,6 +1,6 @@
 <ParameterList name="Neutron Diffusion">
-  <Parameter name="I_BLOCKS" type="int" value="1"/>
-  <Parameter name="J_BLOCKS" type="int" value="1"/>
+  <Parameter name="I_BLOCKS" type="int" value="2"/>
+  <Parameter name="J_BLOCKS" type="int" value="2"/>
   <Parameter name="NUM_SETS" type="int" value="1"/>
   <Parameter name="X_MIN" type="double" value="0.0"/>
   <Parameter name="X_MAX" type="double" value="1.0"/>
@@ -12,26 +12,23 @@
   <Parameter name="SCATTERING XS" type="double" value="1.0"/>
   <Parameter name="SOURCE TYPE" type="string" value="UNIFORM"/>
   <Parameter name="SOURCE STRENGTH" type="double" value="1.0"/>
+  <Parameter name="Solver Type" type="string" value="MCSA"/>
   <ParameterList name="MCLS">
-    <Parameter name="MC Type" type="string" value="Adjoint"/>
-    <Parameter name="Fixed Point Type" type="string" value="Richardson"/>
-    <Parameter name="Transport Type" type="string" value="Global"/>
-    <Parameter name="Estimator Type" type="string" value="Collision"/>
-    <Parameter name="Source Sampling Type" type="string" value="Random"/>
-    <Parameter name="Number of Sets" type="int" value="1"/>
-    <Parameter name="Reproducible MC Mode" type="bool" value="false"/>
-    <Parameter name="Overlap Size" type="int" value="0"/>
-    <Parameter name="Weight Cutoff" type="double" value="0.1"/>
-    <Parameter name="Neumann Relaxation" type="double" value="1.0"/>
-    <Parameter name="Richardson Relaxation" type="double" value="1.0"/>
-    <Parameter name="MC Check Frequency" type="int" value="1000"/>
-    <Parameter name="MC Buffer Size" type="int" value="1000"/>
     <Parameter name="Iteration Print Frequency" type="int" value="1"/>
     <Parameter name="Iteration Check Frequency" type="int" value="1"/>
+    <Parameter name="Transport Type" type="string" value="Global"/>
+    <Parameter name="Fixed Point Type" type="string" value="Richardson"/>
+    <Parameter name="MC Type" type="string" value="Adjoint"/>
+    <Parameter name="Estimator Type" type="string" value="Collision"/>
+    <Parameter name="MC Check Frequency" type="int" value="1024"/>
+    <Parameter name="MC Buffer Size" type="int" value="1024"/>
+    <Parameter name="Number of Sets" type="int" value="1"/>
+    <Parameter name="Overlap Size" type="int" value="0"/>
+    <Parameter name="Weight Cutoff" type="double" value="1.0e-1"/>
     <Parameter name="Smoother Steps" type="int" value="1"/>
-    <Parameter name="Maximum Iterations" type="int" value="10"/>
-    <Parameter name="Composite Operator Threshold" type="double" value="0.01"/>
+    <Parameter name="Maximum Iterations" type="int" value="100"/>
+    <Parameter name="Composite Operator Threshold" type="double" value="1.0e-2"/>
     <Parameter name="Convergence Tolerance" type="double" value="1.0e-8"/>
-    <Parameter name="Sample Ratio" type="double" value="0.25"/>
+    <Parameter name="Sample Ratio" type="double" value="1.0"/>
   </ParameterList>
 </ParameterList>

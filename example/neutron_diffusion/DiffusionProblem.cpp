@@ -53,6 +53,7 @@ DiffusionProblem::DiffusionProblem( const RCP_Comm& comm,
 
     if ( comm->getRank() == 0 )
     {
+	std::cout << std::endl;
         std::cout << "Diffusion Length " << d_length << std::endl;
         std::cout << "Mesh Size " << dx << std::endl;
         std::cout << "L/dx " << d_length/dx << std::endl;

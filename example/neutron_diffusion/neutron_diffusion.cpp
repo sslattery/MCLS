@@ -90,7 +90,7 @@ int main( int argc, char * argv[] )
     Teuchos::updateParametersFromXmlFile(
 	xml_input_filename, Teuchos::inoutArg(*plist) );
 
-    // Setup the problem on the primary set.
+    // Build a communicator for the primary set.
     int num_sets = plist->get<int>("NUM_SETS");
     int set_size = comm->getSize() / num_sets;
     int set_id = std::floor( Teuchos::as<double>(comm->getRank()) /
@@ -102,23 +102,22 @@ int main( int argc, char * argv[] )
     }
     Teuchos::RCP<const Teuchos::Comm<int> > set_comm = 
         comm->createSubcommunicator( comm_ranks() );
-    Teuchos::RCP<MCLSExamples::DiffusionProblem> diffusion_problem;
-    Teuchos::RCP<MCLSExamples::Partitioner> partitioner;
-    if ( 0 == set_id )
-    {
-        partitioner = 
-	    Teuchos::rcp( new MCLSExamples::Partitioner(set_comm, plist) );
 
-        diffusion_problem = Teuchos::rcp(
-            new MCLSExamples::DiffusionProblem(
-		set_comm, partitioner, plist, true) );
-    }
-    comm->barrier();
-
-    // Extract the linear problem on the primary set.
+    // Setup the problem on the primary set.
     Teuchos::RCP<MCLS::LinearProblem<Vector,Matrix> > linear_problem;
     if ( 0 == set_id )
     {
+	// Partition the problem.
+	Teuchos::RCP<MCLSExamples::Partitioner> partitioner =
+	    Teuchos::rcp( new MCLSExamples::Partitioner(set_comm, plist) );
+
+	// Build operators and vectors.
+	Teuchos::RCP<MCLSExamples::DiffusionProblem> diffusion_problem
+	    = Teuchos::rcp(
+		new MCLSExamples::DiffusionProblem(
+		    set_comm, partitioner, plist, true) );
+
+	// Extract the linear problem.
 	linear_problem = Teuchos::rcp( 
 	    new MCLS::LinearProblem<Vector,Matrix>(
 		diffusion_problem->getOperator(),
@@ -128,7 +127,8 @@ int main( int argc, char * argv[] )
     comm->barrier();
 
     // Build the MCLS solver.
-    Teuchos::ParameterList mcls_list = plist->sublist("MCLS",true);
+    Teuchos::RCP<Teuchos::ParameterList> mcls_list = 
+	Teuchos::rcpFromRef( plist->sublist("MCLS",true) );
     std::string solver_type = plist->get<std::string>("Solver Type");
     MCLS::SolverFactory<Vector,Matrix> factory;
     Teuchos::RCP<MCLS::SolverManager<Vector,Matrix> > solver_manager =
@@ -137,6 +137,11 @@ int main( int argc, char * argv[] )
     // Solve the problem.
     solver_manager->setProblem( linear_problem );
     solver_manager->solve();
+
+    // Output final timing.
+    Teuchos::TableFormat &format = Teuchos::TimeMonitor::format();
+    format.setPrecision(5);
+    Teuchos::TimeMonitor::summarize();
 }
 
 //---------------------------------------------------------------------------//
