@@ -394,7 +394,8 @@ class MatrixTraits<Tpetra::Vector<Scalar,LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO>
     {
 	Teuchos::RCP<matrix_type> C = clone( *A );
 	Tpetra::MatrixMatrix::Multiply( *A, transpose_A, *B, transpose_B, *C );
-	return C;
+	return TpetraMatrixHelpers<Scalar,LO,GO,matrix_type>::filter(
+	    *C, threshold );
     }
 
     /*!

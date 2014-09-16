@@ -49,7 +49,6 @@
 
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_VbrMatrix.hpp>
 #include <Tpetra_Import.hpp>
 
 //---------------------------------------------------------------------------//
@@ -105,6 +104,16 @@ class TpetraMatrixHelpers
     static Teuchos::RCP<Matrix> 
     importAndFillCompleteMatrix( const Matrix& matrix, 
 				 const Tpetra::Import<LO,GO>& importer )
+    {
+	UndefinedTpetraHelpers<Scalar,LO,GO,Matrix>::notDefined(); 
+	return Teuchos::null;
+    }
+
+    /*!
+     * \brief Filter values out of a matrix below a certain threshold.
+     */
+    static Teuchos::RCP<Matrix> filter(
+    	const Matrix& matrix, const double& threshold )
     {
 	UndefinedTpetraHelpers<Scalar,LO,GO,Matrix>::notDefined(); 
 	return Teuchos::null;
@@ -179,55 +188,78 @@ class TpetraMatrixHelpers<Scalar,LO,GO,Tpetra::CrsMatrix<Scalar,LO,GO> >
 	MCLS_ENSURE( !new_matrix.is_null() );
 	return new_matrix;
     }
-};
-
-//---------------------------------------------------------------------------//
-/*!
- * \class TpetraMatrixHelpers
- * \brief TpetraMatrixHelpers specialization for Tpetra::VbrMatrix.
- */
-template<class Scalar, class LO, class GO>
-class TpetraMatrixHelpers<Scalar,LO,GO,Tpetra::VbrMatrix<Scalar,LO,GO> >
-{
-  public:
-
-    //@{
-    //! Typedefs.
-    typedef Scalar                                        scalar_type;
-    typedef LO                                            local_ordinal_type;
-    typedef GO                                            global_ordinal_type;
-    typedef Tpetra::VbrMatrix<Scalar,LO,GO>               matrix_type;
-    //@}
 
     /*!
-     * \brief Get the on-process global matrix column indices that, as global
-     * row indices, are off-process.
+     * \brief Filter values out of a matrix below a certain threshold. The
+     * threshold is relative to the maximum value in each row of the matrix.
      */
-    static Teuchos::Array<GO> getOffProcColsAsRows( const matrix_type& matrix )
-    { 
-	MCLS_REQUIRE( matrix.isFillComplete() );
+    static Teuchos::RCP<matrix_type> filter(
+    	const matrix_type& A, const double& threshold )
+    {
+	const Teuchos::RCP<const Tpetra::Map<LO,GO> > row_map = 
+	    A.getRowMap(); 
+	const Teuchos::RCP<const Tpetra::Map<LO,GO> > col_map = 
+	    A.getColMap(); 
+    
+        Teuchos::RCP<matrix_type> A_filter = Teuchos::rcp(
+            new matrix_type(row_map, 0) );
 
-	Teuchos::RCP<const Tpetra::Map<LO,GO> > row_map = 
-	    matrix.getPointRowMap();
-	Teuchos::RCP<const Tpetra::Map<LO,GO> > col_map = 
-	    matrix.getPointColMap();
+        LO num_local_rows = row_map->getNodeNumElements();
 
-	Teuchos::ArrayView<const GO> global_cols = 
-	    col_map->getNodeElementList();
+        LO max_entries = A.getGlobalMaxNumRowEntries();
+	std::size_t num_entries = 0;
+        Teuchos::Array<LO> local_indices(max_entries);
+        Teuchos::Array<GO> global_indices(max_entries);
+        Teuchos::Array<Scalar> values(max_entries);
+	typename Teuchos::Array<GO>::iterator index_it;
+	typename Teuchos::Array<Scalar>::iterator value_it;
+	Scalar row_threshold = 0.0;
 
-	Teuchos::Array<GO> off_proc_cols(0);
-	typename Teuchos::ArrayView<const GO>::const_iterator global_col_it;
-	for ( global_col_it = global_cols.begin();
-	      global_col_it != global_cols.end();
-	      ++global_col_it )
-	{
-	    if ( !row_map->isNodeGlobalElement( *global_col_it ) )
-	    {
-		off_proc_cols.push_back( *global_col_it );
-	    }
-	}
+	// Process row-by-row.
+        for( int local_row = 0; local_row < num_local_rows; ++local_row ) 
+        {
+	    // Get a copy of the row.
+	    A.getLocalRowCopy( 
+		local_row, local_indices(), values(), num_entries );
 
-	return off_proc_cols;
+	    // Get the threshold for this row.
+	    row_threshold = 
+		*std::max_element(values.getRawPtr(),
+				  values.getRawPtr()+num_entries)*threshold;
+
+	    // Find values below the threshold.
+            for (int j = 0 ; j < num_entries; ++j ) 
+            { 
+		if ( std::abs(values[j]) <= row_threshold )
+		{
+		    values[j] = 0.0;
+		    global_indices[j] = -1;
+		}
+		else
+		{
+		    global_indices[j] = 
+			col_map->getGlobalElement( local_indices[j] );
+		}
+            }
+
+	    // Remove values below the threshold.
+	    value_it = 
+		std::remove( values.begin(), values.begin()+num_entries, 0.0 );
+	    index_it = std::remove( 
+		global_indices.begin(), global_indices.begin()+num_entries, -1 );
+	    num_entries = std::distance( values.begin(), value_it );
+	    MCLS_CHECK( std::distance(global_indices.begin(), index_it) == 
+			num_entries );
+
+	    // Create a new row in the filtered matrix.
+	    A_filter->insertGlobalValues( row_map->getGlobalElement(local_row), 
+					  global_indices(0,num_entries),
+					  values(0,num_entries) );
+        }
+
+	A_filter->fillComplete();
+
+        return A_filter;
     }
 };
 
