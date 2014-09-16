@@ -71,7 +71,7 @@ AdjointDomain<Vector,Matrix,RNG>::AdjointDomain(
 
     // Build the domain data.
     Teuchos::Array<Ordinal> local_tally_states;
-    this->buildDomain( A, x, plist, local_tally_states );
+    this->buildDomain( A, plist, local_tally_states );
 
     // Create the tally vector.
     Teuchos::RCP<Vector> x_tally =

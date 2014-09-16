@@ -122,7 +122,6 @@ class AlmostOptimalDomain
 
     // Build the domain.
     void buildDomain( const Teuchos::RCP<const Matrix>& A,
-		      const Teuchos::RCP<Vector>& x,
 		      const Teuchos::ParameterList& plist,
 		      Teuchos::Array<Ordinal>& local_tally_states );
 

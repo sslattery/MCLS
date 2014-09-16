@@ -72,12 +72,10 @@ AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::AlmostOptimalDomain()
 template<class Vector, class Matrix, class RNG, class Tally>
 void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::buildDomain(
     const Teuchos::RCP<const Matrix>& A,
-    const Teuchos::RCP<Vector>& x,
     const Teuchos::ParameterList& plist,
     Teuchos::Array<Ordinal>& local_tally_states )
 {
     MCLS_REQUIRE( Teuchos::nonnull(A) );
-    MCLS_REQUIRE( Teuchos::nonnull(x) );
 
     // Get the estimator type. User the collision estimator as the default.
     b_estimator = Estimator::COLLISION;
@@ -138,6 +136,7 @@ void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::buildDomain(
         {
             addMatrixToDomain( A_overlap, tally_states, relaxation );
         }
+	MCLS_CHECK( num_rows == tally_states.size() );
 
         // Get the boundary states and their owning process ranks.
         if ( num_overlap == 0 )
