@@ -71,7 +71,7 @@ ForwardDomain<Vector,Matrix,RNG>::ForwardDomain(
 
     // Build the domain data.
     Teuchos::Array<Ordinal> local_tally_states;
-    this->buildDomain( A, x, plist, local_tally_states );
+    this->buildDomain( A, plist, local_tally_states );
 
     // Create the tally.
     this->b_tally = Teuchos::rcp( new TallyType(x, this->b_estimator) );
