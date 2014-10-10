@@ -14,21 +14,25 @@
   <Parameter name="SOURCE STRENGTH" type="double" value="1.0"/>
   <Parameter name="Solver Type" type="string" value="MCSA"/>
   <ParameterList name="MCLS">
+    <!--MCSA Solver Parameters--> 
+    <Parameter name="Maximum Iterations" type="int" value="100"/>
     <Parameter name="Iteration Print Frequency" type="int" value="1"/>
     <Parameter name="Iteration Check Frequency" type="int" value="1"/>
-    <Parameter name="Transport Type" type="string" value="Global"/>
+    <Parameter name="Convergence Tolerance" type="double" value="1.0e-8"/>
+    <!--Fixed Point Iteration Parameters--> 
     <Parameter name="Fixed Point Type" type="string" value="Richardson"/>
-    <Parameter name="MC Type" type="string" value="Adjoint"/>
-    <Parameter name="Estimator Type" type="string" value="Collision"/>
+    <Parameter name="Smoother Steps" type="int" value="1"/>
+    <!--Parallel Monte Carlo Parameters--> 
+    <Parameter name="Transport Type" type="string" value="Global"/>
     <Parameter name="MC Check Frequency" type="int" value="1024"/>
     <Parameter name="MC Buffer Size" type="int" value="1024"/>
     <Parameter name="Number of Sets" type="int" value="1"/>
     <Parameter name="Overlap Size" type="int" value="0"/>
+    <!--Local Monte Carlo Parameters--> 
+    <Parameter name="MC Type" type="string" value="Adjoint"/>
+    <Parameter name="Estimator Type" type="string" value="Collision"/>
     <Parameter name="Weight Cutoff" type="double" value="1.0e-1"/>
-    <Parameter name="Smoother Steps" type="int" value="1"/>
-    <Parameter name="Maximum Iterations" type="int" value="100"/>
-    <Parameter name="Composite Operator Threshold" type="double" value="1.0e-2"/>
-    <Parameter name="Convergence Tolerance" type="double" value="1.0e-8"/>
     <Parameter name="Sample Ratio" type="double" value="1.0"/>
+    <Parameter name="Composite Operator Threshold" type="double" value="1.0e-2"/>
   </ParameterList>
 </ParameterList>

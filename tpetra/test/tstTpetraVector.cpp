@@ -68,11 +68,7 @@
 // These types are those enabled by Tpetra under explicit instantiation.
 //---------------------------------------------------------------------------//
 #define UNIT_TEST_INSTANTIATION( type, name )			           \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, int )      \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, long )     \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, double )   \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, int )     \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, long )    \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
 
 //---------------------------------------------------------------------------//
@@ -438,9 +434,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VectorTraits, MeanValue, LO, GO, Scalar )
     VT::putScalar( *A, 2.0 );
     VT::replaceLocalValue( *A, 0, 1.0 );
 
-    Scalar mean_value = ((global_num_rows-comm_size)*2.0 + comm_size*1.0) 
+    Scalar mean_value = ((global_num_rows-comm_size)*2.0 + comm_size*1.0)
 			/ global_num_rows;
-    TEST_EQUALITY( VT::meanValue( *A ), mean_value );
+    TEST_FLOATING_EQUALITY( VT::meanValue( *A ), mean_value, 1.0e-12 );
 }
 
 UNIT_TEST_INSTANTIATION( VectorTraits, MeanValue )
