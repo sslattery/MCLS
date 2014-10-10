@@ -48,8 +48,6 @@
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
-#include <Thyra_VectorBase.hpp>
-#include <Thyra_VectorSpaceBase.hpp>
 #include <Thyra_TpetraThyraWrappers.hpp>
 
 namespace MCLS
@@ -59,7 +57,8 @@ namespace MCLS
  * \class Tpetra specialization
  */
 template<class Scalar, class LO, class GO>
-class ThyraVectorExtraction<Tpetra::Vector<Scalar,LO,GO>,Tpetra::CrsMatrix<Scalar,LO,GO> >
+class ThyraVectorExtraction<Tpetra::Vector<Scalar,LO,GO>,
+			    Tpetra::CrsMatrix<Scalar,LO,GO> >
 {
   public:
 

@@ -1,7 +1,6 @@
 <ParameterList name="Neutron Diffusion">
   <Parameter name="I_BLOCKS" type="int" value="2"/>
   <Parameter name="J_BLOCKS" type="int" value="2"/>
-  <Parameter name="NUM_SETS" type="int" value="1"/>
   <Parameter name="X_MIN" type="double" value="0.0"/>
   <Parameter name="X_MAX" type="double" value="1.0"/>
   <Parameter name="Y_MIN" type="double" value="0.0"/>

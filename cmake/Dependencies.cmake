@@ -1,5 +1,5 @@
-SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Tpetra NOX Thyra)
-SET(LIB_OPTIONAL_DEP_PACKAGES Epetra EpetraExt Ifpack Stratimikos ParaSails ML)
+SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Tpetra NOX ThyraCore ThyraTpetraAdapters)
+SET(LIB_OPTIONAL_DEP_PACKAGES Epetra EpetraExt Ifpack ThyraEpetraAdapters Stratimikos ParaSails ML)
 SET(TEST_REQUIRED_DEP_PACKAGES)
 SET(TEST_OPTIONAL_DEP_PACKAGES)
 SET(LIB_REQUIRED_DEP_TPLS)

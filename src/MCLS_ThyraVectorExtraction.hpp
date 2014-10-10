@@ -48,7 +48,7 @@
 
 namespace MCLS
 {
-
+//---------------------------------------------------------------------------//
 /*!
  * \class UndefinedThyraVectorExtraction
  * \brief Class for undefined vector extraction.

@@ -179,6 +179,7 @@ void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::buildDomain(
 	    }
 	}
     }
+
     // By building the boundary data, now we know where we are sending
     // data. Find out who we are receiving from.
     Tpetra::Distributor distributor( MT::getComm(*A) );
