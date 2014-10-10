@@ -48,26 +48,9 @@
 #include <MCLS_DBC.hpp>
 
 #include "Teuchos_UnitTestHarness.hpp"
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_Array.hpp"
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_CommHelpers.hpp"
 
 //---------------------------------------------------------------------------//
 // HELPER FUNCTIONS
-//---------------------------------------------------------------------------//
-
-// Get the default communicator.
-template<class Ordinal>
-Teuchos::RCP<const Teuchos::Comm<Ordinal> > getDefaultComm()
-{
-#ifdef HAVE_MPI
-    return Teuchos::DefaultComm<Ordinal>::getComm();
-#else
-    return Teuchos::rcp(new Teuchos::SerialComm<Ordinal>() );
-#endif
-}
-
 //---------------------------------------------------------------------------//
 int error_code_function( int& value )
 {
