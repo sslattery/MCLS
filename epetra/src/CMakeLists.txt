@@ -25,6 +25,7 @@ APPEND_SET(HEADERS
   MCLS_EpetraPointJacobiPreconditioner.hpp
   MCLS_EpetraPSILUTPreconditioner.hpp
   MCLS_EpetraRowMatrixAdapter.hpp
+  MCLS_EpetraThyraVectorExtraction.hpp
   MCLS_EpetraVectorAdapter.hpp
   MCLS_EpetraVectorExport.hpp
   ) 

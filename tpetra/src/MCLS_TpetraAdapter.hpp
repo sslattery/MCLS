@@ -44,6 +44,7 @@
 #include "MCLS_TpetraVectorAdapter.hpp"
 #include "MCLS_TpetraVectorExport.hpp"
 #include "MCLS_TpetraCrsMatrixAdapter.hpp"
+#include "MCLS_TpetraThyraVectorExtraction.hpp"
 
 #endif // end MCLS_TPETRAADAPTER_HPP
 

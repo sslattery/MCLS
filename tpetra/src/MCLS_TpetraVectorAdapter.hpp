@@ -51,8 +51,6 @@
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Map.hpp>
 
-#include <AnasaziTpetraAdapter.hpp>
-
 namespace MCLS
 {
 

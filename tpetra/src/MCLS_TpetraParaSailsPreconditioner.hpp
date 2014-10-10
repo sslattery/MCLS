@@ -41,6 +41,8 @@
 #ifndef MCLS_TPETRAPARASAILS_HPP
 #define MCLS_TPETRAPARASAILS_HPP
 
+#if MCLS_HAVE_PARASAILS
+
 #include <MCLS_config.hpp>
 #include <MCLS_Preconditioner.hpp>
 
@@ -132,6 +134,8 @@ class TpetraParaSailsPreconditioner :
 #include "MCLS_TpetraParaSailsPreconditioner_impl.hpp"
 
 //---------------------------------------------------------------------------//
+
+#endif // end  MCLS_HAVE_PARASAILS
 
 #endif // end MCLS_TPETRAPARASAILS_HPP
 

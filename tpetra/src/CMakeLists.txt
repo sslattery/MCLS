@@ -25,6 +25,7 @@ APPEND_SET(HEADERS
   MCLS_TpetraParaSailsPreconditioner_impl.hpp
   MCLS_TpetraPointJacobiPreconditioner.hpp
   MCLS_TpetraPointJacobiPreconditioner_impl.hpp
+  MCLS_TpetraThyraVectorExtraction.hpp
   MCLS_TpetraVectorAdapter.hpp
   MCLS_TpetraVectorExport.hpp
   ) 
@@ -41,7 +42,6 @@ TRIBITS_ADD_LIBRARY(
   mclstpetra
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS mcls tpetra tpetraext parasails
   )
 
 INSTALL(FILES 

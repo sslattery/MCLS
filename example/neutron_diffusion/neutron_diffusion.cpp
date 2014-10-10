@@ -89,9 +89,11 @@ int main( int argc, char * argv[] )
 	Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile(
 	xml_input_filename, Teuchos::inoutArg(*plist) );
+    Teuchos::RCP<Teuchos::ParameterList> mcls_list = 
+	Teuchos::rcpFromRef( plist->sublist("MCLS",true) );
 
     // Build a communicator for the primary set.
-    int num_sets = plist->get<int>("NUM_SETS");
+    int num_sets = mcls_list->get<int>("Number of Sets");
     int set_size = comm->getSize() / num_sets;
     int set_id = std::floor( Teuchos::as<double>(comm->getRank()) /
                              Teuchos::as<double>(set_size) );
@@ -127,8 +129,6 @@ int main( int argc, char * argv[] )
     comm->barrier();
 
     // Build the MCLS solver.
-    Teuchos::RCP<Teuchos::ParameterList> mcls_list = 
-	Teuchos::rcpFromRef( plist->sublist("MCLS",true) );
     std::string solver_type = plist->get<std::string>("Solver Type");
     MCLS::SolverFactory<Vector,Matrix> factory;
     Teuchos::RCP<MCLS::SolverManager<Vector,Matrix> > solver_manager =

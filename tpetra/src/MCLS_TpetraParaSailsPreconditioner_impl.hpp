@@ -41,6 +41,8 @@
 #ifndef MCLS_TPETRAPARASAILS_IMPL_HPP
 #define MCLS_TPETRAPARASAILS_IMPL_HPP
 
+#if MCLS_HAVE_PARASAILS
+
 #include <MCLS_DBC.hpp>
 
 #include <limits>
@@ -298,6 +300,8 @@ void TpetraParaSailsPreconditioner<Scalar,LO,GO>::buildPreconditioner()
 //---------------------------------------------------------------------------//
 
 } // end namespace MCLS
+
+#endif // end MCLS_TPETRAPARASAILS_HPP
 
 #endif // end MCLS_TPETRAPARASAILS_IMPL_HPP
 

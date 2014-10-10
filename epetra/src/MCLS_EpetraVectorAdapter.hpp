@@ -59,8 +59,6 @@
 #include <Epetra_MpiComm.h>
 #endif
 
-#include <AnasaziEpetraAdapter.hpp>
-
 namespace MCLS
 {
 
