@@ -76,6 +76,28 @@ ForwardDomain<Vector,Matrix,RNG>::ForwardDomain(
     // Create the tally.
     this->b_tally = Teuchos::rcp( new TallyType(x, this->b_estimator) );
 
+    // Compute the necessary and sufficient Monte Carlo convergence condition
+    // if requested.
+    if ( plist.isParameter("Compute Convergence Criteria") )
+    {
+	if ( plist.get<bool>("Compute Convergence Criteria") )
+	{
+	    Teuchos::Array<double> criteria = this->computeConvergenceCriteria();
+
+	    if ( 0 == this->b_comm->getRank() )
+	    {
+		std::cout << std::endl;
+		std::cout << "Neumann/Ulam Convergence Criteria" << std::endl;
+		std::cout << "---------------------------------" << std::endl;
+		std::cout << "rho(H)  = " << criteria[0] << std::endl;
+		std::cout << "rho(H+) = " << criteria[1] << std::endl;
+		std::cout << "rho(H*) = " << criteria[2] << std::endl;
+		std::cout << "---------------------------------" << std::endl;
+		std::cout << std::endl;
+	    }
+	}
+    }
+
     MCLS_ENSURE( Teuchos::nonnull(this->b_tally) );
 }
 

@@ -64,6 +64,8 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 
+#include <Tpetra_CrsMatrix.hpp>
+
 namespace MCLS
 {
 
@@ -106,7 +108,6 @@ class AlmostOptimalDomain
     typedef typename tally_type::HistoryType              HistoryType;
     typedef HistoryTraits<HistoryType>                    HT;
     typedef std::stack<Teuchos::RCP<HistoryType> >        BankType;
-    typedef Teuchos::Comm<int>                            Comm;
     typedef RNG                                           rng_type;
     typedef RNGTraits<RNG>                                RNGT;
     typedef typename RNGT::uniform_real_distribution_type RandomDistribution;
@@ -180,6 +181,9 @@ class AlmostOptimalDomain
     // Get the local states in the domain.
     Teuchos::Array<Ordinal> localStates() const;
 
+    // Compute the spectral radius of H and H*.
+    Teuchos::Array<double> computeConvergenceCriteria() const;
+
   private:
 
     // Add matrix data to the local domain.
@@ -190,6 +194,10 @@ class AlmostOptimalDomain
     // Build boundary data.
     void buildBoundary( const Teuchos::RCP<const Matrix>& A,
 			const Teuchos::RCP<const Matrix>& base_A );
+
+    // Given a crs matrix, compute its spectral radius.
+    double computeSpectralRadius( 
+	const Teuchos::RCP<Tpetra::CrsMatrix<double,int,Ordinal> >& matrix ) const;
 
   protected:
 
@@ -234,6 +242,9 @@ class AlmostOptimalDomain
 
     // Boundary state to owning neighbor local id table.
     std::unordered_map<Ordinal,int> b_bnd_to_neighbor;
+
+    // Parallel communicator.
+    Teuchos::RCP<const Teuchos::Comm<int> > b_comm;
 };
 
 //---------------------------------------------------------------------------//

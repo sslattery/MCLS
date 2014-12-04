@@ -45,13 +45,22 @@
 #include <limits>
 #include <string>
 
+#include "MCLS_config.hpp"
 #include "MCLS_Estimators.hpp"
 #include "MCLS_VectorExport.hpp"
 
 #include <Teuchos_as.hpp>
 #include <Teuchos_Array.hpp>
+#include <Teuchos_ParameterList.hpp>
 
 #include <Tpetra_Distributor.hpp>
+#include <Tpetra_Map.hpp>
+#include <Tpetra_MultiVector.hpp>
+#include <Tpetra_Operator.hpp>
+
+#include <AnasaziGeneralizedDavidsonSolMgr.hpp>
+#include <AnasaziBasicEigenproblem.hpp>
+#include <AnasaziTpetraAdapter.hpp>
 
 namespace MCLS
 {
@@ -136,7 +145,7 @@ void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::buildDomain(
         {
             addMatrixToDomain( A_overlap, tally_states, relaxation );
         }
-	MCLS_CHECK( num_rows == tally_states.size() );
+	MCLS_CHECK( num_rows == Teuchos::as<int>(tally_states.size()) );
 
         // Get the boundary states and their owning process ranks.
         if ( num_overlap == 0 )
@@ -182,7 +191,8 @@ void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::buildDomain(
 
     // By building the boundary data, now we know where we are sending
     // data. Find out who we are receiving from.
-    Tpetra::Distributor distributor( MT::getComm(*A) );
+    b_comm = MT::getComm(*A);
+    Tpetra::Distributor distributor( b_comm );
     distributor.createFromSends( b_send_ranks() );
     b_receive_ranks = distributor.getImagesFrom();
 
@@ -788,6 +798,139 @@ void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::buildBoundary(
 
     MCLS_ENSURE( b_bnd_to_neighbor.size() == 
 		 Teuchos::as<std::size_t>(boundary_rows.size()) );
+}
+
+//---------------------------------------------------------------------------//
+// Compute the spectral radius of H and H*.
+template<class Vector, class Matrix, class RNG, class Tally>
+Teuchos::Array<double>
+AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::computeConvergenceCriteria() const
+{
+    // Create a map for the operators.
+    int num_rows = b_cdfs.size();
+    Teuchos::Array<Ordinal> local_rows = b_tally->baseRows();
+    Teuchos::RCP<const Tpetra::Map<int,Ordinal> > map =
+	Tpetra::createNonContigMap<int,Ordinal>(
+	    local_rows(), b_comm );
+    MCLS_CHECK( b_cdfs.size() == local_rows.size() );
+
+    // Find the convergence criteria.
+    Teuchos::Array<double> evals(3);
+
+    // Spectral radius of H.
+    double max_entries = 0;
+    {
+	Teuchos::RCP<Tpetra::CrsMatrix<double,int,Ordinal> > H =
+	    Tpetra::createCrsMatrix<double,int,Ordinal>( map );
+	for ( int i = 0; i < num_rows; ++i )
+	{
+	    H->insertGlobalValues(
+		local_rows[i],
+		(*b_global_columns[i])(),
+		b_h[i]() );
+	}
+	H->fillComplete();
+	max_entries = H->getGlobalMaxNumRowEntries();
+	evals[0] = computeSpectralRadius( H );
+    }
+
+    // Allocate a work array.
+    Teuchos::Array<double> values( max_entries );
+    int row_size = 0;
+
+    // Spectral radius of H+.
+    {
+	Teuchos::RCP<Tpetra::CrsMatrix<double,int,Ordinal> > H_plus =
+	    Tpetra::createCrsMatrix<double,int,Ordinal>( map );
+	for ( int i = 0; i < num_rows; ++i )
+	{
+	    row_size = b_global_columns[i]->size();
+	    for ( int j = 0; j < row_size; ++j )
+	    {
+		values[j] = std::abs(b_h[i][j]);
+	    }
+
+	    H_plus->insertGlobalValues(
+		local_rows[i],
+		(*b_global_columns[i])(),
+		values(0,row_size) );
+	}
+	H_plus->fillComplete();
+	evals[1] = computeSpectralRadius( H_plus );
+    }
+
+    // Spectral radius of H*.
+    {
+	Teuchos::RCP<Tpetra::CrsMatrix<double,int,Ordinal> > H_star =
+	    Tpetra::createCrsMatrix<double,int,Ordinal>( map );
+	for ( int i = 0; i < num_rows; ++i )
+	{
+	    row_size = b_global_columns[i]->size();
+	    for ( int j = 0; j < row_size; ++j )
+	    {
+		values[j] = b_h[i][j] * b_weights[i];
+	    }
+
+	    H_star->insertGlobalValues(
+		local_rows[i],
+		(*b_global_columns[i])(),
+		values(0,row_size) );
+	}
+	H_star->fillComplete();
+	evals[2] = computeSpectralRadius( H_star );
+    }
+
+    return evals;
+}
+
+//---------------------------------------------------------------------------//
+// Given a crs matrix, compute its spectral radius.
+template<class Vector, class Matrix, class RNG, class Tally>
+double AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::computeSpectralRadius( 
+    const Teuchos::RCP<Tpetra::CrsMatrix<double,int,Ordinal> >& matrix ) const
+{
+    typedef double Scalar;
+    typedef Tpetra::Operator<Scalar,int,Ordinal> OP;
+    typedef Tpetra::MultiVector<Scalar,int,Ordinal> MV;
+
+    int nev = 1;
+    int block_size = 1;
+    int max_dim = 40;
+    int max_restarts = 10;
+    double tol = 1.0e-8;
+
+    int verbosity = Anasazi::Errors + Anasazi::Warnings;
+#if HAVE_MCLS_DBC
+    verbosity += Anasazi::FinalSummary + Anasazi::TimingDetails;
+#endif
+
+    Teuchos::ParameterList parameters;
+    parameters.set( "Verbosity", verbosity );
+    parameters.set( "Which", "LM" );
+    parameters.set( "Block Size", block_size );
+    parameters.set( "Maximum Subspace Dimension", max_dim );
+    parameters.set( "Maximum Restarts", max_restarts );
+    parameters.set( "Convergence Tolerance", tol );
+    parameters.set( "Initial Guess", "User" );
+
+    Teuchos::RCP<MV> evec = 
+	Tpetra::createMultiVector<Scalar,int,Ordinal>( matrix->getMap(), block_size );
+
+    Teuchos::RCP<Anasazi::BasicEigenproblem<Scalar,MV,OP> > eigenproblem =
+	Teuchos::rcp( new Anasazi::BasicEigenproblem<Scalar,MV,OP>() );
+    eigenproblem->setA( matrix );
+    eigenproblem->setInitVec( evec );
+    eigenproblem->setNEV( nev );
+    eigenproblem->setProblem();
+
+    Anasazi::GeneralizedDavidsonSolMgr<Scalar,MV,OP> eigensolver( 
+	eigenproblem, parameters );
+    Anasazi::ReturnType returnCode = eigensolver.solve();
+    Anasazi::Eigensolution<Scalar,MV> sol = eigenproblem->getSolution();
+    std::vector<Anasazi::Value<Scalar> > evals = sol.Evals;
+    MCLS_ENSURE( 1 == evals.size() );
+    return std::sqrt(evals[0].realpart*evals[0].realpart +
+		     evals[0].imagpart*evals[0].imagpart);
 }
 
 //---------------------------------------------------------------------------//
