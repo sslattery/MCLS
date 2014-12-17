@@ -142,7 +142,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SourceTransporter, transport, LO, GO, Scalar 
     global_columns[1] = 1;
     global_columns[2] = 2;
     values[0] = 1.0/comm_size;
-    values[1] = 0.12/comm_size;
+    values[1] = -0.12/comm_size;
     values[2] = 0.0/comm_size;
     A->insertGlobalValues( 0, global_columns(), values() );
     for ( int i = 1; i < global_num_rows-1; ++i )
@@ -150,16 +150,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SourceTransporter, transport, LO, GO, Scalar 
 	global_columns[0] = i-1;
 	global_columns[1] = i;
 	global_columns[2] = i+1;
-	values[0] = 0.12/comm_size;
+	values[0] = -0.12/comm_size;
 	values[1] = 1.0/comm_size;
-	values[2] = 0.12/comm_size;
+	values[2] = -0.12/comm_size;
 	A->insertGlobalValues( i, global_columns(), values() );
     }
     global_columns[0] = global_num_rows-3;
     global_columns[1] = global_num_rows-2;
     global_columns[2] = global_num_rows-1;
     values[0] = 0.0/comm_size;
-    values[1] = 0.12/comm_size;
+    values[1] = -0.12/comm_size;
     values[2] = 1.0/comm_size;
     A->insertGlobalValues( global_num_rows-1, global_columns(), values() );
     A->fillComplete();

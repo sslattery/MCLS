@@ -48,7 +48,6 @@ TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 TRIBITS_ADD_ETI_INSTANTIATIONS(Tpetra
   "S={double} LO={int} GO={int} N={${KokkosClassic_DefaultNode}}"
   "S={double} LO={int} GO={long} N={${KokkosClassic_DefaultNode}}"
-  "S={double} LO={long} GO={long} N={${KokkosClassic_DefaultNode}}"
   )
 
 ##---------------------------------------------------------------------------##

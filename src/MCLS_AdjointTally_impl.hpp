@@ -98,7 +98,8 @@ void AdjointTally<Vector>::combineBlockTallies(
 
     Teuchos::ArrayRCP<const Scalar> const_tally_view = VT::view( *d_x );
 
-    Teuchos::ArrayRCP<Scalar> copy_buffer( const_tally_view.size() );
+    Teuchos::ArrayRCP<Scalar> copy_buffer( 
+	const_tally_view.size(), Teuchos::ScalarTraits<Scalar>::zero() );
 
     CommTools::reduceSum<Scalar>( block_comm,
                                   0,

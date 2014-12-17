@@ -172,23 +172,8 @@ inline void AdjointTally<Vector>::tallyHistory( const HistoryType& history )
     MCLS_REQUIRE( history.alive() );
     MCLS_REQUIRE( Teuchos::nonnull(d_x_tally) );
 
-    if ( Estimator::COLLISION == d_estimator )
-    {
-        collisionEstimatorTally( history );
-    }
-
-    else if ( Estimator::EXPECTED_VALUE == d_estimator )
-    {
-        expectedValueEstimatorTally( history );
-    }
-
-    else
-    {
-	MCLS_INSIST( Estimator::COLLISION == d_estimator || 
-		     Estimator::EXPECTED_VALUE == d_estimator,
-                     "Estimator type not supported!" );
-    }
-}
+    collisionEstimatorTally( history );
+ }
 
 //---------------------------------------------------------------------------//
 /*

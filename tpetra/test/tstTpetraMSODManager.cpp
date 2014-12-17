@@ -237,7 +237,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MSODManager, two_by_two, LO, GO, Scalar )
 	tally->setBaseVector( x );
 	for ( int i = 0; i < global_num_rows; ++i )
 	{
-	    if ( i >= local_num_rows*set_rank && i < 2+local_num_rows*(set_rank+1) )
+	    if ( i >= local_num_rows*set_rank && i < local_num_rows*(set_rank+1) )
 	    {
 		HistoryType history( i, i-local_num_rows*set_rank, x_val );
 		history.live();
@@ -372,7 +372,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MSODManager, two_by_two, LO, GO, Scalar )
 	tally->setBaseVector( x );
 	for ( int i = 0; i < global_num_rows; ++i )
 	{
-	    if ( i >= local_num_rows*set_rank && i < 2+local_num_rows*(set_rank+1) )
+	    if ( i >= local_num_rows*set_rank && i < local_num_rows*(set_rank+1) )
 	    {
 		HistoryType history( i, i-local_num_rows*set_rank, x_val );
 		history.live();

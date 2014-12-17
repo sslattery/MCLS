@@ -925,7 +925,7 @@ double AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::computeSpectralRadius(
 
     Anasazi::GeneralizedDavidsonSolMgr<Scalar,MV,OP> eigensolver( 
 	eigenproblem, parameters );
-    Anasazi::ReturnType returnCode = eigensolver.solve();
+    MCLS_CHECK_ERROR_CODE( eigensolver.solve() );
     Anasazi::Eigensolution<Scalar,MV> sol = eigenproblem->getSolution();
     std::vector<Anasazi::Value<Scalar> > evals = sol.Evals;
     MCLS_ENSURE( 1 == evals.size() );

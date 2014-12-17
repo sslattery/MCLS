@@ -71,11 +71,7 @@
 // These types are those enabled by Tpetra under explicit instantiation.
 //---------------------------------------------------------------------------//
 #define UNIT_TEST_INSTANTIATION( type, name )			           \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, int )      \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, long )     \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, double )   \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, int )     \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, long )    \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
 
 //---------------------------------------------------------------------------//
@@ -95,68 +91,48 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TpetraHelpers, CrsOffProcCols, LO, GO, Scalar
     Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
 	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
 
-    for ( int num_overlap = 0; num_overlap < 4; ++num_overlap )
+    Teuchos::RCP<MatrixType> A = 
+	Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
+
+    Teuchos::Array<GO> global_columns( global_num_rows );
+    for ( int j = 0; j < global_num_rows; ++j )
     {
-	Teuchos::RCP<MatrixType> A = 
-	    Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
+	global_columns[j] = j;
+    }
+    Teuchos::Array<Scalar> values( global_num_rows, 1 );
+    for ( int i = local_num_rows*comm_rank; i < local_num_rows*(comm_rank+1); ++i )
+    {
+	A->insertGlobalValues( i, global_columns(), values() );
+    }
+    A->fillComplete();
 
-	Teuchos::Array<GO> global_columns( 2*num_overlap+1 );
-	Teuchos::Array<Scalar> values( 2*num_overlap+1, 1 );
-	for ( int i = num_overlap; i < global_num_rows-num_overlap; ++i )
-	{
-	    for ( int j = 0; j < 2*num_overlap+1; ++j )
-	    {
-		global_columns[j] = i+j-num_overlap;
-	    }
-	    A->insertGlobalValues( i, global_columns(), values() );
-	}
-	A->fillComplete();
+    Teuchos::Array<GO> off_proc_cols = 
+	MCLS::TpetraMatrixHelpers<Scalar,LO,GO,MatrixType>::getOffProcColsAsRows( *A );
 
-	Teuchos::Array<GO> off_proc_cols = 
-	    MCLS::TpetraMatrixHelpers<Scalar,LO,GO,MatrixType>::getOffProcColsAsRows( *A );
-
-	if ( comm_size == 1 )
-	{
-	    TEST_EQUALITY( off_proc_cols.size(), 0 );
-	}
-	else if ( comm_rank == 0 )
-	{
-	    TEST_EQUALITY( off_proc_cols.size(), num_overlap );
-
-	    GO val = local_num_rows;
-	    for ( int i = 0; i < num_overlap; ++i, ++val )
-	    {
-		TEST_EQUALITY( off_proc_cols[i], val );
-	    }
-	}
-	else if ( comm_rank == comm_size-1 )
-	{
-	    TEST_EQUALITY( off_proc_cols.size(), num_overlap );
-
-	    GO val = comm_rank*local_num_rows - num_overlap;
-	    for ( int i = 0; i < num_overlap; ++i, ++val )
-	    {
-		TEST_EQUALITY( off_proc_cols[i], val );
-	    }
-	}
-	else
-	{
-	    TEST_EQUALITY( off_proc_cols.size(), 2*num_overlap );
-
-	    GO val = comm_rank*local_num_rows - num_overlap;
-	    for ( int i = 0; i < num_overlap; ++i, ++val )
-	    {
-		TEST_EQUALITY( off_proc_cols[i], val );
-	    }
-
-	    val = (comm_rank+1)*local_num_rows;
-	    for ( int i = 0; i < num_overlap; ++i, ++val )
-	    {
-		TEST_EQUALITY( off_proc_cols[i], val );
-	    }
-	}
-
-	comm->barrier();
+    int num_off_proc = off_proc_cols.size();
+    int test_off_proc = local_num_rows*(comm_size-1);
+    TEST_EQUALITY( num_off_proc, test_off_proc );
+    
+    Teuchos::Array<GO> local_columns( local_num_rows );
+    for ( int i = local_num_rows*comm_rank, j = 0; 
+	  i < local_num_rows*(comm_rank+1); 
+	  ++i, ++j )
+    {
+	local_columns[j] = i;
+    }
+    Teuchos::Array<GO> test_columns( local_num_rows + global_num_rows );
+    typename Teuchos::Array<GO>::iterator diff_it =
+	std::set_difference( global_columns.begin(), global_columns.end(),
+			     local_columns.begin(), local_columns.end(),
+			     test_columns.begin() );
+    test_columns.resize( std::distance(test_columns.begin(),diff_it) );
+    int num_test_col = test_columns.size();
+    TEST_EQUALITY( num_test_col, test_off_proc );
+    
+    std::sort( off_proc_cols.begin(), off_proc_cols.end() );
+    for ( int i = 0; i < test_off_proc; ++i )
+    {
+	TEST_EQUALITY( off_proc_cols[i], test_columns[i] );
     }
 }
 

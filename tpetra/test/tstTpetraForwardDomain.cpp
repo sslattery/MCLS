@@ -428,14 +428,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardDomain, SomeOverlap, LO, GO, Scalar )
     Teuchos::ArrayRCP<const Scalar> x_view = VT::view( *x );
     for ( int i = 0; i < local_num_rows; ++i )
     {
-	if ( comm_rank == 0 || i > 1 )
-	{
-	    TEST_EQUALITY( x_view[i], x_val*y_val );
-	}
-	else
-	{
-	    TEST_EQUALITY( x_view[i], 2*x_val*y_val );
-	}
+	TEST_EQUALITY( x_view[i], x_val*y_val );
     }
 
     // Check the boundary.
@@ -578,14 +571,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardDomain, PackUnpackSomeOverlap, LO, GO,
     Teuchos::ArrayRCP<const Scalar> x_view = VT::view( *x );
     for ( int i = 0; i < local_num_rows; ++i )
     {
-	if ( comm_rank == 0 || i > 1 )
-	{
-	    TEST_EQUALITY( x_view[i], x_val*y_val );
-	}
-	else
-	{
-	    TEST_EQUALITY( x_view[i], 2*x_val*y_val );
-	}
+	TEST_EQUALITY( x_view[i], x_val*y_val );
     }
 
     // Check the boundary.

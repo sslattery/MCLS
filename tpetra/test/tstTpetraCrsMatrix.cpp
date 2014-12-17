@@ -357,9 +357,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, g2l_row, LO, GO, Scalar )
     A->fillComplete();
 
     int offset = comm->getRank() * local_num_rows;
-    for ( int i = offset; i < local_num_rows+offset; ++i )
+    for ( int i = offset, j = 0; i < local_num_rows+offset; ++i, ++j )
     {
-	TEST_EQUALITY( MT::getLocalRow( *A, i ), i );
+	TEST_EQUALITY( MT::getLocalRow( *A, i ), j );
     }
 }
 
@@ -427,9 +427,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MatrixTraits, g2l_col, LO, GO, Scalar )
     A->fillComplete();
 
     int offset = comm->getRank() * local_num_rows;
-    for ( int i = offset; i < local_num_rows+offset; ++i )
+    for ( int i = offset, j = 0; i < local_num_rows+offset; ++i, ++j )
     {
-	TEST_EQUALITY( MT::getLocalCol( *A, i ), i );
+	TEST_EQUALITY( MT::getLocalCol( *A, i ), j );
     }
 }
 

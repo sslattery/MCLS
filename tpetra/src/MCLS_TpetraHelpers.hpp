@@ -228,7 +228,7 @@ class TpetraMatrixHelpers<Scalar,LO,GO,Tpetra::CrsMatrix<Scalar,LO,GO> >
 				  values.getRawPtr()+num_entries)*threshold;
 
 	    // Find values below the threshold.
-            for (int j = 0 ; j < num_entries; ++j ) 
+            for ( std::size_t j = 0 ; j < num_entries; ++j ) 
             { 
 		if ( std::abs(values[j]) <= row_threshold )
 		{
@@ -248,7 +248,8 @@ class TpetraMatrixHelpers<Scalar,LO,GO,Tpetra::CrsMatrix<Scalar,LO,GO> >
 	    index_it = std::remove( 
 		global_indices.begin(), global_indices.begin()+num_entries, -1 );
 	    num_entries = std::distance( values.begin(), value_it );
-	    MCLS_CHECK( std::distance(global_indices.begin(), index_it) == 
+	    MCLS_CHECK( Teuchos::as<std::size_t>(
+			    std::distance(global_indices.begin(),index_it)) == 
 			num_entries );
 
 	    // Create a new row in the filtered matrix.

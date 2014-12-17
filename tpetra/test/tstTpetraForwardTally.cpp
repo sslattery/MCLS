@@ -391,14 +391,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardTally, BlockCombine, LO, GO, Scalar )
 		  c_view_iterator != C_view.end();
 		  ++c_view_iterator )
 	    {
-		if ( comm_rank == 1 )
-		{
-		    TEST_EQUALITY( *c_view_iterator, 2.0+4.0 );
-		}
-		else
-		{
-		    TEST_EQUALITY( *c_view_iterator, 2.0+3.0+4.0+6.0 );
-		}
+		TEST_EQUALITY( *c_view_iterator, 2.0+3.0+4.0+6.0 );
 	    }
 	}
 	else
@@ -409,7 +402,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardTally, BlockCombine, LO, GO, Scalar )
 		  a_view_iterator != A_view.end();
 		  ++a_view_iterator )
 	    {
-		TEST_EQUALITY( *a_view_iterator, 6.0 );
+		TEST_EQUALITY( *a_view_iterator, 0.0 );
 	    }
 	}
     }

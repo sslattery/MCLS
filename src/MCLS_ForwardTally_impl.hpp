@@ -45,6 +45,7 @@
 
 #include "MCLS_VectorExport.hpp"
 #include "MCLS_Events.hpp"
+#include "MCLS_CommTools.hpp"
 
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
@@ -208,15 +209,18 @@ void ForwardTally<Vector>::combineBlockTallies(
     MCLS_REQUIRE( Teuchos::nonnull(d_x) );
     MCLS_REQUIRE( Teuchos::nonnull(block_comm) );
 
+    MCLS_REQUIRE( num_sets > 0 );
+
     Teuchos::ArrayRCP<const Scalar> const_tally_view = VT::view( *d_x );
 
-    Teuchos::ArrayRCP<Scalar> copy_buffer( const_tally_view.size() );
+    Teuchos::ArrayRCP<Scalar> copy_buffer( 
+	const_tally_view.size(), Teuchos::ScalarTraits<Scalar>::zero() );
 
-    Teuchos::reduceAll<int,Scalar>( *block_comm,
-				    Teuchos::REDUCE_SUM,
-				    Teuchos::as<int>( const_tally_view.size() ),
-				    const_tally_view.getRawPtr(),
-				    copy_buffer.getRawPtr() );
+    CommTools::reduceSum<Scalar>( block_comm,
+                                  0,
+                                  Teuchos::as<int>( const_tally_view.size() ),
+                                  const_tally_view.getRawPtr(),
+                                  copy_buffer.getRawPtr() );
 
     Teuchos::ArrayRCP<Scalar> tally_view = VT::viewNonConst( *d_x );
     

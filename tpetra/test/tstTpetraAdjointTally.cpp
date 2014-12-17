@@ -396,12 +396,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, BlockCombine, LO, GO, Scalar )
 	}
 	comm->barrier();
 
-	Scalar a_val = 2;
-	if ( block_rank == 1 )
-	{
-	    a_val = 4;
-	}
-	comm->barrier();
+	Scalar a_val = (block_rank == 0) ? 2.0 : 4.0;
 
 	for ( int i = 0; i < tally_rows.size(); ++i )
 	{
@@ -425,7 +420,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, BlockCombine, LO, GO, Scalar )
 	    {
 		TEST_EQUALITY( *c_view_iterator, 6.0 );
 	    }
+
+	    Teuchos::ArrayRCP<const Scalar> A_view = VT::view( *A );
+	    typename Teuchos::ArrayRCP<const Scalar>::const_iterator a_view_iterator;
+	    for ( a_view_iterator = A_view.begin();
+		  a_view_iterator != A_view.end();
+		  ++a_view_iterator )
+	    {
+		TEST_EQUALITY( *a_view_iterator, 0.0 );
+	    }
 	}
+	// The tally vector on block 1 is zero because the gather in
+	// combineBlockTallies only writes to block 0 data. Therefore we copy 
+	// a 0 vector into the tally vector on block 1, giving zero.
 	else
 	{
 	    Teuchos::ArrayRCP<const Scalar> A_view = VT::view( *A );
@@ -434,7 +441,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, BlockCombine, LO, GO, Scalar )
 		  a_view_iterator != A_view.end();
 		  ++a_view_iterator )
 	    {
-		TEST_EQUALITY( *a_view_iterator, 6.0 );
+		TEST_EQUALITY( *a_view_iterator, 0.0 );
 	    }
 	}
 
