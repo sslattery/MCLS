@@ -162,8 +162,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SolverFactory, mcsa_two_by_two, LO, GO, Scala
 	    VT::putScalar( *b, -1.0 );
 
 	    // Create the linear problem.
-	    linear_problem = Teuchos::rcp( 
-		new MCLS::LinearProblem<VectorType,MatrixType>(A, x, b) );
+	    linear_problem = MCLS::linearProblem( A, x, b );
 	}
 	comm->barrier();
 

@@ -189,6 +189,19 @@ class LinearProblem
 };
 
 //---------------------------------------------------------------------------//
+// Helper functions.
+//---------------------------------------------------------------------------//
+// Free function for creating a linear problem.
+template<class Vector, class Matrix>
+Teuchos::RCP<LinearProblem<Vector,Matrix> >
+linearProblem( const Teuchos::RCP<Matrix>& A,
+	       const Teuchos::RCP<Vector>& x,
+	       const Teuchos::RCP<Vector>& b )
+{
+    return Teuchos::rcp( new LinearProblem<Vector,Matrix>(A,x,b) );
+}
+
+//---------------------------------------------------------------------------//
 
 } // end namespace MCLS
 
