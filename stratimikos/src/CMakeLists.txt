@@ -31,7 +31,6 @@ TRIBITS_ADD_LIBRARY(
   mclsstratimikos
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS mclsthyra stratimikos
   )
 
 INSTALL(FILES 

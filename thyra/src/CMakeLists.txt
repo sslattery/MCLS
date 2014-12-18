@@ -39,7 +39,6 @@ TRIBITS_ADD_LIBRARY(
   mclsthyra
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS mcls mclsepetra mclstpetra thyracore thyraepetra thyratpetra
   )
 
 INSTALL(FILES 
