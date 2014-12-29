@@ -863,12 +863,14 @@ AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::computeConvergenceCriteria() const
     {
 	Teuchos::RCP<Tpetra::CrsMatrix<double,int,Ordinal> > H_star =
 	    Tpetra::createCrsMatrix<double,int,Ordinal>( map );
+	int transition_sign = 0;
 	for ( int i = 0; i < num_rows; ++i )
 	{
 	    row_size = b_global_columns[i]->size();
 	    for ( int j = 0; j < row_size; ++j )
 	    {
-		values[j] = b_h[i][j] * b_weights[i];
+		transition_sign = ( b_h[i][j] > 0.0 ) ? 1 : -1;
+		values[j] = b_h[i][j] * transition_sign * b_weights[i];
 	    }
 
 	    H_star->insertGlobalValues(

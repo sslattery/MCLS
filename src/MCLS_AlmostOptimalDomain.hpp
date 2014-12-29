@@ -293,8 +293,7 @@ inline void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::processTransition(
     HT::setGlobalState( history, (*b_global_columns[in_state])[out_state] );
 
     // Update the history weight with the transition weight.
-    int transition_sign = (b_h[in_state][out_state] > 0.0) - 
-			  (b_h[in_state][out_state] < 0.0);
+    int transition_sign = ( b_h[in_state][out_state] > 0.0 ) ? 1 : -1;
     HT::multiplyWeight( history, b_weights[in_state]*transition_sign );
 }
 
