@@ -690,8 +690,9 @@ void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::addMatrixToDomain(
 	    *cdf_iterator = std::abs( *cdf_iterator ) + *(cdf_iterator-1);
 	}
 
-	// The final value in the non-normalized CDF is the weight for this
-	// row. This is the absolute value row sum of the iteration matrix.
+	// The final value in the non-normalized CDF is the absolute value of
+	// the weight for this row. This is the absolute value row sum of the
+	// iteration matrix.
 	b_weights[ipoffset] = b_cdfs[ipoffset].back();
 	MCLS_CHECK( b_weights[ipoffset] > 0.0 );
 
@@ -863,14 +864,14 @@ AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::computeConvergenceCriteria() const
     {
 	Teuchos::RCP<Tpetra::CrsMatrix<double,int,Ordinal> > H_star =
 	    Tpetra::createCrsMatrix<double,int,Ordinal>( map );
-	int transition_sign = 0;
+	int h_sign = 0;
 	for ( int i = 0; i < num_rows; ++i )
 	{
 	    row_size = b_global_columns[i]->size();
 	    for ( int j = 0; j < row_size; ++j )
 	    {
-		transition_sign = ( b_h[i][j] > 0.0 ) ? 1 : -1;
-		values[j] = b_h[i][j] * transition_sign * b_weights[i];
+		h_sign = ( b_h[i][j] > 0.0 ) ? 1 : -1;
+		values[j] = b_h[i][j] * h_sign * b_weights[i];
 	    }
 
 	    H_star->insertGlobalValues(
