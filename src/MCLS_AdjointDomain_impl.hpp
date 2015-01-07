@@ -101,8 +101,7 @@ AdjointDomain<Vector,Matrix,RNG>::AdjointDomain(
 		std::cout << "Neumann/Ulam Convergence Criteria" << std::endl;
 		std::cout << "---------------------------------" << std::endl;
 		std::cout << "rho(H)  = " << criteria[0] << std::endl;
-		std::cout << "rho(H+) = " << criteria[1] << std::endl;
-		std::cout << "rho(H*) = " << criteria[2] << std::endl;
+		std::cout << "rho(H*) = " << criteria[1] << std::endl;
 		std::cout << "---------------------------------" << std::endl;
 		std::cout << std::endl;
 	    }

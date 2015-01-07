@@ -128,8 +128,8 @@ void errorCodeFailure( const std::string& cond, const std::string& file,
 {
     std::ostringstream output_msg;
     output_msg <<  "Error code : " << cond << ", failed in "
-	      << file << ":" << line << std::endl
-	      << "with error code:" << std::endl
+	      << file << ":" << line 
+	      << ", with error code:"
 	      << "\"" << error_code << "\"" << std::endl;
     throw Assertion( output_msg.str() );
 }

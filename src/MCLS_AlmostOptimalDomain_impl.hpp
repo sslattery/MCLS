@@ -816,7 +816,7 @@ AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::computeConvergenceCriteria() const
     MCLS_CHECK( b_cdfs.size() == local_rows.size() );
 
     // Find the convergence criteria.
-    Teuchos::Array<double> evals(3);
+    Teuchos::Array<double> evals(2);
 
     // Spectral radius of H.
     double max_entries = 0;
@@ -839,27 +839,6 @@ AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::computeConvergenceCriteria() const
     Teuchos::Array<double> values( max_entries );
     int row_size = 0;
 
-    // Spectral radius of H+.
-    {
-	Teuchos::RCP<Tpetra::CrsMatrix<double,int,Ordinal> > H_plus =
-	    Tpetra::createCrsMatrix<double,int,Ordinal>( map );
-	for ( int i = 0; i < num_rows; ++i )
-	{
-	    row_size = b_global_columns[i]->size();
-	    for ( int j = 0; j < row_size; ++j )
-	    {
-		values[j] = std::abs(b_h[i][j]);
-	    }
-
-	    H_plus->insertGlobalValues(
-		local_rows[i],
-		(*b_global_columns[i])(),
-		values(0,row_size) );
-	}
-	H_plus->fillComplete();
-	evals[1] = computeSpectralRadius( H_plus );
-    }
-
     // Spectral radius of H*.
     {
 	Teuchos::RCP<Tpetra::CrsMatrix<double,int,Ordinal> > H_star =
@@ -880,7 +859,7 @@ AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::computeConvergenceCriteria() const
 		values(0,row_size) );
 	}
 	H_star->fillComplete();
-	evals[2] = computeSpectralRadius( H_star );
+	evals[1] = computeSpectralRadius( H_star );
     }
 
     return evals;
@@ -899,8 +878,8 @@ double AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::computeSpectralRadius(
     int nev = 1;
     int block_size = 1;
     int max_dim = 40;
-    int max_restarts = 10;
-    double tol = 1.0e-8;
+    int max_restarts = 100;
+    double tol = 1.0e-6;
 
     int verbosity = Anasazi::Errors + Anasazi::Warnings;
 #if HAVE_MCLS_DBC
@@ -916,8 +895,9 @@ double AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::computeSpectralRadius(
     parameters.set( "Convergence Tolerance", tol );
     parameters.set( "Initial Guess", "User" );
 
-    Teuchos::RCP<MV> evec = 
-	Tpetra::createMultiVector<Scalar,int,Ordinal>( matrix->getMap(), block_size );
+    Teuchos::RCP<MV> evec = Tpetra::createMultiVector<Scalar,int,Ordinal>( 
+	matrix->getMap(), block_size );
+    evec->randomize();
 
     Teuchos::RCP<Anasazi::BasicEigenproblem<Scalar,MV,OP> > eigenproblem =
 	Teuchos::rcp( new Anasazi::BasicEigenproblem<Scalar,MV,OP>() );
