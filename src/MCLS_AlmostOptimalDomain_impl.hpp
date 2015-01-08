@@ -858,6 +858,51 @@ AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::computeConvergenceCriteria() const
 	}
 	H_plus->fillComplete();
 	evals[1] = computeSpectralRadius( H_plus );
+
+
+	// Balance Criteria.
+	Teuchos::RCP<Tpetra::CrsMatrix<double,int,Ordinal> > H_T = MT::copyTranspose(*H_plus);
+	Teuchos::ArrayView<const int> h_indices;
+	Teuchos::ArrayView<const int> h_T_indices;
+	Teuchos::ArrayView<const double> h_values;
+	Teuchos::ArrayView<const double> h_T_values;
+	double row_norm = 0.0;
+	double col_norm = 0.0;
+	double norm_ratio = 0.0;
+	double max_val = 0.0;
+	double min_val = std::numeric_limits<double>::max();
+	double ave_val = 0.0;
+	for ( int i = 0; i < num_rows; ++i )
+	{
+	    H_plus->getLocalRowView( i, h_indices, h_values );
+	    H_T->getLocalRowView( i, h_T_indices, h_T_values );
+	    row_norm = *std::max_element( h_values.begin(), h_values.end() );
+	    col_norm = *std::max_element( h_T_values.begin(), h_T_values.end() );
+	    norm_ratio = row_norm / col_norm;
+	    min_val = std::min( min_val, norm_ratio );
+	    max_val = std::max( max_val, norm_ratio );
+	    ave_val += norm_ratio;
+	}
+	ave_val /= num_rows;
+
+	double global_min = 0.0;
+	double global_max = 0.0;
+	double global_ave = 0.0;
+	Teuchos::reduceAll( *b_comm, Teuchos::REDUCE_MIN, 
+			    min_val, Teuchos::ptr(&global_min) );
+	Teuchos::reduceAll( *b_comm, Teuchos::REDUCE_MAX, 
+			    max_val, Teuchos::ptr(&global_max) );
+	Teuchos::reduceAll( *b_comm, Teuchos::REDUCE_SUM, 
+			    ave_val, Teuchos::ptr(&global_ave) );
+	ave_val /= b_comm->getSize();
+
+	if ( 0 == b_comm->getRank() )
+	{
+	    std::cout << "H Balance Parameters" << std::endl;
+	    std::cout << "min: " << global_min << std::endl;
+	    std::cout << "max: " << global_max << std::endl;
+	    std::cout << "ave: " << global_ave << std::endl;
+	}
     }
 
     // Spectral radius of H*.
@@ -933,8 +978,10 @@ double AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::computeSpectralRadius(
     Anasazi::Eigensolution<Scalar,MV> sol = eigenproblem->getSolution();
     std::vector<Anasazi::Value<Scalar> > evals = sol.Evals;
     MCLS_ENSURE( 1 == evals.size() );
-    return std::sqrt(evals[0].realpart*evals[0].realpart +
-		     evals[0].imagpart*evals[0].imagpart);
+    double eval_mag = std::sqrt(evals[0].realpart*evals[0].realpart +
+				evals[0].imagpart*evals[0].imagpart);
+
+    return eval_mag;
 }
 
 //---------------------------------------------------------------------------//
