@@ -894,7 +894,7 @@ AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::computeConvergenceCriteria() const
 			    max_val, Teuchos::ptr(&global_max) );
 	Teuchos::reduceAll( *b_comm, Teuchos::REDUCE_SUM, 
 			    ave_val, Teuchos::ptr(&global_ave) );
-	ave_val /= b_comm->getSize();
+	global_ave /= b_comm->getSize();
 
 	if ( 0 == b_comm->getRank() )
 	{
