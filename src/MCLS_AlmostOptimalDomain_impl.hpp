@@ -870,7 +870,9 @@ AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::computeConvergenceCriteria() const
 			    max_row_sum, Teuchos::ptr(&global_max_row_sum) );
 
 	// Balance Criteria.
-	Teuchos::RCP<Tpetra::CrsMatrix<double,int,Ordinal> > H_T = MT::copyTranspose(*H_plus);
+	Teuchos::RCP<Tpetra::CrsMatrix<double,int,Ordinal> > H_T = 
+	    MatrixTraits<Tpetra::Vector<double,int,Ordinal>,
+			 Tpetra::CrsMatrix<double,int,Ordinal> >::copyTranspose(*H_plus);
 	Teuchos::ArrayView<const int> h_indices;
 	Teuchos::ArrayView<const int> h_T_indices;
 	Teuchos::ArrayView<const double> h_values;
