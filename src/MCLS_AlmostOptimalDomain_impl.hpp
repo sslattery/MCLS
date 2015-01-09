@@ -843,22 +843,31 @@ AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::computeConvergenceCriteria() const
     {
 	Teuchos::RCP<Tpetra::CrsMatrix<double,int,Ordinal> > H_plus =
 	    Tpetra::createCrsMatrix<double,int,Ordinal>( map );
+	double max_row_sum = 0.0;
+	double row_sum = 0.0;
 	for ( int i = 0; i < num_rows; ++i )
 	{
+	    row_sum = 0.0;
 	    row_size = b_global_columns[i]->size();
 	    for ( int j = 0; j < row_size; ++j )
 	    {
 		values[j] = std::abs(b_h[i][j]);
+		row_sum += values[j];
 	    }
 
 	    H_plus->insertGlobalValues(
 		local_rows[i],
 		(*b_global_columns[i])(),
 		values(0,row_size) );
+
+	    max_row_sum = std::max( max_row_sum, row_sum );
 	}
 	H_plus->fillComplete();
 	evals[1] = computeSpectralRadius( H_plus );
 
+	double global_max_row_sum = 0.0;
+	Teuchos::reduceAll( *b_comm, Teuchos::REDUCE_MAX, 
+			    max_row_sum, Teuchos::ptr(&global_max_row_sum) );
 
 	// Balance Criteria.
 	Teuchos::RCP<Tpetra::CrsMatrix<double,int,Ordinal> > H_T = MT::copyTranspose(*H_plus);
@@ -898,6 +907,9 @@ AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::computeConvergenceCriteria() const
 
 	if ( 0 == b_comm->getRank() )
 	{
+	    std::cout << std::endl;
+	    std::cout << "||H||_inf = " << global_max_row_sum << std::endl;
+	    std::cout << std::endl;
 	    std::cout << "H Balance Parameters" << std::endl;
 	    std::cout << "min: " << global_min << std::endl;
 	    std::cout << "max: " << global_max << std::endl;
