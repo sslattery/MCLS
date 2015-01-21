@@ -142,6 +142,8 @@ int main( int argc, char * argv[] )
     Teuchos::TableFormat &format = Teuchos::TimeMonitor::format();
     format.setPrecision(5);
     Teuchos::TimeMonitor::summarize();
+
+    return 0;
 }
 
 //---------------------------------------------------------------------------//
