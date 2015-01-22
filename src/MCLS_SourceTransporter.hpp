@@ -50,7 +50,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_ParameterList.hpp>
-#include <Teuchos_Array.hpp>
+#include <Teuchos_ArrayRCP.hpp>
 
 namespace MCLS
 {
@@ -158,12 +158,6 @@ class SourceTransporter : public GlobalTransporter<Source>
     // Domain communicator.
     DomainCommunicatorType d_domain_communicator;
 
-    // Master-worker communicator for reporting number of histories.
-    Teuchos::RCP<const Comm> d_comm_num_done;
-
-    // Master-worker communicator for reporting completion status.
-    Teuchos::RCP<const Comm> d_comm_complete;
-
     // Source.
     Teuchos::RCP<Source> d_source;
 
@@ -172,28 +166,34 @@ class SourceTransporter : public GlobalTransporter<Source>
     std::pair<Teuchos::RCP<Request>,Teuchos::RCP<Request> > d_num_done_handles;
 
     // Master-worker reports for number of histories complete communications. 
-    std::pair<Teuchos::RCP<int>,Teuchos::RCP<int> > d_num_done_report;
+    std::pair<Teuchos::ArrayRCP<int>,Teuchos::ArrayRCP<int> > d_num_done_report;
 
     // Request handle for completed work on worker nodes.
     Teuchos::RCP<Request> d_complete_handle;
 
     // Completion report.
-    Teuchos::RCP<int> d_complete_report;
+    Teuchos::ArrayRCP<int> d_complete_report;
 
     // Total number of source histories in set.
     int d_nh;
 
     // Total number of histories completed in set.
-    Teuchos::RCP<int> d_num_done;
+    Teuchos::ArrayRCP<int> d_num_done;
     
     // Number of histories complete in the local domain.
     int d_num_run;
 
     // Boolean-as-integer from completion of transport calculation.
-    Teuchos::RCP<int> d_complete;
+    Teuchos::ArrayRCP<int> d_complete;
 
     // Check frequency for history buffer communication.
     int d_check_freq;
+
+    // Completed histories tag.
+    int d_num_done_tag;
+
+    // Completion status tag.
+    int d_completion_status_tag;
 };
 
 //---------------------------------------------------------------------------//

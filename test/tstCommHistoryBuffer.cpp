@@ -87,115 +87,6 @@ Teuchos::RCP<const Teuchos::Comm<Ordinal> > getDefaultComm()
 //---------------------------------------------------------------------------//
 // Tests.
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CommHistoryBuffer, ping_pong, Ordinal, Scalar )
-{
-    typedef MCLS::AdjointHistory<Ordinal> HT;
-    typedef MCLS::HistoryBuffer<HT> HistoryBuffer;
-    typedef MCLS::SendHistoryBuffer<HT> SendBuffer;
-    typedef MCLS::ReceiveHistoryBuffer<HT> ReceiveBuffer;
-
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = 
-	Teuchos::DefaultComm<int>::getComm();
-    Teuchos::RCP<const Teuchos::Comm<int> > comm_dup = comm->duplicate();
-    int comm_rank = comm->getRank();
-    int comm_size = comm->getSize();
-
-    int num_histories = 5;
-    HT::setByteSize();
-    HistoryBuffer::setSizePackedHistory( HT::getPackedBytes() );
-    HistoryBuffer::setMaxNumHistories( num_histories );
-
-    std::size_t byte_size = num_histories * HT::getPackedBytes()
-			    + sizeof(int);
-
-    std::stack<Teuchos::RCP<HT> > bank;
-
-    // At least 2 processes required.
-    if ( comm_size > 1 )
-    {
-	if ( comm_rank == 0 )
-	{
-	    SendBuffer buffer( comm, comm_dup );
-	    buffer.allocate();
-	    TEST_EQUALITY( buffer.allocatedSize(), byte_size );
-	    TEST_ASSERT( !buffer.status() );
-
-	    HT h1( 1, 1, 1 );
-	    HT h2( 2, 2, 2 );
-	    HT h3( 3, 3, 3 );
-	    buffer.bufferHistory( h1 );
-	    buffer.bufferHistory( h2 );
-	    buffer.bufferHistory( h3 );
-	    TEST_EQUALITY( buffer.numHistories(), 3 );
-
-	    buffer.send( 1 );
-
-	    TEST_EQUALITY( buffer.numHistories(), 0 );
-	    TEST_EQUALITY( buffer.allocatedSize(), byte_size );
-	    TEST_ASSERT( buffer.isEmpty() );
-	    TEST_ASSERT( !buffer.status() );
-
-	    ReceiveBuffer receiver( comm, comm_dup );
-	    receiver.allocate();
-	    TEST_ASSERT( receiver.isEmpty() );
-
-	    receiver.receive( 1 );
-	    TEST_ASSERT( receiver.isEmpty() );
-	}
-
-	if ( comm_rank == 1 )
-	{
-	    ReceiveBuffer buffer( comm, comm_dup );
-	    buffer.allocate();
-	    TEST_EQUALITY( buffer.allocatedSize(), byte_size );
-	    TEST_ASSERT( !buffer.status() );
-	    TEST_ASSERT( buffer.isEmpty() );
-
-	    buffer.receive( 0 );
-	    TEST_EQUALITY( buffer.numHistories(), 3 );
-	    TEST_ASSERT( !buffer.isEmpty() );
-	    buffer.addToBank( bank );
-	    TEST_ASSERT( buffer.isEmpty() );
-	    TEST_EQUALITY( buffer.allocatedSize(), byte_size );
-
-	    Teuchos::RCP<HT> ph1, ph2, ph3;
-
-	    TEST_EQUALITY( bank.size(), 3 );
-	    ph3 = bank.top();
-	    bank.pop();
-	    TEST_EQUALITY( ph3->globalState(), 3 );
-	    TEST_EQUALITY( ph3->weight(), 3 );
-
-	    TEST_EQUALITY( bank.size(), 2 );
-	    ph2 = bank.top();
-	    bank.pop();
-	    TEST_EQUALITY( ph2->globalState(), 2 );
-	    TEST_EQUALITY( ph2->weight(), 2 );
-
-	    TEST_EQUALITY( bank.size(), 1 );
-	    ph1 = bank.top();
-	    bank.pop();
-	    TEST_EQUALITY( ph1->globalState(), 1 );
-	    TEST_EQUALITY( ph1->weight(), 1 );
-
-	    TEST_ASSERT( bank.empty() );
-
-	    SendBuffer sender( comm, comm_dup );
-	    sender.allocate();
-	    TEST_EQUALITY( sender.numHistories(), 0 );
-	    TEST_ASSERT( sender.isEmpty() );
-
-	    sender.send( 0 );
-	    sender.allocate();
-	    TEST_EQUALITY( sender.numHistories(), 0 );
-	    TEST_ASSERT( sender.isEmpty() );
-	}
-    }
-}
-
-UNIT_TEST_INSTANTIATION( CommHistoryBuffer, ping_pong )
-
-//---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CommHistoryBuffer, non_blocking, Ordinal, Scalar )
 {
     typedef MCLS::AdjointHistory<Ordinal> HT;
@@ -204,7 +95,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CommHistoryBuffer, non_blocking, Ordinal, Sca
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
-    Teuchos::RCP<const Teuchos::Comm<int> > comm_dup = comm->duplicate();
     int comm_rank = comm->getRank();
     int comm_size = comm->getSize();
 
@@ -220,11 +110,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CommHistoryBuffer, non_blocking, Ordinal, Sca
 	//    2 -> 0,3
 	//    3 -> 1,2
 	Teuchos::Array<ReceiveBuffer> 
-	    receives( 2, ReceiveBuffer( comm, comm_dup,
+	    receives( 2, ReceiveBuffer( comm,
 					HT::getPackedBytes(), num_histories ) );
 
 	Teuchos::Array<SendBuffer> 
-	    sends( 2, SendBuffer( comm, comm_dup,
+	    sends( 2, SendBuffer( comm,
 				  HT::getPackedBytes(), num_histories ) );
 
 	 // post the receives

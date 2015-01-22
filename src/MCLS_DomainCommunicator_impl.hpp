@@ -81,22 +81,17 @@ DomainCommunicator<Domain>::DomainCommunicator(
 	    plist.get<int>("MC Buffer Size") );
     }
 
-    // Duplicate the input communicator so we have a blocking and nonblocking
-    // tag for the send and receive buffers.
-    Teuchos::RCP<const Comm> comm_blocking = comm->duplicate();
-    Teuchos::RCP<const Comm> comm_nonblocking = comm->duplicate();
-
     // Allocate the send buffers and set their communicators.
     for ( int n = 0; n < d_num_send_neighbors; ++n )
     {
-	d_sends[n].setComm( comm_blocking, comm_nonblocking );
+	d_sends[n].setComm( comm );
 	d_sends[n].allocate();
     }
 
     // Allocate the receive buffers and set their communicators.
     for ( int n = 0; n < d_num_receive_neighbors; ++n )
     {
-	d_receives[n].setComm( comm_blocking, comm_nonblocking );
+	d_receives[n].setComm( comm );
 	d_receives[n].allocate();
     }
 }

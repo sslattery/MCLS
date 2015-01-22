@@ -67,20 +67,15 @@ SourceTransporter<Source>::SourceTransporter(
     , d_domain( domain )
     , d_domain_transporter( d_domain, plist )
     , d_domain_communicator( d_domain, d_comm, plist )
-    , d_num_done_report( Teuchos::rcp(new int(0)), Teuchos::rcp(new int(0)) )
-    , d_complete_report( Teuchos::rcp(new int(0)) )
-    , d_num_done( Teuchos::rcp(new int(0)) )
-    , d_complete( Teuchos::rcp(new int(0)) )
+    , d_num_done_report( Teuchos::ArrayRCP<int>(1,0), Teuchos::ArrayRCP<int>(1,0) )
+    , d_complete_report( Teuchos::ArrayRCP<int>(1,0) )
+    , d_num_done( Teuchos::ArrayRCP<int>(1,0) )
+    , d_complete( Teuchos::ArrayRCP<int>(1,0) )
+    , d_num_done_tag( 19873 )
+    , d_completion_status_tag( 19874 )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_domain) );
-
-    // Set the duplicate communicators. This is how we get around not having
-    // access to message tags through the abstract Teuchos::Comm interface. We
-    // are constructing a separate messaging space for each of these
-    // bookeeping operations.
-    d_comm_num_done = d_comm->duplicate();
-    d_comm_complete = d_comm->duplicate();
 
     // Get the comm parameters.
     int my_rank = d_comm->getRank();
@@ -122,8 +117,8 @@ SourceTransporter<Source>::SourceTransporter(
     }
 
     MCLS_ENSURE( d_check_freq > 0 );
-    MCLS_ENSURE( Teuchos::nonnull(d_comm_num_done) );
-    MCLS_ENSURE( Teuchos::nonnull(d_comm_complete) );
+    MCLS_ENSURE( Teuchos::nonnull(d_comm) );
+    MCLS_ENSURE( Teuchos::nonnull(d_comm) );
 }
 
 //---------------------------------------------------------------------------//
@@ -155,8 +150,8 @@ void SourceTransporter<Source>::transport()
     d_comm->barrier();
 
     // Initialize.
-    *d_complete = 0;
-    *d_num_done = 0;
+    d_complete[0] = 0;
+    d_num_done[0] = 0;
     d_num_run = 0;
 
     // Get the number of histories in the set from the source.
@@ -173,7 +168,7 @@ void SourceTransporter<Source>::transport()
     postTreeCount();
 
     // Transport all histories through the global domain until completion.
-    while ( !(*d_complete) )
+    while ( !d_complete[0] )
     {
 	// Transport the source histories.
 	if ( !ST::empty(*d_source) )
@@ -293,7 +288,7 @@ void SourceTransporter<Source>::localHistoryTransport(
     else
     {
 	MCLS_CHECK( Event::CUTOFF == HT::event(*history) );
-	++(*d_num_done);
+	++d_num_done[0];
     }
 }
 
@@ -321,24 +316,26 @@ void SourceTransporter<Source>::postTreeCount()
     // Post a receive from the first child for history count data.
     if ( d_children.first != Teuchos::OrdinalTraits<int>::invalid() )
     {
-	*d_num_done_report.first = 0;
+	d_num_done_report.first[0] = 0;
 	d_num_done_handles.first = Teuchos::ireceive<int,int>(
-	    *d_comm_num_done, d_num_done_report.first, d_children.first );
+	    d_num_done_report.first, d_children.first, 
+	    d_num_done_tag, *d_comm );
     }
 
     // Post a receive from the second child for history count data.
     if ( d_children.second != Teuchos::OrdinalTraits<int>::invalid() )
     {
-	*d_num_done_report.second = 0;
+	d_num_done_report.second[0] = 0;
 	d_num_done_handles.second = Teuchos::ireceive<int,int>(
-	    *d_comm_num_done, d_num_done_report.second, d_children.second );
+	    d_num_done_report.second, d_children.second, 
+	    d_num_done_tag, *d_comm );
     }
 
     // Post a receive from parent for transport completion.
     if ( d_parent != Teuchos::OrdinalTraits<int>::invalid() )
     {
 	d_complete_handle = Teuchos::ireceive<int,int>( 
-	    *d_comm_complete, d_complete_report, d_parent );
+	    d_complete_report, d_parent, d_completion_status_tag, *d_comm );
     }
 }
 
@@ -355,12 +352,12 @@ void SourceTransporter<Source>::completeTreeCount()
     // Children nodes send the finish message to the parent.
     if ( d_parent != Teuchos::OrdinalTraits<int>::invalid() )
     {
-	Teuchos::RCP<int> clear = Teuchos::rcp( new int(1) );
+	Teuchos::ArrayRCP<int> clear( 1, 1 );
 	Teuchos::RCP<Request> finish = Teuchos::isend<int,int>(
-	    *d_comm_num_done, clear, d_parent );
+	    clear, d_parent, d_num_done_tag, *d_comm );
 	request_ptr = 
 	    Teuchos::Ptr<Teuchos::RCP<Request> >(&finish);
-	Teuchos::wait( *d_comm_num_done, request_ptr );
+	Teuchos::wait( *d_comm, request_ptr );
 	MCLS_CHECK( Teuchos::is_null(finish) );
     }
 
@@ -369,7 +366,7 @@ void SourceTransporter<Source>::completeTreeCount()
     {
         request_ptr = 
             Teuchos::Ptr<Teuchos::RCP<Request> >(&d_num_done_handles.first);
-        Teuchos::wait( *d_comm_num_done, request_ptr );
+        Teuchos::wait( *d_comm, request_ptr );
         MCLS_CHECK( Teuchos::is_null(d_num_done_handles.first) );
     }
 
@@ -378,7 +375,7 @@ void SourceTransporter<Source>::completeTreeCount()
     {
         request_ptr = 
             Teuchos::Ptr<Teuchos::RCP<Request> >(&d_num_done_handles.second);
-        Teuchos::wait( *d_comm_num_done, request_ptr );
+        Teuchos::wait( *d_comm, request_ptr );
         MCLS_CHECK( Teuchos::is_null(d_num_done_handles.second) );
     }
 }
@@ -400,12 +397,13 @@ void SourceTransporter<Source>::updateTreeCount()
             d_num_done_handles.first = Teuchos::null;
 
             // Add to the running total.
-            *d_num_done += *(d_num_done_report.first);
-            MCLS_CHECK( *d_num_done <= d_nh );
+            d_num_done[0] += d_num_done_report.first[0];
+            MCLS_CHECK( d_num_done[0] <= d_nh );
 
             // Repost.
             d_num_done_handles.first = Teuchos::ireceive<int,int>(
-                *d_comm_num_done, d_num_done_report.first, d_children.first );
+		d_num_done_report.first, d_children.first,
+		d_num_done_tag, *d_comm );
         }
     }
 
@@ -415,16 +413,17 @@ void SourceTransporter<Source>::updateTreeCount()
         // Receive completed reports and repost.
         if ( CommTools::isRequestComplete(d_num_done_handles.second) )
         {
-            MCLS_CHECK( *(d_num_done_report.second) > 0 );
+            MCLS_CHECK( d_num_done_report.second[0] > 0 );
             d_num_done_handles.second = Teuchos::null;
 
             // Add to the running total.
-            *d_num_done += *(d_num_done_report.second);
-            MCLS_CHECK( *d_num_done <= d_nh );
+            d_num_done[0] += d_num_done_report.second[0];
+            MCLS_CHECK( d_num_done[0] <= d_nh );
 
             // Repost.
             d_num_done_handles.second = Teuchos::ireceive<int,int>(
-                *d_comm_num_done, d_num_done_report.second, d_children.second );
+		d_num_done_report.second, d_children.second,
+		d_num_done_tag, *d_comm );
         }
     }
 }
@@ -440,9 +439,9 @@ void SourceTransporter<Source>::sendCompleteToChildren()
     if ( d_children.first != Teuchos::OrdinalTraits<int>::invalid() )
     {
         Teuchos::RCP<Request> complete = Teuchos::isend<int,int>(
-            *d_comm_complete, d_complete, d_children.first );
+	    d_complete, d_children.first, d_completion_status_tag, *d_comm );
         Teuchos::Ptr<Teuchos::RCP<Request> > request_ptr(&complete);
-        Teuchos::wait( *d_comm_complete, request_ptr );
+        Teuchos::wait( *d_comm, request_ptr );
         MCLS_CHECK( Teuchos::is_null(complete) );
     }
 
@@ -450,9 +449,9 @@ void SourceTransporter<Source>::sendCompleteToChildren()
     if ( d_children.second != Teuchos::OrdinalTraits<int>::invalid() )
     {
         Teuchos::RCP<Request> complete = Teuchos::isend<int,int>(
-            *d_comm_complete, d_complete, d_children.second );
+	    d_complete, d_children.second, d_completion_status_tag, *d_comm );
         Teuchos::Ptr<Teuchos::RCP<Request> > request_ptr(&complete);
-        Teuchos::wait( *d_comm_complete, request_ptr );
+        Teuchos::wait( *d_comm, request_ptr );
         MCLS_CHECK( Teuchos::is_null(complete) );
     }
 }
@@ -473,9 +472,9 @@ void SourceTransporter<Source>::controlTermination()
     // MASTER checks for completion.
     if ( d_comm->getRank() == MASTER ) 
     {
-        if ( *d_num_done == d_nh )
+        if ( d_num_done[0] == d_nh )
         {
-            *d_complete = 1;
+            d_complete[0] = 1;
             sendCompleteToChildren();
         }
     }
@@ -486,22 +485,22 @@ void SourceTransporter<Source>::controlTermination()
     else
     {
         // Send completed number of histories to parent.
-        if ( *d_num_done > 0 )
+        if ( d_num_done[0] > 0 )
         {
             Teuchos::RCP<Request> report = Teuchos::isend<int,int>(
-                *d_comm_num_done, d_num_done, d_parent );
+		d_num_done, d_parent, d_num_done_tag, *d_comm );
             Teuchos::Ptr<Teuchos::RCP<Request> > request_ptr(&report);
-            Teuchos::wait( *d_comm_num_done, request_ptr );
+            Teuchos::wait( *d_comm, request_ptr );
             MCLS_CHECK( Teuchos::is_null(report) );
-            *d_num_done = 0;
+            d_num_done[0] = 0;
         } 
 
         // Check for completion status from parent.
         if ( CommTools::isRequestComplete(d_complete_handle) )
         {
-            MCLS_CHECK( *d_complete_report ==  1 );
+            MCLS_CHECK( d_complete_report[0] ==  1 );
             d_complete_handle = Teuchos::null;
-            *d_complete = 1;
+            d_complete[0] = 1;
             sendCompleteToChildren();
         }
     }
