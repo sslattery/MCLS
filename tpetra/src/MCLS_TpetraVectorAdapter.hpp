@@ -105,7 +105,10 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
      */
     static Teuchos::RCP<vector_type> deepCopy( const vector_type& vector )
     {
-	return Teuchos::rcp( new Tpetra::Vector<Scalar,LO,GO>( vector ) );
+	Teuchos::RCP<vector_type> vector_copy = clone( vector );
+	Teuchos::ArrayRCP<Scalar> copy_view = vector_copy->getDataNonConst();
+	copy_view.deepCopy( vector.getData()() );
+	return vector_copy;
     }
 
     /*! 
