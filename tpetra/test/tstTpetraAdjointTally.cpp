@@ -337,6 +337,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, BlockCombine, LO, GO, Scalar )
 	    comm->createSubcommunicator( ranks() );
 	int set_size = comm_set->getSize();
 	int set_rank = comm_set->getRank();
+	TEST_EQUALITY( set_size, 2 );
+	TEST_ASSERT( (set_rank == 0) || (set_rank == 1) );
 
 	// Build the block-constant communicator.
 	if ( comm_rank == 0 || comm_rank == 2 )
@@ -352,6 +354,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AdjointTally, BlockCombine, LO, GO, Scalar )
 	Teuchos::RCP<const Teuchos::Comm<int> > comm_block =
 	    comm->createSubcommunicator( ranks() );
 	int block_rank = comm_block->getRank();
+	TEST_ASSERT( (block_rank == 0) || (block_rank == 1) );
 
 	// Build the map.
 	int local_num_rows = 10;
