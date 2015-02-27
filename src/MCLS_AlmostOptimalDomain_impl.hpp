@@ -808,12 +808,11 @@ Teuchos::Array<double>
 AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::computeConvergenceCriteria() const
 {
     // Create a map for the operators.
-    int num_rows = b_cdfs.size();
     Teuchos::Array<Ordinal> local_rows = b_tally->baseRows();
+    int num_rows = local_rows.size();
     Teuchos::RCP<const Tpetra::Map<int,Ordinal> > map =
 	Tpetra::createNonContigMap<int,Ordinal>(
 	    local_rows(), b_comm );
-    MCLS_CHECK( b_cdfs.size() == local_rows.size() );
 
     // Find the convergence criteria.
     Teuchos::Array<double> evals(3);

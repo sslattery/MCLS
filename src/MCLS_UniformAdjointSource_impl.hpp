@@ -77,6 +77,7 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
     , d_nh_left(0)
     , d_nh_emitted(0)
     , d_random_sampling(1)
+    , d_local_length( VT::getLocalLength(*d_b) )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_b) );
     MCLS_REQUIRE( Teuchos::nonnull(d_domain) );
@@ -207,10 +208,10 @@ Teuchos::Array<char> UniformAdjointSource<Domain>::pack() const
     s << d_nh_requested;
 
     // Pack the size of the local source data.
-    s << Teuchos::as<std::size_t>( VT::getLocalLength(*d_b) );
+    s << Teuchos::as<std::size_t>( d_local_length );
 
     // Pack the source global rows.
-    for ( Ordinal i = 0; i < VT::getLocalLength(*d_b); ++i )
+    for ( Ordinal i = 0; i < d_local_length; ++i )
     {
 	s << Teuchos::as<Ordinal>( VT::getGlobalRow(*d_b,i) );
     }
@@ -245,10 +246,10 @@ std::size_t UniformAdjointSource<Domain>::getPackedBytes() const
     s << d_nh_requested;
 
     // Pack the size of the local source data.
-    s << Teuchos::as<std::size_t>( VT::getLocalLength(*d_b) );
+    s << Teuchos::as<std::size_t>( d_local_length );
 
     // Pack the source global rows.
-    for ( Ordinal i = 0; i < VT::getLocalLength(*d_b); ++i )
+    for ( Ordinal i = 0; i < d_local_length; ++i )
     {
 	s << Teuchos::as<Ordinal>( VT::getGlobalRow(*d_b,i) );
     }
@@ -273,6 +274,7 @@ void UniformAdjointSource<Domain>::buildSource()
 {
     // Get the local source components.
     d_local_source = VT::view( *d_b );
+    d_local_length = VT::getLocalLength(*d_b);
     MCLS_CHECK( d_local_source.size() > 0 );
 
     // Build the source.
@@ -313,10 +315,6 @@ UniformAdjointSource<Domain>::getHistory()
 	return Teuchos::null;
     }
 
-    // Get the local source components.
-    Teuchos::ArrayRCP<const Scalar> local_source = VT::view( *d_b );
-    MCLS_CHECK( local_source.size() > 0 );
-
     // Generate the history.
     Teuchos::RCP<HistoryType> history = Teuchos::rcp( new HistoryType() );
 
@@ -329,8 +327,8 @@ UniformAdjointSource<Domain>::getHistory()
     MCLS_CHECK( DT::isGlobalState(*d_domain,starting_state) );
 
     // Set the history state.
-    Ordinal weight_sign = (local_source[local_state] > 0.0) -
-			  (local_source[local_state] < 0.0);
+    Ordinal weight_sign = (d_local_source[local_state] > 0.0) -
+			  (d_local_source[local_state] < 0.0);
     history->setWeight( d_weight * weight_sign );
     history->setGlobalState( starting_state );
     history->live();

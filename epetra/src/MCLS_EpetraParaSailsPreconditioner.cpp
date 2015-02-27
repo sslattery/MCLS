@@ -52,6 +52,8 @@
 #include <Epetra_Map.h>
 #include <Epetra_Export.h>
 
+#include <EpetraExt_RowMatrixOut.h>
+
 #include <ParaSails.h>
 
 #ifdef HAVE_MPI
@@ -294,6 +296,16 @@ void EpetraParaSailsPreconditioner::buildPreconditioner()
     // Finalize the preconditioner.
     MCLS_CHECK_ERROR_CODE(
 	d_preconditioner->FillComplete()
+	);
+
+    // Write the preconditioner and operator to file.
+    std::string Aname( "A.mtx" );
+    std::string Mname( "M.mtx" );
+    MCLS_CHECK_ERROR_CODE(
+	EpetraExt::RowMatrixToMatrixMarketFile( Aname.c_str(), *d_A )
+	);
+    MCLS_CHECK_ERROR_CODE(
+	EpetraExt::RowMatrixToMatrixMarketFile( Mname.c_str(), *d_preconditioner )
 	);
 
     MCLS_ENSURE( Teuchos::nonnull(d_preconditioner) );

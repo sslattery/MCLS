@@ -213,6 +213,9 @@ class UniformAdjointSource
 
     // Local source cdf for random histories.
     Teuchos::ArrayRCP<double> d_cdf;
+
+    // Local length of the source.
+    Ordinal d_local_length;
 };
 
 //---------------------------------------------------------------------------//
