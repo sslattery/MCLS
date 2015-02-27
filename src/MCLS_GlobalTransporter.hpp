@@ -74,6 +74,9 @@ class GlobalTransporter
     // Transport the source histories and all subsequent histories through the
     // domain to completion.
     virtual void transport() = 0;
+
+    // Reset the state of the transporter.
+    virtual void reset() = 0;
 };
 
 //---------------------------------------------------------------------------//

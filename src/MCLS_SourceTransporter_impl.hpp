@@ -222,6 +222,20 @@ void SourceTransporter<Source>::transport()
 
 //---------------------------------------------------------------------------//
 /*!
+ * \brief Reset the state of the transporter.
+ */
+template<class Source>
+void SourceTransporter<Source>::reset()
+{
+    d_num_done_report = std::make_pair( Teuchos::ArrayRCP<int>(1,0),
+					Teuchos::ArrayRCP<int>(1,0) );
+    d_complete_report = Teuchos::ArrayRCP<int>(1,0);
+    d_num_done = Teuchos::ArrayRCP<int>(1,0);
+    d_complete = Teuchos::ArrayRCP<int>(1,0);
+}
+
+//---------------------------------------------------------------------------//
+/*!
  * \brief Transport a source history.
  */
 template<class Source>

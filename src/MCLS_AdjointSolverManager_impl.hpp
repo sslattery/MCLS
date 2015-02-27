@@ -259,9 +259,6 @@ bool AdjointSolverManager<Vector,Matrix,RNG>::solve()
 	TT::setBaseVector( *tally, d_problem->getLHS() );
     }
 
-    // Set the local domain with the solver.
-    d_mc_solver->setDomain( d_msod_manager->localDomain() );
-
     // Build the global source. We assume the RHS of the linear system changes
     // with each solve.
     buildMonteCarloSource();
@@ -373,6 +370,9 @@ void AdjointSolverManager<Vector,Matrix,RNG>::buildMonteCarloDomain()
 
     // Build the global MSOD Monte Carlo domain from the primary set.
     d_msod_manager->setDomain( primary_domain );
+
+    // Set the local domain with the monte carlo solver.
+    d_mc_solver->setDomain( d_msod_manager->localDomain() );
 
     MCLS_ENSURE( Teuchos::nonnull(d_msod_manager) );
     MCLS_ENSURE( Teuchos::nonnull(d_msod_manager->localDomain()) );

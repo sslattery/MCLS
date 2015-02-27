@@ -87,10 +87,13 @@ void MCSolver<Source>::solve()
     MCLS_REQUIRE( Teuchos::nonnull(d_source) );
     MCLS_REQUIRE( Teuchos::nonnull(d_tally) );
     MCLS_REQUIRE( Teuchos::nonnull(d_transporter) );
-    
+
     // Zero out the tally.
     TT::zeroOut( *d_tally );
 
+    // Reset the transporter.
+    d_transporter->reset();
+    
     // Assign the source to the transporter.
     d_transporter->assignSource( d_source, d_relative_weight_cutoff );
 

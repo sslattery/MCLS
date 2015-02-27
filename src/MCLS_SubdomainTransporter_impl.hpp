@@ -94,7 +94,7 @@ void SubdomainTransporter<Source>::transport()
     MCLS_REQUIRE( Teuchos::nonnull(d_source) );
 
     // Transport all source histories through the local domain until completion.
-    while (  !ST::empty(*d_source) )
+    while ( !ST::empty(*d_source) )
     {
         // Get a history from the source.
         Teuchos::RCP<HistoryType> history = ST::getHistory( *d_source );
@@ -113,6 +113,14 @@ void SubdomainTransporter<Source>::transport()
 
     MCLS_ENSURE( ST::empty(*d_source) );
 }
+
+//---------------------------------------------------------------------------//
+/*!
+ * \brief Reset the state of the transporter.
+ */
+template<class Source>
+void SubdomainTransporter<Source>::reset()
+{ /* ... */ }
 
 //---------------------------------------------------------------------------//
 

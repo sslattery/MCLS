@@ -102,6 +102,9 @@ class SourceTransporter : public GlobalTransporter<Source>
     // domain to completion.
     void transport();
 
+    // Reset the state of the transporter.
+    void reset();
+
   private:
 
     // Transport a source history.
