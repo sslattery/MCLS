@@ -118,6 +118,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( AdjointHistory, history, Ordinal )
     TEST_EQUALITY( h_1.weight(), -14 );
     TEST_EQUALITY( h_1.weightAbs(), 14 );
 
+    TEST_EQUALITY( 0, h_1.numSteps() );
+    h_1.addStep();
+    TEST_EQUALITY( 1, h_1.numSteps() );
+
     MCLS::AdjointHistory<Ordinal> h_2( 5, 2, 6 );
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.globalState(), 5 );
@@ -131,7 +135,7 @@ UNIT_TEST_INSTANTIATION( AdjointHistory, history )
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( AdjointHistory, pack_unpack, Ordinal )
 {
-    std::size_t byte_size = sizeof(Ordinal) + sizeof(double) + 2*sizeof(int);
+    std::size_t byte_size = sizeof(Ordinal) + sizeof(double) + 3*sizeof(int);
     MCLS::AdjointHistory<Ordinal>::setByteSize();
     std::size_t packed_bytes = 
 	MCLS::AdjointHistory<Ordinal>::getPackedBytes();
@@ -140,6 +144,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( AdjointHistory, pack_unpack, Ordinal )
     MCLS::AdjointHistory<Ordinal> h_1( 5, 2, 6 );
     h_1.live();
     h_1.setEvent( MCLS::Event::BOUNDARY );
+    h_1.addStep();
     Teuchos::Array<char> packed_history = h_1.pack();
     TEST_EQUALITY( Teuchos::as<std::size_t>( packed_history.size() ), 
 		   byte_size );
@@ -150,6 +155,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( AdjointHistory, pack_unpack, Ordinal )
     TEST_EQUALITY( h_2.localState(), Teuchos::OrdinalTraits<Ordinal>::invalid() );
     TEST_ASSERT( h_2.alive() );
     TEST_EQUALITY( h_2.event(), MCLS::Event::BOUNDARY );
+    TEST_EQUALITY( h_2.numSteps(), 1 );
 }
 
 UNIT_TEST_INSTANTIATION( AdjointHistory, pack_unpack )
@@ -171,6 +177,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( AdjointHistory, broadcast, Ordinal )
 	MCLS::AdjointHistory<Ordinal> h_1( 5, 2, 6 );
 	h_1.live();
 	h_1.setEvent( MCLS::Event::BOUNDARY );
+	h_1.addStep();
 	packed_history = h_1.pack();
     }
 
@@ -182,6 +189,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( AdjointHistory, broadcast, Ordinal )
     TEST_EQUALITY( h_2.localState(), Teuchos::OrdinalTraits<Ordinal>::invalid() );
     TEST_ASSERT( h_2.alive() );
     TEST_EQUALITY( h_2.event(), MCLS::Event::BOUNDARY );
+    TEST_EQUALITY( h_2.numSteps(), 1 );
 }
 
 UNIT_TEST_INSTANTIATION( AdjointHistory, broadcast )

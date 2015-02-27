@@ -129,6 +129,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, history, Ordinal )
     h_1.addToHistoryTally( 1.34 );
     TEST_EQUALITY( h_1.historyTally(), 1.34 );
 
+    TEST_EQUALITY( 0, h_1.numSteps() );
+    h_1.addStep();
+    TEST_EQUALITY( 1, h_1.numSteps() );
+
     MCLS::ForwardHistory<Ordinal> h_2( 5, 2, 6 );
     TEST_EQUALITY( h_2.weight(), 6 );
     TEST_EQUALITY( h_2.globalState(), 5 );
@@ -144,7 +148,7 @@ UNIT_TEST_INSTANTIATION( ForwardHistory, history )
 //---------------------------------------------------------------------------//
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, pack_unpack, Ordinal )
 {
-    std::size_t byte_size = 2*sizeof(Ordinal) + 2*sizeof(double) + 2*sizeof(int);
+    std::size_t byte_size = 2*sizeof(Ordinal) + 2*sizeof(double) + 3*sizeof(int);
     MCLS::ForwardHistory<Ordinal>::setByteSize();
     std::size_t packed_bytes =
 	MCLS::ForwardHistory<Ordinal>::getPackedBytes();
@@ -154,6 +158,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, pack_unpack, Ordinal )
     h_1.live();
     h_1.setEvent( MCLS::Event::BOUNDARY );
     h_1.addToHistoryTally( 2.44 );
+    h_1.addStep();
     Teuchos::Array<char> packed_history = h_1.pack();
     TEST_EQUALITY( Teuchos::as<std::size_t>( packed_history.size() ), 
 		   byte_size );
@@ -166,6 +171,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, pack_unpack, Ordinal )
     TEST_ASSERT( h_2.alive() );
     TEST_EQUALITY( h_2.event(), MCLS::Event::BOUNDARY );
     TEST_EQUALITY( h_2.historyTally(), 2.44 );
+    TEST_EQUALITY( h_2.numSteps(), 1 );
 }
 
 UNIT_TEST_INSTANTIATION( ForwardHistory, pack_unpack )
@@ -188,6 +194,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, broadcast, Ordinal )
 	h_1.live();
 	h_1.setEvent( MCLS::Event::BOUNDARY );
 	h_1.addToHistoryTally( 1.98 );
+	h_1.addStep();
 	packed_history = h_1.pack();
     }
 
@@ -201,6 +208,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ForwardHistory, broadcast, Ordinal )
     TEST_ASSERT( h_2.alive() );
     TEST_EQUALITY( h_2.event(), MCLS::Event::BOUNDARY );
     TEST_EQUALITY( h_2.historyTally(), 1.98 );
+    TEST_EQUALITY( h_2.numSteps(), 1 );
 }
 
 UNIT_TEST_INSTANTIATION( ForwardHistory, broadcast )

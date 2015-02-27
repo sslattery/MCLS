@@ -56,7 +56,8 @@ namespace MCLS
 template<class Ordinal>
 void History<Ordinal>::packHistory( Serializer& s ) const
 {
-    s << b_global_state << b_weight << static_cast<int>(b_alive) << b_event;
+    s << b_global_state << b_weight << static_cast<int>(b_alive)
+      << b_event << b_num_steps;
 }
 
 //---------------------------------------------------------------------------//
@@ -67,7 +68,7 @@ template<class Ordinal>
 void History<Ordinal>::unpackHistory( Deserializer& ds )
 {
     int alive;
-    ds >> b_global_state >> b_weight >> alive >> b_event;
+    ds >> b_global_state >> b_weight >> alive >> b_event >> b_num_steps;
     b_alive = static_cast<bool>(alive);
 }
 
@@ -84,7 +85,7 @@ std::size_t History<Ordinal>::b_packed_bytes = 0;
 template<class Ordinal>
 void History<Ordinal>::setStaticSize()
 {
-    b_packed_bytes = sizeof(Ordinal) + sizeof(double) + 2*sizeof(int);
+    b_packed_bytes = sizeof(Ordinal) + sizeof(double) + 3*sizeof(int);
 }
 
 //---------------------------------------------------------------------------//

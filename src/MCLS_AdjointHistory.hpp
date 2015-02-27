@@ -83,10 +83,6 @@ class AdjointHistory : public History<Ordinal>
     // Deserializer constructor.
     explicit AdjointHistory( const Teuchos::ArrayView<char>& buffer );
 
-    // Destructor.
-    ~AdjointHistory()
-    { /* ... */ }
-
     // Pack the history into a buffer.
     Teuchos::Array<char> pack() const;
 

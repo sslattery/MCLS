@@ -75,6 +75,7 @@ class History
 	, b_weight( Teuchos::ScalarTraits<double>::one() )
 	, b_alive( false )
 	, b_event( 0 )
+	, b_num_steps( 0 )
     { /* ... */ }
 
     //! State constructor.
@@ -84,10 +85,7 @@ class History
 	, b_weight( weight )
 	, b_alive( false )
 	, b_event( 0 )
-    { /* ... */ }
-
-    // Destructor.
-    ~History()
+	, b_num_steps( 0 )
     { /* ... */ }
 
     // Pack the history into a buffer.
@@ -133,25 +131,33 @@ class History
     { return std::abs(b_weight); }
 
     //! Kill the history.
-    void kill()
+    inline void kill()
     { b_alive = false; }
 
     //! Set the history alive.
-    void live()
+    inline void live()
     { b_alive = true; }
 
     //! Get the history live/dead status.
-    bool alive() const
+    inline bool alive() const
     { return b_alive; }
 
     //! Set the event flag.
-    void setEvent( const int event )
+    inline void setEvent( const int event )
     { b_event = event; }
 
     //! Get the last event.
-    int event() const
+    inline int event() const
     { return b_event; }
 
+    //! Add a step to the history.
+    inline void addStep()
+    { ++b_num_steps; }
+    
+    //! Get the number of steps this history has taken.
+    inline int numSteps() const
+    { return b_num_steps; }
+    
   public:
 
     // Set the byte size of the packed history state.
@@ -162,7 +168,7 @@ class History
 
   protected:
 
-    // History state in globial indexing.
+    // History state in global indexing.
     Ordinal b_global_state;
 
     // History state in local indexing.
@@ -177,6 +183,9 @@ class History
     // Latest history event.
     int b_event;
 
+    // Number of steps this history has taken.
+    int b_num_steps;
+    
   private:
 
     // Packed size of history in bytes.
