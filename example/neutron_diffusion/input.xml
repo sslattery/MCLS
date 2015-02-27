@@ -30,7 +30,7 @@
     <!--Local Monte Carlo Parameters--> 
     <Parameter name="MC Type" type="string" value="Adjoint"/>
     <Parameter name="Estimator Type" type="string" value="Collision"/>
-    <Parameter name="History Length" type="double" value="10"/>
+    <Parameter name="History Length" type="int" value="10"/>
     <Parameter name="Sample Ratio" type="double" value="1.0"/>
     <Parameter name="Composite Operator Threshold" type="double" value="1.0e-2"/>
   </ParameterList>
