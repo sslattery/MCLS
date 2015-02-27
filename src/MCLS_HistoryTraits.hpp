@@ -183,7 +183,7 @@ class HistoryTraits
     /*!
      * \brief Kill the history.
      */
-    static void kill( history_type& history )
+    static inline void kill( history_type& history )
     {
 	UndefinedHistoryTraits<History>::notDefined(); 
     }
@@ -191,7 +191,7 @@ class HistoryTraits
     /*!
      * \brief Set the history alive
      */
-    static void live( history_type& history )
+    static inline void live( history_type& history )
     {
 	UndefinedHistoryTraits<History>::notDefined(); 
     }
@@ -199,7 +199,7 @@ class HistoryTraits
     /*!
      * \brief Get the history live/dead status.
      */
-    static bool alive( const history_type& history )
+    static inline bool alive( const history_type& history )
     {
 	UndefinedHistoryTraits<History>::notDefined(); 
 	return false;
@@ -208,7 +208,7 @@ class HistoryTraits
     /*!
      * \brief Set the event flag.
      */
-    static void setEvent( history_type& history, const int event )
+    static inline void setEvent( history_type& history, const int event )
     {
 	UndefinedHistoryTraits<History>::notDefined(); 
     }
@@ -216,7 +216,7 @@ class HistoryTraits
     /*!
      * \brief Get the last event.
      */
-    static int event( const history_type& history )
+    static inline int event( const history_type& history )
     {
 	UndefinedHistoryTraits<History>::notDefined(); 
 	return -1;
@@ -225,7 +225,7 @@ class HistoryTraits
     /*!
      * \brief Set the byte size of the packed history state.
      */
-    static void setByteSize()
+    static inline void setByteSize()
     {
 	UndefinedHistoryTraits<History>::notDefined();
     }
@@ -233,10 +233,27 @@ class HistoryTraits
     /*!
      * \brief Get the number of bytes in the packed history state.
      */
-    static std::size_t getPackedBytes()
+    static inline std::size_t getPackedBytes()
     {
 	UndefinedHistoryTraits<History>::notDefined();
 	return 0;
+    }
+
+    /*!
+     * \brief Add a step to the history.
+     */
+    static inline void addStep( history_type& history )
+    {
+	UndefinedHistoryTraits<History>::notDefined();
+    }
+
+    /*!
+     * \brief Get the number of steps this history has taken.
+     */
+    static inline int numSteps( const history_type& history )
+    {
+	UndefinedHistoryTraits<History>::notDefined();
+	return -1;
     }
 };
 

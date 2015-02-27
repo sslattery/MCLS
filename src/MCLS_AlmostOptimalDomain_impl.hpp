@@ -71,6 +71,7 @@ namespace MCLS
 template<class Vector, class Matrix, class RNG, class Tally>
 AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::AlmostOptimalDomain()
     : b_rng_dist( RDT::create(0.0, 1.0) )
+    , b_history_length( 10 )
 { /* ... */ }
 
 //---------------------------------------------------------------------------//
@@ -85,6 +86,12 @@ void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::buildDomain(
     Teuchos::Array<Ordinal>& local_tally_states )
 {
     MCLS_REQUIRE( Teuchos::nonnull(A) );
+
+    // Get the history length.
+    if ( plist.isParameter("History Length") )
+    {
+	b_history_length = plist.get<int>("History Length");
+    }
 
     // Get the estimator type. User the collision estimator as the default.
     b_estimator = Estimator::COLLISION;
@@ -210,6 +217,9 @@ template<class Vector, class Matrix, class RNG, class Tally>
 void
 AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::packDomain( Serializer& s ) const
 {
+    // Pack in the history length.
+    s << Teuchos::as<int>(b_history_length);
+    
     // Pack the estimator type.
     s << Teuchos::as<int>(b_estimator);
 
@@ -352,6 +362,10 @@ void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::unpackDomain(
     Ordinal num_bnd = 0;
     Ordinal num_base = 0;
 
+    // Unpack the history length.
+    ds >> b_history_length;
+    MCLS_CHECK( b_history_length >= 0 );
+    
     // Unpack the estimator type.
     ds >> b_estimator;
     MCLS_CHECK( b_estimator >= 0 );

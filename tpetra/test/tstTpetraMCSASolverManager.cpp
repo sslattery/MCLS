@@ -73,7 +73,6 @@
 // have removed scalar types that are not floating point
 //---------------------------------------------------------------------------//
 #define UNIT_TEST_INSTANTIATION( type, name )			           \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, double )   \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
 
 //---------------------------------------------------------------------------//
@@ -137,11 +136,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, one_by_one_adjoint, LO, GO
     // Solver parameters.
     Teuchos::RCP<Teuchos::ParameterList> plist = 
 	Teuchos::rcp( new Teuchos::ParameterList() );
-    double cutoff = 1.0e-6;
     plist->set<std::string>("MC Type", "Adjoint");
     plist->set<double>("Convergence Tolerance", 1.0e-8);
     plist->set<int>("Maximum Iterations", 20);
-    plist->set<double>("Weight Cutoff", cutoff);
     plist->set<int>("MC Check Frequency", 50);
     plist->set<bool>("Reproducible MC Mode",true);
     plist->set<int>("Overlap Size", 2);
@@ -311,11 +308,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two_adjoint, LO, GO
 	// Solver parameters.
 	Teuchos::RCP<Teuchos::ParameterList> plist = 
 	    Teuchos::rcp( new Teuchos::ParameterList() );
-	double cutoff = 1.0e-4;
 	plist->set<std::string>("MC Type", "Adjoint");
 	plist->set<double>("Convergence Tolerance", 1.0e-8);
 	plist->set<int>("Maximum Iterations", 20);
-	plist->set<double>("Weight Cutoff", cutoff);
 	plist->set<int>("MC Check Frequency", 50);
 	plist->set<bool>("Reproducible MC Mode",true);
 	plist->set<int>("Overlap Size", 2);
@@ -502,11 +497,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, one_by_one_prec_adjoint, L
     // Solver parameters.
     Teuchos::RCP<Teuchos::ParameterList> plist = 
 	Teuchos::rcp( new Teuchos::ParameterList() );
-    double cutoff = 1.0e-6;
     plist->set<std::string>("MC Type", "Adjoint");
     plist->set<double>("Convergence Tolerance", 1.0e-8);
     plist->set<int>("Maximum Iterations", 20);
-    plist->set<double>("Weight Cutoff", cutoff);
     plist->set<int>("MC Check Frequency", 50);
     plist->set<bool>("Reproducible MC Mode",true);
     plist->set<int>("Overlap Size", 2);
@@ -695,11 +688,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two_prec_adjoint, L
 	// Solver parameters.
 	Teuchos::RCP<Teuchos::ParameterList> plist = 
 	    Teuchos::rcp( new Teuchos::ParameterList() );
-	double cutoff = 1.0e-4;
 	plist->set<std::string>("MC Type", "Adjoint");
 	plist->set<double>("Convergence Tolerance", 1.0e-8);
 	plist->set<int>("Maximum Iterations", 20);
-	plist->set<double>("Weight Cutoff", cutoff);
 	plist->set<int>("MC Check Frequency", 50);
 	plist->set<bool>("Reproducible MC Mode",true);
 	plist->set<int>("Overlap Size", 2);
@@ -899,11 +890,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, one_by_one_forward, LO, GO
     // Solver parameters.
     Teuchos::RCP<Teuchos::ParameterList> plist = 
 	Teuchos::rcp( new Teuchos::ParameterList() );
-    double cutoff = 1.0e-6;
     plist->set<std::string>("MC Type", "Forward");
     plist->set<double>("Convergence Tolerance", 1.0e-8);
     plist->set<int>("Maximum Iterations", 20);
-    plist->set<double>("Weight Cutoff", cutoff);
     plist->set<int>("MC Check Frequency", 50);
     plist->set<bool>("Reproducible MC Mode",true);
     plist->set<int>("Overlap Size", 2);
@@ -1073,11 +1062,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two_forward, LO, GO
 	// Solver parameters.
 	Teuchos::RCP<Teuchos::ParameterList> plist = 
 	    Teuchos::rcp( new Teuchos::ParameterList() );
-	double cutoff = 1.0e-4;
 	plist->set<std::string>("MC Type", "Forward");
 	plist->set<double>("Convergence Tolerance", 1.0e-8);
 	plist->set<int>("Maximum Iterations", 20);
-	plist->set<double>("Weight Cutoff", cutoff);
 	plist->set<int>("MC Check Frequency", 50);
 	plist->set<bool>("Reproducible MC Mode",true);
 	plist->set<int>("Overlap Size", 2);
@@ -1272,11 +1259,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, one_by_one_prec_forward, L
     // Solver parameters.
     Teuchos::RCP<Teuchos::ParameterList> plist = 
 	Teuchos::rcp( new Teuchos::ParameterList() );
-    double cutoff = 1.0e-6;
     plist->set<std::string>("MC Type", "Forward");
     plist->set<double>("Convergence Tolerance", 1.0e-8);
     plist->set<int>("Maximum Iterations", 20);
-    plist->set<double>("Weight Cutoff", cutoff);
     plist->set<int>("MC Check Frequency", 50);
     plist->set<bool>("Reproducible MC Mode",true);
     plist->set<int>("Overlap Size", 2);
@@ -1465,11 +1450,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSASolverManager, two_by_two_prec_forward, L
 	// Solver parameters.
 	Teuchos::RCP<Teuchos::ParameterList> plist = 
 	    Teuchos::rcp( new Teuchos::ParameterList() );
-	double cutoff = 1.0e-4;
 	plist->set<std::string>("MC Type", "Forward");
 	plist->set<double>("Convergence Tolerance", 1.0e-8);
 	plist->set<int>("Maximum Iterations", 20);
-	plist->set<double>("Weight Cutoff", cutoff);
 	plist->set<int>("MC Check Frequency", 50);
 	plist->set<bool>("Reproducible MC Mode",true);
 	plist->set<int>("Overlap Size", 2);

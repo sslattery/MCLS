@@ -78,7 +78,6 @@
 // have removed scalar types that are not floating point
 //---------------------------------------------------------------------------//
 #define UNIT_TEST_INSTANTIATION( type, name )			           \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, double )   \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
 
 //---------------------------------------------------------------------------//
@@ -155,8 +154,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformAdjointSource, nh_not_set, LO, GO, Sca
     HistoryType::setByteSize();
 
     // Create the adjoint source with default values.
-    double cutoff = 1.0e-8;
-    plist.set<double>("Weight Cutoff", cutoff );
     MCLS::UniformAdjointSource<DomainType> 
 	source( b, domain, comm, comm->getSize(), comm->getRank(), plist );
     TEST_ASSERT( source.empty() );
@@ -249,8 +246,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformAdjointSource, PackUnpack, LO, GO, Sca
     HistoryType::setByteSize();
 
     // Create the adjoint source with default values.
-    double cutoff = 1.0e-8;
-    plist.set<double>("Weight Cutoff", cutoff );
     MCLS::UniformAdjointSource<DomainType> 
 	primary_source( b, domain, comm, comm->getSize(), 
 			comm->getRank(), plist );
@@ -350,9 +345,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformAdjointSource, nh_set, LO, GO, Scalar 
 
     // Create the adjoint source with a set number of histories.
     int mult = 10;
-    double cutoff = 1.0e-8;
     plist.set<double>("Sample Ratio",mult);
-    plist.set<double>("Weight Cutoff", cutoff);
     MCLS::UniformAdjointSource<DomainType> 
 	source( b, domain, comm, comm->getSize(), comm->getRank(), plist );
     TEST_ASSERT( source.empty() );
@@ -445,9 +438,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( UniformAdjointSource, nh_set_pu, LO, GO, Scal
 
     // Create the adjoint source with a set number of histories.
     int mult = 10;
-    double cutoff = 1.0e-8;
     plist.set<double>("Sample Ratio",mult);
-    plist.set<double>("Weight Cutoff", cutoff);
     MCLS::UniformAdjointSource<DomainType> 
 	primary_source( b, domain, comm, comm->getSize(), 
 			comm->getRank(), plist );

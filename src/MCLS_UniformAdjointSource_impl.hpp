@@ -113,9 +113,6 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
 //---------------------------------------------------------------------------//
 /*!
  * \brief Deserializer constructor.
- *
- * Note that the relative weight cutoff will be set in the global parameter
- * list by the first call to the vector constructor above.
  */
 template<class Domain>
 UniformAdjointSource<Domain>::UniformAdjointSource( 

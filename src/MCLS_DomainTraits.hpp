@@ -130,9 +130,9 @@ class DomainTraits
     }
 
     /*!
-     * \brief Set a weight cutoff with the domain.
+     * \brief Set a fixed number of history steps with the domain.
      */
-    static void setCutoff( Domain& domain, const double cutoff )
+    static void setHistoryLength( Domain& domain, const int history_length )
     { 
 	UndefinedDomainTraits<Domain>::notDefined(); 
     }

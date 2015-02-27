@@ -78,7 +78,6 @@
 // have removed scalar types that are not floating point
 //---------------------------------------------------------------------------//
 #define UNIT_TEST_INSTANTIATION( type, name )			           \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, double )   \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
 
 //---------------------------------------------------------------------------//
@@ -140,10 +139,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MSODManager, two_by_two, LO, GO, Scalar )
 	HistoryType::setByteSize();
 
 	// Parameters.
-	double cutoff = 1.0e-8;
 	Teuchos::ParameterList plist;
 	plist.set<int>( "Overlap Size", 2 );
-	plist.set<double>( "Weight Cutoff", cutoff );
 	plist.set<int>( "Number of Sets", 2 );
 
 	// Declare variables globally.

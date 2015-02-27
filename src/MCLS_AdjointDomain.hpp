@@ -193,14 +193,6 @@ class DomainTraits<AdjointDomain<Vector,Matrix,RNG> >
     }
 
     /*!
-     * \brief Set a weight cutoff with the domain.
-     */
-    static void setCutoff( domain_type& domain, const double cutoff )
-    { 
-	domain.setCutoff( cutoff );
-    }
-
-    /*!
      * \brief Given a history with a global state in the local domain, set the
      * local state of that history.
      */

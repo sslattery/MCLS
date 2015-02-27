@@ -115,7 +115,7 @@ SourceTransporter<Source>::SourceTransporter(
     {
 	d_check_freq = plist.get<int>("MC Check Frequency");
     }
-
+    
     MCLS_ENSURE( d_check_freq > 0 );
     MCLS_ENSURE( Teuchos::nonnull(d_comm) );
     MCLS_ENSURE( Teuchos::nonnull(d_comm) );
@@ -127,13 +127,11 @@ SourceTransporter<Source>::SourceTransporter(
 */
 template<class Source>
 void SourceTransporter<Source>::assignSource(
-    const Teuchos::RCP<Source>& source,
-    const double relative_weight_cutoff )
+    const Teuchos::RCP<Source>& source )
 {
     MCLS_REQUIRE( Teuchos::nonnull(source) );
     MCLS_REQUIRE( Teuchos::nonnull(d_domain) );
     d_source = source;
-    DT::setCutoff( *d_domain, relative_weight_cutoff );
 }
 
 //---------------------------------------------------------------------------//
@@ -298,7 +296,7 @@ void SourceTransporter<Source>::localHistoryTransport(
 	d_domain_communicator.communicate( history );
     }
 
-    // Otherwise the history was killed by the weight cutoff.
+    // Otherwise the history was killed by the finishing all of its steps.
     else
     {
 	MCLS_CHECK( Event::CUTOFF == HT::event(*history) );

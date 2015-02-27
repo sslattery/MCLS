@@ -74,7 +74,6 @@
 // have removed scalar types that are not floating point
 //---------------------------------------------------------------------------//
 #define UNIT_TEST_INSTANTIATION( type, name )			           \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, double )   \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
 
 //---------------------------------------------------------------------------//
@@ -140,8 +139,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardSolverManager, one_by_one, LO, GO, Sca
     // Solver parameters.
     Teuchos::RCP<Teuchos::ParameterList> plist = 
 	Teuchos::rcp( new Teuchos::ParameterList() );
-    double cutoff = 1.0e-6;
-    plist->set<double>("Weight Cutoff", cutoff);
     plist->set<int>("MC Check Frequency", 10);
     plist->set<bool>("Reproducible MC Mode",true);
     plist->set<int>("Overlap Size", 2);
@@ -305,8 +302,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardSolverManager, two_by_two, LO, GO, Sca
 	// Solver parameters.
 	Teuchos::RCP<Teuchos::ParameterList> plist = 
 	    Teuchos::rcp( new Teuchos::ParameterList() );
-	double cutoff = 1.0e-4;
-	plist->set<double>("Weight Cutoff", cutoff);
 	plist->set<int>("MC Check Frequency", 500);
 	plist->set<bool>("Reproducible MC Mode",true);
 	plist->set<int>("Overlap Size", 2);
@@ -520,8 +515,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardSolverManager, one_by_one_prec, LO, GO
     // Solver parameters.
     Teuchos::RCP<Teuchos::ParameterList> plist = 
 	Teuchos::rcp( new Teuchos::ParameterList() );
-    double cutoff = 1.0e-6;
-    plist->set<double>("Weight Cutoff", cutoff);
     plist->set<int>("MC Check Frequency", 10);
     plist->set<bool>("Reproducible MC Mode",true);
     plist->set<int>("Overlap Size", 2);
@@ -704,8 +697,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ForwardSolverManager, two_by_two_prec, LO, GO
 	// Solver parameters.
 	Teuchos::RCP<Teuchos::ParameterList> plist = 
 	    Teuchos::rcp( new Teuchos::ParameterList() );
-	double cutoff = 1.0e-4;
-	plist->set<double>("Weight Cutoff", cutoff);
 	plist->set<int>("MC Check Frequency", 500);
 	plist->set<bool>("Reproducible MC Mode",true);
 	plist->set<int>("Overlap Size", 2);

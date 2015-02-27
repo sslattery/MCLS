@@ -239,7 +239,7 @@ class HistoryTraits<ForwardHistory<Ordinal> >
     /*!
      * \brief Kill the history.
      */
-    static void kill( history_type& history )
+    static inline void kill( history_type& history )
     {
 	history.kill();
     }
@@ -247,7 +247,7 @@ class HistoryTraits<ForwardHistory<Ordinal> >
     /*!
      * \brief Set the history alive
      */
-    static void live( history_type& history )
+    static inline void live( history_type& history )
     {
 	history.live();
     }
@@ -255,7 +255,7 @@ class HistoryTraits<ForwardHistory<Ordinal> >
     /*!
      * \brief Get the history live/dead status.
      */
-    static bool alive( const history_type& history )
+    static inline bool alive( const history_type& history )
     {
 	return history.alive();
     }
@@ -263,7 +263,7 @@ class HistoryTraits<ForwardHistory<Ordinal> >
     /*!
      * \brief Set the event flag.
      */
-    static void setEvent( history_type& history, const int event )
+    static inline void setEvent( history_type& history, const int event )
     {
 	history.setEvent( event );
     }
@@ -271,7 +271,7 @@ class HistoryTraits<ForwardHistory<Ordinal> >
     /*!
      * \brief Get the last event.
      */
-    static int event( const history_type& history )
+    static inline int event( const history_type& history )
     {
 	return history.event();
     }
@@ -279,7 +279,7 @@ class HistoryTraits<ForwardHistory<Ordinal> >
     /*!
      * \brief Set the byte size of the packed history state.
      */
-    static void setByteSize()
+    static inline void setByteSize()
     {
 	history_type::setByteSize();
     }
@@ -287,9 +287,25 @@ class HistoryTraits<ForwardHistory<Ordinal> >
     /*!
      * \brief Get the number of bytes in the packed history state.
      */
-    static std::size_t getPackedBytes()
+    static inline std::size_t getPackedBytes()
     {
 	return history_type::getPackedBytes();
+    }
+
+    /*!
+     * \brief Add a step to the history.
+     */
+    static inline void addStep( history_type& history )
+    {
+	history.addStep();
+    }
+
+    /*!
+     * \brief Get the number of steps this history has taken.
+     */
+    static inline int numSteps( const history_type& history )
+    {
+	return history.numSteps();
     }
 };
 

@@ -60,7 +60,6 @@ MCSolver<Source>::MCSolver( const Teuchos::RCP<const Comm>& set_comm,
 			    const Teuchos::RCP<Teuchos::ParameterList>& plist )
     : d_set_comm( set_comm )
     , d_plist( plist )
-    , d_relative_weight_cutoff( 0.0 )
     , d_rng( Teuchos::rcp(new PRNG<rng_type>(global_rank)) )
 #if HAVE_MCLS_TIMERS
     , d_mc_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: Monte Carlo") )
@@ -95,7 +94,7 @@ void MCSolver<Source>::solve()
     d_transporter->reset();
     
     // Assign the source to the transporter.
-    d_transporter->assignSource( d_source, d_relative_weight_cutoff );
+    d_transporter->assignSource( d_source );
 
     // Transport the source to solve the problem.
     {
@@ -157,13 +156,7 @@ void MCSolver<Source>::setSource( const Teuchos::RCP<Source>& source )
 
     // Build the source.
     ST::buildSource( *d_source );
-
-    // Get the weight cutoff.
-    double cutoff = d_plist->get<double>("Weight Cutoff");
-    d_relative_weight_cutoff = cutoff * ST::weight( *d_source, 0 );
-
     MCLS_ENSURE( Teuchos::nonnull(d_source) );
-    MCLS_ENSURE( d_relative_weight_cutoff > 0.0 );
 }
 
 //---------------------------------------------------------------------------//

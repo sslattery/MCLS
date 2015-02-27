@@ -90,9 +90,6 @@ class MCSolver
 	      const int global_rank,
 	      const Teuchos::RCP<Teuchos::ParameterList>& plist );
 
-    //! Destructor.
-    ~MCSolver() { /* ... */ }
-
     // Solve the linear problem.
     void solve();
 
@@ -109,9 +106,6 @@ class MCSolver
 
     // Problem parameters.
     Teuchos::RCP<Teuchos::ParameterList> d_plist;
-
-    // Relative weight cutoff.
-    double d_relative_weight_cutoff;
 
     // Random number generator.
     Teuchos::RCP<PRNG<rng_type> > d_rng;

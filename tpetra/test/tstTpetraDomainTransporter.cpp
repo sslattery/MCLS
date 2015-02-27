@@ -77,7 +77,6 @@
 // have removed scalar types that are not floating point
 //---------------------------------------------------------------------------//
 #define UNIT_TEST_INSTANTIATION( type, name )			           \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, double )   \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
 
 //---------------------------------------------------------------------------//
@@ -147,6 +146,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Cutoff, LO, GO, Scalar )
     // Build the adjoint domain.
     Teuchos::ParameterList plist;
     plist.set<int>( "Overlap Size", 2 );
+    plist.set<int>( "History Length", 1 );
     Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( A_T, x, plist ) );
     Teuchos::RCP<MCLS::PRNG<rng_type> > rng = Teuchos::rcp(
 	new MCLS::PRNG<rng_type>( comm->getRank() ) );
@@ -154,9 +154,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Cutoff, LO, GO, Scalar )
 
     // Build the domain transporter.
     double weight = 3.0; 
-    double relative_cutoff = weight / 2 + 0.01;
     MCLS::DomainTransporter<DomainType> transporter( domain, plist );
-    domain->setCutoff( relative_cutoff );
 
     // Transport histories through the domain.
     for ( int i = 0; i < global_num_rows-1; ++i )
@@ -284,7 +282,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Boundary, LO, GO, Scalar )
 
 	// Build the domain transporter.
 	MCLS::DomainTransporter<DomainType> transporter( domain, plist );
-	domain->setCutoff( 1.0e-12 );
 
 	// Transport histories through the domain until they hit a boundary.
 	double weight = 3.0; 

@@ -74,13 +74,11 @@ SubdomainTransporter<Source>::SubdomainTransporter(
 */
 template<class Source>
 void SubdomainTransporter<Source>::assignSource(
-    const Teuchos::RCP<Source>& source,
-    const double relative_weight_cutoff )
+    const Teuchos::RCP<Source>& source )
 {
     MCLS_REQUIRE( Teuchos::nonnull(source) );
     MCLS_REQUIRE( Teuchos::nonnull(d_domain) );
     d_source = source;
-    DT::setCutoff( *d_domain, relative_weight_cutoff );
 }
 
 //---------------------------------------------------------------------------//

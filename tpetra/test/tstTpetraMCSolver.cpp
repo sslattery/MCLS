@@ -77,7 +77,6 @@
 // have removed scalar types that are not floating point
 //---------------------------------------------------------------------------//
 #define UNIT_TEST_INSTANTIATION( type, name )			           \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, double )   \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
 
 //---------------------------------------------------------------------------//
@@ -146,8 +145,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSolver, solve, LO, GO, Scalar )
     // Create the solver.
     Teuchos::RCP<Teuchos::ParameterList> plist = 
 	Teuchos::rcp( new Teuchos::ParameterList() );
-    double cutoff = 1.0e-6;
-    plist->set<double>("Weight Cutoff", cutoff);
     plist->set<int>("MC Check Frequency", 10);
     plist->set<bool>("Reproducible MC Mode",true);
     plist->set<std::string>("Transport Type", "Global" );
@@ -164,7 +161,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSolver, solve, LO, GO, Scalar )
 	new SourceType( b, domain, comm, 
 			comm->getSize(), comm->getRank(), *plist ) );
     source->buildSource();
-    plist->set<double>("Relative Weight Cutoff", source->sourceWeight()*cutoff);
 
     // Set the Domain.
     solver.setDomain( domain );
@@ -188,7 +184,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSolver, solve, LO, GO, Scalar )
     VT::putScalar( *b, 2.0 );
     source->buildSource();
     solver.setSource( source );
-    plist->set<double>("Relative Weight Cutoff", source->sourceWeight()*cutoff);
     solver.solve();
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
@@ -207,7 +202,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MCSolver, solve, LO, GO, Scalar )
     // Reset both and solve with a negative source.
     VT::putScalar( *b, -2.0 );
     source->buildSource();
-    plist->set<double>("Relative Weight Cutoff", source->sourceWeight()*cutoff*2);
     solver.setDomain( domain );
     solver.setSource( source );
     solver.solve();

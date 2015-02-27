@@ -68,8 +68,7 @@ class GlobalTransporter
     virtual ~GlobalTransporter() { /* ... */ }
 
     // Assign the source.
-    virtual void assignSource( const Teuchos::RCP<Source>& source, 
-                               const double relative_weight_cutoff ) = 0;
+    virtual void assignSource( const Teuchos::RCP<Source>& source ) = 0;
 
     // Transport the source histories and all subsequent histories through the
     // domain to completion.

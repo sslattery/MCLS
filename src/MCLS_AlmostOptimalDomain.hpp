@@ -136,10 +136,6 @@ class AlmostOptimalDomain
     // Unpack the domain from a buffer.
     void unpackDomain( Deserializer& ds, Teuchos::Array<Ordinal>& base_rows );
 
-    //! Set the weight cutoff.
-    void setCutoff( const double weight_cutoff )
-    { b_weight_cutoff = weight_cutoff; }
-
     // Given a history with a global state in the local domain, set the local
     // state of that history.
     inline void setHistoryLocalState( HistoryType& history ) const;
@@ -147,9 +143,9 @@ class AlmostOptimalDomain
     // Process a history through a transition to a new state.
     inline void processTransition( HistoryType& history ) const;
 
-    //! Deterimine if a history should be terminated.
+    // Determine if we should terminate the history.
     inline bool terminateHistory( const HistoryType& history ) const
-    { return HT::weightAbs(history) < b_weight_cutoff; }
+    { return (HT::numSteps(history) >= b_history_length); }
 
     // Get the domain tally.
     Teuchos::RCP<Tally> domainTally() const
@@ -210,8 +206,8 @@ class AlmostOptimalDomain
     // Monte Carlo estimator type.
     int b_estimator;
 
-    // History weight cutoff.
-    double b_weight_cutoff;
+    // History length.
+    int b_history_length;
 
     // Domain tally.
     Teuchos::RCP<Tally> b_tally;
@@ -295,6 +291,9 @@ inline void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::processTransition(
     // Update the history weight with the transition weight.
     int transition_sign = ( b_h[in_state][out_state] > 0.0 ) ? 1 : -1;
     HT::multiplyWeight( history, b_weights[in_state]*transition_sign );
+
+    // Increment the history step count.
+    HT::addStep( history );
 }
 
 //---------------------------------------------------------------------------//

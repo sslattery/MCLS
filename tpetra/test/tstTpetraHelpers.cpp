@@ -63,7 +63,6 @@
 #include <Tpetra_BlockMap.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_VbrMatrix.hpp>
 
 //---------------------------------------------------------------------------//
 // Instantiation macro. 
@@ -71,7 +70,6 @@
 // These types are those enabled by Tpetra under explicit instantiation.
 //---------------------------------------------------------------------------//
 #define UNIT_TEST_INSTANTIATION( type, name )			           \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, double )   \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
 
 //---------------------------------------------------------------------------//

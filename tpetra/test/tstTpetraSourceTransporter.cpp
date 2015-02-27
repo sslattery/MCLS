@@ -79,7 +79,6 @@
 // have removed scalar types that are not floating point
 //---------------------------------------------------------------------------//
 #define UNIT_TEST_INSTANTIATION( type, name )			           \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, int, double )   \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
 
 //---------------------------------------------------------------------------//
@@ -183,9 +182,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SourceTransporter, transport, LO, GO, Scalar 
 
     // Create the adjoint source with a set number of histories.
     int mult = 100;
-    double cutoff = 1.0e-6;
     plist.set<double>("Sample Ratio",mult);
-    plist.set<double>("Weight Cutoff", cutoff);
     Teuchos::RCP<SourceType> source = Teuchos::rcp(
 	new SourceType( b, domain, comm, 
 			comm->getSize(), comm->getRank(), plist ) );
@@ -194,10 +191,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SourceTransporter, transport, LO, GO, Scalar 
 
     // Create the source transporter.
     plist.set<int>("MC Check Frequency", 10);
-    double relative_cutoff = source->sourceWeight()*cutoff;
     MCLS::SourceTransporter<SourceType> source_transporter( 
 	comm, domain, plist );
-    source_transporter.assignSource( source, relative_cutoff );
+    source_transporter.assignSource( source );
 
     // Do transport.
     source_transporter.transport();
