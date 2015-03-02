@@ -104,41 +104,9 @@ class TallyTraits
     }
 
     /*!
-     * \brief Combine the tallies together over a set. This is generally
-     * combining the tally and base tallies.
-     */
-    static void combineSetTallies( Tally& tally, 
-				   const Teuchos::RCP<const Comm>& set_comm )
-    {
-	UndefinedTallyTraits<Tally>::notDefined(); 
-    }
-
-    /*!
-     * \brief Combine the tallies together over a block communicator and
-     * normalize by the number of sets (the size of a block).
-     */
-    static void combineBlockTallies( 
-	Tally& tally,
-	const Teuchos::RCP<const Comm>& block_comm,
-        const int num_sets )
-    {
-	UndefinedTallyTraits<Tally>::notDefined(); 
-    }
-
-    /*!
      * \brief Normalize the tally with a specified number of histories.
      */
     static void normalize( Tally& tally, const int nh )
-    {
-	UndefinedTallyTraits<Tally>::notDefined(); 
-    }
-
-    /*!
-     * \brief Set the tally base vector. The maps are required to be
-     * compatible. 
-     */
-    static void setBaseVector( Tally& tally, 
-			       const Teuchos::RCP<vector_type>& x_base )
     {
 	UndefinedTallyTraits<Tally>::notDefined(); 
     }
@@ -152,12 +120,11 @@ class TallyTraits
     }
 
     /*!
-     * \brief Get the estimator type used by this tally.
+     * \brief Finalize the tally.
      */
-    static int estimatorType( const Tally& tally )
+    static void finalize( Tally& tally )
     {
-	UndefinedTallyTraits<Tally>::notDefined();
-	return -1;
+	UndefinedTallyTraits<Tally>::notDefined(); 
     }
 };
 

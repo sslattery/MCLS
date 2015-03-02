@@ -41,8 +41,6 @@
 #ifndef MCLS_ADJOINTTALLY_IMPL_HPP
 #define MCLS_ADJOINTTALLY_IMPL_HPP
 
-#include "MCLS_CommTools.hpp"
-
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ArrayRCP.hpp>
@@ -55,62 +53,11 @@ namespace MCLS
  * \brief Constructor.
  */
 template<class Vector>
-AdjointTally<Vector>::AdjointTally( const Teuchos::RCP<Vector>& x,
-                                    const Teuchos::RCP<Vector>& x_tally,
-                                    const int estimator )
+AdjointTally<Vector>::AdjointTally( const Teuchos::RCP<Vector>& x )
     : d_x( x )
-    , d_x_tally( x_tally )
-    , d_estimator( estimator )
 { 
-    d_export = Teuchos::rcp( new VectorExport<Vector>(d_x_tally, d_x) );
-    d_x_tally_view = VT::viewNonConst( *d_x_tally );
+    d_x_view = VT::viewNonConst( *d_x );
     MCLS_ENSURE( Teuchos::nonnull(d_x) );
-    MCLS_ENSURE( Teuchos::nonnull(d_x_tally) );
-    MCLS_ENSURE( Teuchos::nonnull(d_export) );
-    MCLS_ENSURE( Estimator::COLLISION == estimator || 
-		 Estimator::EXPECTED_VALUE == estimator );
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Combine the overlap tally with the operator decomposition tally in
- * the set.
- */
-template<class Vector>
-void AdjointTally<Vector>::combineSetTallies( 
-    const Teuchos::RCP<const Comm>& set_comm )
-{
-    d_export->doExportAdd();
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Combine the base tallies across a block and normalize by the number
- * of sets.
- */
-template<class Vector>
-void AdjointTally<Vector>::combineBlockTallies(
-    const Teuchos::RCP<const Comm>& block_comm, const int num_sets )
-{
-    MCLS_REQUIRE( Teuchos::nonnull(d_x) );
-    MCLS_REQUIRE( Teuchos::nonnull(block_comm) );
-    MCLS_REQUIRE( num_sets > 0 );
-
-    Teuchos::ArrayRCP<const Scalar> const_tally_view = VT::view( *d_x );
-
-    Teuchos::ArrayRCP<Scalar> copy_buffer( 
-	const_tally_view.size(), Teuchos::ScalarTraits<Scalar>::zero() );
-
-    CommTools::reduceSum<Scalar>( block_comm,
-                                  0,
-                                  Teuchos::as<int>( const_tally_view.size() ),
-                                  const_tally_view.getRawPtr(),
-                                  copy_buffer.getRawPtr() );
-
-    Teuchos::ArrayRCP<Scalar> tally_view = VT::viewNonConst( *d_x );
-    
-    std::copy( copy_buffer.begin(), copy_buffer.end(), tally_view.begin() );
-    VT::scale( *d_x, 1.0 / Teuchos::as<double>(num_sets) );
 }
 
 //---------------------------------------------------------------------------//
@@ -126,118 +73,13 @@ void AdjointTally<Vector>::normalize( const int& nh )
 
 //---------------------------------------------------------------------------//
 /*
- * \brief Set the base tally vector.
- */
-template<class Vector>
-void AdjointTally<Vector>::setBaseVector( const Teuchos::RCP<Vector>& x_base )
-{
-    MCLS_REQUIRE( Teuchos::nonnull(x_base) );
-    MCLS_REQUIRE( Teuchos::nonnull(d_x_tally) );
-    d_x = x_base;
-    d_export = Teuchos::rcp( new VectorExport<Vector>(d_x_tally, d_x) );
-}
-
-//---------------------------------------------------------------------------//
-/*
  * \brief Zero out operator decomposition and overlap decomposition tallies.
  */
 template<class Vector>
 void AdjointTally<Vector>::zeroOut()
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_x) );
-    MCLS_REQUIRE( Teuchos::nonnull(d_x_tally) );
     VT::putScalar( *d_x, Teuchos::ScalarTraits<Scalar>::zero() );
-    VT::putScalar( *d_x_tally, Teuchos::ScalarTraits<Scalar>::zero() );
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Get the number global rows in the base decomposition.
- */
-template<class Vector>
-typename AdjointTally<Vector>::Ordinal 
-AdjointTally<Vector>::numBaseRows() const
-{
-    MCLS_CHECK( Teuchos::nonnull(d_x) );
-    return VT::getLocalLength( *d_x );
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Get the number global rows in the tally decomposition.
- */
-template<class Vector>
-typename AdjointTally<Vector>::Ordinal 
-AdjointTally<Vector>::numTallyRows() const
-{
-    MCLS_CHECK( Teuchos::nonnull(d_x_tally) );
-    return VT::getLocalLength( *d_x_tally );
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Get the global rows in the base decomposition.
- */
-template<class Vector>
-Teuchos::Array<typename AdjointTally<Vector>::Ordinal>
-AdjointTally<Vector>::baseRows() const
-{
-    MCLS_CHECK( Teuchos::nonnull(d_x) );
-
-    Teuchos::Array<Ordinal> base_rows( VT::getLocalLength(*d_x) );
-    typename Teuchos::Array<Ordinal>::iterator row_it;
-    typename VT::local_ordinal_type local_row = 
-	Teuchos::OrdinalTraits<typename VT::local_ordinal_type>::zero();
-    for ( row_it = base_rows.begin();
-	  row_it != base_rows.end();
-	  ++row_it )
-    {
-	*row_it = VT::getGlobalRow( *d_x, local_row );
-	++local_row;
-    }
-
-    return base_rows;
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Get the global rows in the tally decomposition.
- */
-template<class Vector>
-Teuchos::Array<typename AdjointTally<Vector>::Ordinal>
-AdjointTally<Vector>::tallyRows() const
-{
-    MCLS_CHECK( Teuchos::nonnull(d_x_tally) );
-
-    Teuchos::Array<Ordinal> tally_rows( VT::getLocalLength(*d_x_tally) );
-    typename Teuchos::Array<Ordinal>::iterator row_it;
-    typename VT::local_ordinal_type local_row = 
-	Teuchos::OrdinalTraits<typename VT::local_ordinal_type>::zero();
-    for ( row_it = tally_rows.begin();
-	  row_it != tally_rows.end();
-	  ++row_it )
-    {
-	*row_it = VT::getGlobalRow( *d_x_tally, local_row );
-	++local_row;
-    }
-
-    return tally_rows;
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Set the iteration matrix with the tally
- */
-template<class Vector>
-void AdjointTally<Vector>::setIterationMatrix( 
-    const Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> >& h,
-    const Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<int> > >& columns )
-{
-    MCLS_REQUIRE( Estimator::EXPECTED_VALUE == d_estimator );
-    MCLS_REQUIRE( Teuchos::nonnull(h) );
-    MCLS_REQUIRE( Teuchos::nonnull(columns) );
-    d_h = h;
-    d_columns = columns;
 }
 
 //---------------------------------------------------------------------------//

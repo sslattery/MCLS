@@ -45,12 +45,9 @@
 
 #include "MCLS_VectorExport.hpp"
 #include "MCLS_Events.hpp"
-#include "MCLS_CommTools.hpp"
 
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayRCP.hpp>
-#include <Teuchos_CommHelpers.hpp>
 
 namespace MCLS
 {
@@ -60,13 +57,10 @@ namespace MCLS
  * \brief Constructor.
  */
 template<class Vector>
-ForwardTally<Vector>::ForwardTally( const Teuchos::RCP<Vector>& x,
-                                    const int estimator )
+ForwardTally<Vector>::ForwardTally( const Teuchos::RCP<Vector>& x )
     : d_x( x )
-    , d_estimator( estimator )
 { 
     MCLS_ENSURE( Teuchos::nonnull(d_x) );
-    MCLS_ENSURE( Estimator::COLLISION == estimator );
 }
 
 //---------------------------------------------------------------------------//
@@ -92,32 +86,47 @@ void ForwardTally<Vector>::postProcessHistory( const HistoryType& history )
 {
     MCLS_REQUIRE( !history.alive() );
     MCLS_REQUIRE( Event::CUTOFF == history.event() );
-    MCLS_REQUIRE( d_tally_states.size() == d_tally_values.size() );
 
     // If the history starting state has already been tallied, add the history
     // tally sum to the local sum and increment the tally count for the
     // starting state.
-    typename Teuchos::Array<Ordinal>::iterator state_it = 
-	std::find( d_tally_states.begin(), d_tally_states.end(), 
-		   history.startingState() );
-    if ( state_it != d_tally_states.end() )
+    if ( d_states_values_counts.count(history.startingState()) )
     {
-        typename VT::local_ordinal_type local_tally_state = 
-            std::distance(d_tally_states.begin(),state_it);
-	d_tally_values[ local_tally_state ] += history.historyTally();
-        d_tally_count[ local_tally_state ] += 1;
+	auto state_val_count =
+	    d_states_values_counts.find( history.startingState() );
+	state_val_count->second.first += history.historyTally();
+	state_val_count->second.second += 1;
     }
 
     // Otherwise add the history state to the local states, sum, and count.
     else
     {
-	d_tally_states.push_back( history.startingState() );
-	d_tally_values.push_back( history.historyTally() );
-        d_tally_count.push_back( 1 );
+	d_states_values_counts.emplace(
+	    history.startingState(), std::make_pair(history.historyTally(),1) );
     }
+}
+    
+//---------------------------------------------------------------------------//
+/*
+ * \brief Normalize base decomposition tally with the number of specified
+ * histories.
+ */
+template<class Vector>
+void ForwardTally<Vector>::normalize( const int& nh )
+{
+    VT::scale( *d_x, 1.0 );
+}
 
-    MCLS_ENSURE( d_tally_states.size() == d_tally_values.size() );
-    MCLS_ENSURE( d_tally_count.size() == d_tally_values.size() );
+//---------------------------------------------------------------------------//
+/*
+ * \brief Zero out tally data.
+ */
+template<class Vector>
+void ForwardTally<Vector>::zeroOut()
+{
+    MCLS_REQUIRE( Teuchos::nonnull(d_x) );
+    VT::putScalar( *d_x, 0.0 );
+    d_states_values_counts.clear();
 }
 
 //---------------------------------------------------------------------------//
@@ -126,22 +135,29 @@ void ForwardTally<Vector>::postProcessHistory( const HistoryType& history )
  * the set and normalize by the counted number of histories in each state.
  */
 template<class Vector>
-void ForwardTally<Vector>::combineSetTallies( 
-    const Teuchos::RCP<const Comm>& set_comm )
+void ForwardTally<Vector>::finalize()
 {
+    // Extract the tally states.
+    Teuchos::Array<Ordinal> tally_states( d_states_values_counts.size() );
+    typename Teuchos::Array<Ordinal>::iterator state_it;
+    typename std::unordered_map<Ordinal,std::pair<Scalar,int> >::const_iterator
+	svc_it;
+    for ( state_it = tally_states.begin(),
+	    svc_it = d_states_values_counts.begin();
+	  state_it != tally_states.end();
+	  ++state_it, ++svc_it )
+    {
+	*state_it = svc_it->first;
+    }
+    
     // Build a vector from the dead history states.
     Teuchos::RCP<Vector> x_tally = 
-	VT::createFromRows( set_comm, d_tally_states() );
+	VT::createFromRows( VT::getComm(*d_x), tally_states() );
 
     // Copy the tally data into the vector.
-    typename Teuchos::Array<Scalar>::const_iterator val_it;
-    typename Teuchos::Array<Ordinal>::const_iterator state_it;
-    for ( state_it = d_tally_states.begin(),
-	    val_it = d_tally_values.begin();
-	  state_it != d_tally_states.end();
-	  ++state_it, ++val_it )
+    for ( auto svc : d_states_values_counts )
     {
-	VT::sumIntoGlobalValue( *x_tally, *state_it, *val_it );
+	VT::sumIntoGlobalValue( *x_tally, svc.first, svc.second.first );
     }
 
     // Export the local history vector to the base vector.
@@ -152,17 +168,12 @@ void ForwardTally<Vector>::combineSetTallies(
 
     // Build a vector from the dead history states.
     Teuchos::RCP<Vector> count_tally = 
-	VT::createFromRows( set_comm, d_tally_states() );
+	VT::createFromRows( VT::getComm(*d_x), tally_states() );
  
     // Copy the tally counts into the vector.
-    typename Teuchos::Array<int>::const_iterator count_it;
-    for ( state_it = d_tally_states.begin(),
-	    count_it = d_tally_count.begin();
-	  state_it != d_tally_states.end();
-	  ++state_it, ++count_it )
+    for ( auto svc : d_states_values_counts )
     {
-	VT::sumIntoGlobalValue( *count_tally, *state_it, 
-                                Teuchos::as<Scalar>(*count_it) );
+	VT::sumIntoGlobalValue( *count_tally, svc.first, svc.second.second );
     }
 
     // Build a vector from the base states.
@@ -195,110 +206,6 @@ void ForwardTally<Vector>::combineSetTallies(
             *x_it = 0.0;
         }
     }
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Combine the base tallies across a block and normalize by the number
- * of sets.
- */
-template<class Vector>
-void ForwardTally<Vector>::combineBlockTallies(
-    const Teuchos::RCP<const Comm>& block_comm, const int num_sets )
-{
-    MCLS_REQUIRE( Teuchos::nonnull(d_x) );
-    MCLS_REQUIRE( Teuchos::nonnull(block_comm) );
-
-    MCLS_REQUIRE( num_sets > 0 );
-
-    Teuchos::ArrayRCP<const Scalar> const_tally_view = VT::view( *d_x );
-
-    Teuchos::ArrayRCP<Scalar> copy_buffer( 
-	const_tally_view.size(), Teuchos::ScalarTraits<Scalar>::zero() );
-
-    CommTools::reduceSum<Scalar>( block_comm,
-                                  0,
-                                  Teuchos::as<int>( const_tally_view.size() ),
-                                  const_tally_view.getRawPtr(),
-                                  copy_buffer.getRawPtr() );
-
-    Teuchos::ArrayRCP<Scalar> tally_view = VT::viewNonConst( *d_x );
-    
-    std::copy( copy_buffer.begin(), copy_buffer.end(), tally_view.begin() );
-    VT::scale( *d_x, 1.0 / Teuchos::as<double>(num_sets) );
-}
-
-//---------------------------------------------------------------------------//
-/*
- * \brief Normalize base decomposition tally with the number of specified
- * histories.
- */
-template<class Vector>
-void ForwardTally<Vector>::normalize( const int& nh )
-{
-    VT::scale( *d_x, 1.0 );
-}
-
-//---------------------------------------------------------------------------//
-/*
- * \brief Set the base tally vector.
- */
-template<class Vector>
-void ForwardTally<Vector>::setBaseVector( const Teuchos::RCP<Vector>& x_base )
-{
-    MCLS_REQUIRE( Teuchos::nonnull(x_base) );
-    d_x = x_base;
-}
-
-//---------------------------------------------------------------------------//
-/*
- * \brief Zero out tally data.
- */
-template<class Vector>
-void ForwardTally<Vector>::zeroOut()
-{
-    MCLS_REQUIRE( Teuchos::nonnull(d_x) );
-    VT::putScalar( *d_x, Teuchos::ScalarTraits<Scalar>::zero() );
-    d_tally_states.clear();
-    d_tally_values.clear();
-    d_tally_count.clear();
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Get the number global rows in the base decomposition.
- */
-template<class Vector>
-typename ForwardTally<Vector>::Ordinal 
-ForwardTally<Vector>::numBaseRows() const
-{
-    MCLS_CHECK( Teuchos::nonnull(d_x) );
-    return VT::getLocalLength( *d_x );
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Get the global rows in the base decomposition.
- */
-template<class Vector>
-Teuchos::Array<typename ForwardTally<Vector>::Ordinal>
-ForwardTally<Vector>::baseRows() const
-{
-    MCLS_CHECK( Teuchos::nonnull(d_x) );
-
-    Teuchos::Array<Ordinal> base_rows( VT::getLocalLength(*d_x) );
-    typename Teuchos::Array<Ordinal>::iterator row_it;
-    typename VT::local_ordinal_type local_row = 
-	Teuchos::OrdinalTraits<typename VT::local_ordinal_type>::zero();
-    for ( row_it = base_rows.begin();
-	  row_it != base_rows.end();
-	  ++row_it )
-    {
-	*row_it = VT::getGlobalRow( *d_x, local_row );
-	++local_row;
-    }
-
-    return base_rows;
 }
 
 //---------------------------------------------------------------------------//

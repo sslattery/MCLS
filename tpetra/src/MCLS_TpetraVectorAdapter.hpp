@@ -84,6 +84,15 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     }
 
     /*!
+     * \brief Get the communicator.
+     */
+    static Teuchos::RCP<const Teuchos::Comm<int> >
+    getComm( const vector_type& vector )
+    {
+	return vector.getComm();
+    }
+
+    /*!
      * \brief Create a reference-counted pointer to a new empty vector with
      * the same parallel distribution given by the input rows.
      */

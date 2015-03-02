@@ -42,14 +42,13 @@
 #define MCLS_FORWARDTALLY_HPP
 
 #include <unordered_map>
+
 #include "MCLS_DBC.hpp"
 #include "MCLS_ForwardHistory.hpp"
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_TallyTraits.hpp"
-#include "MCLS_Estimators.hpp"
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Comm.hpp>
 
 namespace MCLS
 {
@@ -72,17 +71,10 @@ class ForwardTally
     typedef typename VT::global_ordinal_type                    Ordinal;
     typedef typename VT::scalar_type                            Scalar;
     typedef ForwardHistory<Ordinal>                             HistoryType;
-    typedef Teuchos::Comm<int>                                  Comm;
-    typedef typename std::unordered_map<Ordinal,int>            MapType;
     //@}
 
     // Constructor.
-    ForwardTally( const Teuchos::RCP<Vector>& x,
-                  const int estimator );
-
-    // Destructor.
-    ~ForwardTally()
-    { /* ... */ }
+    ForwardTally( const Teuchos::RCP<Vector>& x );
 
     // Assign the source vector to the tally.
     void setSource( const Teuchos::RCP<Vector>& b );
@@ -93,33 +85,15 @@ class ForwardTally
     // Post-process a history if it is permanently killed in the local domain.
     void postProcessHistory( const HistoryType& history );
 
-    // Combine the overlap tally with the base decomposition tally in the set
-    // and normalize by the counted number of histories in each set.
-    void combineSetTallies( const Teuchos::RCP<const Comm>& set_comm );
-
-    // Combine the secondary tallies with the primary tally across a
-    // block. Normalize the result with the number of sets.
-    void combineBlockTallies( const Teuchos::RCP<const Comm>& block_comm,
-                              const int num_sets );
-
     // Normalize base decomposition tally with the number of specified
     // histories.
     void normalize( const int& nh );
 
-    // Set the base tally vector.
-    void setBaseVector( const Teuchos::RCP<Vector>& x_base );
-
     // Zero out the tallies.
     void zeroOut();
 
-    // Get the number global rows in the base decomposition.
-    Ordinal numBaseRows() const;
-
-    // Get the global tally rows in the base decomposition.
-    Teuchos::Array<Ordinal> baseRows() const;
-
-    //! Get the estimator type for this tally.
-    int estimatorType() const { return d_estimator; }
+    // Finalize the tally.
+    void finalize();
 
   private:
 
@@ -132,17 +106,8 @@ class ForwardTally
     // View of the local source.
     Teuchos::ArrayRCP<const Scalar> d_b_view;
 
-    // Tally states.
-    Teuchos::Array<Ordinal> d_tally_states;
-
-    // Tally values.
-    Teuchos::Array<Scalar> d_tally_values;
-
-    // Tally count.
-    Teuchos::Array<int> d_tally_count;
-
-    // Monte Carlo estimator type.
-    int d_estimator;
+    // Tally states, values, and counts.
+    std::unordered_map<Ordinal,std::pair<Scalar,int> > d_states_values_counts;
 };
 
 //---------------------------------------------------------------------------//
@@ -157,7 +122,6 @@ inline void ForwardTally<Vector>::tallyHistory( HistoryType& history )
     MCLS_REQUIRE( history.alive() );
     MCLS_REQUIRE( Teuchos::nonnull(d_b) );
     MCLS_REQUIRE( VT::isLocalRow(*d_b,history.localState()) );
-    MCLS_REQUIRE( Estimator::COLLISION == d_estimator );
 
     history.addToHistoryTally( 
 	history.weight() * d_b_view[history.localState()] );
@@ -181,7 +145,6 @@ class TallyTraits<ForwardTally<Vector> >
     typedef typename tally_type::vector_type           vector_type;
     typedef typename tally_type::Ordinal               ordinal_type;
     typedef typename tally_type::HistoryType           history_type;
-    typedef Teuchos::Comm<int>                         Comm;
     //@}
 
     /*!
@@ -203,42 +166,11 @@ class TallyTraits<ForwardTally<Vector> >
     }
 
     /*!
-     * \brief Combine the tallies together over a set. This is generally
-     * combining the overlap and base tallies.
-     */
-    static void combineSetTallies( tally_type& tally,
-				   const Teuchos::RCP<const Comm>& set_comm )
-    {
-	tally.combineSetTallies( set_comm );
-    }
-
-    /*!
-     * \brief Combine the tallies together over a block communicator.
-     */
-    static void combineBlockTallies( 
-	tally_type& tally,
-	const Teuchos::RCP<const Comm>& block_comm,
-        const int num_sets )
-    {
-	tally.combineBlockTallies( block_comm, num_sets );
-    }
-
-    /*!
      * \brief Normalize the tally with a specified number of histories.
      */
     static void normalize( tally_type& tally, const int nh )
     {
 	tally.normalize( nh );
-    }
-
-    /*!
-     * \brief Set the tally base vector. The maps are required to be
-     * compatible. 
-     */
-    static void setBaseVector( tally_type& tally, 
-			       const Teuchos::RCP<vector_type>& x_base )
-    {
-	tally.setBaseVector( x_base );
     }
 
     /*!
@@ -250,11 +182,11 @@ class TallyTraits<ForwardTally<Vector> >
     }
 
     /*!
-     * \brief Get the estimator type used by this tally.
+     * \brief Finalize the tally.
      */
-    static int estimatorType( const tally_type& tally )
+    static void finalize( tally_type& tally )
     {
-	return tally.estimatorType();
+	tally.finalize();
     }
 };
 
