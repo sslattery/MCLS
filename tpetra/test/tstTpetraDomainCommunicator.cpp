@@ -50,7 +50,7 @@
 
 #include <MCLS_DomainCommunicator.hpp>
 #include <MCLS_DomainTransporter.hpp>
-#include <MCLS_AdjointDomain.hpp>
+#include <MCLS_AlmostOptimalDomain.hpp>
 #include <MCLS_VectorTraits.hpp>
 #include <MCLS_TpetraAdapter.hpp>
 #include <MCLS_AdjointHistory.hpp>
@@ -71,23 +71,13 @@
 #include <Tpetra_Vector.hpp>
 
 //---------------------------------------------------------------------------//
-// Instantiation macro. 
-// 
-// These types are those enabled by Tpetra under explicit instantiation. I
-// have removed scalar types that are not floating point
-//---------------------------------------------------------------------------//
-#define UNIT_TEST_INSTANTIATION( type, name )			           \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
-
-//---------------------------------------------------------------------------//
 // Helper functions.
 //---------------------------------------------------------------------------//
-template<class GO>
-Teuchos::RCP<MCLS::AdjointHistory<GO> > makeHistory( 
-    GO state, double weight, int streamid )
+Teuchos::RCP<MCLS::AdjointHistory<long> > makeHistory( 
+    long state, double weight, int streamid )
 {
-    Teuchos::RCP<MCLS::AdjointHistory<GO> > history = Teuchos::rcp(
-	new MCLS::AdjointHistory<GO>( state, state, weight ) );
+    Teuchos::RCP<MCLS::AdjointHistory<long> > history = Teuchos::rcp(
+	new MCLS::AdjointHistory<long>( state, state, weight ) );
     history->setEvent( MCLS::Event::BOUNDARY );
     return history;
 }
@@ -95,37 +85,16 @@ Teuchos::RCP<MCLS::AdjointHistory<GO> > makeHistory(
 //---------------------------------------------------------------------------//
 // Test templates
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Typedefs, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST( DomainCommunicator, Communicate )
 {
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType,std::mt19937> DomainType;
-    typedef MCLS::AdjointHistory<GO> HistoryType;
-
-    typedef MCLS::DomainTransporter<DomainType> TransportType;
-    typedef typename TransportType::HistoryType history_type;
-    typedef typename TransportType::BankType bank_type;
-
-    TEST_EQUALITY_CONST( 
-	(Teuchos::TypeTraits::is_same<HistoryType, history_type>::value)
-	== true, true );
-    TEST_EQUALITY_CONST( 
-	(Teuchos::TypeTraits::is_same<bank_type, 
-	 std::stack<Teuchos::RCP<HistoryType> > >::value)
-	 == true, true );
-}
-
-UNIT_TEST_INSTANTIATION( DomainCommunicator, Typedefs )
-
-//---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Communicate, LO, GO, Scalar )
-{
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
+    typedef Tpetra::Vector<double,int,long> VectorType;
+    typedef Tpetra::CrsMatrix<double,int,long> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::AdjointHistory<GO> HistoryType;
+    typedef MCLS::AdjointHistory<long> HistoryType;
     typedef std::mt19937 rng_type;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType,rng_type> DomainType;
+    typedef MCLS::AdjointTally<VectorType> TallyType;
+    typedef MCLS::AlmostOptimalDomain<VectorType,MatrixType,rng_type,TallyType>
+	DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -137,13 +106,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Communicate, LO, GO, Scal
     {
 	int local_num_rows = 10;
 	int global_num_rows = local_num_rows*comm_size;
-	Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
-	    Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
+	Teuchos::RCP<const Tpetra::Map<int,long> > map = 
+	    Tpetra::createUniformContigMap<int,long>( global_num_rows, comm );
 
 	// Build the linear operator and solution vector.
-	Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
-	Teuchos::Array<GO> global_columns( 1 );
-	Teuchos::Array<Scalar> values( 1 );
+	Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<double,int,long>( map );
+	Teuchos::Array<long> global_columns( 1 );
+	Teuchos::Array<double> values( 1 );
 	for ( int i = 1; i < global_num_rows; ++i )
 	{
 	    global_columns[0] = i-1;
@@ -243,21 +212,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Communicate, LO, GO, Scal
 	    TEST_ASSERT( !domain->isGlobalState(10) );
 
 	    Teuchos::RCP<HistoryType> h1 = 
-		makeHistory<GO>( 10, 1.1, comm_rank*4 + 1 );
+		makeHistory( 10, 1.1, comm_rank*4 + 1 );
 	    const typename MCLS::DomainCommunicator<DomainType>::Result
 		r1 = communicator.communicate( h1 );
 	    TEST_ASSERT( !r1.sent );
 	    TEST_EQUALITY( communicator.sendBufferSize(), 1 );
 
 	    Teuchos::RCP<HistoryType> h2 = 
-		makeHistory<GO>( 10, 2.1, comm_rank*4 + 2 );
+		makeHistory( 10, 2.1, comm_rank*4 + 2 );
 	    const typename MCLS::DomainCommunicator<DomainType>::Result
 		r2 = communicator.communicate( h2 );
 	    TEST_ASSERT( !r2.sent );
 	    TEST_EQUALITY( communicator.sendBufferSize(), 2 );
 
 	    Teuchos::RCP<HistoryType> h3 = 
-		makeHistory<GO>( 10, 3.1, comm_rank*4 + 3 );
+		makeHistory( 10, 3.1, comm_rank*4 + 3 );
 	    const typename MCLS::DomainCommunicator<DomainType>::Result
 		r3 = communicator.communicate( h3 );
 	    TEST_ASSERT( r3.sent );
@@ -273,21 +242,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Communicate, LO, GO, Scal
 	    TEST_ASSERT( !domain->isGlobalState((comm_rank+1)*10) );
 
 	    Teuchos::RCP<HistoryType> h1 = 
-		makeHistory<GO>( (comm_rank+1)*10, 1.1, comm_rank*4 + 1 );
+		makeHistory( (comm_rank+1)*10, 1.1, comm_rank*4 + 1 );
 	    const typename MCLS::DomainCommunicator<DomainType>::Result
 		r1 = communicator.communicate( h1 );
 	    TEST_ASSERT( !r1.sent );
 	    TEST_EQUALITY( communicator.sendBufferSize(), 1 );
 
 	    Teuchos::RCP<HistoryType> h2 = 
-		makeHistory<GO>( (comm_rank+1)*10, 2.1, comm_rank*4 + 2 );
+		makeHistory( (comm_rank+1)*10, 2.1, comm_rank*4 + 2 );
 	    const typename MCLS::DomainCommunicator<DomainType>::Result
 		r2 = communicator.communicate( h2 );
 	    TEST_ASSERT( !r2.sent );
 	    TEST_EQUALITY( communicator.sendBufferSize(), 2 );
 
 	    Teuchos::RCP<HistoryType> h3 = 
-		makeHistory<GO>( (comm_rank+1)*10, 3.1, comm_rank*4 + 3 );
+		makeHistory( (comm_rank+1)*10, 3.1, comm_rank*4 + 3 );
 	    const typename MCLS::DomainCommunicator<DomainType>::Result
 		r3 = communicator.communicate( h3 );
 	    TEST_ASSERT( r3.sent );
@@ -356,8 +325,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainCommunicator, Communicate, LO, GO, Scal
     // correctly. 
     comm->barrier();
 }
-
-UNIT_TEST_INSTANTIATION( DomainCommunicator, Communicate )
 
 //---------------------------------------------------------------------------//
 // end tstTpetraDomainCommunicator.cpp
