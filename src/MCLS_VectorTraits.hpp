@@ -99,6 +99,16 @@ class VectorTraits
     }
 
     /*!
+     * \brief Get the communicator.
+     */
+    static Teuchos::RCP<const Teuchos::Comm<int> >
+    getComm( const Vector& vector )
+    {
+	UndefinedVectorTraits<Vector>::notDefined(); 
+	return Teuchos::null; 
+    }
+
+    /*!
      * \brief Create a reference-counted pointer to a new empty vector with
      * the same parallel distribution given by the input rows.
      */

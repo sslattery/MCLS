@@ -22,8 +22,6 @@ SET(HEADERS ${HEADERS}
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
-  MCLS_AdjointDomain.hpp
-  MCLS_AdjointDomain_impl.hpp
   MCLS_AdjointHistory.hpp
   MCLS_AdjointHistory_impl.hpp
   MCLS_AdjointSolverManager.hpp
@@ -43,15 +41,12 @@ APPEND_SET(HEADERS
   MCLS_DomainTraits.hpp
   MCLS_DomainTransporter.hpp
   MCLS_DomainTransporter_impl.hpp
-  MCLS_Estimators.hpp
   MCLS_Events.hpp
   MCLS_FixedPointIteration.hpp
   MCLS_FixedPointIterationFactory.hpp
   MCLS_FixedPointIterationFactory_impl.hpp
   MCLS_FixedPointSolverManager.hpp
   MCLS_FixedPointSolverManager_impl.hpp
-  MCLS_ForwardDomain.hpp
-  MCLS_ForwardDomain_impl.hpp
   MCLS_ForwardHistory.hpp
   MCLS_ForwardHistory_impl.hpp
   MCLS_ForwardSolverManager.hpp

@@ -47,10 +47,12 @@
 #include <random>
 
 #include "MCLS_DBC.hpp"
+#include "MCLS_DomainTraits.hpp"
 #include "MCLS_SamplingTools.hpp"
 #include "MCLS_Events.hpp"
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_MatrixTraits.hpp"
+#include "MCLS_TallyTraits.hpp"
 #include "MCLS_PRNG.hpp"
 #include "MCLS_RNGTraits.hpp"
 #include "MCLS_HistoryTraits.hpp"
@@ -82,15 +84,14 @@ namespace MCLS
  * where the transition probabilities are relative to the iteration matrix
  * components.
  *
- * This domain contains data for all local states in the system, including the
- * overlap and neighboring domains. This object is responsible for creating
- * the tally for the solution vector over the domain as it has ownership of
- * the parallel decomposition of the domain.
+ * This domain contains data for all local states in the system. This object
+ * is responsible for creating the tally for the solution vector over the
+ * domain as it has ownership of the parallel decomposition of the domain.
  *
- * For all estimator types, the AlmostOptimalDomain constructs weights for all
- * transitions, cumulative distribution functions for each local state in the
- * system that can be sampled, and the associated states for those CDFs to
- * which a given initial state in the local system can transition to.
+ * The AlmostOptimalDomain constructs weights for all transitions, cumulative
+ * distribution functions for each local state in the system that can be
+ * sampled, and the associated states for those CDFs to which a given initial
+ * state in the local system can transition to.
  */
 template<class Vector, class Matrix, class RNG, class Tally>
 class AlmostOptimalDomain
@@ -104,8 +105,9 @@ class AlmostOptimalDomain
     typedef Matrix                                        matrix_type;
     typedef MatrixTraits<Vector,Matrix>                   MT;
     typedef typename VT::global_ordinal_type              Ordinal;
-    typedef Tally                                         tally_type;
-    typedef typename tally_type::HistoryType              HistoryType;
+    typedef Tally                                         TallyType;
+    typedef TallyTraits<Tally>                            TT;
+    typedef typename TT::history_type                     HistoryType;
     typedef HistoryTraits<HistoryType>                    HT;
     typedef std::stack<Teuchos::RCP<HistoryType> >        BankType;
     typedef RNG                                           rng_type;
@@ -114,27 +116,14 @@ class AlmostOptimalDomain
     typedef RandomDistributionTraits<RandomDistribution>  RDT;
     //@}
 
-    // Default constructor.
-    AlmostOptimalDomain();
-
-    // Destructor.
-    virtual ~AlmostOptimalDomain()
-    { /* ... */ }
-
-    // Build the domain.
-    void buildDomain( const Teuchos::RCP<const Matrix>& A,
-		      const Teuchos::ParameterList& plist,
-		      Teuchos::Array<Ordinal>& local_tally_states );
+    // Constructor.
+    AlmostOptimalDomain( const Teuchos::RCP<const Matrix>& A,
+			 const Teuchos::RCP<Vector>& x,
+			 const Teuchos::ParameterList& plist );
 
     // Set the random number generator.
     void setRNG( const Teuchos::RCP<PRNG<RNG> >& rng )
-    { b_rng = rng; }
-
-    // Pack the domain into a buffer.
-    void packDomain( Serializer& s ) const;
-
-    // Unpack the domain from a buffer.
-    void unpackDomain( Deserializer& ds, Teuchos::Array<Ordinal>& base_rows );
+    { d_rng = rng; }
 
     // Given a history with a global state in the local domain, set the local
     // state of that history.
@@ -145,11 +134,11 @@ class AlmostOptimalDomain
 
     // Determine if we should terminate the history.
     inline bool terminateHistory( const HistoryType& history ) const
-    { return (HT::numSteps(history) >= b_history_length); }
+    { return (HT::numSteps(history) >= d_history_length); }
 
     // Get the domain tally.
     Teuchos::RCP<Tally> domainTally() const
-    { return b_tally; }
+    { return d_tally; }
 
     // Determine if a given state global is in the local domain.
     inline bool isGlobalState( const Ordinal& state ) const;
@@ -159,14 +148,14 @@ class AlmostOptimalDomain
 
     //! Get the number of neighboring domains from which we will receive.
     int numReceiveNeighbors() const
-    { return b_receive_ranks.size(); }
+    { return d_receive_ranks.size(); }
 
     // Get the neighbor domain process rank from which we will receive.
     int receiveNeighborRank( int n ) const;
 
     //! Get the number of neighboring domains to which we will send.
     int numSendNeighbors() const
-    { return b_send_ranks.size(); }
+    { return d_send_ranks.size(); }
 
     // Get the neighbor domain process rank to which we will send.
     int sendNeighborRank( int n ) const;
@@ -182,14 +171,16 @@ class AlmostOptimalDomain
 
   private:
 
+    // Build the domain.
+    void buildDomain( const Teuchos::RCP<const Matrix>& A,
+		      const Teuchos::ParameterList& plist );
+
     // Add matrix data to the local domain.
     void addMatrixToDomain( const Teuchos::RCP<const Matrix>& A,
-                            std::set<Ordinal>& tally_states,
 			    const double relaxation );
 
     // Build boundary data.
-    void buildBoundary( const Teuchos::RCP<const Matrix>& A,
-			const Teuchos::RCP<const Matrix>& base_A );
+    void buildBoundary( const Teuchos::RCP<const Matrix>& A );
 
     // Given a crs matrix, compute its spectral radius.
     double computeSpectralRadius( 
@@ -198,49 +189,46 @@ class AlmostOptimalDomain
   protected:
 
     // Random number generator.
-    Teuchos::RCP<PRNG<RNG> > b_rng;
+    Teuchos::RCP<PRNG<RNG> > d_rng;
 
     // Random number distribution.
-    Teuchos::RCP<RandomDistribution> b_rng_dist;
-
-    // Monte Carlo estimator type.
-    int b_estimator;
+    Teuchos::RCP<RandomDistribution> d_rng_dist;
 
     // History length.
-    int b_history_length;
+    int d_history_length;
 
     // Domain tally.
-    Teuchos::RCP<Tally> b_tally;
+    Teuchos::RCP<Tally> d_tally;
 
     // Global-to-local row indexer.
-    std::unordered_map<Ordinal,int> b_g2l_row_indexer;
+    std::unordered_map<Ordinal,int> d_g2l_row_indexer;
 
     // Local CDF columns in global indexing.
-    Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > > b_global_columns;
+    Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<Ordinal> > > d_global_columns;
 
     // Local CDF columns in local indexing.
-    Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<int> > > b_local_columns;
+    Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::Array<int> > > d_local_columns;
 
     // Local CDF values.
-    Teuchos::ArrayRCP<Teuchos::Array<double> > b_cdfs;
+    Teuchos::ArrayRCP<Teuchos::Array<double> > d_cdfs;
 
     // Local iteration matrix values.
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > b_h;
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > d_h;
 
     // Local weights.
-    Teuchos::ArrayRCP<double> b_weights;
+    Teuchos::ArrayRCP<double> d_weights;
 
     // Neighboring domain process ranks from which we will receive.
-    Teuchos::Array<int> b_receive_ranks;
+    Teuchos::Array<int> d_receive_ranks;
 
     // Neighboring domain process ranks to which we will send.
-    Teuchos::Array<int> b_send_ranks;
+    Teuchos::Array<int> d_send_ranks;
 
     // Boundary state to owning neighbor local id table.
-    std::unordered_map<Ordinal,int> b_bnd_to_neighbor;
+    std::unordered_map<Ordinal,int> d_bnd_to_neighbor;
 
     // Parallel communicator.
-    Teuchos::RCP<const Teuchos::Comm<int> > b_comm;
+    Teuchos::RCP<const Teuchos::Comm<int> > d_comm;
 };
 
 //---------------------------------------------------------------------------//
@@ -255,9 +243,9 @@ inline void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::setHistoryLocalState(
     HistoryType& history ) const
 {
     MCLS_REQUIRE( isGlobalState(HT::globalState(history)) );
-    MCLS_REQUIRE( b_g2l_row_indexer.count(HT::globalState(history)) );
+    MCLS_REQUIRE( d_g2l_row_indexer.count(HT::globalState(history)) );
     HT::setLocalState( 
-	history, b_g2l_row_indexer.find(HT::globalState(history))->second );
+	history, d_g2l_row_indexer.find(HT::globalState(history))->second );
 }
 
 //---------------------------------------------------------------------------//
@@ -268,7 +256,7 @@ template<class Vector, class Matrix, class RNG, class Tally>
 inline void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::processTransition( 
     HistoryType& history ) const
 {
-    MCLS_REQUIRE( Teuchos::nonnull(b_rng) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_rng) );
     MCLS_REQUIRE( HT::alive(history) );
     MCLS_REQUIRE( Event::TRANSITION == HT::event(history) );
     MCLS_REQUIRE( isGlobalState(HT::globalState(history)) );
@@ -278,19 +266,19 @@ inline void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::processTransition(
 
     // Sample the row CDF to get a new outgoing state.
     int out_state = 
-	SamplingTools::sampleDiscreteCDF( b_cdfs[in_state].getRawPtr(),
-					  b_cdfs[in_state].size(),
-					  b_rng->random(*b_rng_dist) );
+	SamplingTools::sampleDiscreteCDF( d_cdfs[in_state].getRawPtr(),
+					  d_cdfs[in_state].size(),
+					  d_rng->random(*d_rng_dist) );
 
     // Set the new local state with the history.
-    HT::setLocalState( history, (*b_local_columns[in_state])[out_state] );
+    HT::setLocalState( history, (*d_local_columns[in_state])[out_state] );
 
     // Set the new global state with the history.
-    HT::setGlobalState( history, (*b_global_columns[in_state])[out_state] );
+    HT::setGlobalState( history, (*d_global_columns[in_state])[out_state] );
 
     // Update the history weight with the transition weight.
-    int transition_sign = ( b_h[in_state][out_state] > 0.0 ) ? 1 : -1;
-    HT::multiplyWeight( history, b_weights[in_state]*transition_sign );
+    int transition_sign = ( d_h[in_state][out_state] > 0.0 ) ? 1 : -1;
+    HT::multiplyWeight( history, d_weights[in_state]*transition_sign );
 
     // Increment the history step count.
     HT::addStep( history );
@@ -304,7 +292,7 @@ template<class Vector, class Matrix, class RNG, class Tally>
 inline bool AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::isGlobalState( 
     const Ordinal& state ) const
 {
-    return b_g2l_row_indexer.count( state );
+    return d_g2l_row_indexer.count( state );
 }
 
 //---------------------------------------------------------------------------//
@@ -315,8 +303,141 @@ template<class Vector, class Matrix, class RNG, class Tally>
 inline bool AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::isBoundaryState( 
     const Ordinal& state ) const
 {
-    return b_bnd_to_neighbor.count( state );
+    return d_bnd_to_neighbor.count( state );
 }
+
+//---------------------------------------------------------------------------//
+// DomainTraits implementation.
+//---------------------------------------------------------------------------//
+/*!
+ * \class DomainTraits
+ * \brief Traits implementation for the AlmostOptimalDomain.
+ */
+template<class Vector, class Matrix, class RNG, class Tally>
+class DomainTraits<AlmostOptimalDomain<Vector,Matrix,RNG,Tally> >
+{
+  public:
+
+    //@{
+    //! Typedefs.
+    typedef AlmostOptimalDomain<Vector,Matrix,RNG,Tally> domain_type;
+    typedef typename domain_type::Ordinal                ordinal_type;
+    typedef typename domain_type::HistoryType            history_type;
+    typedef typename domain_type::TallyType              tally_type;
+    typedef typename domain_type::BankType               bank_type;
+    typedef typename domain_type::rng_type               rng_type;
+    //@}
+
+    /*!
+     * \brief Set a random number generator with the domain.
+     */
+    static void setRNG( domain_type& domain,
+			const Teuchos::RCP<PRNG<rng_type> >& rng )
+    {
+	domain.setRNG( rng );
+    }
+
+    /*!
+     * \brief Given a history with a global state in the local domain, set the
+     * local state of that history.
+     */
+    static inline void setHistoryLocalState( 
+	const domain_type& domain, history_type& history )
+    { 
+	domain.setHistoryLocalState( history );
+    }
+
+    /*!
+     * \brief Process a history through a transition in the local domain to a
+     * new state
+     */
+    static inline void processTransition( 
+	const domain_type& domain, history_type& history )
+    { 
+	domain.processTransition( history );
+    }
+
+    /*!
+     * \brief Deterimine if a history should be terminated.
+     */
+    static inline bool terminateHistory( 
+	const domain_type& domain, const history_type& history )
+    { 
+	return domain.terminateHistory( history );
+    }
+
+    /*!
+     * \brief Get the tally associated with this domain.
+     */
+    static Teuchos::RCP<tally_type> domainTally( const domain_type& domain )
+    { 
+	return domain.domainTally();
+    }
+
+    /*!
+     * \brief Determine if a given state is in the local domain.
+     */
+    static inline bool isGlobalState( const domain_type& domain, 
+			      const ordinal_type state )
+    { 
+	return domain.isGlobalState( state );
+    }
+
+    /*!
+     * \brief Determine if a given state is on the boundary.
+     */
+    static inline bool isBoundaryState( const domain_type& domain, 
+                                 const ordinal_type state )
+    { 
+	return domain.isBoundaryState( state );
+    }
+
+    /*!
+     * \brief Get the number of neighbors from which this domain will
+     * receive. 
+     */
+    static int numReceiveNeighbors( const domain_type& domain )
+    {
+	return domain.numReceiveNeighbors();
+    }
+
+    /*!
+     * \brief Given a local neighbor ID, return the proc rank of that
+     * neighbor. 
+     */
+    static int receiveNeighborRank( const domain_type& domain, 
+				    int neighbor_id )
+    {
+	return domain.receiveNeighborRank( neighbor_id );
+    }
+
+    /*!
+     * \brief Get the number of neighbors to which this domain will send.
+     */
+    static int numSendNeighbors( const domain_type& domain )
+    {
+	return domain.numSendNeighbors();
+    }
+
+    /*!
+     * \brief Given a local neighbor ID, return the proc rank of that
+     * neighbor. 
+     */
+    static int sendNeighborRank( const domain_type& domain, int neighbor_id )
+    {
+	return domain.sendNeighborRank( neighbor_id );
+    }
+
+    /*!
+     * \brief Given a state on the boundary or this domain, return the ID of
+     * the owning neighbor.
+     */
+    static int owningNeighbor( const domain_type& domain, 
+			       const ordinal_type state )
+    {
+	return domain.owningNeighbor( state );
+    }
+};
 
 //---------------------------------------------------------------------------//
 

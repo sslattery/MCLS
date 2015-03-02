@@ -89,7 +89,7 @@ class VectorTraits<Tpetra::Vector<Scalar,LO,GO> >
     static Teuchos::RCP<const Teuchos::Comm<int> >
     getComm( const vector_type& vector )
     {
-	return vector.getComm();
+	return vector.getMap()->getComm();
     }
 
     /*!

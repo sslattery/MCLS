@@ -51,15 +51,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  TpetraAdjointDomain_tests
-  SOURCES tstTpetraAdjointDomain.cpp ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  TpetraForwardDomain_tests
-  SOURCES tstTpetraForwardDomain.cpp ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
+  TpetraAlmostOptimalDomain_tests
+  SOURCES tstTpetraAlmostOptimalDomain.cpp ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )

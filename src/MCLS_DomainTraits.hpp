@@ -100,44 +100,6 @@ class DomainTraits
     }
 
     /*!
-     * \brief Create a reference-counted pointer to a new domain defined over
-     * the given communicator by unpacking a data buffer. 
-     */
-    static Teuchos::RCP<Domain> 
-    createFromBuffer( const Teuchos::RCP<const Comm>& comm,
-		      const Teuchos::ArrayView<char>& buffer )
-    { 
-	UndefinedDomainTraits<Domain>::notDefined(); 
-	return Teuchos::null; 
-    }
-
-    /*!
-     * \brief Pack a domain into a buffer.
-     */
-    static Teuchos::Array<char> pack( const Domain& domain )
-    { 
-	UndefinedDomainTraits<Domain>::notDefined(); 
-	return Teuchos::Array<char>(0);
-    }
-
-    /*!
-     * \brief Get the size of domain in packed bytes.
-     */
-    static std::size_t getPackedBytes( const Domain& domain )
-    { 
-	UndefinedDomainTraits<Domain>::notDefined(); 
-	return 0;
-    }
-
-    /*!
-     * \brief Set a fixed number of history steps with the domain.
-     */
-    static void setHistoryLength( Domain& domain, const int history_length )
-    { 
-	UndefinedDomainTraits<Domain>::notDefined(); 
-    }
-
-    /*!
      * \brief Given a history with a global state in the local domain, set the
      * local state of that history.
      */
@@ -165,26 +127,6 @@ class DomainTraits
     { 
 	UndefinedDomainTraits<Domain>::notDefined(); 
 	return false;
-    }
-
-    /*!
-     * \brief Given a local index in the domain get the global index.
-     */
-    static ordinal_type 
-    localToGlobal( const Domain& domain, const int local_id )
-    {
-	UndefinedDomainTraits<Domain>::notDefined();
-	return 0;
-    }
-
-    /*!
-     * \brief Given a local index in the domain get the global index.
-     */
-    static int 
-    globalToLocal( const Domain& domain, const ordinal_type global_id  )
-    {
-	UndefinedDomainTraits<Domain>::notDefined();
-	return 0;
     }
 
     /*!

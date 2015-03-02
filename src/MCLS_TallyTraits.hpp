@@ -86,6 +86,24 @@ class TallyTraits
     //@}
 
     /*!
+     * \brief Factory method. This methods builds a tally around a vector.
+     */
+    static Teuchos::RCP<Tally> create( const Teuchos::RCP<vector_type>& vector )
+    { 
+	UndefinedTallyTraits<Tally>::notDefined();
+	return Teuchos::null;
+    }
+
+    /*!
+     * \brief Get the vector under the tally.
+     */
+    static Teuchos::RCP<vector_type> getVector( const Tally& tally )
+    {
+	UndefinedTallyTraits<Tally>::notDefined();
+	return Teuchos::null;
+    }
+    
+    /*!
      * \brief Add a history's contribution to the tally.
      */
     static inline void tallyHistory( Tally& tally, 

@@ -76,6 +76,10 @@ class ForwardTally
     // Constructor.
     ForwardTally( const Teuchos::RCP<Vector>& x );
 
+    // Get the vector under the tally.
+    Teuchos::RCP<Vector> getVector() const
+    { return d_x; }
+
     // Assign the source vector to the tally.
     void setSource( const Teuchos::RCP<Vector>& b );
 
@@ -146,6 +150,23 @@ class TallyTraits<ForwardTally<Vector> >
     typedef typename tally_type::Ordinal               ordinal_type;
     typedef typename tally_type::HistoryType           history_type;
     //@}
+
+    /*!
+     * \brief Factory method. This methods builds a tally around a vector.
+     */
+    static Teuchos::RCP<tally_type>
+    create( const Teuchos::RCP<vector_type>& vector )
+    { 
+	return Teuchos::rcp( new tally_type(vector) );
+    }
+
+    /*!
+     * \brief Get the vector under the tally.
+     */
+    static Teuchos::RCP<vector_type> getVector( const tally_type& tally )
+    {
+	return tally.getVector();
+    }
 
     /*!
      * \brief Add a history's contribution to the tally.
