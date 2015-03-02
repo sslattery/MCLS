@@ -74,8 +74,6 @@ APPEND_SET(HEADERS
   MCLS_MCSolver_impl.hpp
   MCLS_MinimalResidualIteration.hpp
   MCLS_MinimalResidualIteration_impl.hpp
-  MCLS_MSODManager.hpp
-  MCLS_MSODManager_impl.hpp
   MCLS_Preconditioner.hpp
   MCLS_PRNG.hpp
   MCLS_PRNG_impl.hpp
