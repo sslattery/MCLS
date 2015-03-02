@@ -49,7 +49,6 @@
 #include "MCLS_RNGTraits.hpp"
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Comm.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_Array.hpp>
@@ -83,7 +82,6 @@ class UniformAdjointSource
     typedef VectorTraits<VectorType>                      VT;
     typedef typename VT::scalar_type                      Scalar;
     typedef typename Domain::rng_type                     rng_type;
-    typedef Teuchos::Comm<int>                            Comm;
     typedef RNGTraits<rng_type>                           RNGT;
     typedef typename RNGT::uniform_real_distribution_type RandomDistribution;
     typedef RandomDistributionTraits<RandomDistribution>  RDT;
@@ -92,30 +90,11 @@ class UniformAdjointSource
     // Constructor.
     UniformAdjointSource( const Teuchos::RCP<VectorType>& b,
 			  const Teuchos::RCP<Domain>& domain,
-			  const Teuchos::RCP<const Comm>& set_comm,
-			  const int global_comm_size,
-			  const int global_comm_rank,
 			  const Teuchos::ParameterList& plist );
-
-    // Deserializer constructor.
-    UniformAdjointSource( const Teuchos::ArrayView<char>& buffer,
-			  const Teuchos::RCP<Domain>& domain,
-			  const Teuchos::RCP<const Comm>& set_comm,
-			  const int global_comm_size,
-			  const int global_comm_rank );
-
-    // Destructor.
-    ~UniformAdjointSource() { /* ... */ }
 
     // Set the random number generator.
     void setRNG( const Teuchos::RCP<PRNG<rng_type> >& rng )
     { d_rng = rng; }
-
-    // Pack the source into a buffer.
-    Teuchos::Array<char> pack() const;
-
-    // Get the size of this object in packed bytes.
-    std::size_t getPackedBytes() const;
 
     // Build the source.
     void buildSource();
@@ -176,19 +155,10 @@ class UniformAdjointSource
     // Random number distribution.
     Teuchos::RCP<RandomDistribution> d_rng_dist;
 
-    // Communicator for this set.
-    Teuchos::RCP<const Comm> d_set_comm;
-
     // Delayed stack of stratified source histories. First value of pair is
     // the local state the history will be born in, second value is the number
     // of histories left to create in that local state.
     std::stack<std::pair<int,int> > d_history_stack;
-
-    // Size of global communicator (all sets, all blocks).
-    int d_global_size;
-
-    // Global rank of this proc (all sets, all blocks).
-    int d_global_rank;
 
     // Number of requested histories.
     int d_nh_requested;
@@ -237,7 +207,6 @@ class SourceTraits<UniformAdjointSource<Domain> >
     typedef typename source_type::HistoryType           history_type;
     typedef typename source_type::domain_type           domain_type;
     typedef typename source_type::rng_type              rng_type;
-    typedef Teuchos::Comm<int>                          Comm;
     //@}
 
     /*!
@@ -247,41 +216,6 @@ class SourceTraits<UniformAdjointSource<Domain> >
 			const Teuchos::RCP<PRNG<rng_type> >& rng )
     {
 	source.setRNG( rng );
-    }
-
-    /*!
-     * \brief Create a reference-counted pointer to a new source defined over
-     * the given communicator and domain by unpacking a data buffer.
-     */
-    static Teuchos::RCP<source_type> 
-    createFromBuffer( const Teuchos::ArrayView<char>& buffer,
-		      const Teuchos::RCP<const Comm>& comm,
-		      const Teuchos::RCP<domain_type>& domain,
-		      const int global_comm_size,
-		      const int global_comm_rank )
-
-    { 
-	return Teuchos::rcp( new source_type( buffer,
-					      domain,
-					      comm,
-					      global_comm_size,
-					      global_comm_rank ) );
-    }
-
-    /*!
-     * \brief Pack a source into a buffer.
-     */
-    static Teuchos::Array<char> pack( const source_type& source )
-    { 
-	return source.pack();
-    }
-
-    /*!
-     * \brief Get the size of source in packed bytes.
-     */
-    static std::size_t getPackedBytes( const source_type& source )
-    { 
-	return source.getPackedBytes();
     }
 
     /*!

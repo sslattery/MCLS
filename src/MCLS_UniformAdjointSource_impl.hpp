@@ -60,16 +60,10 @@ template<class Domain>
 UniformAdjointSource<Domain>::UniformAdjointSource( 
     const Teuchos::RCP<VectorType>& b,
     const Teuchos::RCP<Domain>& domain,
-    const Teuchos::RCP<const Comm>& set_comm,
-    const int global_comm_size,
-    const int global_comm_rank,
     const Teuchos::ParameterList& plist )
     : d_b( b )
     , d_domain( domain )
     , d_rng_dist( RDT::create(0.0, 1.0) )
-    , d_set_comm( set_comm )
-    , d_global_size( global_comm_size )
-    , d_global_rank( global_comm_rank )
     , d_nh_requested( VT::getGlobalLength(*d_b) )
     , d_nh_total(0)
     , d_nh_domain(0)
@@ -81,7 +75,6 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_b) );
     MCLS_REQUIRE( Teuchos::nonnull(d_domain) );
-    MCLS_REQUIRE( Teuchos::nonnull(d_set_comm) );
 
     // Get the requested number of histories. The default value is a sample
     // ratio of 1.
@@ -91,7 +84,8 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
 	    VT::getGlobalLength(*d_b) * plist.get<double>("Sample Ratio");
     }
     
-    // Determine whether to use random or stratified source sampling.
+    // Determine whether to use random or stratified source sampling. Default
+    // to use random sampling.
     if ( plist.isParameter("Source Sampling Type") )
     {
         if ( plist.get<std::string>("Source Sampling Type") == "Random" )
@@ -108,158 +102,6 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
     // Set the total to the requested amount. This may change based on the
     // global stratified sampling.
     d_nh_total = d_nh_requested;
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Deserializer constructor.
- */
-template<class Domain>
-UniformAdjointSource<Domain>::UniformAdjointSource( 
-    const Teuchos::ArrayView<char>& buffer,
-    const Teuchos::RCP<Domain>& domain,
-    const Teuchos::RCP<const Comm>& set_comm,
-    const int global_comm_size,
-    const int global_comm_rank )
-    : d_domain( domain )
-    , d_rng_dist( RDT::create(0.0, 1.0) )
-    , d_set_comm( set_comm )
-    , d_global_size( global_comm_size )
-    , d_global_rank( global_comm_rank )
-    , d_nh_requested(0)
-    , d_nh_total(0)
-    , d_nh_domain(0)
-    , d_weight(0)
-    , d_nh_left(0)
-    , d_nh_emitted(0)
-{
-    MCLS_REQUIRE( Teuchos::nonnull(d_domain) );
-    MCLS_REQUIRE( Teuchos::nonnull(d_set_comm) );
-
-    Deserializer ds;
-    ds.setBuffer( buffer() );
-
-    // Unpack the sampling type.
-    ds >> d_random_sampling;
-    MCLS_CHECK( 0 == d_random_sampling || 1 == d_random_sampling );
-
-    // Unpack the requested number of histories.
-    ds >> d_nh_requested;
-    MCLS_CHECK( d_nh_requested > 0 );
-
-    // Unpack the size of the local source data.
-    std::size_t local_size = 0;
-    ds >> local_size;
-    MCLS_CHECK( local_size > 0 );
-
-    // Unpack the source global rows.
-    Teuchos::ArrayRCP<Ordinal> global_rows( local_size );
-    typename Teuchos::ArrayRCP<Ordinal>::iterator row_it;
-    for ( row_it = global_rows.begin(); 
-	  row_it != global_rows.end();
-	  ++row_it )
-    {
-	ds >> *row_it;
-    }
-
-    // Build the source vector.
-    d_b = VT::createFromRows( d_set_comm, global_rows() );
-
-    // Unpack the local source data.
-    Teuchos::ArrayRCP<Scalar> b_view = VT::viewNonConst( *d_b );
-    typename Teuchos::ArrayRCP<Scalar>::iterator data_it;
-    for ( data_it = b_view.begin(); data_it != b_view.end(); ++data_it )
-    {
-	ds >> *data_it;
-    }
-    MCLS_CHECK( ds.getPtr() == ds.end() );
-
-    // Set the weight.
-    d_weight = VT::norm1( *d_b );
-
-    // Set the total to the requested amount. This may change based on the
-    // global stratified sampling.
-    d_nh_total = d_nh_requested;
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Pack the source into a buffer.
- */
-template<class Domain>
-Teuchos::Array<char> UniformAdjointSource<Domain>::pack() const
-{
-    // Get the byte size of the buffer.
-    std::size_t packed_bytes = getPackedBytes();
-    MCLS_CHECK( packed_bytes );
-
-    // Build the buffer and set it with the serializer.
-    Teuchos::Array<char> buffer( packed_bytes );
-    Serializer s;
-    s.setBuffer( buffer() );
-
-    // Pack the sampling type.
-    s << d_random_sampling;
-
-    // Pack the requested number of histories.
-    s << d_nh_requested;
-
-    // Pack the size of the local source data.
-    s << Teuchos::as<std::size_t>( d_local_length );
-
-    // Pack the source global rows.
-    for ( Ordinal i = 0; i < d_local_length; ++i )
-    {
-	s << Teuchos::as<Ordinal>( VT::getGlobalRow(*d_b,i) );
-    }
-
-    // Pack the local source data.
-    Teuchos::ArrayRCP<const Scalar> b_view = VT::view(*d_b );
-    typename Teuchos::ArrayRCP<const Scalar>::const_iterator b_view_it;
-    for ( b_view_it = b_view.begin(); b_view_it != b_view.end(); ++b_view_it )
-    {
-	s << *b_view_it;
-    }
-
-    MCLS_ENSURE( s.getPtr() == s.end() );
-
-    return buffer;
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Compute the size of this object in bytes.
- */
-template<class Domain>
-std::size_t UniformAdjointSource<Domain>::getPackedBytes() const
-{
-    Serializer s;
-    s.computeBufferSizeMode();
-
-    // Pack the sampling type.
-    s << d_random_sampling;
-
-    // Pack the requested number of histories.
-    s << d_nh_requested;
-
-    // Pack the size of the local source data.
-    s << Teuchos::as<std::size_t>( d_local_length );
-
-    // Pack the source global rows.
-    for ( Ordinal i = 0; i < d_local_length; ++i )
-    {
-	s << Teuchos::as<Ordinal>( VT::getGlobalRow(*d_b,i) );
-    }
-
-    // Pack the local source data.
-    Teuchos::ArrayRCP<const Scalar> b_view = VT::view(*d_b );
-    typename Teuchos::ArrayRCP<const Scalar>::const_iterator b_view_it;
-    for ( b_view_it = b_view.begin(); b_view_it != b_view.end(); ++b_view_it )
-    {
-	s << *b_view_it;
-    }
-
-    return s.size();
 }
 
 //---------------------------------------------------------------------------//
@@ -285,7 +127,7 @@ void UniformAdjointSource<Domain>::buildSource()
     }
 
     // The total size may have changed due to integer rounding.
-    Teuchos::reduceAll( *d_set_comm, Teuchos::REDUCE_SUM, 
+    Teuchos::reduceAll( *VT::getComm(*d_b), Teuchos::REDUCE_SUM, 
 			d_nh_domain, Teuchos::Ptr<int>(&d_nh_total) );
     MCLS_CHECK( d_nh_total > 0 );
 
@@ -324,8 +166,7 @@ UniformAdjointSource<Domain>::getHistory()
     MCLS_CHECK( DT::isGlobalState(*d_domain,starting_state) );
 
     // Set the history state.
-    Ordinal weight_sign = (d_local_source[local_state] > 0.0) -
-			  (d_local_source[local_state] < 0.0);
+    Ordinal weight_sign = (d_local_source[local_state] > 0.0) ? 1 : -1;
     history->setWeight( d_weight * weight_sign );
     history->setGlobalState( starting_state );
     history->live();
