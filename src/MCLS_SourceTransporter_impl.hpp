@@ -65,7 +65,7 @@ SourceTransporter<Source>::SourceTransporter(
     , d_children( Teuchos::OrdinalTraits<int>::invalid(),
                   Teuchos::OrdinalTraits<int>::invalid() )
     , d_domain( domain )
-    , d_domain_transporter( d_domain, plist )
+    , d_domain_transporter( d_domain )
     , d_domain_communicator( d_domain, d_comm, plist )
     , d_num_done_report( Teuchos::ArrayRCP<int>(1,0), Teuchos::ArrayRCP<int>(1,0) )
     , d_complete_report( Teuchos::ArrayRCP<int>(1,0) )
@@ -249,7 +249,7 @@ void SourceTransporter<Source>::transportSourceHistory( BankType& bank )
 
     // Transport the history through the local domain and communicate it if
     // needed. 
-    localHistoryTransport( history, bank );
+    localHistoryTransport( history );
 }
 
 //---------------------------------------------------------------------------//
@@ -271,7 +271,7 @@ void SourceTransporter<Source>::transportBankHistory( BankType& bank )
 
     // Transport the history through the local domain and communicate it if
     // needed. 
-    localHistoryTransport( history, bank );
+    localHistoryTransport( history );
 }
 
 //---------------------------------------------------------------------------//
@@ -280,8 +280,7 @@ void SourceTransporter<Source>::transportBankHistory( BankType& bank )
  */
 template<class Source>
 void SourceTransporter<Source>::localHistoryTransport( 
-    const Teuchos::RCP<HistoryType>& history, 
-    BankType& bank )
+    const Teuchos::RCP<HistoryType>& history )
 {
     MCLS_REQUIRE( Teuchos::nonnull(history) );
     MCLS_REQUIRE( HT::alive(*history) );

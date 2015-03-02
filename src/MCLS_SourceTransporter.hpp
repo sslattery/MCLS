@@ -91,9 +91,6 @@ class SourceTransporter : public GlobalTransporter<Source>
 		       const Teuchos::RCP<Domain>& domain, 
 		       const Teuchos::ParameterList& plist );
 
-    // Destructor.
-    ~SourceTransporter() { /* ... */ }
-
     // Assign the source.
     void assignSource( const Teuchos::RCP<Source>& source );
 
@@ -113,8 +110,7 @@ class SourceTransporter : public GlobalTransporter<Source>
     void transportBankHistory( BankType& bank );
 
     // Transport a history through the local domain.
-    void localHistoryTransport( const Teuchos::RCP<HistoryType>& history, 
-				BankType& bank );
+    void localHistoryTransport( const Teuchos::RCP<HistoryType>& history );
 
     // Process incoming messages.
     void processMessages( BankType& bank );

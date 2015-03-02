@@ -99,40 +99,6 @@ class SourceTraits
     }
 
     /*!
-     * \brief Create a reference-counted pointer to a new source defined over
-     * the given communicator and domain by unpacking a data buffer.
-     */
-    static Teuchos::RCP<Source> 
-    createFromBuffer( const Teuchos::ArrayView<char>& buffer,
-		      const Teuchos::RCP<const Comm>& comm,
-		      const Teuchos::RCP<domain_type>& domain,
-		      const int global_comm_size,
-		      const int global_comm_rank )
-
-    { 
-	UndefinedSourceTraits<Source>::notDefined(); 
-	return Teuchos::null; 
-    }
-
-    /*!
-     * \brief Pack a source into a buffer.
-     */
-    static Teuchos::Array<char> pack( const Source& source )
-    { 
-	UndefinedSourceTraits<Source>::notDefined(); 
-	return Teuchos::Array<char>(0);
-    }
-
-    /*!
-     * \brief Get the size of source in packed bytes.
-     */
-    static std::size_t getPackedBytes( const Source& source )
-    { 
-	UndefinedSourceTraits<Source>::notDefined(); 
-	return 0;
-    }
-
-    /*!
      * \brief Build the source.
      */
     static void buildSource( Source& source )

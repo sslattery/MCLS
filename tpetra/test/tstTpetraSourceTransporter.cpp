@@ -51,11 +51,12 @@
 
 #include <MCLS_SourceTransporter.hpp>
 #include <MCLS_UniformAdjointSource.hpp>
-#include <MCLS_AdjointDomain.hpp>
+#include <MCLS_AlmostOptimalDomain.hpp>
 #include <MCLS_VectorTraits.hpp>
 #include <MCLS_MatrixTraits.hpp>
 #include <MCLS_TpetraAdapter.hpp>
 #include <MCLS_AdjointHistory.hpp>
+#include <MCLS_AdjointTally.hpp>
 #include <MCLS_Events.hpp>
 #include <MCLS_PRNG.hpp>
 
@@ -73,54 +74,17 @@
 #include <Tpetra_Vector.hpp>
 
 //---------------------------------------------------------------------------//
-// Instantiation macro. 
-// 
-// These types are those enabled by Tpetra under explicit instantiation. I
-// have removed scalar types that are not floating point
-//---------------------------------------------------------------------------//
-#define UNIT_TEST_INSTANTIATION( type, name )			           \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
-
-//---------------------------------------------------------------------------//
-// Test templates
-//---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SourceTransporter, Typedefs, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST( SourceTransporter, transport )
 {
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType,std::mt19937> DomainType;
-    typedef MCLS::AdjointHistory<GO> HistoryType;
-    typedef MCLS::UniformAdjointSource<DomainType> SourceType;
-    typedef std::stack<Teuchos::RCP<HistoryType> > BankType;
-
-    typedef MCLS::SourceTransporter<SourceType> SourceTransporterType;
-    typedef typename SourceTransporterType::HistoryType history_type;
-    typedef typename SourceTransporterType::BankType bank_type;
-    typedef typename SourceTransporterType::Domain domain_type;
-
-    TEST_EQUALITY_CONST( 
-	(Teuchos::TypeTraits::is_same<HistoryType, history_type>::value)
-	== true, true );
-    TEST_EQUALITY_CONST( 
-	(Teuchos::TypeTraits::is_same<BankType, bank_type>::value)
-	== true, true );
-    TEST_EQUALITY_CONST( 
-	(Teuchos::TypeTraits::is_same<DomainType, domain_type>::value)
-	== true, true );
-}
-
-UNIT_TEST_INSTANTIATION( SourceTransporter, Typedefs )
-
-//---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SourceTransporter, transport, LO, GO, Scalar )
-{
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef Tpetra::Vector<double,int,long> VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
+    typedef Tpetra::CrsMatrix<double,int,long> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::AdjointHistory<GO> HistoryType;
+    typedef MCLS::AdjointHistory<long> HistoryType;
     typedef std::mt19937 rng_type;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType,rng_type> DomainType;
+    typedef MCLS::AdjointTally<VectorType> TallyType;
+    typedef MCLS::AlmostOptimalDomain<VectorType,MatrixType,rng_type,TallyType>
+	DomainType;
     typedef MCLS::UniformAdjointSource<DomainType> SourceType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -129,14 +93,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SourceTransporter, transport, LO, GO, Scalar 
 
     int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
-    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
-	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
+    Teuchos::RCP<const Tpetra::Map<int,long> > map = 
+	Tpetra::createUniformContigMap<int,long>( global_num_rows, comm );
 
     // Build the linear system. This operator is symmetric with a spectral
     // radius less than 1.
-    Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
-    Teuchos::Array<GO> global_columns( 3 );
-    Teuchos::Array<Scalar> values( 3 );
+    Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<double,int,long>( map );
+    Teuchos::Array<long> global_columns( 3 );
+    Teuchos::Array<double> values( 3 );
     global_columns[0] = 0;
     global_columns[1] = 1;
     global_columns[2] = 2;
@@ -184,31 +148,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( SourceTransporter, transport, LO, GO, Scalar 
     int mult = 100;
     plist.set<double>("Sample Ratio",mult);
     Teuchos::RCP<SourceType> source = Teuchos::rcp(
-	new SourceType( b, domain, comm, 
-			comm->getSize(), comm->getRank(), plist ) );
+	new SourceType( b, domain, plist ) );
     source->setRNG( rng );
     source->buildSource();
 
     // Create the source transporter.
     plist.set<int>("MC Check Frequency", 10);
-    MCLS::SourceTransporter<SourceType> source_transporter( 
-	comm, domain, plist );
+    MCLS::SourceTransporter<SourceType> source_transporter( comm, domain, plist );
     source_transporter.assignSource( source );
 
     // Do transport.
     source_transporter.transport();
-    domain->domainTally()->combineSetTallies( comm );
 
     // Check that we got a negative solution.
-    Teuchos::ArrayRCP<const Scalar> x_view = VT::view( *x );
-    typename Teuchos::ArrayRCP<const Scalar>::const_iterator x_view_it;
+    Teuchos::ArrayRCP<const double> x_view = VT::view( *x );
+    typename Teuchos::ArrayRCP<const double>::const_iterator x_view_it;
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
-	TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<Scalar>::zero() );
+	TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<double>::zero() );
     }
 }
-
-UNIT_TEST_INSTANTIATION( SourceTransporter, transport )
 
 //---------------------------------------------------------------------------//
 // end tstTpetraSourceTransporter.cpp
