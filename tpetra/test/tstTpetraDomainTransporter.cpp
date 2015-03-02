@@ -49,7 +49,7 @@
 #include <random>
 
 #include <MCLS_DomainTransporter.hpp>
-#include <MCLS_AdjointDomain.hpp>
+#include <MCLS_AlmostOptimalDomain.hpp>
 #include <MCLS_VectorTraits.hpp>
 #include <MCLS_TpetraAdapter.hpp>
 #include <MCLS_AdjointHistory.hpp>
@@ -71,24 +71,15 @@
 #include <Tpetra_Vector.hpp>
 
 //---------------------------------------------------------------------------//
-// Instantiation macro. 
-// 
-// These types are those enabled by Tpetra under explicit instantiation. I
-// have removed scalar types that are not floating point
-//---------------------------------------------------------------------------//
-#define UNIT_TEST_INSTANTIATION( type, name )			           \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
-
-//---------------------------------------------------------------------------//
 // Test templates
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Typedefs, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST( DomainTransporter, Typedefs )
 {
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType,std::mt19937> DomainType;
-    typedef MCLS::AdjointHistory<GO> HistoryType;
+    typedef Tpetra::Vector<double,int,long> VectorType;
+    typedef Tpetra::CrsMatrix<double,int,long> MatrixType;
     typedef MCLS::AdjointTally<VectorType> TallyType;
+    typedef MCLS::AlmostOptimalDomain<VectorType,MatrixType,std::mt19937,TallyType> DomainType;
+    typedef MCLS::AdjointHistory<long> HistoryType;
 
     typedef MCLS::DomainTransporter<DomainType> TransportType;
     typedef typename TransportType::HistoryType history_type;
@@ -102,18 +93,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Typedefs, LO, GO, Scalar )
 	== true, true );
 }
 
-UNIT_TEST_INSTANTIATION( DomainTransporter, Typedefs )
-
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Cutoff, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST( DomainTransporter, Cutoff )
 {
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef Tpetra::Vector<double,int,long> VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
+    typedef Tpetra::CrsMatrix<double,int,long> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::AdjointHistory<GO> HistoryType;
+    typedef MCLS::AdjointHistory<long> HistoryType;
     typedef std::mt19937 rng_type;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType,rng_type> DomainType;
+    typedef MCLS::AdjointTally<VectorType> TallyType;
+    typedef MCLS::AlmostOptimalDomain<VectorType,MatrixType,rng_type,TallyType>
+	DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -122,22 +113,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Cutoff, LO, GO, Scalar )
 
     int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
-    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
-	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
+    Teuchos::RCP<const Tpetra::Map<int,long> > map = 
+	Tpetra::createUniformContigMap<int,long>( global_num_rows, comm );
 
     // Build the linear operator and solution vector.
-    Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
-    Teuchos::Array<GO> global_columns( 1 );
-    Teuchos::Array<Scalar> values( 1 );
-    for ( int i = 1; i < global_num_rows; ++i )
+    Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<double,int,long>( map );
+    Teuchos::Array<long> global_columns( 1 );
+    Teuchos::Array<double> values( 1, 0.5 );
+    for ( int i = 0; i < global_num_rows; ++i )
     {
-	global_columns[0] = i-1;
-	values[0] = -0.5/comm_size;
-	A->insertGlobalValues( i, global_columns(), values() );
+	if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
+	{
+	    global_columns[0] = i;
+	    A->insertGlobalValues( i, global_columns(), values() );
+	}
     }
-    global_columns[0] = global_num_rows-1;
-    values[0] = -0.5/comm_size;
-    A->insertGlobalValues( global_num_rows-1, global_columns(), values() );
     A->fillComplete();
 
     Teuchos::RCP<VectorType> x = MT::cloneVectorFromMatrixRows( *A );
@@ -145,7 +135,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Cutoff, LO, GO, Scalar )
 
     // Build the adjoint domain.
     Teuchos::ParameterList plist;
-    plist.set<int>( "Overlap Size", 2 );
     plist.set<int>( "History Length", 1 );
     Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( A_T, x, plist ) );
     Teuchos::RCP<MCLS::PRNG<rng_type> > rng = Teuchos::rcp(
@@ -154,74 +143,45 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Cutoff, LO, GO, Scalar )
 
     // Build the domain transporter.
     double weight = 3.0; 
-    MCLS::DomainTransporter<DomainType> transporter( domain, plist );
+    MCLS::DomainTransporter<DomainType> transporter( domain );
 
     // Transport histories through the domain.
-    for ( int i = 0; i < global_num_rows-1; ++i )
+    for ( int i = 0; i < global_num_rows; ++i )
     {
-	if ( comm_rank == comm_size - 1 )
+	if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
 	{
-	    if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
-	    {
-		HistoryType history( i, i, weight );
-		history.live();
-		transporter.transport( history );
+	    HistoryType history( i, i, weight );
+	    history.live();
+	    transporter.transport( history );
 
-		TEST_EQUALITY( history.globalState(), i+1 );
-		TEST_EQUALITY( history.weight(), weight / 2 );
-		TEST_EQUALITY( history.event(), MCLS::Event::CUTOFF );
-		TEST_ASSERT( !history.alive() );
-	    }
-	}
-	else
-	{
-	    if ( i >= local_num_rows*comm_rank && i < 2+local_num_rows*(comm_rank+1) )
-	    {
-		HistoryType history( i, i, weight );
-		history.live();
-		transporter.transport( history );
-
-		TEST_EQUALITY( history.globalState(), i+1 );
-		TEST_EQUALITY( history.weight(), weight / 2 );
-		TEST_EQUALITY( history.event(), MCLS::Event::CUTOFF );
-		TEST_ASSERT( !history.alive() );
-	    }
+	    TEST_EQUALITY( history.globalState(), i );
+	    TEST_EQUALITY( history.localState(), i - local_num_rows*comm_rank );
+	    TEST_EQUALITY( history.weight(), weight / 2 );
+	    TEST_EQUALITY( history.event(), MCLS::Event::CUTOFF );
+	    TEST_ASSERT( !history.alive() );
 	}
     }
 
     // Check the tally.
-    domain->domainTally()->combineSetTallies( comm );
-    Teuchos::ArrayRCP<const Scalar> x_view = 
-        VT::view( *x );
-    Scalar x_val = weight;
+    Teuchos::ArrayRCP<const double> x_view = VT::view( *x );
+    double x_val = weight;
     for ( int i = 0; i < local_num_rows; ++i )
     {
-	if ( comm_rank == comm_size-1 && i == local_num_rows-1 )
-	{
-	    TEST_EQUALITY( x_view[i], 0 );
-	}
-	else if ( comm_rank == 0 || i > 1 )
-	{
-	    TEST_EQUALITY( x_view[i], x_val );
-	}
-	else
-	{
-	    TEST_EQUALITY( x_view[i], 2*x_val );
-	}
+	TEST_EQUALITY( x_view[i], x_val );
     }
 }
 
-UNIT_TEST_INSTANTIATION( DomainTransporter, Cutoff )
-
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Boundary, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST( DomainTransporter, Boundary )
 {
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
+    typedef Tpetra::Vector<double,int,long> VectorType;
+    typedef Tpetra::CrsMatrix<double,int,long> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
-    typedef MCLS::AdjointHistory<GO> HistoryType;
+    typedef MCLS::AdjointHistory<long> HistoryType;
     typedef std::mt19937 rng_type;
-    typedef MCLS::AdjointDomain<VectorType,MatrixType,rng_type> DomainType;
+    typedef MCLS::AdjointTally<VectorType> TallyType;
+    typedef MCLS::AlmostOptimalDomain<VectorType,MatrixType,rng_type,TallyType>
+	DomainType;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
@@ -234,36 +194,36 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Boundary, LO, GO, Scalar )
     {
 	int local_num_rows = 10;
 	int global_num_rows = local_num_rows*comm_size;
-	Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
-	    Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
+	Teuchos::RCP<const Tpetra::Map<int,long> > map = 
+	    Tpetra::createUniformContigMap<int,long>( global_num_rows, comm );
 
 	// Build the linear operator and solution vector.
-	Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
-	Teuchos::Array<GO> global_columns( 3 );
-	Teuchos::Array<Scalar> values( 3 );
+	Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<double,int,long>( map );
+	Teuchos::Array<long> global_columns( 3 );
+	Teuchos::Array<double> values( 3 );
 
 	global_columns[0] = 0;
 	global_columns[1] = 1;
 	global_columns[2] = 2;
 	values[0] = 1.0/comm_size;
-	values[1] = 0.49/comm_size;
-	values[2] = 0.49/comm_size;
+	values[1] = -0.499/comm_size;
+	values[2] = -0.499/comm_size;
 	A->insertGlobalValues( 0, global_columns(), values() );
 	for ( int i = 1; i < global_num_rows-1; ++i )
 	{
 	    global_columns[0] = i-1;
 	    global_columns[1] = i;
 	    global_columns[2] = i+1;
-	    values[0] = 0.49/comm_size;
+	    values[0] = -0.499/comm_size;
 	    values[1] = 1.0/comm_size;
-	    values[2] = 0.49/comm_size;
+	    values[2] = -0.499/comm_size;
 	    A->insertGlobalValues( i, global_columns(), values() );
 	}
 	global_columns[0] = global_num_rows-3;
 	global_columns[1] = global_num_rows-2;
 	global_columns[2] = global_num_rows-1;
-	values[0] = 0.49/comm_size;
-	values[1] = 0.49/comm_size;
+	values[0] = -0.499/comm_size;
+	values[1] = -0.499/comm_size;
 	values[2] = 1.0/comm_size;
 	A->insertGlobalValues( global_num_rows-1, global_columns(), values() );
 	A->fillComplete();
@@ -273,7 +233,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Boundary, LO, GO, Scalar )
 
 	// Build the adjoint domain.
 	Teuchos::ParameterList plist;
-	plist.set<int>( "Overlap Size", 2 );
+	plist.set<int>( "History Length", 10000 );
 	Teuchos::RCP<DomainType> domain = 
             Teuchos::rcp( new DomainType( A_T, x, plist ) );
 	Teuchos::RCP<MCLS::PRNG<rng_type> > rng = Teuchos::rcp(
@@ -281,43 +241,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DomainTransporter, Boundary, LO, GO, Scalar )
 	domain->setRNG( rng );
 
 	// Build the domain transporter.
-	MCLS::DomainTransporter<DomainType> transporter( domain, plist );
+	MCLS::DomainTransporter<DomainType> transporter( domain );
 
 	// Transport histories through the domain until they hit a boundary.
 	double weight = 3.0; 
 	for ( int i = 0; i < global_num_rows-1; ++i )
 	{
-	    if ( comm_rank == comm_size - 1 )
+	    if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
 	    {
-		if ( i >= local_num_rows*comm_rank && i < local_num_rows*(comm_rank+1) )
-		{
-		    HistoryType history( i, i, weight );
-		    history.live();
-		    transporter.transport( history );
+		HistoryType history( i, i, weight );
+		history.live();
+		transporter.transport( history );
 
-		    TEST_ASSERT( history.event() == 
-				 MCLS::Event::BOUNDARY || MCLS::Event::CUTOFF );
-		    TEST_ASSERT( !history.alive() );
-		}
-	    }
-	    else
-	    {
-		if ( i >= local_num_rows*comm_rank && i < 2+local_num_rows*(comm_rank+1) )
-		{
-		    HistoryType history( i, i, weight );
-		    history.live();
-		    transporter.transport( history );
-
-		    TEST_ASSERT( history.event() == 
-				 MCLS::Event::BOUNDARY || MCLS::Event::CUTOFF );
-		    TEST_ASSERT( !history.alive() );
-		}
+		TEST_ASSERT( history.event() ==  MCLS::Event::BOUNDARY );
+		TEST_ASSERT( !history.alive() );
 	    }
 	}
     }
 }
-
-UNIT_TEST_INSTANTIATION( DomainTransporter, Boundary )
 
 //---------------------------------------------------------------------------//
 // end tstTpetraDomainTransporter.cpp

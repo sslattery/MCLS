@@ -46,7 +46,6 @@
 #include <MCLS_HistoryTraits.hpp>
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_ParameterList.hpp>
 
 namespace MCLS
 {
@@ -69,18 +68,12 @@ class DomainTransporter
     typedef DomainTraits<Domain>                      DT;
     typedef typename DT::history_type                 HistoryType;
     typedef HistoryTraits<HistoryType>                HT;
-    typedef typename DT::bank_type                    BankType;
     typedef typename DT::tally_type                   TallyType;
     typedef TallyTraits<TallyType>                    TT;
     //@}
 
     // Matrix constructor.
-    DomainTransporter( const Teuchos::RCP<Domain>& domain,
-		       const Teuchos::ParameterList& plist );
-
-    // Destructor.
-    ~DomainTransporter()
-    { /* ... */ }
+    DomainTransporter( const Teuchos::RCP<Domain>& domain );
 
     // Transport a history through the domain.
     void transport( HistoryType& history );
@@ -110,5 +103,5 @@ class DomainTransporter
 
 //---------------------------------------------------------------------------//
 // end MCLS_DomainTransporter.hpp
-// ---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
 

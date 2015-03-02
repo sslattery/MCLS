@@ -55,7 +55,7 @@ namespace MCLS
  */
 template<class Domain>
 DomainTransporter<Domain>::DomainTransporter( 
-    const Teuchos::RCP<Domain>& domain, const Teuchos::ParameterList& plist )
+    const Teuchos::RCP<Domain>& domain )
     : d_domain( domain )
     , d_tally( DT::domainTally(*d_domain) )
 {
@@ -122,10 +122,9 @@ void DomainTransporter<Domain>::transport( HistoryType& history )
 
 } // end namespace MCLS
 
-
 #endif // end MCLS_DOMAINTRANSPORTER_IMPL_HPP
 
 //---------------------------------------------------------------------------//
 // end MCLS_DomainTransporter_impl.hpp
-// ---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
 
