@@ -252,7 +252,7 @@ template<class Vector, class Matrix>
 void LinearProblem<Vector,Matrix>::apply( const Vector& x, Vector& y )
 {
 #if HAVE_MCLS_TIMERS
-    Teuchos::TimeMonitor mm_monitor( *d_mv_timer );
+    Teuchos::TimeMonitor mv_monitor( *d_mv_timer );
 #endif
 
     const bool left_prec = Teuchos::nonnull( d_PL );
@@ -449,5 +449,5 @@ void LinearProblem<Vector,Matrix>::updatePrecResidual()
 
 //---------------------------------------------------------------------------//
 // end MCLS_LinearProblem_impl.hpp
-// ---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
 

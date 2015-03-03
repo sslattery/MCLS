@@ -72,6 +72,8 @@ APPEND_SET(HEADERS
   MCLS_MonteCarloSolverManager_impl.hpp
   MCLS_MinimalResidualIteration.hpp
   MCLS_MinimalResidualIteration_impl.hpp
+  MCLS_MultiSetLinearProblem.hpp
+  MCLS_MultiSetLinearProblem_impl.hpp
   MCLS_Preconditioner.hpp
   MCLS_PRNG.hpp
   MCLS_PRNG_impl.hpp
