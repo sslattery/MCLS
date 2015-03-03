@@ -154,6 +154,15 @@ class SourceTraits
 	UndefinedSourceTraits<Source>::notDefined(); 
 	return 0;
     }
+
+    /*!
+     * \brief Get the within-set normalization constant for this source.
+     */
+    static int normalization( const Source& source )
+    { 
+	UndefinedSourceTraits<Source>::notDefined(); 
+	return 0;
+    }
 };
 
 //---------------------------------------------------------------------------//

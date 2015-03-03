@@ -127,6 +127,9 @@ class UniformForwardSource
     //! Get the number of histories left to emit in this domain.
     int numLeft() const { return d_nh_left; }
 
+    //! Get the number of histories per state.
+    int numPerState() const { return d_nh_per_state; }
+
   private:
 
     // Source vector.
@@ -252,6 +255,14 @@ class SourceTraits<UniformForwardSource<Domain> >
     static int numToTransportInSet( const source_type& source )
     { 
 	return source.numToTransportInSet();
+    }
+
+    /*!
+     * \brief Get the within-set normalization constant for this source.
+     */
+    static int normalization( const source_type& source )
+    { 
+	return source.numPerState();
     }
 };
 

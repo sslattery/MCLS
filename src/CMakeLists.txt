@@ -24,8 +24,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_SET(HEADERS
   MCLS_AdjointHistory.hpp
   MCLS_AdjointHistory_impl.hpp
-  MCLS_AdjointSolverManager.hpp
-  MCLS_AdjointSolverManager_impl.hpp
   MCLS_AdjointTally.hpp
   MCLS_AdjointTally_impl.hpp
   MCLS_AlmostOptimalDomain.hpp
@@ -49,8 +47,6 @@ APPEND_SET(HEADERS
   MCLS_FixedPointSolverManager_impl.hpp
   MCLS_ForwardHistory.hpp
   MCLS_ForwardHistory_impl.hpp
-  MCLS_ForwardSolverManager.hpp
-  MCLS_ForwardSolverManager_impl.hpp
   MCLS_ForwardTally.hpp
   MCLS_ForwardTally_impl.hpp
   MCLS_GlobalTransporter.hpp
@@ -72,6 +68,8 @@ APPEND_SET(HEADERS
   MCLS_MCSAStatusTest_impl.hpp
   MCLS_MCSolver.hpp
   MCLS_MCSolver_impl.hpp
+  MCLS_MonteCarloSolverManager.hpp
+  MCLS_MonteCarloSolverManager_impl.hpp
   MCLS_MinimalResidualIteration.hpp
   MCLS_MinimalResidualIteration_impl.hpp
   MCLS_Preconditioner.hpp

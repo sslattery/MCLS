@@ -62,7 +62,7 @@ SubdomainTransporter<Source>::SubdomainTransporter(
     const Teuchos::ParameterList& plist )
     : d_comm( comm )
     , d_domain( domain )
-    , d_domain_transporter( d_domain, plist )
+    , d_domain_transporter( d_domain )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_domain) );

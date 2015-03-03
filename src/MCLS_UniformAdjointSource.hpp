@@ -269,6 +269,14 @@ class SourceTraits<UniformAdjointSource<Domain> >
     { 
 	return source.numToTransportInSet();
     }
+
+    /*!
+     * \brief Get the within-set normalization constant for this source.
+     */
+    static int normalization( const source_type& source )
+    { 
+	return source.numToTransportInSet();
+    }
 };
 
 //---------------------------------------------------------------------------//

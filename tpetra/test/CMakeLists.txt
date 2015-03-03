@@ -100,15 +100,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  TpetraAdjointSolverManager_tests
-  SOURCES tstTpetraAdjointSolverManager.cpp ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  TpetraForwardSolverManager_tests
-  SOURCES tstTpetraForwardSolverManager.cpp ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
+  TpetraMonteCarloSolverManager_tests
+  SOURCES tstTpetraMonteCarloSolverManager.cpp ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )

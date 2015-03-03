@@ -32,76 +32,107 @@
 */
 //---------------------------------------------------------------------------//
 /*!
- * \file MCLS_ForwardSolverManager.hpp
+ * \file MCLS_MonteCarloSolverManager.hpp
  * \author Stuart R. Slattery
- * \brief Forward Monte Carlo solver manager declaration.
+ * \brief Monte Carlo solver manager declaration.
  */
 //---------------------------------------------------------------------------//
 
-#ifndef MCLS_FORWARDSOLVERMANAGER_HPP
-#define MCLS_FORWARDSOLVERMANAGER_HPP
+#ifndef MCLS_MONTECARLOSOLVERMANAGER_HPP
+#define MCLS_MONTECARLOSOLVERMANAGER_HPP
 
 #include <random>
 
+#include "MCLS_config.hpp"
 #include "MCLS_SolverManager.hpp"
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_MatrixTraits.hpp"
-#include "MCLS_MSODManager.hpp"
 #include "MCLS_MCSolver.hpp"
+#include "MCLS_UniformAdjointSource.hpp"
+#include "MCLS_AdjointTally.hpp"
 #include "MCLS_UniformForwardSource.hpp"
-#include "MCLS_ForwardDomain.hpp"
-#include "MCLS_TallyTraits.hpp"
+#include "MCLS_ForwardTally.hpp"
+#include "MCLS_AlmostOptimalDomain.hpp"
 #include "MCLS_Xorshift.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_Comm.hpp>
+#include <Teuchos_Time.hpp>
 
 namespace MCLS
 {
+//---------------------------------------------------------------------------//
+// Monte Carlo Algorithm Tag Traits.
+//---------------------------------------------------------------------------//
+
+// Dispatch tags.
+class MonteCarloTag {};
+class ForwardTag {};
+class AdjointTag {};
+
+// Algorithm tag traits.
+template<class Vector, class Matrix, class RNG, class Tag>
+class MonteCarloTagTraits {};
+
+// Forward specialization.
+template<class Vector, class Matrix, class RNG>
+class MonteCarloTagTraits<Vector,Matrix,RNG,ForwardTag>
+{
+  public:
+    typedef ForwardTally<Vector>                              tally_type;
+    typedef AlmostOptimalDomain<Vector,Matrix,RNG,tally_type> domain_type;
+    typedef UniformForwardSource<domain_type>                 source_type;
+};
+
+// Adjoint specialization.
+template<class Vector, class Matrix, class RNG>
+class MonteCarloTagTraits<Vector,Matrix,RNG,AdjointTag>
+{
+  public:
+    typedef AdjointTally<Vector>                              tally_type;
+    typedef AlmostOptimalDomain<Vector,Matrix,RNG,tally_type> domain_type;
+    typedef UniformAdjointSource<domain_type>                 source_type;
+};
 
 //---------------------------------------------------------------------------//
 /*!
- * \class ForwardSolverManager
- * \brief Solver manager for analog forward Monte Carlo.
+ * \class MonteCarloSolverManager
+ * \brief Solver manager for analog Monte Carlo.
  */
-template<class Vector, class Matrix, class RNG = Xorshift<> >
-class ForwardSolverManager : public SolverManager<Vector,Matrix>
+template<class Vector,
+	 class Matrix,
+	 class AlgorithmTag = AdjointTag,
+	 class RNG = Xorshift<> >
+class MonteCarloSolverManager : public SolverManager<Vector,Matrix>
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef SolverManager<Vector,Matrix>            Base;
-    typedef Vector                                  vector_type;
-    typedef VectorTraits<Vector>                    VT;
-    typedef typename VT::scalar_type                Scalar;
-    typedef Matrix                                  matrix_type;
-    typedef MatrixTraits<Vector,Matrix>             MT;
-    typedef LinearProblem<Vector,Matrix>            LinearProblemType;
-    typedef ForwardDomain<Vector,Matrix,RNG>        DomainType;
-    typedef typename DomainType::TallyType          TallyType;
-    typedef TallyTraits<TallyType>                  TT;
-    typedef UniformForwardSource<DomainType>        SourceType;
-    typedef RNG                                     rng_type;
-    typedef Teuchos::Comm<int>                      Comm;
+    typedef SolverManager<Vector,Matrix>               Base;
+    typedef Vector                                     vector_type;
+    typedef VectorTraits<Vector>                       VT;
+    typedef typename VT::scalar_type                   Scalar;
+    typedef Matrix                                     matrix_type;
+    typedef MatrixTraits<Vector,Matrix>                MT;
+    typedef LinearProblem<Vector,Matrix>               LinearProblemType;
+    typedef AlgorithmTag                               Tag;
+    typedef MonteCarloTagTraits<Vector,Matrix,RNG,Tag> MCTT;
+    typedef typename MCTT::domain_type                 DomainType;
+    typedef typename MCTT::source_type                 SourceType;
+    typedef RNG                                        rng_type;
     //@}
 
-    // Comm constructor. setProblem() must be called before solve().
-    ForwardSolverManager( const Teuchos::RCP<const Comm>& global_comm,
-			  const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                          bool internal_solver = false );
+    // Parameter constructor. setProblem() must be called before solve().
+    MonteCarloSolverManager( const Teuchos::RCP<Teuchos::ParameterList>& plist,
+			     bool internal_solver = false );
 
     // Constructor.
-    ForwardSolverManager( const Teuchos::RCP<LinearProblemType>& problem,
-			  const Teuchos::RCP<const Comm>& global_comm,
-			  const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                          bool internal_solver = false );
-
-    //! Destructor.
-    ~ForwardSolverManager() { /* ... */ }
+    MonteCarloSolverManager( const Teuchos::RCP<LinearProblemType>& problem,
+			     const Teuchos::RCP<Teuchos::ParameterList>& plist,
+			     bool internal_solver = false );
 
     //! Get the linear problem being solved by the manager.
     const LinearProblem<Vector,Matrix>& getProblem() const
@@ -133,16 +164,24 @@ class ForwardSolverManager : public SolverManager<Vector,Matrix>
     // if it did not.
     bool solve();
 
-    //! Return if the last linear solve converged. The forward Monte Carlo
-    //! solver is a direct solver, and therefore always converges in the
-    //! iterative sense.
+    //! Return if the last linear solve converged. The Monte Carlo solver is a
+    //! direct solver, and therefore always converges in the iterative sense.
     bool getConvergedStatus() const
     { return true; }
 
-    //! Get the block-constant communicator for this set.
-    Teuchos::RCP<const Comm> blockComm() const { return d_msod_manager->blockComm(); }
-
   private:
+
+    // Get the composite operator for a given algorithm tag.
+    Teuchos::RCP<const Matrix>
+    getCompositeOperator( const double threshold,
+			  ForwardTag ) const;
+    Teuchos::RCP<const Matrix>
+    getCompositeOperator( const double threshold,
+			  AdjointTag ) const;
+
+    // Initialize the tally for a solve for a given algorithm tag.
+    void initializeTally( ForwardTag );
+    void initializeTally( AdjointTag );
 
     // Build the Monte Carlo domain from the provided linear problem.
     void buildMonteCarloDomain();
@@ -155,23 +194,25 @@ class ForwardSolverManager : public SolverManager<Vector,Matrix>
     // Linear problem
     Teuchos::RCP<LinearProblemType> d_problem;
 
-    // Global communicator.
-    Teuchos::RCP<const Comm> d_global_comm;
-
     // Parameters.
     Teuchos::RCP<Teuchos::ParameterList> d_plist;
 
     // Boolean for internal solver (i.e. inside of MCSA).
     bool d_internal_solver;
 
-    // Primary set indicator.
-    bool d_primary_set;
+    // Local domain for this proc.
+    Teuchos::RCP<DomainType> d_domain;
 
-    // MSOD Manager.
-    Teuchos::RCP<MSODManager<SourceType> > d_msod_manager;
+    // Local source for this proc.
+    Teuchos::RCP<SourceType> d_source;
 
     // Monte Carlo set solver.
     Teuchos::RCP<MCSolver<SourceType> > d_mc_solver;
+
+#if HAVE_MCLS_TIMERS
+    // Total solve timer.
+    Teuchos::RCP<Teuchos::Time> d_solve_timer;
+#endif
 };
 
 //---------------------------------------------------------------------------//
@@ -182,13 +223,13 @@ class ForwardSolverManager : public SolverManager<Vector,Matrix>
 // Template includes.
 //---------------------------------------------------------------------------//
 
-#include "MCLS_ForwardSolverManager_impl.hpp"
+#include "MCLS_MonteCarloSolverManager_impl.hpp"
 
 //---------------------------------------------------------------------------//
 
-#endif // end MCLS_FORWARDSOLVERMANAGER_HPP
+#endif // end MCLS_MONTECARLOSOLVERMANAGER_HPP
 
 //---------------------------------------------------------------------------//
-// end MCLS_ForwardSolverManager.hpp
+// end MCLS_MonteCarloSolverManager.hpp
 //---------------------------------------------------------------------------//
 
