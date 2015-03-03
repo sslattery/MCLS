@@ -89,6 +89,10 @@ class MultiSetLinearProblem
 	const Teuchos::RCP<Vector>& x,
 	const Teuchos::RCP<const Vector>& b );
 
+    // Get the global rank.
+    int globalRank() const
+    { return d_global_comm->getRank(); }
+    
     // Get the number of sets.
     int numSets() const
     { return d_num_sets; }
@@ -96,6 +100,10 @@ class MultiSetLinearProblem
     // Get the set id.
     int setID() const
     { return d_set_id; }
+
+    // Get the block id.
+    int blockID() const
+    { return d_block_id; }
 
     // Get the linear problem for the local set.
     Teuchos::RCP<LinearProblem<Vector,Matrix> > getProblem() const

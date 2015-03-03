@@ -55,8 +55,10 @@ namespace MCLS
 template<class Vector, class Matrix, class MonteCarloTag, class RNG>
 MonteCarloSolverManager<Vector,Matrix,MonteCarloTag,RNG>::MonteCarloSolverManager( 
     const Teuchos::RCP<Teuchos::ParameterList>& plist,
+    int global_rank,
     bool internal_solver )
     : d_plist( plist )
+    , d_global_rank( global_rank )
     , d_internal_solver( internal_solver )
 #if HAVE_MCLS_TIMERS
     , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: MC Solve") )
@@ -73,9 +75,11 @@ template<class Vector, class Matrix, class MonteCarloTag, class RNG>
 MonteCarloSolverManager<Vector,Matrix,MonteCarloTag,RNG>::MonteCarloSolverManager( 
     const Teuchos::RCP<LinearProblemType>& problem,
     const Teuchos::RCP<Teuchos::ParameterList>& plist,
+    int global_rank,
     bool internal_solver )
     : d_problem( problem )
     , d_plist( plist )
+    , d_global_rank( global_rank )
     , d_internal_solver( internal_solver )
 #if HAVE_MCLS_TIMERS
     , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: MC Solve") )
@@ -312,7 +316,7 @@ void MonteCarloSolverManager<Vector,Matrix,MonteCarloTag,RNG>::buildMonteCarloDo
 	d_mc_solver = Teuchos::rcp(
 	    new MCSolver<SourceType>(
 		MT::getComm(*d_problem->getOperator()),
-		MT::getComm(*d_problem->getOperator())->getRank(),
+		d_global_rank,
 		d_plist) );
     }
 

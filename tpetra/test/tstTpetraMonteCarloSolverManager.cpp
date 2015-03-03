@@ -80,6 +80,7 @@ TEUCHOS_UNIT_TEST( MonteCarloSolverManager, adjoint )
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
     int comm_size = comm->getSize();
+    int comm_rank = comm->getRank();
 
     int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
@@ -141,7 +142,7 @@ TEUCHOS_UNIT_TEST( MonteCarloSolverManager, adjoint )
 
     // Create the solver.
     MCLS::MonteCarloSolverManager<VectorType,MatrixType,MCLS::AdjointTag,std::mt19937> 
-	solver_manager( linear_problem, plist );
+	solver_manager( linear_problem, plist, comm_rank );
 
     // Solve the problem.
     bool converged_status = solver_manager.solve();
@@ -206,6 +207,7 @@ TEUCHOS_UNIT_TEST( MonteCarloSolverManager, adjoint_prec )
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
     int comm_size = comm->getSize();
+    int comm_rank = comm->getRank();
 
     int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
@@ -283,7 +285,7 @@ TEUCHOS_UNIT_TEST( MonteCarloSolverManager, adjoint_prec )
 
     // Create the solver.
     MCLS::MonteCarloSolverManager<VectorType,MatrixType,MCLS::AdjointTag,std::mt19937> 
-	solver_manager( linear_problem, plist );
+	solver_manager( linear_problem, plist, comm_rank );
 
     // Solve the problem.
     bool converged_status = solver_manager.solve();
@@ -348,7 +350,8 @@ TEUCHOS_UNIT_TEST( MonteCarloSolverManager, forward )
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
     int comm_size = comm->getSize();
-
+    int comm_rank = comm->getRank();
+    
     int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
     Teuchos::RCP<const Tpetra::Map<int,long> > map = 
@@ -409,7 +412,7 @@ TEUCHOS_UNIT_TEST( MonteCarloSolverManager, forward )
 
     // Create the solver.
     MCLS::MonteCarloSolverManager<VectorType,MatrixType,MCLS::ForwardTag,std::mt19937> 
-	solver_manager( linear_problem, plist );
+	solver_manager( linear_problem, plist, comm_rank );
 
     // Solve the problem.
     bool converged_status = solver_manager.solve();
@@ -474,6 +477,7 @@ TEUCHOS_UNIT_TEST( MonteCarloSolverManager, forward_prec )
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
 	Teuchos::DefaultComm<int>::getComm();
     int comm_size = comm->getSize();
+    int comm_rank = comm->getRank();  
 
     int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
@@ -550,7 +554,7 @@ TEUCHOS_UNIT_TEST( MonteCarloSolverManager, forward_prec )
 
     // Create the solver.
     MCLS::MonteCarloSolverManager<VectorType,MatrixType,MCLS::ForwardTag,std::mt19937> 
-	solver_manager( linear_problem, plist );
+	solver_manager( linear_problem, plist, comm_rank );
 
     // Solve the problem.
     bool converged_status = solver_manager.solve();

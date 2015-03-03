@@ -86,7 +86,7 @@ class MCSolver
     //@}
 
     // Constructor.
-    MCSolver( const Teuchos::RCP<const Comm>& comm,
+    MCSolver( const Teuchos::RCP<const Comm>& set_comm,
 	      const int global_rank,
 	      const Teuchos::RCP<Teuchos::ParameterList>& plist );
 
@@ -101,8 +101,8 @@ class MCSolver
 
   private:
 
-    // Set constant communicator.
-    Teuchos::RCP<const Comm> d_comm;
+    // Set-constant communicator.
+    Teuchos::RCP<const Comm> d_set_comm;
 
     // Problem parameters.
     Teuchos::RCP<Teuchos::ParameterList> d_plist;

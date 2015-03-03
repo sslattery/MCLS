@@ -55,10 +55,10 @@ namespace MCLS
  * \brief Constructor.
  */
 template<class Source>
-MCSolver<Source>::MCSolver( const Teuchos::RCP<const Comm>& comm,
+MCSolver<Source>::MCSolver( const Teuchos::RCP<const Comm>& set_comm,
 			    const int global_rank,
 			    const Teuchos::RCP<Teuchos::ParameterList>& plist )
-    : d_comm( comm )
+    : d_set_comm( set_comm )
     , d_plist( plist )
     , d_rng( Teuchos::rcp(new PRNG<rng_type>(global_rank)) )
 #if HAVE_MCLS_TIMERS
@@ -66,7 +66,7 @@ MCSolver<Source>::MCSolver( const Teuchos::RCP<const Comm>& comm,
 #endif
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
-    MCLS_REQUIRE( Teuchos::nonnull(d_comm) );
+    MCLS_REQUIRE( Teuchos::nonnull(d_set_comm) );
 
     // Set the static byte size for the histories.
     HT::setByteSize();
@@ -131,7 +131,7 @@ void MCSolver<Source>::setDomain( const Teuchos::RCP<Domain>& domain )
 
     // Generate the source transporter.
     d_transporter = GlobalTransporterFactory<Source>::create(
-        d_comm, d_domain, *d_plist );
+        d_set_comm, d_domain, *d_plist );
 
     MCLS_ENSURE( Teuchos::nonnull(d_domain) );
     MCLS_ENSURE( Teuchos::nonnull(d_tally) );

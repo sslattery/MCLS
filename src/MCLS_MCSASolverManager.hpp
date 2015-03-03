@@ -47,6 +47,7 @@
 #include "MCLS_SolverManager.hpp"
 #include "MCLS_MonteCarloSolverManager.hpp"
 #include "MCLS_FixedPointIteration.hpp"
+#include "MCLS_MultiSetLinearProblem.hpp"
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_MatrixTraits.hpp"
@@ -84,15 +85,16 @@ class MCSASolverManager : public SolverManager<Vector,Matrix>
     typedef MatrixTraits<Vector,Matrix>                       MT;
     typedef LinearProblem<Vector,Matrix>                      LinearProblemType;
     typedef FixedPointIteration<Vector,Matrix>                FixedPointType;
-    typedef MonteCarloSolverManager<Vector,Matrix,MonteCarloTag,RNG> MCSolver;
+    typedef MonteCarloSolverManager<Vector,Matrix,MonteCarloTag,RNG> MonteCarloSolver;
     //@}
 
     // Parameter constructor. setProblem() must be called before solve().
     MCSASolverManager( const Teuchos::RCP<Teuchos::ParameterList>& plist );
 
     // Constructor.
-    MCSASolverManager( const Teuchos::RCP<LinearProblemType>& problem,
-		       const Teuchos::RCP<Teuchos::ParameterList>& plist );
+    MCSASolverManager(
+	const Teuchos::RCP<MultiSetLinearProblem<Vector,Matrix> >& multiset_problem,
+	const Teuchos::RCP<Teuchos::ParameterList>& plist );
 
     //! Get the linear problem being solved by the manager.
     const LinearProblem<Vector,Matrix>& getProblem() const
@@ -112,7 +114,11 @@ class MCSASolverManager : public SolverManager<Vector,Matrix>
     // Get the number of iterations from the last linear solve.
     int getNumIters() const { return d_num_iters; };
 
-    // Set the linear problem with the manager.
+    // Set the multiset problem with the manager.
+    void setMultiSetProblem( 
+	const Teuchos::RCP<MultiSetLinearProblem<Vector,Matrix> >& multiset_problem );
+
+    // Set the problem with the manager.
     void setProblem( 
 	const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem );
 
@@ -141,6 +147,9 @@ class MCSASolverManager : public SolverManager<Vector,Matrix>
 
   private:
 
+    // Multiset Linear Problem.
+    Teuchos::RCP<MultiSetLinearProblem<Vector,Matrix> > d_multiset_problem;
+    
     // Linear problem
     Teuchos::RCP<LinearProblemType> d_problem;
 
@@ -151,7 +160,7 @@ class MCSASolverManager : public SolverManager<Vector,Matrix>
     Teuchos::RCP<Teuchos::ParameterList> d_plist;
 
     // Monte Carlo solver manager.
-    Teuchos::RCP<MCSolver> d_mc_solver;
+    Teuchos::RCP<MonteCarloSolver> d_mc_solver;
 
     // Fixed point iteration.
     Teuchos::RCP<FixedPointType> d_fixed_point;

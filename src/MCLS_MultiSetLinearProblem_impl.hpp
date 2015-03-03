@@ -86,18 +86,18 @@ MultiSetLinearProblem<Vector,Matrix>::MultiSetLinearProblem(
     : d_global_comm( global_comm )
     , d_num_sets( num_sets )
     , d_set_id( set_id )
-    , d_problem( linearProblem(A,x,b) )
 #if HAVE_MCLS_TIMERS
     , d_bcvs_timer(
 	Teuchos::TimeMonitor::getNewCounter("MCLS: Block-Constant Sum") )
 #endif
 {
+    d_problem = Teuchos::rcp( new LinearProblem<Vector,Matrix>(A,x,b) );
     buildCommunicators();
 }
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Set the linear operator.
+ * \brief Gather-scatter sum a vector over sets.
  */
 template<class Vector, class Matrix>
 void MultiSetLinearProblem<Vector,Matrix>::blockConstantVectorSum( 
@@ -112,11 +112,11 @@ void MultiSetLinearProblem<Vector,Matrix>::blockConstantVectorSum(
     Teuchos::ArrayRCP<Scalar> vector_view = VT::viewNonConst( *vector );
     Teuchos::ArrayRCP<Scalar> vector_copy;
     vector_copy.assign( vector_view.begin(), vector_view.end() );
-    Teuchos::reduceAll( *d_block_comm,
-			Teuchos::REDUCE_SUM,
-			vector_view.size(),
-			vector_copy.getRawPtr(),
-			vector_view.getRawPtr() );
+    Teuchos::reduceAll<int,double>( *d_block_comm,
+				    Teuchos::REDUCE_SUM,
+				    vector_view.size(),
+				    vector_copy.getRawPtr(),
+				    vector_view.getRawPtr() );
 }
 
 //---------------------------------------------------------------------------//
@@ -136,6 +136,7 @@ void MultiSetLinearProblem<Vector,Matrix>::buildCommunicators()
     // communicators.
     d_block_comm = d_global_comm->split( d_block_id, d_set_id );
 
+    MCLS_ENSURE( d_block_comm->getRank() == d_set_id );
     MCLS_ENSURE( d_set_comm->getSize()*d_num_sets == d_global_comm->getSize() );
 }
 

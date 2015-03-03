@@ -126,11 +126,13 @@ class MonteCarloSolverManager : public SolverManager<Vector,Matrix>
 
     // Parameter constructor. setProblem() must be called before solve().
     MonteCarloSolverManager( const Teuchos::RCP<Teuchos::ParameterList>& plist,
+			     int global_rank,
 			     bool internal_solver = false );
 
     // Constructor.
     MonteCarloSolverManager( const Teuchos::RCP<LinearProblemType>& problem,
 			     const Teuchos::RCP<Teuchos::ParameterList>& plist,
+			     int global_rank,
 			     bool internal_solver = false );
 
     //! Get the linear problem being solved by the manager.
@@ -196,6 +198,9 @@ class MonteCarloSolverManager : public SolverManager<Vector,Matrix>
     // Parameters.
     Teuchos::RCP<Teuchos::ParameterList> d_plist;
 
+    // Global rank for this proc.
+    int d_global_rank;
+    
     // Boolean for internal solver (i.e. inside of MCSA).
     bool d_internal_solver;
 

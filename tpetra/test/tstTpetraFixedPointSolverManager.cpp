@@ -67,22 +67,13 @@
 #include <Tpetra_Vector.hpp>
 
 //---------------------------------------------------------------------------//
-// Instantiation macro. 
-// 
-// These types are those enabled by Tpetra under explicit instantiation. I
-// have removed scalar types that are not floating point
-//---------------------------------------------------------------------------//
-#define UNIT_TEST_INSTANTIATION( type, name )			           \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( type, name, int, long, double )
-
-//---------------------------------------------------------------------------//
 // Test templates
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FixedPointSolverManager, one_by_one, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST( FixedPointSolverManager, one_by_one )
 {
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef Tpetra::Vector<double,int,long> VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
+    typedef Tpetra::CrsMatrix<double,int,long> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -91,13 +82,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FixedPointSolverManager, one_by_one, LO, GO, 
 
     int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
-    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
-	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
+    Teuchos::RCP<const Tpetra::Map<int,long> > map = 
+	Tpetra::createUniformContigMap<int,long>( global_num_rows, comm );
 
     // Build the linear system. 
-    Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
-    Teuchos::Array<GO> global_columns( 3 );
-    Teuchos::Array<Scalar> values( 3 );
+    Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<double,int,long>( map );
+    Teuchos::Array<long> global_columns( 3 );
+    Teuchos::Array<double> values( 3 );
     global_columns[0] = 0;
     global_columns[1] = 1;
     global_columns[2] = 2;
@@ -148,7 +139,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FixedPointSolverManager, one_by_one, LO, GO, 
 
     // Create the solver.
     MCLS::FixedPointSolverManager<VectorType,MatrixType> 
-	solver_manager( linear_problem, comm, plist );
+	solver_manager( linear_problem, plist );
 
     // Solve the problem.
     bool converged_status = solver_manager.solve();
@@ -159,11 +150,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FixedPointSolverManager, one_by_one, LO, GO, 
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
 
     // Check that we got a negative solution.
-    Teuchos::ArrayRCP<const Scalar> x_view = VT::view(*x);
-    typename Teuchos::ArrayRCP<const Scalar>::const_iterator x_view_it;
+    Teuchos::ArrayRCP<const double> x_view = VT::view(*x);
+    typename Teuchos::ArrayRCP<const double>::const_iterator x_view_it;
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
-	TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<Scalar>::zero() );
+	TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<double>::zero() );
     }
 
     // Now solve the problem with a positive source.
@@ -177,7 +168,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FixedPointSolverManager, one_by_one, LO, GO, 
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
-    	TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<Scalar>::zero() );
+    	TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<double>::zero() );
     }
 
     // Reset the domain and solve again with a positive source.
@@ -191,7 +182,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FixedPointSolverManager, one_by_one, LO, GO, 
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
-    	TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<Scalar>::zero() );
+    	TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<double>::zero() );
     }
 
     // Reset both and solve with a negative source.
@@ -205,18 +196,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FixedPointSolverManager, one_by_one, LO, GO, 
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
-    	TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<Scalar>::zero() );
+    	TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<double>::zero() );
     }
 }
 
-UNIT_TEST_INSTANTIATION( FixedPointSolverManager, one_by_one )
-
 //---------------------------------------------------------------------------//
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FixedPointSolverManager, one_by_one_prec, LO, GO, Scalar )
+TEUCHOS_UNIT_TEST( FixedPointSolverManager, one_by_one_prec )
 {
-    typedef Tpetra::Vector<Scalar,LO,GO> VectorType;
+    typedef Tpetra::Vector<double,int,long> VectorType;
     typedef MCLS::VectorTraits<VectorType> VT;
-    typedef Tpetra::CrsMatrix<Scalar,LO,GO> MatrixType;
+    typedef Tpetra::CrsMatrix<double,int,long> MatrixType;
     typedef MCLS::MatrixTraits<VectorType,MatrixType> MT;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = 
@@ -225,13 +214,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FixedPointSolverManager, one_by_one_prec, LO,
 
     int local_num_rows = 10;
     int global_num_rows = local_num_rows*comm_size;
-    Teuchos::RCP<const Tpetra::Map<LO,GO> > map = 
-	Tpetra::createUniformContigMap<LO,GO>( global_num_rows, comm );
+    Teuchos::RCP<const Tpetra::Map<int,long> > map = 
+	Tpetra::createUniformContigMap<int,long>( global_num_rows, comm );
 
     // Build the identity matrix as a preconditioner.
-    Teuchos::RCP<MatrixType> I = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
-    Teuchos::Array<GO> i_global_columns( 1 );
-    Teuchos::Array<Scalar> i_values( 1, 1.0/comm_size );
+    Teuchos::RCP<MatrixType> I = Tpetra::createCrsMatrix<double,int,long>( map );
+    Teuchos::Array<long> i_global_columns( 1 );
+    Teuchos::Array<double> i_values( 1, 1.0/comm_size );
     for ( int i = 0; i < global_num_rows; ++i )
     {
 	i_global_columns[0] = i;
@@ -240,9 +229,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FixedPointSolverManager, one_by_one_prec, LO,
     I->fillComplete();
 
     // Build the linear system. 
-    Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<Scalar,LO,GO>( map );
-    Teuchos::Array<GO> global_columns( 3 );
-    Teuchos::Array<Scalar> values( 3 );
+    Teuchos::RCP<MatrixType> A = Tpetra::createCrsMatrix<double,int,long>( map );
+    Teuchos::Array<long> global_columns( 3 );
+    Teuchos::Array<double> values( 3 );
     global_columns[0] = 0;
     global_columns[1] = 1;
     global_columns[2] = 2;
@@ -297,7 +286,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FixedPointSolverManager, one_by_one_prec, LO,
 
     // Create the solver.
     MCLS::FixedPointSolverManager<VectorType,MatrixType> 
-	solver_manager( linear_problem, comm, plist );
+	solver_manager( linear_problem, plist );
 
     // Solve the problem.
     bool converged_status = solver_manager.solve();
@@ -308,11 +297,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FixedPointSolverManager, one_by_one_prec, LO,
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
 
     // Check that we got a negative solution.
-    Teuchos::ArrayRCP<const Scalar> x_view = VT::view(*x);
-    typename Teuchos::ArrayRCP<const Scalar>::const_iterator x_view_it;
+    Teuchos::ArrayRCP<const double> x_view = VT::view(*x);
+    typename Teuchos::ArrayRCP<const double>::const_iterator x_view_it;
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
-	TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<Scalar>::zero() );
+	TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<double>::zero() );
     }
 
     // Now solve the problem with a positive source.
@@ -326,7 +315,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FixedPointSolverManager, one_by_one_prec, LO,
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
-    	TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<Scalar>::zero() );
+    	TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<double>::zero() );
     }
 
     // Reset the domain and solve again with a positive source.
@@ -340,7 +329,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FixedPointSolverManager, one_by_one_prec, LO,
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
-    	TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<Scalar>::zero() );
+    	TEST_ASSERT( *x_view_it > Teuchos::ScalarTraits<double>::zero() );
     }
 
     // Reset both and solve with a negative source.
@@ -354,11 +343,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FixedPointSolverManager, one_by_one_prec, LO,
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
     for ( x_view_it = x_view.begin(); x_view_it != x_view.end(); ++x_view_it )
     {
-    	TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<Scalar>::zero() );
+    	TEST_ASSERT( *x_view_it < Teuchos::ScalarTraits<double>::zero() );
     }
 }
-
-UNIT_TEST_INSTANTIATION( FixedPointSolverManager, one_by_one_prec )
 
 //---------------------------------------------------------------------------//
 // end tstTpetraFixedPointSolverManager.cpp

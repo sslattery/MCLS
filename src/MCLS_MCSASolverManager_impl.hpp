@@ -75,9 +75,10 @@ MCSASolverManager<Vector,Matrix,MonteCarloTag,RNG>::MCSASolverManager(
  */
 template<class Vector, class Matrix, class MonteCarloTag, class RNG>
 MCSASolverManager<Vector,Matrix,MonteCarloTag,RNG>::MCSASolverManager( 
-    const Teuchos::RCP<LinearProblemType>& problem,
+    const Teuchos::RCP<MultiSetLinearProblem<Vector,Matrix> >& multiset_problem,
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
-    : d_problem( problem )
+    : d_multiset_problem( multiset_problem )
+    , d_problem( multiset_problem->getProblem() )
     , d_plist( plist )
     , d_num_iters( 0 )
     , d_converged_status( 0 )
@@ -89,7 +90,7 @@ MCSASolverManager<Vector,Matrix,MonteCarloTag,RNG>::MCSASolverManager(
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
     // Determine if this is the root rank.
-    d_is_rank_zero = ( MT::getComm(*d_problem->getOperator())->getRank() == 0 );
+    d_is_rank_zero = ( d_multiset_problem->globalRank() == 0 );
     
     // Build the fixed point solver. Default to
     // richardson.
@@ -173,6 +174,19 @@ MCSASolverManager<Vector,Matrix,MonteCarloTag,RNG>::achievedTol() const
 
 //---------------------------------------------------------------------------//
 /*!
+ * \brief Set the multiset linear problem with the manager.
+ */
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+void MCSASolverManager<Vector,Matrix,MonteCarloTag,RNG>::setMultiSetProblem( 
+    const Teuchos::RCP<MultiSetLinearProblem<Vector,Matrix> >& multiset_problem )
+{
+    d_multiset_problem = multiset_problem;
+    d_is_rank_zero = ( d_multiset_problem->globalRank() == 0 );
+    setProblem( d_multiset_problem->getProblem() );
+}
+
+//---------------------------------------------------------------------------//
+/*!
  * \brief Set the linear problem with the manager.
  */
 template<class Vector, class Matrix, class MonteCarloTag, class RNG>
@@ -190,7 +204,7 @@ void MCSASolverManager<Vector,Matrix,MonteCarloTag,RNG>::setProblem(
     FixedPointIterationFactory<Vector,Matrix> fp_factory;
     d_fixed_point = 
 	fp_factory.create( iteration_name, d_plist );
-    d_fixed_point->setProblem( problem );   
+    d_fixed_point->setProblem( problem );
 
     // Determine if the linear operator has changed. It is presumed the
     // preconditioners are bound to the linear operator and will therefore
@@ -209,9 +223,6 @@ void MCSASolverManager<Vector,Matrix,MonteCarloTag,RNG>::setProblem(
 
     // Set the problem.
     d_problem = problem;
-
-    // Determine if this is the root rank.
-    d_is_rank_zero = ( MT::getComm(*d_problem->getOperator())->getRank() == 0 );
 
     // Update the residual problem if it already exists.
     if ( Teuchos::nonnull(d_mc_solver) )
@@ -359,6 +370,12 @@ bool MCSASolverManager<Vector,Matrix,MonteCarloTag,RNG>::solve()
 	// Solve the residual Monte Carlo problem.
 	d_mc_solver->solve();
 
+	// Combine the Monte Carlo correction across sets and normalize.
+	d_multiset_problem->blockConstantVectorSum(
+	    d_residual_problem->getLHS() );
+	VT::scale( *d_residual_problem->getLHS(),
+		   1.0 / d_multiset_problem->numSets() );
+
 	// Apply the correction.
 	VT::update( *d_problem->getLHS(),
 		    Teuchos::ScalarTraits<Scalar>::one(),
@@ -443,8 +460,9 @@ MCSASolverManager<Vector,Matrix,MonteCarloTag,RNG>::buildResidualMonteCarloProbl
     }
 
     // Create the Monte Carlo direct solver for the residual problem.
-    d_mc_solver =
-	Teuchos::rcp( new MCSolver(d_residual_problem, d_plist, true) );
+    d_mc_solver = Teuchos::rcp(
+	new MonteCarloSolver(d_residual_problem, d_plist,
+			     d_multiset_problem->globalRank(), true) );
     MCLS_ENSURE( Teuchos::nonnull(d_mc_solver) );
 }
 

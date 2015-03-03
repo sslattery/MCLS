@@ -49,7 +49,7 @@
 #include <cassert>
 
 #include <MCLS_MCSASolverManager.hpp>
-#include <MCLS_LinearProblem.hpp>
+#include <MCLS_MultiSetLinearProblem.hpp>
 #include <MCLS_TpetraAdapter.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
@@ -137,10 +137,12 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, adjoint )
     Teuchos::RCP<MCLS::LinearProblem<VectorType,MatrixType> > linear_problem =
 	Teuchos::rcp( new MCLS::LinearProblem<VectorType,MatrixType>(
 			  A, x, b ) );
-
     // Create the solver.
+    Teuchos::RCP<MCLS::MultiSetLinearProblem<VectorType,MatrixType> > multiset_problem =
+	Teuchos::rcp( new MCLS::MultiSetLinearProblem<VectorType,MatrixType>(
+			  comm, 1, 0, linear_problem) );
     MCLS::MCSASolverManager<VectorType,MatrixType,MCLS::AdjointTag> 
-	solver_manager( linear_problem, plist );
+	solver_manager( multiset_problem, plist );
 
     // Solve the problem.
     bool converged_status = solver_manager.solve();
@@ -149,7 +151,7 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, adjoint )
     TEST_ASSERT( solver_manager.getConvergedStatus() );
     TEST_ASSERT( solver_manager.getNumIters() < 20 );
     TEST_ASSERT( solver_manager.achievedTol() > 0.0 );
-
+    
     // Check that we got a negative solution.
     Teuchos::ArrayRCP<const double> x_view = VT::view(*x);
     typename Teuchos::ArrayRCP<const double>::const_iterator x_view_it;
@@ -287,8 +289,11 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, prec_adjoint )
     linear_problem->setRightPrec( I );
 
     // Create the solver.
+    Teuchos::RCP<MCLS::MultiSetLinearProblem<VectorType,MatrixType> > multiset_problem =
+	Teuchos::rcp( new MCLS::MultiSetLinearProblem<VectorType,MatrixType>(
+			  comm, 1, 0, linear_problem) );
     MCLS::MCSASolverManager<VectorType,MatrixType,MCLS::AdjointTag> 
-	solver_manager( linear_problem, plist );
+	solver_manager( multiset_problem, plist );
 
     // Solve the problem.
     bool converged_status = solver_manager.solve();
@@ -420,8 +425,11 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, forward )
 			  A, x, b ) );
 
     // Create the solver.
-    MCLS::MCSASolverManager<VectorType,MatrixType,MCLS::ForwardTag> 
-	solver_manager( linear_problem, plist );
+    Teuchos::RCP<MCLS::MultiSetLinearProblem<VectorType,MatrixType> > multiset_problem =
+	Teuchos::rcp( new MCLS::MultiSetLinearProblem<VectorType,MatrixType>(
+			  comm, 1, 0, linear_problem) );
+    MCLS::MCSASolverManager<VectorType,MatrixType,MCLS::AdjointTag> 
+	solver_manager( multiset_problem, plist );
 
     // Solve the problem.
     bool converged_status = solver_manager.solve();
@@ -568,8 +576,11 @@ TEUCHOS_UNIT_TEST( MCSASolverManager, prec_forward )
     linear_problem->setRightPrec( I );
 
     // Create the solver.
-    MCLS::MCSASolverManager<VectorType,MatrixType,MCLS::ForwardTag> 
-	solver_manager( linear_problem, plist );
+    Teuchos::RCP<MCLS::MultiSetLinearProblem<VectorType,MatrixType> > multiset_problem =
+	Teuchos::rcp( new MCLS::MultiSetLinearProblem<VectorType,MatrixType>(
+			  comm, 1, 0, linear_problem) );
+    MCLS::MCSASolverManager<VectorType,MatrixType,MCLS::AdjointTag> 
+	solver_manager( multiset_problem, plist );
 
     // Solve the problem.
     bool converged_status = solver_manager.solve();
