@@ -42,8 +42,7 @@
 #define MCLS_SOLVERFACTORY_IMPL_HPP
 
 #include "MCLS_DBC.hpp"
-#include "MCLS_AdjointSolverManager.hpp"
-#include "MCLS_ForwardSolverManager.hpp"
+#include "MCLS_MonteCarloSolverManager.hpp"
 #include "MCLS_MCSASolverManager.hpp"
 #include "MCLS_FixedPointSolverManager.hpp"
 #include "MCLS_AndersonSolverManager.hpp"
@@ -89,32 +88,34 @@ SolverFactory<Vector,Matrix>::create(
     {
 	case ADJOINT_MC:
 
-	    solver = Teuchos::rcp( new AdjointSolverManager<Vector,Matrix>( 
-				       global_comm, solver_parameters ) );
+	    solver = Teuchos::rcp(
+		new MonteCarloSolverManager<Vector,Matrix,AdjointTag>( 
+		    solver_parameters ) );
 	    break;
 
 	case FORWARD_MC:
 
-	    solver = Teuchos::rcp( new ForwardSolverManager<Vector,Matrix>( 
-				       global_comm, solver_parameters ) );
+	    solver = Teuchos::rcp(
+		new MonteCarloSolverManager<Vector,Matrix,ForwardTag>( 
+		    solver_parameters ) );
 	    break;
 
 	case MCSA:
 
 	    solver = Teuchos::rcp( new MCSASolverManager<Vector,Matrix>( 
-				       global_comm, solver_parameters ) );
+				       solver_parameters ) );
 	    break;
 
 	case FIXED_POINT:
 
 	    solver = Teuchos::rcp( new FixedPointSolverManager<Vector,Matrix>( 
-				       global_comm, solver_parameters ) );
+				       solver_parameters ) );
 	    break;
 
 	case ANDERSON:
 
-	    solver = Teuchos::rcp( new AndersonSolverManager<Vector,Matrix>( 
-				       global_comm, solver_parameters ) );
+	    solver = Teuchos::rcp( new AndersonSolverManager<Vector,Matrix,>( 
+				       solver_parameters ) );
 	    break;
 
 	default:

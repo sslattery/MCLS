@@ -52,8 +52,8 @@ namespace MCLS
  * \brief Parameter constructor. setProblem() and setParameters() must be called
  * before solve(). 
  */
-template<class Vector, class Matrix, class AlgorithmTag, class RNG>
-MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::MonteCarloSolverManager( 
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+MonteCarloSolverManager<Vector,Matrix,MonteCarloTag,RNG>::MonteCarloSolverManager( 
     const Teuchos::RCP<Teuchos::ParameterList>& plist,
     bool internal_solver )
     : d_plist( plist )
@@ -69,8 +69,8 @@ MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::MonteCarloSolverManager
 /*!
  * \brief Constructor.
  */
-template<class Vector, class Matrix, class AlgorithmTag, class RNG>
-MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::MonteCarloSolverManager( 
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+MonteCarloSolverManager<Vector,Matrix,MonteCarloTag,RNG>::MonteCarloSolverManager( 
     const Teuchos::RCP<LinearProblemType>& problem,
     const Teuchos::RCP<Teuchos::ParameterList>& plist,
     bool internal_solver )
@@ -90,13 +90,14 @@ MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::MonteCarloSolverManager
 /*!
  * \brief Get the valid parameters for this manager.
  */
-template<class Vector, class Matrix, class AlgorithmTag, class RNG>
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
 Teuchos::RCP<const Teuchos::ParameterList> 
-MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::getValidParameters() const
+MonteCarloSolverManager<Vector,Matrix,MonteCarloTag,RNG>::getValidParameters() const
 {
     Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::parameterList();
 
     // Set the list values to the default code values. Put zero if no default.
+    plist->set<double>("Sample Ratio", 1.0);
     plist->set<double>("History Length", 10);
     plist->set<int>("MC Check Frequency", 1000);
     plist->set<int>("MC Buffer Size", 1000);
@@ -109,10 +110,10 @@ MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::getValidParameters() co
  * \brief Get the tolerance achieved on the last linear solve. This may be
  * less or more than the set convergence tolerance.
  */
-template<class Vector, class Matrix, class AlgorithmTag, class RNG>
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
 typename Teuchos::ScalarTraits<
-    typename MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::Scalar>::magnitudeType 
-MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::achievedTol() const
+    typename MonteCarloSolverManager<Vector,Matrix,MonteCarloTag,RNG>::Scalar>::magnitudeType 
+MonteCarloSolverManager<Vector,Matrix,MonteCarloTag,RNG>::achievedTol() const
 {
     // Here we'll simply return the source weighted norm of the residual after
     // solution. This will give us a measure of the stochastic error generated
@@ -132,8 +133,8 @@ MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::achievedTol() const
  * \brief Get the number of iterations from the last linear solve. This is a
  * direct solver and therefore does not do any iterations.
  */
-template<class Vector, class Matrix, class AlgorithmTag, class RNG>
-int MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::getNumIters() const
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+int MonteCarloSolverManager<Vector,Matrix,MonteCarloTag,RNG>::getNumIters() const
 {
     return 0;
 }
@@ -142,8 +143,8 @@ int MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::getNumIters() const
 /*!
  * \brief Set the linear problem with the manager.
  */
-template<class Vector, class Matrix, class AlgorithmTag, class RNG>
-void MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::setProblem( 
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+void MonteCarloSolverManager<Vector,Matrix,MonteCarloTag,RNG>::setProblem( 
     const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
@@ -178,8 +179,8 @@ void MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::setProblem(
  * \brief Set the parameters for the manager. The manager will modify this
     list with default parameters that are not defined. 
 */
-template<class Vector, class Matrix, class AlgorithmTag, class RNG>
-void MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::setParameters( 
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+void MonteCarloSolverManager<Vector,Matrix,MonteCarloTag,RNG>::setParameters( 
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
     MCLS_REQUIRE( Teuchos::nonnull(params) );
@@ -191,8 +192,8 @@ void MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::setParameters(
  * \brief Solve the linear problem. Return true if the solution
  * converged. False if it did not.
  */
-template<class Vector, class Matrix, class AlgorithmTag, class RNG>
-bool MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::solve()
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+bool MonteCarloSolverManager<Vector,Matrix,MonteCarloTag,RNG>::solve()
 {    
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
     MCLS_REQUIRE( Teuchos::nonnull(d_mc_solver) );
@@ -207,7 +208,7 @@ bool MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::solve()
     buildMonteCarloSource();
 
     // Initialize the tally.
-    initializeTally( AlgorithmTag() );
+    initializeTally( MonteCarloTag() );
     
     // Solve the Monte Carlo problem over the set.
     d_mc_solver->solve();
@@ -234,9 +235,9 @@ bool MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::solve()
  * \brief Get the composite operator for a given algorithm tag. Forward
  * overload.
  */
-template<class Vector, class Matrix, class AlgorithmTag, class RNG>
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
 Teuchos::RCP<const Matrix>
-MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::getCompositeOperator(
+MonteCarloSolverManager<Vector,Matrix,MonteCarloTag,RNG>::getCompositeOperator(
     const double threshold, ForwardTag ) const
 {
     return d_problem->getCompositeOperator(threshold);
@@ -247,9 +248,9 @@ MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::getCompositeOperator(
  * \brief Get the composite operator for a given algorithm tag. Adjoint
  * overload.
  */
-template<class Vector, class Matrix, class AlgorithmTag, class RNG>
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
 Teuchos::RCP<const Matrix>
-MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::getCompositeOperator(
+MonteCarloSolverManager<Vector,Matrix,MonteCarloTag,RNG>::getCompositeOperator(
     const double threshold, AdjointTag ) const
 {
     return d_problem->getTransposeCompositeOperator(threshold);
@@ -259,8 +260,8 @@ MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::getCompositeOperator(
 /*!
  * \brief Initialize the tally for a solve. Forward overload.
  */
-template<class Vector, class Matrix, class AlgorithmTag, class RNG>
-void MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::initializeTally(
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+void MonteCarloSolverManager<Vector,Matrix,MonteCarloTag,RNG>::initializeTally(
     ForwardTag )
 {
     // Get a copy of the source so we can modify it.
@@ -291,8 +292,8 @@ void MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::initializeTally(
 /*!
  * \brief Initialize the tally for a solve. Adjoint overload.
  */
-template<class Vector, class Matrix, class AlgorithmTag, class RNG>
-void MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::initializeTally(
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+void MonteCarloSolverManager<Vector,Matrix,MonteCarloTag,RNG>::initializeTally(
     AdjointTag )
 { /* ... */ }
 
@@ -300,8 +301,8 @@ void MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::initializeTally(
 /*!
  * \brief Build the Monte Carlo domain from the provided linear problem.
  */
-template<class Vector, class Matrix, class AlgorithmTag, class RNG>
-void MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::buildMonteCarloDomain()
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+void MonteCarloSolverManager<Vector,Matrix,MonteCarloTag,RNG>::buildMonteCarloDomain()
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
@@ -323,7 +324,7 @@ void MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::buildMonteCarloDom
 	threshold =  d_plist->get<double>("Composite Operator Threshold");
     }
     d_domain = Teuchos::rcp( 
-	new DomainType( getCompositeOperator(threshold,AlgorithmTag()),
+	new DomainType( getCompositeOperator(threshold,MonteCarloTag()),
 			d_problem->getLHS(),
 			*d_plist ) );
 
@@ -338,8 +339,8 @@ void MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::buildMonteCarloDom
 /*!
  * \brief Build the Monte Carlo source from the provided linear problem.
  */
-template<class Vector, class Matrix, class AlgorithmTag, class RNG>
-void MonteCarloSolverManager<Vector,Matrix,AlgorithmTag,RNG>::buildMonteCarloSource()
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+void MonteCarloSolverManager<Vector,Matrix,MonteCarloTag,RNG>::buildMonteCarloSource()
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
     MCLS_REQUIRE( Teuchos::nonnull(d_domain()) );

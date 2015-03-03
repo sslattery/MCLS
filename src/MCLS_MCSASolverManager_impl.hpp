@@ -46,12 +46,8 @@
 #include <iomanip>
 
 #include "MCLS_DBC.hpp"
-#include "MCLS_AdjointSolverManager.hpp"
-#include "MCLS_ForwardSolverManager.hpp"
 #include "MCLS_FixedPointIterationFactory.hpp"
 
-#include <Teuchos_CommHelpers.hpp>
-#include <Teuchos_Ptr.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
 namespace MCLS
@@ -59,19 +55,17 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Comm constructor. setProblem() must be called before solve().
+ * \brief Parameter constructor. setProblem() must be called before solve().
  */
-template<class Vector, class Matrix, class RNG>
-MCSASolverManager<Vector,Matrix,RNG>::MCSASolverManager( 
-    const Teuchos::RCP<const Comm>& global_comm,
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+MCSASolverManager<Vector,Matrix,MonteCarloTag,RNG>::MCSASolverManager( 
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
-    : d_global_comm( global_comm )
-    , d_plist( plist )
+    : d_plist( plist )
+    , d_is_rank_zero( false )
 #if HAVE_MCLS_TIMERS
     , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: MCSA Solve") )
 #endif
 {
-    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 }
 
@@ -79,39 +73,37 @@ MCSASolverManager<Vector,Matrix,RNG>::MCSASolverManager(
 /*!
  * \brief Constructor.
  */
-template<class Vector, class Matrix, class RNG>
-MCSASolverManager<Vector,Matrix,RNG>::MCSASolverManager( 
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+MCSASolverManager<Vector,Matrix,MonteCarloTag,RNG>::MCSASolverManager( 
     const Teuchos::RCP<LinearProblemType>& problem,
-    const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
     : d_problem( problem )
-    , d_global_comm( global_comm )
     , d_plist( plist )
-    , d_primary_set( Teuchos::nonnull(d_problem) )
     , d_num_iters( 0 )
     , d_converged_status( 0 )
+    , d_is_rank_zero( false )
 #if HAVE_MCLS_TIMERS
     , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: MCSA Solve") )
 #endif
 {
-    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
-    // Build the fixed point solver on the primary set. Default to
+    // Determine if this is the root rank.
+    d_is_rank_zero = ( MT::getComm(*d_problem->getOperator())->getRank() == 0 );
+    
+    // Build the fixed point solver. Default to
     // richardson.
-    if ( d_primary_set )
+    std::string iteration_name = "Richardson";
+    if ( d_plist->isParameter("Fixed Point Type") )
     {
-        std::string iteration_name = "Richardson";
-        if ( d_plist->isParameter("Fixed Point Type") )
-        {
-            iteration_name = d_plist->get<std::string>("Fixed Point Type");
-        }
-        FixedPointIterationFactory<Vector,Matrix> fp_factory;
-        d_fixed_point = 
-            fp_factory.create( iteration_name, d_plist );
-        d_fixed_point->setProblem( d_problem );   
+	iteration_name = d_plist->get<std::string>("Fixed Point Type");
     }
+    FixedPointIterationFactory<Vector,Matrix> fp_factory;
+    d_fixed_point = 
+	fp_factory.create( iteration_name, d_plist );
+    d_fixed_point->setProblem( d_problem );   
 
+    // Build the residual Monte Carlo problem.
     buildResidualMonteCarloProblem();
 }
 
@@ -119,9 +111,9 @@ MCSASolverManager<Vector,Matrix,RNG>::MCSASolverManager(
 /*!
  * \brief Get the valid parameters for this manager.
  */
-template<class Vector, class Matrix, class RNG>
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
 Teuchos::RCP<const Teuchos::ParameterList> 
-MCSASolverManager<Vector,Matrix,RNG>::getValidParameters() const
+MCSASolverManager<Vector,Matrix,MonteCarloTag,RNG>::getValidParameters() const
 {
     // Create a parameter list with the Monte Carlo solver parameters as a
     // starting point.
@@ -132,7 +124,6 @@ MCSASolverManager<Vector,Matrix,RNG>::getValidParameters() const
     }
 
     // Add the default code values. Put zero if no default.
-    plist->set<std::string>("MC Type", "Adjoint");
     plist->set<double>("Convergence Tolerance", 1.0);
     plist->set<int>("Maximum Iterations", 1000);
     plist->set<int>("Iteration Print Frequency", 10);
@@ -147,40 +138,35 @@ MCSASolverManager<Vector,Matrix,RNG>::getValidParameters() const
  * \brief Get the tolerance achieved on the last linear solve. This may be
  * less or more than the set convergence tolerance. 
  */
-template<class Vector, class Matrix, class RNG>
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
 typename Teuchos::ScalarTraits<
-    typename MCSASolverManager<Vector,Matrix,RNG>::Scalar>::magnitudeType 
-MCSASolverManager<Vector,Matrix,RNG>::achievedTol() const
+    typename MCSASolverManager<Vector,Matrix,MonteCarloTag,RNG>::Scalar>::magnitudeType 
+MCSASolverManager<Vector,Matrix,MonteCarloTag,RNG>::achievedTol() const
 {
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType residual_norm = 
 	Teuchos::ScalarTraits<Scalar>::zero();
 
-    // We only do this on the primary set where the linear problem exists.
-    if ( d_primary_set )
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType source_norm = 0;
+
+    residual_norm = VT::norm2( *d_problem->getPrecResidual() );
+
+    // Compute the source norm preconditioned if necessary.
+    if ( d_problem->isLeftPrec() )
     {
-	typename Teuchos::ScalarTraits<Scalar>::magnitudeType source_norm = 0;
-
-	residual_norm = VT::norm2( *d_problem->getPrecResidual() );
-
-	// Compute the source norm preconditioned if necessary.
-	if ( d_problem->isLeftPrec() )
-	{
-	    Teuchos::RCP<Vector> tmp = VT::clone( *d_problem->getRHS() );
-	    d_problem->applyLeftPrec( *d_problem->getRHS(), *tmp );
-	    source_norm = VT::norm2( *tmp );
-	}
-	else
-	{
-	    source_norm = VT::norm2( *d_problem->getRHS() );
-	}
-
-	// Heterogenous case.
-	if ( source_norm > 0.0 )
-	{
-	    residual_norm /= source_norm;
-	}
+	Teuchos::RCP<Vector> tmp = VT::clone( *d_problem->getRHS() );
+	d_problem->applyLeftPrec( *d_problem->getRHS(), *tmp );
+	source_norm = VT::norm2( *tmp );
     }
-    d_global_comm->barrier();
+    else
+    {
+	source_norm = VT::norm2( *d_problem->getRHS() );
+    }
+
+    // Heterogenous case.
+    if ( source_norm > 0.0 )
+    {
+	residual_norm /= source_norm;
+    }
 
     return residual_norm;
 }
@@ -189,30 +175,22 @@ MCSASolverManager<Vector,Matrix,RNG>::achievedTol() const
 /*!
  * \brief Set the linear problem with the manager.
  */
-template<class Vector, class Matrix, class RNG>
-void MCSASolverManager<Vector,Matrix,RNG>::setProblem( 
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+void MCSASolverManager<Vector,Matrix,MonteCarloTag,RNG>::setProblem( 
     const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem )
 {
-    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
-    // Set the problem.
-    d_primary_set = Teuchos::nonnull(problem);
-
-    // Build the fixed point solver on the primary set. Default to
-    // richardson.
-    if ( d_primary_set )
+    // Build the fixed point solver. Default to richardson.
+    std::string iteration_name = "Richardson";
+    if ( d_plist->isParameter("Fixed Point Type") )
     {
-        std::string iteration_name = "Richardson";
-        if ( d_plist->isParameter("Fixed Point Type") )
-        {
-            iteration_name = d_plist->get<std::string>("Fixed Point Type");
-        }
-        FixedPointIterationFactory<Vector,Matrix> fp_factory;
-        d_fixed_point = 
-            fp_factory.create( iteration_name, d_plist );
-        d_fixed_point->setProblem( problem );   
+	iteration_name = d_plist->get<std::string>("Fixed Point Type");
     }
+    FixedPointIterationFactory<Vector,Matrix> fp_factory;
+    d_fixed_point = 
+	fp_factory.create( iteration_name, d_plist );
+    d_fixed_point->setProblem( problem );   
 
     // Determine if the linear operator has changed. It is presumed the
     // preconditioners are bound to the linear operator and will therefore
@@ -220,41 +198,37 @@ void MCSASolverManager<Vector,Matrix,RNG>::setProblem(
     // the operator has changed is checking if the memory address is the
     // same. This may not be the best way to check.
     bool update_operator = true;
-    if ( d_primary_set )
-    {        
-        if ( Teuchos::nonnull(d_problem) )
-        {
-            if ( d_problem->getOperator().getRawPtr() == 
-                 problem->getOperator().getRawPtr() )
-            {
-                update_operator = false;
-            }
-        }
+    if ( Teuchos::nonnull(d_problem) )
+    {
+	if ( d_problem->getOperator().getRawPtr() == 
+	     problem->getOperator().getRawPtr() )
+	{
+	    update_operator = false;
+	}
     }
 
     // Set the problem.
     d_problem = problem;
 
+    // Determine if this is the root rank.
+    d_is_rank_zero = ( MT::getComm(*d_problem->getOperator())->getRank() == 0 );
+
     // Update the residual problem if it already exists.
     if ( Teuchos::nonnull(d_mc_solver) )
     {
-        if ( d_primary_set )
-        {
-            if ( update_operator )
-            {
-                d_residual_problem->setOperator( d_problem->getOperator() );
-                if ( d_problem->isLeftPrec() )
-                {
-                    d_residual_problem->setLeftPrec( d_problem->getLeftPrec() );
-                }
-                if ( d_problem->isRightPrec() )
-                {
-                    d_residual_problem->setRightPrec( d_problem->getRightPrec() );
-                }
-            }
-	    d_residual_problem->setRHS( d_problem->getPrecResidual() );
+	if ( update_operator )
+	{
+	    d_residual_problem->setOperator( d_problem->getOperator() );
+	    if ( d_problem->isLeftPrec() )
+	    {
+		d_residual_problem->setLeftPrec( d_problem->getLeftPrec() );
+	    }
+	    if ( d_problem->isRightPrec() )
+	    {
+		d_residual_problem->setRightPrec( d_problem->getRightPrec() );
+	    }
 	}
-	d_global_comm->barrier();
+	d_residual_problem->setRHS( d_problem->getPrecResidual() );
 
 	// Set the updated residual problem with the Monte Carlo solver.
 	d_mc_solver->setProblem( d_residual_problem );
@@ -271,8 +245,8 @@ void MCSASolverManager<Vector,Matrix,RNG>::setProblem(
  * \brief Set the parameters for the manager. The manager will modify this
  * list with default parameters that are not defined.
  */
-template<class Vector, class Matrix, class RNG>
-void MCSASolverManager<Vector,Matrix,RNG>::setParameters( 
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+void MCSASolverManager<Vector,Matrix,MonteCarloTag,RNG>::setParameters( 
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
     MCLS_REQUIRE( Teuchos::nonnull(params) );
@@ -290,10 +264,9 @@ void MCSASolverManager<Vector,Matrix,RNG>::setParameters(
  * \brief Solve the linear problem. Return true if the solution
  * converged. False if it did not.
  */
-template<class Vector, class Matrix, class RNG>
-bool MCSASolverManager<Vector,Matrix,RNG>::solve()
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+bool MCSASolverManager<Vector,Matrix,MonteCarloTag,RNG>::solve()
 {
-    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_mc_solver) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
@@ -306,38 +279,34 @@ bool MCSASolverManager<Vector,Matrix,RNG>::solve()
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType 
 	convergence_criteria = 0;
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType source_norm = 0;
-    if ( d_primary_set )
+    typename Teuchos::ScalarTraits<double>::magnitudeType tolerance = 1.0;
+    if ( d_plist->isParameter("Convergence Tolerance") )
     {
-        typename Teuchos::ScalarTraits<double>::magnitudeType tolerance = 1.0;
-        if ( d_plist->isParameter("Convergence Tolerance") )
-        {
-            tolerance = d_plist->get<double>("Convergence Tolerance");
-        }
-
-	// Compute the source norm preconditioned if necessary.
-	if ( d_problem->isLeftPrec() )
-	{
-	    Teuchos::RCP<Vector> tmp = VT::clone( *d_problem->getRHS() );
-	    d_problem->applyLeftPrec( *d_problem->getRHS(), *tmp );
-	    source_norm = VT::norm2( *tmp );
-	}
-	else
-	{
-	    source_norm = VT::norm2( *d_problem->getRHS() );
-	}
-	
-	// Homogenous case.
-	if ( std::abs(source_norm) < 
-	     10.0 * Teuchos::ScalarTraits<double>::eps() )
-	{
-	    source_norm = 1.0;
-	}
-
-	convergence_criteria = tolerance * source_norm;
-
-        d_fixed_point->setParameters( d_plist );
+	tolerance = d_plist->get<double>("Convergence Tolerance");
     }
-    d_global_comm->barrier();
+
+    // Compute the source norm preconditioned if necessary.
+    if ( d_problem->isLeftPrec() )
+    {
+	Teuchos::RCP<Vector> tmp = VT::clone( *d_problem->getRHS() );
+	d_problem->applyLeftPrec( *d_problem->getRHS(), *tmp );
+	source_norm = VT::norm2( *tmp );
+    }
+    else
+    {
+	source_norm = VT::norm2( *d_problem->getRHS() );
+    }
+	
+    // Homogenous case.
+    if ( std::abs(source_norm) < 
+	 10.0 * Teuchos::ScalarTraits<double>::eps() )
+    {
+	source_norm = 1.0;
+    }
+
+    convergence_criteria = tolerance * source_norm;
+
+    d_fixed_point->setParameters( d_plist );
     d_converged_status = 0;
 
     // Iteration setup.
@@ -362,14 +331,10 @@ bool MCSASolverManager<Vector,Matrix,RNG>::solve()
 	smooth_steps = d_plist->get<int>("Smoother Steps");
     }
 
-    // Set the residual.
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType residual_norm = 0;
-    if ( d_primary_set )
-    {
-	// Compute the initial preconditioned residual.
-	d_problem->updatePrecResidual();
-	residual_norm = VT::norm2( *d_problem->getPrecResidual() );
-    }
+    // Compute the initial preconditioned residual.
+    d_problem->updatePrecResidual();
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType residual_norm =
+	VT::norm2( *d_problem->getPrecResidual() );
 
     // Print initial iteration data.
     printTopBanner();
@@ -382,52 +347,38 @@ bool MCSASolverManager<Vector,Matrix,RNG>::solve()
 	// Update the iteration count.
 	++d_num_iters;
 
-	// Perform smoothing and update the residual on the primary set and
-	// clear the correction.
-	if ( d_primary_set )
+	// Perform smoothing and update the residual.
+	for ( int l = 0; l < smooth_steps; ++l )
 	{
-	    for ( int l = 0; l < smooth_steps; ++l )
-	    {
-		d_fixed_point->doOneIteration();
-	    }
-
-	    VT::putScalar( *d_residual_problem->getLHS(), 0.0 );
+	    d_fixed_point->doOneIteration();
 	}
+
+	// Clear the Monte Carlo correction.
+	VT::putScalar( *d_residual_problem->getLHS(), 0.0 );
 
 	// Solve the residual Monte Carlo problem.
 	d_mc_solver->solve();
 
-	// Apply the correction and update the preconditioned residual on the
-	// primary set.
-	if ( d_primary_set )
-	{
-            VT::update( *d_problem->getLHS(),
-                        Teuchos::ScalarTraits<Scalar>::one(),
-                        *d_residual_problem->getLHS(),
-                        Teuchos::ScalarTraits<Scalar>::one() );
+	// Apply the correction.
+	VT::update( *d_problem->getLHS(),
+		    Teuchos::ScalarTraits<Scalar>::one(),
+		    *d_residual_problem->getLHS(),
+		    Teuchos::ScalarTraits<Scalar>::one() );
 
-	    d_problem->updatePrecResidual();
+	// Update the preconditioned residual.
+	d_problem->updatePrecResidual();
+	residual_norm = VT::norm2( *d_problem->getPrecResidual() );
 
-	    residual_norm = VT::norm2( *d_problem->getPrecResidual() );
-
-	    // Check if we're done iterating.
-	    if ( d_num_iters % check_freq == 0 )
-	    {
-		do_iterations = (residual_norm > convergence_criteria) &&
-				(d_num_iters < max_num_iters);
-	    }
-	}
-
-	// Broadcast iteration status to the blocks.
+	// Check if we're done iterating.
 	if ( d_num_iters % check_freq == 0 )
 	{
-	    Teuchos::broadcast<int,int>( 
-		*d_block_comm, 0, Teuchos::Ptr<int>(&do_iterations) );
+	    do_iterations = (residual_norm > convergence_criteria) &&
+			    (d_num_iters < max_num_iters);
 	}
 
 	// Print iteration data.
-	if ( (d_global_comm->getRank() == 0 && d_num_iters % print_freq == 0) ||
-             (d_global_comm->getRank() == 0 && !do_iterations) )
+	if ( d_is_rank_zero &&
+	     ((d_num_iters % print_freq == 0) || !do_iterations) )
 	{
 	    std::cout << std::setw(18) << d_num_iters;
 	    std::cout << std::setw(18) 
@@ -435,41 +386,31 @@ bool MCSASolverManager<Vector,Matrix,RNG>::solve()
 		      << std::scientific
 		      << residual_norm/source_norm << std::endl;
 	}
-
-	// Barrier before proceeding.
-	d_global_comm->barrier();
     }
 
     // Finalize.
-    if ( d_primary_set )
+    // Recover the original solution if right preconditioned.
+    if ( d_problem->isRightPrec() )
     {
-        // Recover the original solution if right preconditioned.
-        if ( d_problem->isRightPrec() )
-        {
-            Teuchos::RCP<Vector> temp = VT::clone(*d_problem->getLHS());
-	    d_problem->applyRightPrec( *d_problem->getLHS(),
-                                       *temp );
-            VT::update( *d_problem->getLHS(),
-                        Teuchos::ScalarTraits<Scalar>::zero(),
-                        *temp,
-                        Teuchos::ScalarTraits<Scalar>::one() );
-        }
+	Teuchos::RCP<Vector> temp = VT::clone(*d_problem->getLHS());
+	d_problem->applyRightPrec( *d_problem->getLHS(),
+				   *temp );
+	VT::update( *d_problem->getLHS(),
+		    Teuchos::ScalarTraits<Scalar>::zero(),
+		    *temp,
+		    Teuchos::ScalarTraits<Scalar>::one() );
+    }
 
-        // Check for convergence.
-	if ( VT::norm2(*d_problem->getPrecResidual()) <= convergence_criteria )
-	{
-	    d_converged_status = 1;
-	}
+    // Check for convergence.
+    if ( VT::norm2(*d_problem->getPrecResidual()) <= convergence_criteria )
+    {
+	d_converged_status = 1;
     }
 
     // Print final iteration data.
     printBottomBanner();
-    d_global_comm->barrier();
 
-    // Broadcast convergence status to the blocks.
-    Teuchos::broadcast<int,int>( 
-	*d_block_comm, 0, Teuchos::Ptr<int>(&d_converged_status) );
-
+    // Return converged status.
     return Teuchos::as<bool>(d_converged_status);
 }
 
@@ -477,117 +418,64 @@ bool MCSASolverManager<Vector,Matrix,RNG>::solve()
 /*!
  * \brief Build the residual Monte Carlo problem.
  */
-template<class Vector, class Matrix, class RNG>
-void MCSASolverManager<Vector,Matrix,RNG>::buildResidualMonteCarloProblem()
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+void
+MCSASolverManager<Vector,Matrix,MonteCarloTag,RNG>::buildResidualMonteCarloProblem()
 {
-    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
-    // Generate the residual Monte Carlo problem on the primary set. The
-    // preconditioned residual is the source and the transposed composite
-    // operator is the domain. We pass the preconditioners and operator
-    // separately to defer composite operator construction until the last
-    // possible moment.
-    if ( d_primary_set )
+    // Generate the residual Monte Carlo problem. The preconditioned residual
+    // is the source and the transposed composite operator is the domain. We
+    // pass the preconditioners and operator separately to defer composite
+    // operator construction until the last possible moment.
+    Teuchos::RCP<Vector> delta_x = VT::clone( *d_problem->getLHS() );
+    d_residual_problem = Teuchos::rcp(
+	new LinearProblemType( d_problem->getOperator(),
+			       delta_x,
+			       d_problem->getPrecResidual() ) );
+    if ( d_problem->isLeftPrec() )
     {
-	Teuchos::RCP<Vector> delta_x = VT::clone( *d_problem->getLHS() );
-	d_residual_problem = Teuchos::rcp(
-	    new LinearProblemType( d_problem->getOperator(),
-				   delta_x,
-				   d_problem->getPrecResidual() ) );
-        if ( d_problem->isLeftPrec() )
-        {
-            d_residual_problem->setLeftPrec( d_problem->getLeftPrec() );
-        }
-        if ( d_problem->isRightPrec() )
-        {
-            d_residual_problem->setRightPrec( d_problem->getRightPrec() );
-        }
+	d_residual_problem->setLeftPrec( d_problem->getLeftPrec() );
     }
-    d_global_comm->barrier();
+    if ( d_problem->isRightPrec() )
+    {
+	d_residual_problem->setRightPrec( d_problem->getRightPrec() );
+    }
 
     // Create the Monte Carlo direct solver for the residual problem.
-    bool use_adjoint = false;
-    bool use_forward = false;
-    if ( d_plist->get<std::string>("MC Type") == "Adjoint" )
-    {
-	use_adjoint = true;
-    }
-    else if ( d_plist->get<std::string>("MC Type") == "Forward" )
-    {
-	use_forward = true;
-    }
-    else
-    {
-	MCLS_INSIST( use_forward || use_adjoint, 
-		     "MC Type not supported" );
-    }
-
-    if ( use_adjoint )
-    {
-	d_mc_solver = Teuchos::rcp( 
-	    new AdjointSolverManager<Vector,Matrix,RNG>(
-		d_residual_problem, d_global_comm, d_plist, true) );
-
-	// Get the block constant communicator.
-	MCLS_CHECK( Teuchos::nonnull(d_mc_solver) );
-	d_block_comm = 
-	    Teuchos::rcp_dynamic_cast<AdjointSolverManager<Vector,Matrix,RNG> >(
-		d_mc_solver)->blockComm();
-    }
-    else if ( use_forward )
-    {
-	d_mc_solver = Teuchos::rcp( 
-	    new ForwardSolverManager<Vector,Matrix,RNG>(
-		d_residual_problem, d_global_comm, d_plist, true) );
-
-	// Get the block constant communicator.
-	MCLS_CHECK( Teuchos::nonnull(d_mc_solver) );
-	d_block_comm = 
-	    Teuchos::rcp_dynamic_cast<ForwardSolverManager<Vector,Matrix,RNG> >(
-		d_mc_solver)->blockComm();
-    }
-    else
-    {
-        MCLS_INSIST( use_forward || use_adjoint, 
-                     "MC Type not supported" );
-    }
-
+    d_mc_solver =
+	Teuchos::rcp( new MCSolver(d_residual_problem, d_plist, true) );
     MCLS_ENSURE( Teuchos::nonnull(d_mc_solver) );
-    MCLS_ENSURE( Teuchos::nonnull(d_block_comm) );
 }
 
 //---------------------------------------------------------------------------//
 /*!
  * \brief Print top banner for the iteration.
  */
-template<class Vector, class Matrix, class RNG>
-void MCSASolverManager<Vector,Matrix,RNG>::printTopBanner()
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+void MCSASolverManager<Vector,Matrix,MonteCarloTag,RNG>::printTopBanner()
 {
-    if ( d_global_comm->getRank() == 0 )
+    if ( d_is_rank_zero )
     {
         std::cout << std::endl;
         std::cout << "**************************************************" << std::endl;
         std::cout << "*       MCLS: Monte Carlo Linear Solvers         *" << std::endl;
         std::cout << "**************************************************" << std::endl;
 	std::cout << std::endl;
-        std::cout << "         MCSA / " << d_fixed_point->name() << " / "
-		  << d_plist->get<std::string>("MC Type") << std::endl << std::endl;
+        std::cout << "MCSA" << std::endl << std::endl;
 	std::cout << std::setw(18) << "Iteration";
 	std::cout << std::setw(18) << "|r|_2 / |b|_2" << std::endl;
     }
-    d_global_comm->barrier();
-  
 }
 
 //---------------------------------------------------------------------------//
 /*!
  * \brief Print bottom banner for the iteration.
  */
-template<class Vector, class Matrix, class RNG>
-void MCSASolverManager<Vector,Matrix,RNG>::printBottomBanner()
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+void MCSASolverManager<Vector,Matrix,MonteCarloTag,RNG>::printBottomBanner()
 {
-    if ( d_global_comm->getRank() == 0 )
+    if ( d_is_rank_zero )
     {
 	std::cout << std::endl;
         std::cout << "**************************************************" << std::endl;

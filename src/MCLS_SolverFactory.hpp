@@ -77,9 +77,6 @@ class SolverFactory : public virtual Teuchos::Describable
     //! Constructor.
     SolverFactory();
 
-    //! Destructor.
-    ~SolverFactory() { /* ... */ }
-
     // Creation method.
     Teuchos::RCP<Solver> 
     create( const std::string& solver_name,

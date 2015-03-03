@@ -67,10 +67,6 @@ class PRNG
     // Constructor.
     PRNG( const int comm_rank );
 
-    // Destructor.
-    ~PRNG()
-    { /* ... */ }
-
     // Get a random number from a specified distribution.
     template<class RandomDistribution>
     inline typename RandomDistributionTraits<RandomDistribution>::result_type

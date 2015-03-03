@@ -45,16 +45,17 @@
 
 #include "MCLS_config.hpp"
 #include "MCLS_SolverManager.hpp"
+#include "MCLS_MonteCarloSolverManager.hpp"
 #include "MCLS_FixedPointIteration.hpp"
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
+#include "MCLS_MatrixTraits.hpp"
 #include "MCLS_Xorshift.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_as.hpp>
-#include <Teuchos_Comm.hpp>
 #include <Teuchos_Time.hpp>
 
 namespace MCLS
@@ -65,34 +66,33 @@ namespace MCLS
  * \class MCSASolverManager
  * \brief Solver manager for Monte Carlo synthetic acceleration.
  */
-template<class Vector, class Matrix, class RNG = Xorshift<> >
+template<class Vector,
+	 class Matrix,
+	 class MonteCarloTag = AdjointTag,
+	 class RNG = Xorshift<> >
 class MCSASolverManager : public SolverManager<Vector,Matrix>
 {
   public:
 
     //@{
     //! Typedefs.
-    typedef SolverManager<Vector,Matrix>            Base;
-    typedef Vector                                  vector_type;
-    typedef VectorTraits<Vector>                    VT;
-    typedef typename VT::scalar_type                Scalar;
-    typedef Matrix                                  matrix_type;
-    typedef LinearProblem<Vector,Matrix>            LinearProblemType;
-    typedef FixedPointIteration<Vector,Matrix>      FixedPointType;
-    typedef Teuchos::Comm<int>                      Comm;
+    typedef SolverManager<Vector,Matrix>                      Base;
+    typedef Vector                                            vector_type;
+    typedef VectorTraits<Vector>                              VT;
+    typedef typename VT::scalar_type                          Scalar;
+    typedef Matrix                                            matrix_type;
+    typedef MatrixTraits<Vector,Matrix>                       MT;
+    typedef LinearProblem<Vector,Matrix>                      LinearProblemType;
+    typedef FixedPointIteration<Vector,Matrix>                FixedPointType;
+    typedef MonteCarloSolverManager<Vector,Matrix,MonteCarloTag,RNG> MCSolver;
     //@}
 
-    // Comm constructor. setProblem() must be called before solve().
-    MCSASolverManager( const Teuchos::RCP<const Comm>& global_comm,
-		       const Teuchos::RCP<Teuchos::ParameterList>& plist );
+    // Parameter constructor. setProblem() must be called before solve().
+    MCSASolverManager( const Teuchos::RCP<Teuchos::ParameterList>& plist );
 
     // Constructor.
     MCSASolverManager( const Teuchos::RCP<LinearProblemType>& problem,
-		       const Teuchos::RCP<const Comm>& global_comm,
 		       const Teuchos::RCP<Teuchos::ParameterList>& plist );
-
-    //! Destructor.
-    ~MCSASolverManager() { /* ... */ }
 
     //! Get the linear problem being solved by the manager.
     const LinearProblem<Vector,Matrix>& getProblem() const
@@ -147,20 +147,11 @@ class MCSASolverManager : public SolverManager<Vector,Matrix>
     // Residual linear problem
     Teuchos::RCP<LinearProblemType> d_residual_problem;
 
-    // Global communicator.
-    Teuchos::RCP<const Comm> d_global_comm;
-
-    // Block communicator.
-    Teuchos::RCP<const Comm> d_block_comm;
-
     // Parameters.
     Teuchos::RCP<Teuchos::ParameterList> d_plist;
 
-    // Primary set indicator.
-    bool d_primary_set;
-
     // Monte Carlo solver manager.
-    Teuchos::RCP<Base> d_mc_solver;
+    Teuchos::RCP<MCSolver> d_mc_solver;
 
     // Fixed point iteration.
     Teuchos::RCP<FixedPointType> d_fixed_point;
@@ -170,6 +161,9 @@ class MCSASolverManager : public SolverManager<Vector,Matrix>
 
     // Converged status. True if last solve converged.
     int d_converged_status;
+
+    // Boolean for rank 0.
+    bool d_is_rank_zero;
 
 #if HAVE_MCLS_TIMERS
     // Total solve timer.

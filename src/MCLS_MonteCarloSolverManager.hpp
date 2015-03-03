@@ -68,7 +68,6 @@ namespace MCLS
 //---------------------------------------------------------------------------//
 
 // Dispatch tags.
-class MonteCarloTag {};
 class ForwardTag {};
 class AdjointTag {};
 
@@ -103,7 +102,7 @@ class MonteCarloTagTraits<Vector,Matrix,RNG,AdjointTag>
  */
 template<class Vector,
 	 class Matrix,
-	 class AlgorithmTag = AdjointTag,
+	 class MonteCarloTag = AdjointTag,
 	 class RNG = Xorshift<> >
 class MonteCarloSolverManager : public SolverManager<Vector,Matrix>
 {
@@ -118,7 +117,7 @@ class MonteCarloSolverManager : public SolverManager<Vector,Matrix>
     typedef Matrix                                     matrix_type;
     typedef MatrixTraits<Vector,Matrix>                MT;
     typedef LinearProblem<Vector,Matrix>               LinearProblemType;
-    typedef AlgorithmTag                               Tag;
+    typedef MonteCarloTag                              Tag;
     typedef MonteCarloTagTraits<Vector,Matrix,RNG,Tag> MCTT;
     typedef typename MCTT::domain_type                 DomainType;
     typedef typename MCTT::source_type                 SourceType;
