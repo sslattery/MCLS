@@ -60,9 +60,11 @@ SolverFactory<Vector,Matrix>::SolverFactory()
     // Create the sovler name-to-enum map.
     d_name_map["Adjoint MC"] = ADJOINT_MC;
     d_name_map["Forward MC"] = FORWARD_MC;
-    d_name_map["MCSA"] = MCSA;
+    d_name_map["Adjoint MCSA"] = ADJOINT_MCSA;
+    d_name_map["Forward MCSA"] = FORWARD_MCSA;
+    d_name_map["Adjoint Anderson"] = ADJOINT_ANDERSON;
+    d_name_map["Forward Anderson"] = FORWARD_ANDERSON;
     d_name_map["Fixed Point"] = FIXED_POINT;
-    d_name_map["Anderson"] = ANDERSON;
 }
 
 //---------------------------------------------------------------------------//
@@ -73,10 +75,8 @@ template<class Vector, class Matrix>
 Teuchos::RCP<typename SolverFactory<Vector,Matrix>::Solver> 
 SolverFactory<Vector,Matrix>::create( 
     const std::string& solver_name,
-    const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& solver_parameters )
 {
-    MCLS_REQUIRE( Teuchos::nonnull(global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(solver_parameters) );
 
     Teuchos::RCP<Solver> solver;
@@ -100,21 +100,37 @@ SolverFactory<Vector,Matrix>::create(
 		    solver_parameters ) );
 	    break;
 
-	case MCSA:
+	case ADJOINT_MCSA:
 
-	    solver = Teuchos::rcp( new MCSASolverManager<Vector,Matrix>( 
-				       solver_parameters ) );
+	    solver = Teuchos::rcp(
+		new MCSASolverManager<Vector,Matrix,AdjointTag>( 
+		    solver_parameters ) );
+	    break;
+
+	case FORWARD_MCSA:
+
+	    solver = Teuchos::rcp(
+		new MCSASolverManager<Vector,Matrix,ForwardTag>( 
+		    solver_parameters ) );
+	    break;
+
+	case ADJOINT_ANDERSON:
+
+	    solver = Teuchos::rcp(
+		new AndersonSolverManager<Vector,Matrix,AdjointTag>( 
+		    solver_parameters ) );
+	    break;
+
+	case FORWARD_ANDERSON:
+
+	    solver = Teuchos::rcp(
+		new AndersonSolverManager<Vector,Matrix,ForwardTag>( 
+		    solver_parameters ) );
 	    break;
 
 	case FIXED_POINT:
 
 	    solver = Teuchos::rcp( new FixedPointSolverManager<Vector,Matrix>( 
-				       solver_parameters ) );
-	    break;
-
-	case ANDERSON:
-
-	    solver = Teuchos::rcp( new AndersonSolverManager<Vector,Matrix,>( 
 				       solver_parameters ) );
 	    break;
 

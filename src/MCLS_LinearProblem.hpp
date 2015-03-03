@@ -75,9 +75,6 @@ class LinearProblem
 		   const Teuchos::RCP<Vector>& x,
 		   const Teuchos::RCP<const Vector>& b );
 
-    // Destructor.
-    ~LinearProblem();
-
     // Set the linear operator.
     void setOperator( const Teuchos::RCP<const Matrix>& A );
 

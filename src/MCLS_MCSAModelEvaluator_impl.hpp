@@ -46,8 +46,6 @@
 #include <iomanip>
 
 #include "MCLS_DBC.hpp"
-#include "MCLS_AdjointSolverManager.hpp"
-#include "MCLS_ForwardSolverManager.hpp"
 #include "MCLS_ThyraVectorExtraction.hpp"
 
 #include <Teuchos_CommHelpers.hpp>
@@ -58,21 +56,18 @@ namespace MCLS
 {
 //---------------------------------------------------------------------------//
 /*!
- * \brief Comm constructor. setProblem() must be called before solve().
+ * \brief Parameter constructor. setProblem() must be called before solve().
  */
-template<class Vector, class Matrix, class RNG>
-MCSAModelEvaluator<Vector,Matrix,RNG>::MCSAModelEvaluator( 
-    const Teuchos::RCP<const Comm>& global_comm,
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+MCSAModelEvaluator<Vector,Matrix,MonteCarloTag,RNG>::MCSAModelEvaluator( 
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
-    : d_global_comm( global_comm )
-    , d_plist( plist )
+    : d_plist( plist )
     , d_num_smooth( 1 )
 #if HAVE_MCLS_TIMERS
     , d_eval_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: Model Evaluation") )
     , d_mv_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: Matrix-Vector Multiply") )
 #endif
 {
-    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
     // Set the number of smoothing steps.
@@ -87,15 +82,13 @@ MCSAModelEvaluator<Vector,Matrix,RNG>::MCSAModelEvaluator(
 /*!
  * \brief Constructor.
  */
-template<class Vector, class Matrix, class RNG>
-MCSAModelEvaluator<Vector,Matrix,RNG>::MCSAModelEvaluator( 
-    const Teuchos::RCP<const Comm>& global_comm,
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+MCSAModelEvaluator<Vector,Matrix,MonteCarloTag,RNG>::MCSAModelEvaluator( 
     const Teuchos::RCP<Teuchos::ParameterList>& plist,
     const Teuchos::RCP<const Matrix>& A,
     const Teuchos::RCP<const Vector>& b,
     const Teuchos::RCP<const Matrix>& M )
-    : d_global_comm( global_comm )
-    , d_plist( plist )
+    : d_plist( plist )
     , d_A( A )
     , d_b( b )
     , d_M( M )
@@ -105,7 +98,6 @@ MCSAModelEvaluator<Vector,Matrix,RNG>::MCSAModelEvaluator(
     , d_mv_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: Matrix-Vector Multiply") )
 #endif
 {
-    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
     // Create the resiudal.
@@ -132,13 +124,12 @@ MCSAModelEvaluator<Vector,Matrix,RNG>::MCSAModelEvaluator(
 /*!
  * \brief Set the linear problem with the manager.
  */
-template<class Vector, class Matrix, class RNG>
-void MCSAModelEvaluator<Vector,Matrix,RNG>::setProblem( 
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+void MCSAModelEvaluator<Vector,Matrix,MonteCarloTag,RNG>::setProblem( 
     const Teuchos::RCP<const Matrix>& A,
     const Teuchos::RCP<const Vector>& b,
     const Teuchos::RCP<const Matrix>& M )
 {
-    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
     // Determine if the linear operator has changed. It is presumed the
@@ -190,8 +181,8 @@ void MCSAModelEvaluator<Vector,Matrix,RNG>::setProblem(
  * \brief Set the parameters for the manager. The manager will modify this
  * list with default parameters that are not defined.
  */
-template<class Vector, class Matrix, class RNG>
-void MCSAModelEvaluator<Vector,Matrix,RNG>::setParameters( 
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+void MCSAModelEvaluator<Vector,Matrix,MonteCarloTag,RNG>::setParameters( 
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
     MCLS_REQUIRE( Teuchos::nonnull(params) );
@@ -215,9 +206,9 @@ void MCSAModelEvaluator<Vector,Matrix,RNG>::setParameters(
 /*!
  * \brief Get the preconditioned residual given a LHS.
  */
-template<class Vector, class Matrix, class RNG>
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
 Teuchos::RCP<Vector> 
-MCSAModelEvaluator<Vector,Matrix,RNG>::getPrecResidual( 
+MCSAModelEvaluator<Vector,Matrix,MonteCarloTag,RNG>::getPrecResidual( 
     const Teuchos::RCP<Vector>& x ) const
 {
 #if HAVE_MCLS_TIMERS
@@ -243,27 +234,27 @@ MCSAModelEvaluator<Vector,Matrix,RNG>::getPrecResidual(
 
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
-template<class Vector, class Matrix, class RNG>
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
 Teuchos::RCP<const ::Thyra::VectorSpaceBase<typename VectorTraits<Vector>::scalar_type> >
-MCSAModelEvaluator<Vector,Matrix,RNG>::get_x_space() const
+MCSAModelEvaluator<Vector,Matrix,MonteCarloTag,RNG>::get_x_space() const
 {
   return d_x_space;
 }
 
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
-template<class Vector, class Matrix, class RNG>
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
 Teuchos::RCP<const ::Thyra::VectorSpaceBase<typename VectorTraits<Vector>::scalar_type> >
-MCSAModelEvaluator<Vector,Matrix,RNG>::get_f_space() const
+MCSAModelEvaluator<Vector,Matrix,MonteCarloTag,RNG>::get_f_space() const
 {
   return d_f_space;
 }
 
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
-template<class Vector, class Matrix, class RNG>
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
 ::Thyra::ModelEvaluatorBase::InArgs<typename VectorTraits<Vector>::scalar_type>
-MCSAModelEvaluator<Vector,Matrix,RNG>::getNominalValues() const
+MCSAModelEvaluator<Vector,Matrix,MonteCarloTag,RNG>::getNominalValues() const
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_A) );
     MCLS_REQUIRE( Teuchos::nonnull(d_b) );
@@ -277,9 +268,9 @@ MCSAModelEvaluator<Vector,Matrix,RNG>::getNominalValues() const
 
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
-template<class Vector, class Matrix, class RNG>
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
 ::Thyra::ModelEvaluatorBase::InArgs<typename VectorTraits<Vector>::scalar_type>
-MCSAModelEvaluator<Vector,Matrix,RNG>::createInArgs() const
+MCSAModelEvaluator<Vector,Matrix,MonteCarloTag,RNG>::createInArgs() const
 {
     ::Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
     inArgs.setModelEvalDescription(this->description());
@@ -289,9 +280,9 @@ MCSAModelEvaluator<Vector,Matrix,RNG>::createInArgs() const
 
 //---------------------------------------------------------------------------//
 // Overridden from Thyra::ModelEvaulator
-template<class Vector, class Matrix, class RNG>
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
 ::Thyra::ModelEvaluatorBase::OutArgs<typename VectorTraits<Vector>::scalar_type>
-MCSAModelEvaluator<Vector,Matrix,RNG>::createOutArgsImpl() const
+MCSAModelEvaluator<Vector,Matrix,MonteCarloTag,RNG>::createOutArgsImpl() const
 {
     ::Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
     outArgs.setModelEvalDescription(this->description());
@@ -303,8 +294,8 @@ MCSAModelEvaluator<Vector,Matrix,RNG>::createOutArgsImpl() const
 /*!
  * \brief Solve the linear problem.
  */
-template<class Vector, class Matrix, class RNG>
-void MCSAModelEvaluator<Vector,Matrix,RNG>::evalModelImpl(
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+void MCSAModelEvaluator<Vector,Matrix,MonteCarloTag,RNG>::evalModelImpl(
     const ::Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     const ::Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs ) const
 {
@@ -313,7 +304,6 @@ void MCSAModelEvaluator<Vector,Matrix,RNG>::evalModelImpl(
     Teuchos::TimeMonitor eval_monitor( *d_eval_timer );
 #endif
 
-    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_mc_solver) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
@@ -351,10 +341,10 @@ void MCSAModelEvaluator<Vector,Matrix,RNG>::evalModelImpl(
 /*!
  * \brief Build the residual Monte Carlo problem.
  */
-template<class Vector, class Matrix, class RNG>
-void MCSAModelEvaluator<Vector,Matrix,RNG>::buildResidualMonteCarloProblem()
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+void
+MCSAModelEvaluator<Vector,Matrix,MonteCarloTag,RNG>::buildResidualMonteCarloProblem()
 {
-    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
     // Generate the residual Monte Carlo problem on the primary set. The
@@ -367,40 +357,9 @@ void MCSAModelEvaluator<Vector,Matrix,RNG>::buildResidualMonteCarloProblem()
     d_mc_problem->setLeftPrec( d_M );
 
     // Create the Monte Carlo direct solver for the residual problem.
-    bool use_adjoint = false;
-    bool use_forward = false;
-    if ( d_plist->get<std::string>("MC Type") == "Adjoint" )
-    {
-	use_adjoint = true;
-    }
-    else if ( d_plist->get<std::string>("MC Type") == "Forward" )
-    {
-	use_forward = true;
-    }
-    else
-    {
-	MCLS_INSIST( use_forward || use_adjoint, 
-		     "MC Type not supported" );
-    }
-
-    if ( use_adjoint )
-    {
-	d_mc_solver = Teuchos::rcp( 
-	    new AdjointSolverManager<Vector,Matrix,RNG>(
-		d_mc_problem, d_global_comm, d_plist, true) );
-    }
-    else if ( use_forward )
-    {
-	d_mc_solver = Teuchos::rcp( 
-	    new ForwardSolverManager<Vector,Matrix,RNG>(
-		d_mc_problem, d_global_comm, d_plist, true) );
-    }
-    else
-    {
-        MCLS_INSIST( use_forward || use_adjoint, 
-                     "MC Type not supported" );
-    }
-
+    d_mc_solver = Teuchos::rcp( 
+	new MonteCarloSolverManager<Vector,Matrix,MonteCarloTag,RNG>(
+	    d_mc_problem, d_plist, true) );
     MCLS_ENSURE( Teuchos::nonnull(d_mc_solver) );
 }
 

@@ -76,14 +76,6 @@ LinearProblem<Vector,Matrix>::LinearProblem(
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Destructor.
- */
-template<class Vector, class Matrix>
-LinearProblem<Vector,Matrix>::~LinearProblem()
-{ /* ... */ }
-
-//---------------------------------------------------------------------------//
-/*!
  * \brief Set the linear operator.
  */
 template<class Vector, class Matrix>

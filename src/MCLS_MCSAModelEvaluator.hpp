@@ -48,12 +48,12 @@
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_MatrixTraits.hpp"
 #include "MCLS_Xorshift.hpp"
+#include "MCLS_MonteCarloSolverManager.hpp"
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_as.hpp>
-#include <Teuchos_Comm.hpp>
 #include <Teuchos_Time.hpp>
 
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
@@ -66,7 +66,10 @@ namespace MCLS
  * \class MCSAModelEvaluator
  * \brief Solver manager for Monte Carlo synthetic acceleration.
  */
-template<class Vector, class Matrix, class RNG = Xorshift<> >
+template<class Vector,
+	 class Matrix,
+	 class MonteCarloTag = AdjointTag,
+	 class RNG = Xorshift<> >
 class MCSAModelEvaluator : 
 	public ::Thyra::StateFuncModelEvaluatorBase<typename VectorTraits<Vector>::scalar_type>
 {
@@ -81,22 +84,17 @@ class MCSAModelEvaluator :
     typedef Matrix                                       matrix_type;
     typedef MatrixTraits<vector_type,matrix_type>        MT;
     typedef LinearProblem<vector_type,matrix_type>       LinearProblemType;
-    typedef Teuchos::Comm<int>                           Comm;
+    typedef MonteCarloSolverManager<Vector,Matrix,MonteCarloTag,RNG> MCSolver;
     //@}
 
-    // Default constructor.
-    MCSAModelEvaluator( const Teuchos::RCP<const Comm>& global_comm,
-			const Teuchos::RCP<Teuchos::ParameterList>& plist );
+    // Parameter constructor.
+    MCSAModelEvaluator( const Teuchos::RCP<Teuchos::ParameterList>& plist );
 
     // Constructor.
-    MCSAModelEvaluator( const Teuchos::RCP<const Comm>& global_comm,
-			const Teuchos::RCP<Teuchos::ParameterList>& plist,
+    MCSAModelEvaluator( const Teuchos::RCP<Teuchos::ParameterList>& plist,
 			const Teuchos::RCP<const Matrix>& A,
 			const Teuchos::RCP<const Vector>& b,
 			const Teuchos::RCP<const Matrix>& M = Teuchos::null );
-
-    //! Destructor.
-    ~MCSAModelEvaluator() { /* ... */ }
 
     // Set the linear problem with the manager.
     void setProblem( const Teuchos::RCP<const Matrix>& A,
@@ -166,9 +164,6 @@ class MCSAModelEvaluator :
     // Residual linear problem
     Teuchos::RCP<LinearProblemType> d_mc_problem;
 
-    // Global communicator.
-    Teuchos::RCP<const Comm> d_global_comm;
-
     // Parameters.
     Teuchos::RCP<Teuchos::ParameterList> d_plist;
 
@@ -176,7 +171,7 @@ class MCSAModelEvaluator :
     mutable ::Thyra::ModelEvaluatorBase::InArgs<Scalar> d_nominal_values;
 
     // Monte Carlo solver manager.
-    Teuchos::RCP<SolverManager<Vector,Matrix> > d_mc_solver;
+    Teuchos::RCP<MCSolver> d_mc_solver;
 
     // Number of smoothing steps.
     int d_num_smooth;

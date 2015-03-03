@@ -45,6 +45,7 @@
 
 #include "MCLS_config.hpp"
 #include "MCLS_MCSAModelEvaluator.hpp"
+#include "MCLS_MonteCarloSolverManager.hpp"
 #include "MCLS_LinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_Xorshift.hpp"
@@ -53,7 +54,6 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_as.hpp>
-#include <Teuchos_Comm.hpp>
 #include <Teuchos_Time.hpp>
 
 #include <NOX.H>
@@ -68,7 +68,10 @@ namespace MCLS
  * \class AndersonSolverManager
  * \brief Solver manager for Monte Carlo synthetic acceleration.
  */
-template<class Vector, class Matrix, class RNG = Xorshift<> >
+template<class Vector,
+	 class Matrix,
+	 class MonteCarloTag = AdjointTag,
+	 class RNG = Xorshift<> >
 class AndersonSolverManager : public SolverManager<Vector,Matrix>
 {
   public:
@@ -81,20 +84,14 @@ class AndersonSolverManager : public SolverManager<Vector,Matrix>
     typedef VectorTraits<vector_type>                      VT;
     typedef typename VT::scalar_type                       Scalar;
     typedef LinearProblem<vector_type,matrix_type>         LinearProblemType;
-    typedef Teuchos::Comm<int>                             Comm;
     //@}
 
-    // Comm constructor. setProblem() must be called before solve().
-    AndersonSolverManager( const Teuchos::RCP<const Comm>& global_comm,
-			   const Teuchos::RCP<Teuchos::ParameterList>& plist );
+    // Parameter constructor. setProblem() must be called before solve().
+    AndersonSolverManager( const Teuchos::RCP<Teuchos::ParameterList>& plist );
 
     // Constructor.
     AndersonSolverManager( const Teuchos::RCP<LinearProblemType>& problem,
-			   const Teuchos::RCP<const Comm>& global_comm,
 			   const Teuchos::RCP<Teuchos::ParameterList>& plist );
-
-    //! Destructor.
-    ~AndersonSolverManager() { /* ... */ }
 
     //! Get the linear problem being solved by the manager.
     const LinearProblem<vector_type,matrix_type>& getProblem() const
@@ -139,14 +136,12 @@ class AndersonSolverManager : public SolverManager<Vector,Matrix>
     // Linear problem
     Teuchos::RCP<LinearProblemType> d_problem;
 
-    // Global communicator.
-    Teuchos::RCP<const Comm> d_global_comm;
-
     // Parameters.
     Teuchos::RCP<Teuchos::ParameterList> d_plist;
 
     // MCSA model evaluator.
-    Teuchos::RCP<MCSAModelEvaluator<Vector,Matrix,RNG> > d_model_evaluator;
+    Teuchos::RCP<MCSAModelEvaluator<Vector,Matrix,MonteCarloTag,RNG> >
+    d_model_evaluator;
 
     // NOX solver.
     Teuchos::RCP<NOX::Solver::Generic> d_nox_solver;

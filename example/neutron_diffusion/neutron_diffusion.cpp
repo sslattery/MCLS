@@ -132,7 +132,7 @@ int main( int argc, char * argv[] )
     std::string solver_type = plist->get<std::string>("Solver Type");
     MCLS::SolverFactory<Vector,Matrix> factory;
     Teuchos::RCP<MCLS::SolverManager<Vector,Matrix> > solver_manager =
-	factory.create( solver_type, comm, mcls_list );
+	factory.create( solver_type, mcls_list );
 
     // Solve the problem.
     solver_manager->setProblem( linear_problem );

@@ -462,7 +462,8 @@ void MCSASolverManager<Vector,Matrix,MonteCarloTag,RNG>::printTopBanner()
         std::cout << "*       MCLS: Monte Carlo Linear Solvers         *" << std::endl;
         std::cout << "**************************************************" << std::endl;
 	std::cout << std::endl;
-        std::cout << "MCSA" << std::endl << std::endl;
+        std::cout << "                     MCSA                         "
+		  << std::endl << std::endl;
 	std::cout << std::setw(18) << "Iteration";
 	std::cout << std::setw(18) << "|r|_2 / |b|_2" << std::endl;
     }

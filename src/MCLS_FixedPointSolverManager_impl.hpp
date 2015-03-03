@@ -55,19 +55,16 @@ namespace MCLS
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief Comm constructor. setProblem() must be called before solve().
+ * \brief Parameter constructor. setProblem() must be called before solve().
  */
 template<class Vector, class Matrix>
 FixedPointSolverManager<Vector,Matrix>::FixedPointSolverManager( 
-    const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
-    : d_global_comm( global_comm )
-    , d_plist( plist )
+    : d_plist( plist )
 #if HAVE_MCLS_TIMERS
     , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: Fixed-Point Solve") )
 #endif
 {
-    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 }
 
@@ -78,10 +75,8 @@ FixedPointSolverManager<Vector,Matrix>::FixedPointSolverManager(
 template<class Vector, class Matrix>
 FixedPointSolverManager<Vector,Matrix>::FixedPointSolverManager( 
     const Teuchos::RCP<LinearProblemType>& problem,
-    const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
     : d_problem( problem )
-    , d_global_comm( global_comm )
     , d_plist( plist )
     , d_num_iters( 0 )
     , d_converged_status( 0 )
@@ -90,7 +85,6 @@ FixedPointSolverManager<Vector,Matrix>::FixedPointSolverManager(
 #endif
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_problem) );
-    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
     // Create the fixed point iteration. Default to Richardson.
@@ -174,7 +168,6 @@ template<class Vector, class Matrix>
 void FixedPointSolverManager<Vector,Matrix>::setProblem( 
     const Teuchos::RCP<LinearProblem<Vector,Matrix> >& problem )
 {
-    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
     // Set the problem.
@@ -219,7 +212,6 @@ bool FixedPointSolverManager<Vector,Matrix>::solve()
     Teuchos::TimeMonitor solve_monitor( *d_solve_timer );
 #endif
 
-    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
 
     // Get the convergence parameters on the primary set.
@@ -298,7 +290,8 @@ bool FixedPointSolverManager<Vector,Matrix>::solve()
         }
 
 	// Print iteration data.
-	if ( d_global_comm->getRank() == 0 && d_num_iters % print_freq == 0 )
+	if ( VT::getComm(*d_problem->getLHS())->getRank() == 0 &&
+	     d_num_iters % print_freq == 0 )
 	{
 	    std::cout << d_fixed_point->name() << " Iteration " << d_num_iters
 		      << ": Residual = " 

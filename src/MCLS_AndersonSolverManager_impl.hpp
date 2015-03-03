@@ -55,53 +55,46 @@
 
 namespace MCLS
 {
-
 //---------------------------------------------------------------------------//
 /*!
- * \brief Comm constructor. setProblem() must be called before solve().
+ * \brief Parameter constructor. setProblem() must be called before solve().
  */
-template<class Vector, class Matrix, class RNG>
-AndersonSolverManager<Vector,Matrix,RNG>::AndersonSolverManager( 
-    const Teuchos::RCP<const Comm>& global_comm,
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+AndersonSolverManager<Vector,Matrix,MonteCarloTag,RNG>::AndersonSolverManager( 
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
-    : d_global_comm( global_comm )
-    , d_plist( plist )
+    : d_plist( plist )
 #if HAVE_MCLS_TIMERS
     , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: Anderson Solve") )
 #endif
 {
-    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
     d_plist->set( "Nonlinear Solver", "Anderson Accelerated Fixed-Point" );
     d_model_evaluator = Teuchos::rcp( 
-	new MCSAModelEvaluator<Vector,Matrix,RNG>(d_global_comm, d_plist) );
+	new MCSAModelEvaluator<Vector,Matrix,MonteCarloTag,RNG>(d_plist) );
 }
 
 //---------------------------------------------------------------------------//
 /*!
  * \brief Constructor.
  */
-template<class Vector, class Matrix, class RNG>
-AndersonSolverManager<Vector,Matrix,RNG>::AndersonSolverManager( 
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+AndersonSolverManager<Vector,Matrix,MonteCarloTag,RNG>::AndersonSolverManager( 
     const Teuchos::RCP<LinearProblemType>& problem,
-    const Teuchos::RCP<const Comm>& global_comm,
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
     : d_problem( problem )
-    , d_global_comm( global_comm )
     , d_plist( plist )
     , d_nox_solver( new ::Thyra::NOXNonlinearSolver )
 #if HAVE_MCLS_TIMERS
     , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: Anderson Solve") )
 #endif
 {
-    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
     d_plist->set( "Nonlinear Solver", "Anderson Accelerated Fixed-Point" );
 
     // Create the model evaluator.
     d_model_evaluator = Teuchos::rcp( 
-	new MCSAModelEvaluator<Vector,Matrix,RNG>(
-	    d_global_comm, d_plist, 
+	new MCSAModelEvaluator<Vector,Matrix,MonteCarloTag,RNG>(
+	    d_plist, 
 	    d_problem->getOperator(), d_problem->getRHS(),
 	    d_problem->getLeftPrec()) );
 
@@ -114,9 +107,9 @@ AndersonSolverManager<Vector,Matrix,RNG>::AndersonSolverManager(
 /*!
  * \brief Get the valid parameters for this manager.
  */
-template<class Vector, class Matrix, class RNG>
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
 Teuchos::RCP<const Teuchos::ParameterList> 
-AndersonSolverManager<Vector,Matrix,RNG>::getValidParameters() const
+AndersonSolverManager<Vector,Matrix,MonteCarloTag,RNG>::getValidParameters() const
 {
     // Create a parameter list with the Monte Carlo solver parameters as a
     // starting point.
@@ -129,10 +122,10 @@ AndersonSolverManager<Vector,Matrix,RNG>::getValidParameters() const
  * \brief Get the tolerance achieved on the last linear solve. This may be
  * less or more than the set convergence tolerance. 
  */
-template<class Vector, class Matrix, class RNG>
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
 typename Teuchos::ScalarTraits<
-    typename AndersonSolverManager<Vector,Matrix,RNG>::Scalar>::magnitudeType 
-AndersonSolverManager<Vector,Matrix,RNG>::achievedTol() const
+    typename AndersonSolverManager<Vector,Matrix,MonteCarloTag,RNG>::Scalar>::magnitudeType 
+AndersonSolverManager<Vector,Matrix,MonteCarloTag,RNG>::achievedTol() const
 {
     return 0.0;
 }
@@ -141,11 +134,10 @@ AndersonSolverManager<Vector,Matrix,RNG>::achievedTol() const
 /*!
  * \brief Set the linear problem with the manager.
  */
-template<class Vector, class Matrix, class RNG>
-void AndersonSolverManager<Vector,Matrix,RNG>::setProblem( 
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+void AndersonSolverManager<Vector,Matrix,MonteCarloTag,RNG>::setProblem( 
     const Teuchos::RCP<LinearProblemType>& problem )
 {
-    MCLS_REQUIRE( Teuchos::nonnull(d_global_comm) );
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
     MCLS_REQUIRE( Teuchos::nonnull(d_model_evaluator) );
 
@@ -160,8 +152,8 @@ void AndersonSolverManager<Vector,Matrix,RNG>::setProblem(
  * \brief Set the parameters for the manager. The manager will modify this
  * list with default parameters that are not defined.
  */
-template<class Vector, class Matrix, class RNG>
-void AndersonSolverManager<Vector,Matrix,RNG>::setParameters( 
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+void AndersonSolverManager<Vector,Matrix,MonteCarloTag,RNG>::setParameters( 
     const Teuchos::RCP<Teuchos::ParameterList>& params )
 {
     MCLS_REQUIRE( Teuchos::nonnull(params) );
@@ -181,8 +173,8 @@ void AndersonSolverManager<Vector,Matrix,RNG>::setParameters(
  * \brief Solve the linear problem. Return true if the solution
  * converged. False if it did not.
  */
-template<class Vector, class Matrix, class RNG>
-bool AndersonSolverManager<Vector,Matrix,RNG>::solve()
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+bool AndersonSolverManager<Vector,Matrix,MonteCarloTag,RNG>::solve()
 {
 #if HAVE_MCLS_TIMERS
     // Start the solve timer.
@@ -220,8 +212,8 @@ bool AndersonSolverManager<Vector,Matrix,RNG>::solve()
 /*!
  * \brief Create the nonlinear solver.
  */
-template<class Vector, class Matrix, class RNG>
-void AndersonSolverManager<Vector,Matrix,RNG>::createNonlinearSolver()
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+void AndersonSolverManager<Vector,Matrix,MonteCarloTag,RNG>::createNonlinearSolver()
 {
     // Create the solve criteria.
     typename Teuchos::ScalarTraits<double>::magnitudeType tolerance = 1.0e-8;

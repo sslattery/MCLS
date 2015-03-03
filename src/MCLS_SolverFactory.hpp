@@ -48,7 +48,6 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_Describable.hpp>
-#include <Teuchos_Comm.hpp>
 
 #include <unordered_map>
 
@@ -70,7 +69,6 @@ class SolverFactory : public virtual Teuchos::Describable
     typedef Vector                                    vector_type;
     typedef Matrix                                    matrix_type;
     typedef SolverManager<Vector,Matrix>              Solver;     
-    typedef Teuchos::Comm<int>                        Comm;
     typedef std::unordered_map<std::string,int>       MapType;
     //@}
 
@@ -80,7 +78,6 @@ class SolverFactory : public virtual Teuchos::Describable
     // Creation method.
     Teuchos::RCP<Solver> 
     create( const std::string& solver_name,
-	    const Teuchos::RCP<const Comm>& global_comm,
 	    const Teuchos::RCP<Teuchos::ParameterList>& solver_parameters );
 
   private:
@@ -89,10 +86,11 @@ class SolverFactory : public virtual Teuchos::Describable
     enum MCLSSolverType {
 	ADJOINT_MC,
         FORWARD_MC,
-	MCSA,
-	SEQUENTIAL_MC,
-        FIXED_POINT,
-	ANDERSON
+	ADJOINT_MCSA,
+	FORWARD_MCSA,
+	ADJOINT_ANDERSON,
+	FORWARD_ANDERSON,
+        FIXED_POINT
     };
 
     // String name to enum/integer map.

@@ -51,7 +51,6 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_as.hpp>
-#include <Teuchos_Comm.hpp>
 #include <Teuchos_Time.hpp>
 
 namespace MCLS
@@ -76,20 +75,14 @@ class FixedPointSolverManager : public SolverManager<Vector,Matrix>
     typedef Matrix                                  matrix_type;
     typedef LinearProblem<Vector,Matrix>            LinearProblemType;
     typedef FixedPointIteration<Vector,Matrix>      FixedPointType;
-    typedef Teuchos::Comm<int>                      Comm;
     //@}
 
-    // Comm constructor. setProblem() must be called before solve().
-    FixedPointSolverManager( const Teuchos::RCP<const Comm>& global_comm,
-                             const Teuchos::RCP<Teuchos::ParameterList>& plist );
+    // Parameter constructor. setProblem() must be called before solve().
+    FixedPointSolverManager( const Teuchos::RCP<Teuchos::ParameterList>& plist );
 
     // Constructor.
     FixedPointSolverManager( const Teuchos::RCP<LinearProblemType>& problem,
-                             const Teuchos::RCP<const Comm>& global_comm,
                              const Teuchos::RCP<Teuchos::ParameterList>& plist );
-
-    //! Destructor.
-    ~FixedPointSolverManager() { /* ... */ }
 
     //! Get the linear problem being solved by the manager.
     const LinearProblem<Vector,Matrix>& getProblem() const
@@ -129,9 +122,6 @@ class FixedPointSolverManager : public SolverManager<Vector,Matrix>
 
     // Linear problem
     Teuchos::RCP<LinearProblemType> d_problem;
-
-    // Global communicator.
-    Teuchos::RCP<const Comm> d_global_comm;
 
     // Parameters.
     Teuchos::RCP<Teuchos::ParameterList> d_plist;
