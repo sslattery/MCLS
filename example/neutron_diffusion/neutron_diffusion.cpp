@@ -93,13 +93,8 @@ int main( int argc, char * argv[] )
     int set_size = comm->getSize() / num_sets;
     int set_id = std::floor( Teuchos::as<double>(comm->getRank()) /
                              Teuchos::as<double>(set_size) );
-    Teuchos::Array<int> comm_ranks( set_size );
-    for ( int n = 0; n < set_size; ++n )
-    {
-        comm_ranks[n] = set_id*set_size + n;
-    }
-    Teuchos::RCP<const Teuchos::Comm<int> > set_comm = 
-        comm->createSubcommunicator( comm_ranks() );
+    Teuchos::RCP<const Teuchos::Comm<int> > set_comm =
+	comm->split( set_id, comm->getRank() );
 
     // Partition the problem.
     Teuchos::RCP<MCLSExamples::Partitioner> partitioner =

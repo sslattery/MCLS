@@ -199,7 +199,7 @@ void UniformAdjointSource<Domain>::buildRandomSource()
 	  ++src_it, ++cdf_it )
     {
 	*cdf_it = *(cdf_it-1) + std::abs(*src_it);
-	MCLS_CHECK( *cdf_it >= 0 );
+	MCLS_CHECK( *cdf_it >= 0.0 );
     }
 
     // Stratify sample the global domain to get the number of histories that

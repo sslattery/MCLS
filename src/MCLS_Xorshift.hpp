@@ -68,12 +68,8 @@ class Xorshift
     //@}
 
     //! Constructor.
-    Xorshift( const result_type seed )
+    explicit Xorshift( const result_type seed )
 	: d_x( seed )
-    { /* ... */ }
-
-    //! Destructor.
-    ~Xorshift()
     { /* ... */ }
 
     //! Minimum value.
