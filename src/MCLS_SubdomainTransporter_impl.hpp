@@ -96,7 +96,7 @@ void SubdomainTransporter<Source>::transport()
     {
         // Get a history from the source.
 	ST::getHistory( *d_source, d_current_history );
-        MCLS_CHECK( HT::alive(history) );
+        MCLS_CHECK( HT::alive(d_current_history) );
 
         // Do local transport.
         d_domain_transporter.transport( d_current_history );

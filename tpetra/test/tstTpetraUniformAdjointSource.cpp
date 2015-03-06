@@ -149,7 +149,8 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_not_set )
 	TEST_EQUALITY( source.numLeft(), local_num_rows-i );
 	TEST_EQUALITY( source.numEmitted(), i );
 
-	HistoryType history = source.getHistory();
+	HistoryType history;
+	source.getHistory( history );
 
 	TEST_EQUALITY( history.weight(), -global_num_rows );
 	TEST_ASSERT( domain->isGlobalState( history.globalState() ) );
@@ -239,7 +240,8 @@ TEUCHOS_UNIT_TEST( UniformAdjointSource, nh_set )
 	TEST_EQUALITY( source.numLeft(), mult*local_num_rows-i );
 	TEST_EQUALITY( source.numEmitted(), i );
 
-	HistoryType history = source.getHistory();
+	HistoryType history;
+	source.getHistory( history );
 
 	TEST_EQUALITY( history.weight(), -global_num_rows );
 	TEST_ASSERT( domain->isGlobalState( history.globalState() ) );

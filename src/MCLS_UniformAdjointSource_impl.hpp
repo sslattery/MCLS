@@ -92,8 +92,7 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
         {
             d_random_sampling = 1;
         }
-        else if ( plist.get<std::string>("Source Sampling Type") == 
-                  "Stratified" )
+        else
         {
             d_random_sampling = 0;
         }
