@@ -104,13 +104,14 @@ class SourceTransporter : public GlobalTransporter<Source>
   private:
 
     // Transport a source history.
-    void transportSourceHistory();
+    void transportSourceHistory( BankType& bank );
 
     // Transport a bank history.
     void transportBankHistory( BankType& bank );
 
     // Transport a history through the local domain.
-    void localHistoryTransport();
+    template<class T>
+    void localHistoryTransport( T&& history );
 
     // Process incoming messages.
     void processMessages( BankType& bank );
@@ -192,9 +193,6 @@ class SourceTransporter : public GlobalTransporter<Source>
 
     // Completion status tag.
     int d_completion_status_tag;
-
-    // The current history being transported.
-    HistoryType d_current_history;
 };
 
 //---------------------------------------------------------------------------//

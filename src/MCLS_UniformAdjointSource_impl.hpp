@@ -141,7 +141,8 @@ void UniformAdjointSource<Domain>::buildSource()
  * \brief Get a history from the source.
  */
 template<class Domain>
-void UniformAdjointSource<Domain>::getHistory( HistoryType& history )
+typename UniformAdjointSource<Domain>::HistoryType
+UniformAdjointSource<Domain>::getHistory()
 {
     MCLS_REQUIRE( d_weight > 0.0 );
     MCLS_REQUIRE( d_nh_left > 0 );
@@ -159,11 +160,9 @@ void UniformAdjointSource<Domain>::getHistory( HistoryType& history )
     --d_nh_left;
     ++d_nh_emitted;
 
-    // Update the history.
+    // Generate the history.
     Ordinal weight_sign = (d_local_source[local_state] > 0.0) ? 1 : -1;
-    history.setGlobalState( starting_state );
-    history.setWeight( d_weight * weight_sign );
-    history.clearSteps();
+    return HistoryType( starting_state, local_state, d_weight * weight_sign );
 }
 
 //---------------------------------------------------------------------------//

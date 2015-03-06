@@ -103,7 +103,7 @@ class UniformAdjointSource
     double sourceWeight() const { return d_weight; }
 
     // Get a history from the source.
-    void getHistory( HistoryType& history );
+    HistoryType getHistory();
 
     //! Return whether the source has emitted all histories.
     bool empty() const { return (d_nh_left == 0); }
@@ -238,9 +238,9 @@ class SourceTraits<UniformAdjointSource<Domain> >
     /*!
      * \brief Get a history from the source.
      */
-    static void getHistory( source_type& source, history_type& history )
+    static history_type getHistory( source_type& source )
     { 
-	source.getHistory( history );
+	return source.getHistory();
     }
 
     /*!

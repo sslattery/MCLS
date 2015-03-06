@@ -119,9 +119,10 @@ class SourceTraits
     /*!
      * \brief Get a history from the source.
      */
-    static void getHistory( Source& source, history_type& history )
+    static history_type getHistory( Source& source )
     { 
 	UndefinedSourceTraits<Source>::notDefined(); 
+	return Teuchos::null; 
     }
 
     /*!

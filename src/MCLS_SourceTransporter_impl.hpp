@@ -171,7 +171,7 @@ void SourceTransporter<Source>::transport()
 	// Transport the source histories.
 	if ( !ST::empty(*d_source) )
 	{
-	    transportSourceHistory();
+	    transportSourceHistory( bank );
 	    ++d_num_run;
 	}
 
@@ -237,17 +237,14 @@ void SourceTransporter<Source>::reset()
  * \brief Transport a source history.
  */
 template<class Source>
-void SourceTransporter<Source>::transportSourceHistory()
+void SourceTransporter<Source>::transportSourceHistory( BankType& bank )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_source) );
     MCLS_REQUIRE( !ST::empty(*d_source) );
 
-    // Get the next source history.
-    ST::getHistory( *d_source, d_current_history );
-    
     // Transport a source history through the local domain and communicate it if
     // needed. 
-    localHistoryTransport();
+    localHistoryTransport( ST::getHistory(*d_source) );
 }
 
 //---------------------------------------------------------------------------//
@@ -260,12 +257,14 @@ void SourceTransporter<Source>::transportBankHistory( BankType& bank )
     MCLS_REQUIRE( !bank.empty() );
 
     // Get a reference to the history on top of the bank.
-    d_current_history = bank.top();
-    bank.pop();
-    
+    HistoryType& history = bank.top();
+
     // Transport the history through the local domain and communicate it if
     // needed. 
-    localHistoryTransport();
+    localHistoryTransport( history );
+
+    // Pop the top of the bank.
+    bank.pop();
 }
 
 //---------------------------------------------------------------------------//
@@ -273,25 +272,26 @@ void SourceTransporter<Source>::transportBankHistory( BankType& bank )
  * \brief Transport a history through the local domain.
  */
 template<class Source>
-void SourceTransporter<Source>::localHistoryTransport()
+template<class T>
+void SourceTransporter<Source>::localHistoryTransport( T&& history )
 {
     // Set the history alive for transport.
-    HT::live( d_current_history );
+    HT::live( history );
     
     // Do local transport.
-    d_domain_transporter.transport( d_current_history );
-    MCLS_CHECK( !HT::alive(d_current_history) );
+    d_domain_transporter.transport( history );
+    MCLS_CHECK( !HT::alive(history) );
 
     // Communicate the history if it left the local domain.
-    if ( Event::BOUNDARY == HT::event(d_current_history) )
+    if ( Event::BOUNDARY == HT::event(history) )
     {
-	d_domain_communicator.communicate( d_current_history );
+	d_domain_communicator.communicate( history );
     }
 
     // Otherwise the history was killed by the finishing all of its steps.
     else
     {
-	MCLS_CHECK( Event::CUTOFF == HT::event(d_current_history) );
+	MCLS_CHECK( Event::CUTOFF == HT::event(history) );
 	++d_num_done[0];
     }
 }

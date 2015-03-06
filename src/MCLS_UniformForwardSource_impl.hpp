@@ -114,7 +114,8 @@ void UniformForwardSource<Domain>::buildSource()
  * \brief Get a history from the source.
  */
 template<class Domain>
-void UniformForwardSource<Domain>::getHistory( HistoryType& history )
+typename UniformForwardSource<Domain>::HistoryType
+UniformForwardSource<Domain>::getHistory()
 {
     MCLS_REQUIRE( 1.0 == d_weight );
     MCLS_REQUIRE( d_nh_left > 0 );
@@ -139,11 +140,8 @@ void UniformForwardSource<Domain>::getHistory( HistoryType& history )
     --d_nh_left;
     ++d_nh_emitted;
 
-    // Update the history.
-    history.setGlobalState( starting_state );
-    history.setStartingState( starting_state );
-    history.setWeight( d_weight );
-    history.clearSteps();
+    // Generate the history.
+    return HistoryType( starting_state, d_current_local_state, d_weight );
 }
 
 //---------------------------------------------------------------------------//

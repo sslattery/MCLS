@@ -55,9 +55,7 @@ namespace MCLS
  */
 //---------------------------------------------------------------------------//
 template<class uint_type = uint_fast64_t, 
-	 uint_type a = 13,
-	 uint_type b = 7,
-	 uint_type c = 17>
+	 uint_type a = 13, uint_type b = 7, uint_type c = 17>
 class Xorshift
 {
   public:
