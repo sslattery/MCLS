@@ -150,6 +150,10 @@ class History
     inline int event() const
     { return b_event; }
 
+    //! Clear the history steps.
+    inline void clearSteps()
+    { b_num_steps = 0; }
+    
     //! Add a step to the history.
     inline void addStep()
     { ++b_num_steps; }

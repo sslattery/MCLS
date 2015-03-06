@@ -111,6 +111,9 @@ class SubdomainTransporter : public GlobalTransporter<Source>
 
     // Source.
     Teuchos::RCP<Source> d_source;
+
+    // The current history being transported.
+    HistoryType d_current_history;
 };
 
 //---------------------------------------------------------------------------//

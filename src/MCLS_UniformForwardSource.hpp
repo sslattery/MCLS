@@ -106,7 +106,7 @@ class UniformForwardSource
     Teuchos::RCP<VectorType> sourceVector() const { return d_b; }
     
     // Get a history from the source.
-    HistoryType getHistory();
+    void getHistory( HistoryType& history );
 
     //! Return whether the source has emitted all histories.
     bool empty() const { return (d_nh_left == 0); }
@@ -225,9 +225,9 @@ class SourceTraits<UniformForwardSource<Domain> >
     /*!
      * \brief Get a history from the source.
      */
-    static history_type getHistory( source_type& source )
+    static void getHistory( source_type& source, history_type& history )
     { 
-	return source.getHistory();
+	source.getHistory( history );
     }
 
     /*!

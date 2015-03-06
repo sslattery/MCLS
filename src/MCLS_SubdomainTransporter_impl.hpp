@@ -95,18 +95,15 @@ void SubdomainTransporter<Source>::transport()
     while ( !ST::empty(*d_source) )
     {
         // Get a history from the source.
-        HistoryType history = ST::getHistory( *d_source );
+	ST::getHistory( *d_source, d_current_history );
         MCLS_CHECK( HT::alive(history) );
 
         // Do local transport.
-        d_domain_transporter.transport( history );
-        MCLS_CHECK( !HT::alive(history) );
-        MCLS_CHECK( Event::CUTOFF == HT::event(history) ||
-                    Event::BOUNDARY == HT::event(history) );
+        d_domain_transporter.transport( d_current_history );
+        MCLS_CHECK( !HT::alive(d_current_history) );
+        MCLS_CHECK( Event::CUTOFF == HT::event(d_current_history) ||
+                    Event::BOUNDARY == HT::event(d_current_history) );
     }
-
-    // Barrier before continuing.
-    d_comm->barrier();
 
     MCLS_ENSURE( ST::empty(*d_source) );
 }
