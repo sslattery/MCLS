@@ -53,6 +53,8 @@
 #include <Teuchos_Ptr.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
+#include <Thyra_NonlinearSolver_NOX.hpp>
+
 namespace MCLS
 {
 //---------------------------------------------------------------------------//
@@ -79,11 +81,11 @@ AndersonSolverManager<Vector,Matrix,MonteCarloTag,RNG>::AndersonSolverManager(
  */
 template<class Vector, class Matrix, class MonteCarloTag, class RNG>
 AndersonSolverManager<Vector,Matrix,MonteCarloTag,RNG>::AndersonSolverManager( 
-    const Teuchos::RCP<LinearProblemType>& problem,
+    const Teuchos::RCP<MultiSetLinearProblem<Vector,Matrix> >& multiset_problem,
     const Teuchos::RCP<Teuchos::ParameterList>& plist )
-    : d_problem( problem )
+    : d_multiset_problem( multiset_problem )
+    , d_problem( multiset_problem->getProblem() )
     , d_plist( plist )
-    , d_nox_solver( new ::Thyra::NOXNonlinearSolver )
 #if HAVE_MCLS_TIMERS
     , d_solve_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: Anderson Solve") )
 #endif
@@ -94,8 +96,10 @@ AndersonSolverManager<Vector,Matrix,MonteCarloTag,RNG>::AndersonSolverManager(
     // Create the model evaluator.
     d_model_evaluator = Teuchos::rcp( 
 	new MCSAModelEvaluator<Vector,Matrix,MonteCarloTag,RNG>(
-	    d_plist, 
-	    d_problem->getOperator(), d_problem->getRHS(),
+	    d_plist,
+	    d_multiset_problem,
+	    d_problem->getOperator(),
+	    d_problem->getRHS(),
 	    d_problem->getLeftPrec()) );
 
     // Create the nonlinear solver.
@@ -132,6 +136,18 @@ AndersonSolverManager<Vector,Matrix,MonteCarloTag,RNG>::achievedTol() const
 
 //---------------------------------------------------------------------------//
 /*!
+ * \brief Set the multiset linear problem with the manager.
+ */
+template<class Vector, class Matrix, class MonteCarloTag, class RNG>
+void AndersonSolverManager<Vector,Matrix,MonteCarloTag,RNG>::setMultiSetProblem( 
+    const Teuchos::RCP<MultiSetLinearProblem<Vector,Matrix> >& multiset_problem )
+{
+    d_multiset_problem = multiset_problem;
+    setProblem( d_multiset_problem->getProblem() );
+}
+
+//---------------------------------------------------------------------------//
+/*!
  * \brief Set the linear problem with the manager.
  */
 template<class Vector, class Matrix, class MonteCarloTag, class RNG>
@@ -142,7 +158,8 @@ void AndersonSolverManager<Vector,Matrix,MonteCarloTag,RNG>::setProblem(
     MCLS_REQUIRE( Teuchos::nonnull(d_model_evaluator) );
 
     d_problem = problem;
-    d_model_evaluator->setProblem( d_problem->getOperator(),
+    d_model_evaluator->setProblem( d_multiset_problem,
+				   d_problem->getOperator(),
 				   d_problem->getRHS(),
 				   d_problem->getLeftPrec() );
 }

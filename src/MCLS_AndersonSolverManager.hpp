@@ -47,6 +47,7 @@
 #include "MCLS_MCSAModelEvaluator.hpp"
 #include "MCLS_MonteCarloSolverManager.hpp"
 #include "MCLS_LinearProblem.hpp"
+#include "MCLS_MultiSetLinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_Xorshift.hpp"
 
@@ -90,8 +91,9 @@ class AndersonSolverManager : public SolverManager<Vector,Matrix>
     AndersonSolverManager( const Teuchos::RCP<Teuchos::ParameterList>& plist );
 
     // Constructor.
-    AndersonSolverManager( const Teuchos::RCP<LinearProblemType>& problem,
-			   const Teuchos::RCP<Teuchos::ParameterList>& plist );
+    AndersonSolverManager(
+	const Teuchos::RCP<MultiSetLinearProblem<Vector,Matrix> >& multiset_problem,
+	const Teuchos::RCP<Teuchos::ParameterList>& plist );
 
     //! Get the linear problem being solved by the manager.
     const LinearProblem<vector_type,matrix_type>& getProblem() const
@@ -110,6 +112,10 @@ class AndersonSolverManager : public SolverManager<Vector,Matrix>
 
     // Get the number of iterations from the last linear solve.
     int getNumIters() const { return d_nox_solver->getNumIterations(); };
+
+    // Set the multiset problem with the manager.
+    void setMultiSetProblem( 
+	const Teuchos::RCP<MultiSetLinearProblem<Vector,Matrix> >& multiset_problem );
 
     // Set the linear problem with the manager.
     void setProblem( const Teuchos::RCP<LinearProblemType >& problem );
@@ -132,6 +138,9 @@ class AndersonSolverManager : public SolverManager<Vector,Matrix>
     void createNonlinearSolver();
 
   private:
+
+    // Multiset Linear Problem.
+    Teuchos::RCP<MultiSetLinearProblem<Vector,Matrix> > d_multiset_problem;
 
     // Linear problem
     Teuchos::RCP<LinearProblemType> d_problem;

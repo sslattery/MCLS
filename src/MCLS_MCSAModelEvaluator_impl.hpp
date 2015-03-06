@@ -85,10 +85,12 @@ MCSAModelEvaluator<Vector,Matrix,MonteCarloTag,RNG>::MCSAModelEvaluator(
 template<class Vector, class Matrix, class MonteCarloTag, class RNG>
 MCSAModelEvaluator<Vector,Matrix,MonteCarloTag,RNG>::MCSAModelEvaluator( 
     const Teuchos::RCP<Teuchos::ParameterList>& plist,
+    const Teuchos::RCP<MultiSetLinearProblem<Vector,Matrix> >& multiset_problem,
     const Teuchos::RCP<const Matrix>& A,
     const Teuchos::RCP<const Vector>& b,
     const Teuchos::RCP<const Matrix>& M )
     : d_plist( plist )
+    , d_multiset_problem( multiset_problem )
     , d_A( A )
     , d_b( b )
     , d_M( M )
@@ -126,11 +128,14 @@ MCSAModelEvaluator<Vector,Matrix,MonteCarloTag,RNG>::MCSAModelEvaluator(
  */
 template<class Vector, class Matrix, class MonteCarloTag, class RNG>
 void MCSAModelEvaluator<Vector,Matrix,MonteCarloTag,RNG>::setProblem( 
-    const Teuchos::RCP<const Matrix>& A,
+const Teuchos::RCP<MultiSetLinearProblem<Vector,Matrix> >& multiset_problem,
+const Teuchos::RCP<const Matrix>& A,
     const Teuchos::RCP<const Vector>& b,
     const Teuchos::RCP<const Matrix>& M )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
+
+    d_multiset_problem = multiset_problem;
 
     // Determine if the linear operator has changed. It is presumed the
     // preconditioners are bound to the linear operator and will therefore
@@ -163,7 +168,10 @@ void MCSAModelEvaluator<Vector,Matrix,MonteCarloTag,RNG>::setProblem(
 	if ( update_operator )
 	{
 	    d_mc_problem->setOperator( d_A );
-	    d_mc_problem->setLeftPrec( d_M );
+	    if ( Teuchos::nonnull(d_M) )
+	    {
+		d_mc_problem->setLeftPrec( d_M );
+	    }
 	}
 
 	// Set the updated residual problem with the Monte Carlo solver.
@@ -333,6 +341,10 @@ void MCSAModelEvaluator<Vector,Matrix,MonteCarloTag,RNG>::evalModelImpl(
     VT::putScalar( *d_mc_problem->getLHS(), 0.0 );
     d_mc_solver->solve();
 
+    // Combine the Monte Carlo correction across sets and normalize.
+    d_multiset_problem->blockConstantVectorSum(	d_mc_problem->getLHS() );
+    VT::scale( *d_mc_problem->getLHS(), 1.0 / d_multiset_problem->numSets() );
+
     // Compute the new nonlinear residual.
     VT::update( *f, 1.0, *d_mc_problem->getLHS(), 1.0, *x, -1.0 );
 }
@@ -354,7 +366,10 @@ MCSAModelEvaluator<Vector,Matrix,MonteCarloTag,RNG>::buildResidualMonteCarloProb
     // possible moment.
     Teuchos::RCP<Vector> delta_x = MT::cloneVectorFromMatrixRows( *d_A );
     d_mc_problem = Teuchos::rcp( new LinearProblemType(d_A, delta_x, d_b) );
-    d_mc_problem->setLeftPrec( d_M );
+    if ( Teuchos::nonnull(d_M) )
+    {
+	d_mc_problem->setLeftPrec( d_M );
+    }
 
     // Create the Monte Carlo direct solver for the residual problem.
     d_mc_solver = Teuchos::rcp( 

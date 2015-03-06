@@ -45,6 +45,7 @@
 
 #include "MCLS_config.hpp"
 #include "MCLS_LinearProblem.hpp"
+#include "MCLS_MultiSetLinearProblem.hpp"
 #include "MCLS_VectorTraits.hpp"
 #include "MCLS_MatrixTraits.hpp"
 #include "MCLS_Xorshift.hpp"
@@ -91,15 +92,19 @@ class MCSAModelEvaluator :
     MCSAModelEvaluator( const Teuchos::RCP<Teuchos::ParameterList>& plist );
 
     // Constructor.
-    MCSAModelEvaluator( const Teuchos::RCP<Teuchos::ParameterList>& plist,
-			const Teuchos::RCP<const Matrix>& A,
-			const Teuchos::RCP<const Vector>& b,
-			const Teuchos::RCP<const Matrix>& M = Teuchos::null );
+    MCSAModelEvaluator(
+	const Teuchos::RCP<Teuchos::ParameterList>& plist,
+	const Teuchos::RCP<MultiSetLinearProblem<Vector,Matrix> >& multiset_problem,
+	const Teuchos::RCP<const Matrix>& A,
+	const Teuchos::RCP<const Vector>& b,
+	const Teuchos::RCP<const Matrix>& M = Teuchos::null );
 
     // Set the linear problem with the manager.
-    void setProblem( const Teuchos::RCP<const Matrix>& A,
-		     const Teuchos::RCP<const Vector>& b,
-		     const Teuchos::RCP<const Matrix>& M = Teuchos::null );
+    void setProblem(
+	const Teuchos::RCP<MultiSetLinearProblem<Vector,Matrix> >& multiset_problem,
+	const Teuchos::RCP<const Matrix>& A,
+	const Teuchos::RCP<const Vector>& b,
+	const Teuchos::RCP<const Matrix>& M = Teuchos::null );
 
     // Set the parameters for the manager. The manager will modify this list
     // with default parameters that are not defined.
@@ -146,6 +151,12 @@ class MCSAModelEvaluator :
 
   private:
 
+    // Parameters.
+    Teuchos::RCP<Teuchos::ParameterList> d_plist;
+
+    // Multiset Linear Problem.
+    Teuchos::RCP<MultiSetLinearProblem<Vector,Matrix> > d_multiset_problem;
+
     // Linear operator.
     Teuchos::RCP<const Matrix> d_A;
 
@@ -163,9 +174,6 @@ class MCSAModelEvaluator :
 
     // Residual linear problem
     Teuchos::RCP<LinearProblemType> d_mc_problem;
-
-    // Parameters.
-    Teuchos::RCP<Teuchos::ParameterList> d_plist;
 
     // Nominal values.
     mutable ::Thyra::ModelEvaluatorBase::InArgs<Scalar> d_nominal_values;
