@@ -135,7 +135,6 @@ TEUCHOS_UNIT_TEST( SourceTransporter, transport )
 
     // Build the adjoint domain.
     Teuchos::ParameterList plist;
-    plist.set<int>( "Overlap Size", 2 );
     Teuchos::RCP<DomainType> domain = Teuchos::rcp( new DomainType( A_T, x, plist ) );
     Teuchos::RCP<MCLS::PRNG<rng_type> > rng = Teuchos::rcp(
 	new MCLS::PRNG<rng_type>( comm->getRank() ) );

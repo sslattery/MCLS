@@ -109,7 +109,7 @@ class AlmostOptimalDomain
     typedef TallyTraits<Tally>                            TT;
     typedef typename TT::history_type                     HistoryType;
     typedef HistoryTraits<HistoryType>                    HT;
-    typedef std::stack<Teuchos::RCP<HistoryType> >        BankType;
+    typedef std::stack<HistoryType>                       BankType;
     typedef RNG                                           rng_type;
     typedef RNGTraits<RNG>                                RNGT;
     typedef typename RNGT::uniform_real_distribution_type RandomDistribution;

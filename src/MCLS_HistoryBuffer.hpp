@@ -66,7 +66,7 @@ class HistoryBuffer
     //! Typedefs.
     typedef History                                  history_type;
     typedef HistoryTraits<History>                   HT;
-    typedef std::stack<Teuchos::RCP<History> >       BankType;
+    typedef std::stack<History>                      BankType;
     typedef Teuchos::Array<char>                     Buffer;
     //@}
 

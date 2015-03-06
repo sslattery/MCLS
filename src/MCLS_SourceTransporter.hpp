@@ -110,7 +110,8 @@ class SourceTransporter : public GlobalTransporter<Source>
     void transportBankHistory( BankType& bank );
 
     // Transport a history through the local domain.
-    void localHistoryTransport( const Teuchos::RCP<HistoryType>& history );
+    template<class T>
+    void localHistoryTransport( T&& history );
 
     // Process incoming messages.
     void processMessages( BankType& bank );

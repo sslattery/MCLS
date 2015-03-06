@@ -88,9 +88,6 @@ class SubdomainTransporter : public GlobalTransporter<Source>
                           const Teuchos::RCP<Domain>& domain, 
                           const Teuchos::ParameterList& plist );
 
-    // Destructor.
-    ~SubdomainTransporter() { /* ... */ }
-
     // Assign the source.
     void assignSource( const Teuchos::RCP<Source>& source );
 

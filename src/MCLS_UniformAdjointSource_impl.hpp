@@ -141,21 +141,12 @@ void UniformAdjointSource<Domain>::buildSource()
  * \brief Get a history from the source.
  */
 template<class Domain>
-Teuchos::RCP<typename UniformAdjointSource<Domain>::HistoryType> 
+typename UniformAdjointSource<Domain>::HistoryType
 UniformAdjointSource<Domain>::getHistory()
 {
     MCLS_REQUIRE( d_weight > 0.0 );
-    MCLS_REQUIRE( d_nh_left >= 0 );
+    MCLS_REQUIRE( d_nh_left > 0 );
     MCLS_REQUIRE( Teuchos::nonnull(d_rng) );
-
-    // Return null if empty.
-    if ( !d_nh_left )
-    {
-	return Teuchos::null;
-    }
-
-    // Generate the history.
-    Teuchos::RCP<HistoryType> history = Teuchos::rcp( new HistoryType() );
 
     // Sample the local source cdf to get a starting state.
     int local_state = d_random_sampling ? 
@@ -165,21 +156,13 @@ UniformAdjointSource<Domain>::getHistory()
     Ordinal starting_state = VT::getGlobalRow( *d_b, local_state );
     MCLS_CHECK( DT::isGlobalState(*d_domain,starting_state) );
 
-    // Set the history state.
-    Ordinal weight_sign = (d_local_source[local_state] > 0.0) ? 1 : -1;
-    history->setWeight( d_weight * weight_sign );
-    history->setGlobalState( starting_state );
-    history->live();
-
     // Update count.
     --d_nh_left;
     ++d_nh_emitted;
 
-    MCLS_ENSURE( Teuchos::nonnull(history) );
-    MCLS_ENSURE( history->alive() );
-    MCLS_ENSURE( history->weightAbs() == d_weight );
-
-    return history;
+    // Generate the history.
+    Ordinal weight_sign = (d_local_source[local_state] > 0.0) ? 1 : -1;
+    return HistoryType( starting_state, local_state, d_weight * weight_sign );
 }
 
 //---------------------------------------------------------------------------//
@@ -248,7 +231,7 @@ void UniformAdjointSource<Domain>::buildStratifiedSource()
 
         if ( nh_state > 0 )
         {
-            d_history_stack.push( std::pair<int,int>(i,nh_state) );
+            d_history_stack.emplace( std::pair<int,int>(i,nh_state) );
             d_nh_domain += nh_state;
         }
     }

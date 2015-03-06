@@ -41,7 +41,6 @@
 #ifndef MCLS_HISTORYTRAITS_HPP
 #define MCLS_HISTORYTRAITS_HPP
 
-#include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
 
@@ -85,11 +84,11 @@ class HistoryTraits
     /*!
      * \brief Create a history from a buffer.
      */
-    static Teuchos::RCP<history_type> 
+    static history_type
     createFromBuffer( const Teuchos::ArrayView<char>& buffer )
     { 
 	UndefinedHistoryTraits<History>::notDefined(); 
-	return Teuchos::null;
+	return 0;
     }
 
     /*!

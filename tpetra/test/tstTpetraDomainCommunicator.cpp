@@ -73,12 +73,11 @@
 //---------------------------------------------------------------------------//
 // Helper functions.
 //---------------------------------------------------------------------------//
-Teuchos::RCP<MCLS::AdjointHistory<long> > makeHistory( 
+MCLS::AdjointHistory<long> makeHistory( 
     long state, double weight, int streamid )
 {
-    Teuchos::RCP<MCLS::AdjointHistory<long> > history = Teuchos::rcp(
-	new MCLS::AdjointHistory<long>( state, state, weight ) );
-    history->setEvent( MCLS::Event::BOUNDARY );
+    MCLS::AdjointHistory<long> history( state, state, weight );
+    history.setEvent( MCLS::Event::BOUNDARY );
     return history;
 }
 
@@ -211,21 +210,21 @@ TEUCHOS_UNIT_TEST( DomainCommunicator, Communicate )
 	{
 	    TEST_ASSERT( !domain->isGlobalState(10) );
 
-	    Teuchos::RCP<HistoryType> h1 = 
+	    HistoryType h1 = 
 		makeHistory( 10, 1.1, comm_rank*4 + 1 );
 	    const typename MCLS::DomainCommunicator<DomainType>::Result
 		r1 = communicator.communicate( h1 );
 	    TEST_ASSERT( !r1.sent );
 	    TEST_EQUALITY( communicator.sendBufferSize(), 1 );
 
-	    Teuchos::RCP<HistoryType> h2 = 
+	    HistoryType h2 = 
 		makeHistory( 10, 2.1, comm_rank*4 + 2 );
 	    const typename MCLS::DomainCommunicator<DomainType>::Result
 		r2 = communicator.communicate( h2 );
 	    TEST_ASSERT( !r2.sent );
 	    TEST_EQUALITY( communicator.sendBufferSize(), 2 );
 
-	    Teuchos::RCP<HistoryType> h3 = 
+	    HistoryType h3 = 
 		makeHistory( 10, 3.1, comm_rank*4 + 3 );
 	    const typename MCLS::DomainCommunicator<DomainType>::Result
 		r3 = communicator.communicate( h3 );
@@ -241,21 +240,21 @@ TEUCHOS_UNIT_TEST( DomainCommunicator, Communicate )
 	    // Send to proc comm_rank+1.
 	    TEST_ASSERT( !domain->isGlobalState((comm_rank+1)*10) );
 
-	    Teuchos::RCP<HistoryType> h1 = 
+	    HistoryType h1 = 
 		makeHistory( (comm_rank+1)*10, 1.1, comm_rank*4 + 1 );
 	    const typename MCLS::DomainCommunicator<DomainType>::Result
 		r1 = communicator.communicate( h1 );
 	    TEST_ASSERT( !r1.sent );
 	    TEST_EQUALITY( communicator.sendBufferSize(), 1 );
 
-	    Teuchos::RCP<HistoryType> h2 = 
+	    HistoryType h2 = 
 		makeHistory( (comm_rank+1)*10, 2.1, comm_rank*4 + 2 );
 	    const typename MCLS::DomainCommunicator<DomainType>::Result
 		r2 = communicator.communicate( h2 );
 	    TEST_ASSERT( !r2.sent );
 	    TEST_EQUALITY( communicator.sendBufferSize(), 2 );
 
-	    Teuchos::RCP<HistoryType> h3 = 
+	    HistoryType h3 = 
 		makeHistory( (comm_rank+1)*10, 3.1, comm_rank*4 + 3 );
 	    const typename MCLS::DomainCommunicator<DomainType>::Result
 		r3 = communicator.communicate( h3 );
@@ -271,20 +270,20 @@ TEUCHOS_UNIT_TEST( DomainCommunicator, Communicate )
 
 	    TEST_EQUALITY( bank.size(), 3 );
 
-	    Teuchos::RCP<HistoryType> rp3 = bank.top();
+	    HistoryType rp3 = bank.top();
 	    bank.pop();
-	    Teuchos::RCP<HistoryType> rp2 = bank.top();
+	    HistoryType rp2 = bank.top();
 	    bank.pop();
-	    Teuchos::RCP<HistoryType> rp1 = bank.top();
+	    HistoryType rp1 = bank.top();
 	    bank.pop();
 	    TEST_ASSERT( bank.empty() );
 
-	    TEST_EQUALITY( rp3->globalState(), comm_rank*10 );
-	    TEST_EQUALITY( rp3->weight(), 3.1 );
-	    TEST_EQUALITY( rp2->globalState(), comm_rank*10 );
-	    TEST_EQUALITY( rp2->weight(), 2.1 );
-	    TEST_EQUALITY( rp1->globalState(), comm_rank*10 );
-	    TEST_EQUALITY( rp1->weight(), 1.1 );
+	    TEST_EQUALITY( rp3.globalState(), comm_rank*10 );
+	    TEST_EQUALITY( rp3.weight(), 3.1 );
+	    TEST_EQUALITY( rp2.globalState(), comm_rank*10 );
+	    TEST_EQUALITY( rp2.weight(), 2.1 );
+	    TEST_EQUALITY( rp1.globalState(), comm_rank*10 );
+	    TEST_EQUALITY( rp1.weight(), 1.1 );
 
 	    TEST_ASSERT( communicator.receiveStatus() );
 	}
@@ -300,20 +299,20 @@ TEUCHOS_UNIT_TEST( DomainCommunicator, Communicate )
 	    TEST_ASSERT( communicator.receiveStatus() );
 	    TEST_EQUALITY( bank.size(), 3 );
 
-	    Teuchos::RCP<HistoryType> rp3 = bank.top();
+	    HistoryType rp3 = bank.top();
 	    bank.pop();
-	    Teuchos::RCP<HistoryType> rp2 = bank.top();
+	    HistoryType rp2 = bank.top();
 	    bank.pop();
-	    Teuchos::RCP<HistoryType> rp1 = bank.top();
+	    HistoryType rp1 = bank.top();
 	    bank.pop();
 	    TEST_ASSERT( bank.empty() );
 
-	    TEST_EQUALITY( rp3->globalState(), comm_rank*10 );
-	    TEST_EQUALITY( rp3->weight(), 3.1 );
-	    TEST_EQUALITY( rp2->globalState(), comm_rank*10 );
-	    TEST_EQUALITY( rp2->weight(), 2.1 );
-	    TEST_EQUALITY( rp1->globalState(), comm_rank*10 );
-	    TEST_EQUALITY( rp1->weight(), 1.1 );
+	    TEST_EQUALITY( rp3.globalState(), comm_rank*10 );
+	    TEST_EQUALITY( rp3.weight(), 3.1 );
+	    TEST_EQUALITY( rp2.globalState(), comm_rank*10 );
+	    TEST_EQUALITY( rp2.weight(), 2.1 );
+	    TEST_EQUALITY( rp1.globalState(), comm_rank*10 );
+	    TEST_EQUALITY( rp1.weight(), 1.1 );
 	}
 
 	// End communication.

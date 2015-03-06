@@ -103,19 +103,18 @@ DomainCommunicator<Domain>::DomainCommunicator(
 template<class Domain>
 const typename DomainCommunicator<Domain>::Result& 
 DomainCommunicator<Domain>::communicate( 
-    const Teuchos::RCP<HistoryType>& history )
+    const HistoryType& history )
 {
-    MCLS_REQUIRE( Teuchos::nonnull(history) );
-    MCLS_REQUIRE( Event::BOUNDARY == HT::event(*history) );
-    MCLS_REQUIRE( !HT::alive(*history) );
+    MCLS_REQUIRE( Event::BOUNDARY == HT::event(history) );
+    MCLS_REQUIRE( !HT::alive(history) );
 
     // Initialize result status.
     d_result.sent = false;
     d_result.destination = 0;
 
     // Add the history to the appropriate buffer.
-    int neighbor_id = DT::owningNeighbor( *d_domain, HT::globalState(*history) );
-    d_sends[neighbor_id].bufferHistory( *history );
+    int neighbor_id = DT::owningNeighbor( *d_domain, HT::globalState(history) );
+    d_sends[neighbor_id].bufferHistory( history );
 
     // Update the result destination.
     d_result.destination = DT::sendNeighborRank( *d_domain, neighbor_id );

@@ -149,12 +149,11 @@ TEUCHOS_UNIT_TEST( UniformForwardSource, nh_not_set )
 	TEST_EQUALITY( source.numLeft(), local_num_rows-i );
 	TEST_EQUALITY( source.numEmitted(), i );
 
-	Teuchos::RCP<HistoryType> history = source.getHistory();
+	HistoryType history = source.getHistory();
 
-	TEST_EQUALITY( history->weight(), 1.0 );
-	TEST_ASSERT( domain->isGlobalState( history->globalState() ) );
-	TEST_ASSERT( history->alive() );
-	TEST_ASSERT( VT::isGlobalRow( *x, history->globalState() ) );
+	TEST_EQUALITY( history.weight(), 1.0 );
+	TEST_ASSERT( domain->isGlobalState( history.globalState() ) );
+	TEST_ASSERT( VT::isGlobalRow( *x, history.globalState() ) );
     }
     TEST_ASSERT( source.empty() );
     TEST_EQUALITY( source.numLeft(), 0 );
@@ -240,12 +239,11 @@ TEUCHOS_UNIT_TEST( UniformForwardSource, nh_set )
 	TEST_EQUALITY( source.numLeft(), mult*local_num_rows-i );
 	TEST_EQUALITY( source.numEmitted(), i );
 
-	Teuchos::RCP<HistoryType> history = source.getHistory();
+	HistoryType history = source.getHistory();
 
-	TEST_EQUALITY( history->weight(), 1.0 );
-	TEST_ASSERT( domain->isGlobalState( history->globalState() ) );
-	TEST_ASSERT( history->alive() );
-	TEST_ASSERT( VT::isGlobalRow( *x, history->globalState() ) );
+	TEST_EQUALITY( history.weight(), 1.0 );
+	TEST_ASSERT( domain->isGlobalState( history.globalState() ) );
+	TEST_ASSERT( VT::isGlobalRow( *x, history.globalState() ) );
     }
     TEST_ASSERT( source.empty() );
     TEST_EQUALITY( source.numLeft(), 0 );

@@ -119,7 +119,7 @@ class SourceTraits
     /*!
      * \brief Get a history from the source.
      */
-    static Teuchos::RCP<history_type> getHistory( Source& source )
+    static history_type getHistory( Source& source )
     { 
 	UndefinedSourceTraits<Source>::notDefined(); 
 	return Teuchos::null; 

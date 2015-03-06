@@ -95,15 +95,14 @@ void SubdomainTransporter<Source>::transport()
     while ( !ST::empty(*d_source) )
     {
         // Get a history from the source.
-        Teuchos::RCP<HistoryType> history = ST::getHistory( *d_source );
-        MCLS_CHECK( Teuchos::nonnull(history) );
-        MCLS_CHECK( HT::alive(*history) );
+        HistoryType history = ST::getHistory( *d_source );
+        MCLS_CHECK( HT::alive(history) );
 
         // Do local transport.
-        d_domain_transporter.transport( *history );
-        MCLS_CHECK( !HT::alive(*history) );
-        MCLS_CHECK( Event::CUTOFF == HT::event(*history) ||
-                    Event::BOUNDARY == HT::event(*history) );
+        d_domain_transporter.transport( history );
+        MCLS_CHECK( !HT::alive(history) );
+        MCLS_CHECK( Event::CUTOFF == HT::event(history) ||
+                    Event::BOUNDARY == HT::event(history) );
     }
 
     // Barrier before continuing.

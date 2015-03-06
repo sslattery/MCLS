@@ -93,12 +93,8 @@ class DomainCommunicator
 			const Teuchos::RCP<const Comm>& comm, 
 			const Teuchos::ParameterList& plist );
 
-    // Destructor.
-    ~DomainCommunicator()
-    { /* ... */ }
-
     // Buffer and send a history.
-    const Result& communicate( const Teuchos::RCP<HistoryType>& history );
+    const Result& communicate( const HistoryType& history );
 
     // Send all buffers that are not empty.
     int send();

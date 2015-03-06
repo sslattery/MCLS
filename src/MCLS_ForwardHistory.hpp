@@ -147,10 +147,10 @@ class HistoryTraits<ForwardHistory<Ordinal> >
     /*!
      * \brief Create a history from a buffer.
      */
-    static Teuchos::RCP<history_type> 
+    static history_type
     createFromBuffer( const Teuchos::ArrayView<char>& buffer )
     { 
-	return Teuchos::rcp( new history_type(buffer) );
+	return history_type(buffer);
     }
 
     /*!

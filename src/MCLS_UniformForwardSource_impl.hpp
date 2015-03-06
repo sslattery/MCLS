@@ -114,34 +114,19 @@ void UniformForwardSource<Domain>::buildSource()
  * \brief Get a history from the source.
  */
 template<class Domain>
-Teuchos::RCP<typename UniformForwardSource<Domain>::HistoryType> 
+typename UniformForwardSource<Domain>::HistoryType
 UniformForwardSource<Domain>::getHistory()
 {
     MCLS_REQUIRE( 1.0 == d_weight );
-    MCLS_REQUIRE( d_nh_left >= 0 );
+    MCLS_REQUIRE( d_nh_left > 0 );
     MCLS_REQUIRE( Teuchos::nonnull(d_rng) );
     MCLS_REQUIRE( d_current_state_samples < d_nh_per_state );
     MCLS_REQUIRE( d_current_local_state < VT::getLocalLength(*d_b) );
-
-    // Return null if empty.
-    if ( !d_nh_left )
-    {
-	return Teuchos::null;
-    }
-
-    // Generate the history.
-    Teuchos::RCP<HistoryType> history = Teuchos::rcp( new HistoryType() );
 
     // Get a starting state.
     MCLS_CHECK( VT::isLocalRow(*d_b,d_current_local_state) );
     Ordinal starting_state = VT::getGlobalRow( *d_b, d_current_local_state );
     MCLS_CHECK( DT::isGlobalState(*d_domain,starting_state) );
-
-    // Set the history state.
-    history->setWeight( d_weight );
-    history->setGlobalState( starting_state );
-    history->setStartingState( starting_state );
-    history->live();
 
     // Update local state.
     ++d_current_state_samples;
@@ -155,11 +140,8 @@ UniformForwardSource<Domain>::getHistory()
     --d_nh_left;
     ++d_nh_emitted;
 
-    MCLS_ENSURE( Teuchos::nonnull(history) );
-    MCLS_ENSURE( history->alive() );
-    MCLS_ENSURE( history->weightAbs() == d_weight );
-
-    return history;
+    // Generate the history.
+    return HistoryType( starting_state, d_current_local_state, d_weight );
 }
 
 //---------------------------------------------------------------------------//

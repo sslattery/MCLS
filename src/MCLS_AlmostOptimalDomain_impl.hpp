@@ -84,6 +84,12 @@ AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::AlmostOptimalDomain(
     // Create the tally.
     d_tally = TT::create( x );
 
+    // Get the history length.
+    if ( plist.isParameter("History Length") )
+    {
+	d_history_length = plist.get<int>("History Length");
+    }
+
     // Compute the necessary and sufficient Monte Carlo convergence condition
     // if requested.
     if ( plist.isParameter("Compute Convergence Criteria") )
@@ -120,12 +126,6 @@ void AlmostOptimalDomain<Vector,Matrix,RNG,Tally>::buildDomain(
     const Teuchos::ParameterList& plist )
 {
     MCLS_REQUIRE( Teuchos::nonnull(A) );
-
-    // Get the history length.
-    if ( plist.isParameter("History Length") )
-    {
-	d_history_length = plist.get<int>("History Length");
-    }
 
     // Get the total number of local rows.
     int num_rows = MT::getLocalNumRows( *A );

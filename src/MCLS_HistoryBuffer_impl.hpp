@@ -125,7 +125,6 @@ void HistoryBuffer<History>::addToBank( BankType& bank )
 
     Buffer::const_iterator buffer_it = d_buffer.begin();
     Buffer packed_history( d_size_packed_history );
-    Teuchos::RCP<History> history;
 
     MCLS_REMEMBER( std::size_t bank_size = bank.size() );
 
@@ -134,17 +133,15 @@ void HistoryBuffer<History>::addToBank( BankType& bank )
 	std::copy( buffer_it, buffer_it + d_size_packed_history, 
 		   packed_history.begin() );
 
-	history = HT::createFromBuffer( packed_history );
-	MCLS_CHECK( Teuchos::nonnull(history) );
-	bank.push( history );
+	bank.emplace( HT::createFromBuffer(packed_history) );
 
 	buffer_it += d_size_packed_history;
     }
 
     MCLS_ENSURE( bank_size + d_number == bank.size() );
     MCLS_ENSURE( d_number == d_max_num_histories ?
-            buffer_it + sizeof(int) == d_buffer.end() :
-            buffer_it + sizeof(int) != d_buffer.end() );
+		 buffer_it + sizeof(int) == d_buffer.end() :
+		 buffer_it + sizeof(int) != d_buffer.end() );
 
     empty();
     MCLS_ENSURE( isEmpty() );
