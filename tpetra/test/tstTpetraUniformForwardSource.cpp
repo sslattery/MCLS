@@ -149,8 +149,7 @@ TEUCHOS_UNIT_TEST( UniformForwardSource, nh_not_set )
 	TEST_EQUALITY( source.numLeft(), local_num_rows-i );
 	TEST_EQUALITY( source.numEmitted(), i );
 
-	HistoryType history;
-	source.getHistory( history );
+	HistoryType history = source.getHistory();
 
 	TEST_EQUALITY( history.weight(), 1.0 );
 	TEST_ASSERT( domain->isGlobalState( history.globalState() ) );
@@ -240,8 +239,7 @@ TEUCHOS_UNIT_TEST( UniformForwardSource, nh_set )
 	TEST_EQUALITY( source.numLeft(), mult*local_num_rows-i );
 	TEST_EQUALITY( source.numEmitted(), i );
 
-	HistoryType history;
-	source.getHistory( history );
+	HistoryType history = source.getHistory();
 
 	TEST_EQUALITY( history.weight(), 1.0 );
 	TEST_ASSERT( domain->isGlobalState( history.globalState() ) );
