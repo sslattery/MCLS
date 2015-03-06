@@ -102,6 +102,9 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
     // Set the total to the requested amount. This may change based on the
     // global stratified sampling.
     d_nh_total = d_nh_requested;
+
+    // Get the global states in the source.
+    d_global_states = d_b->getMap()->getNodeElementList();
 }
 
 //---------------------------------------------------------------------------//
@@ -153,8 +156,6 @@ UniformAdjointSource<Domain>::getHistory()
                       sampleRandomSource( d_rng->random(*d_rng_dist) ) : 
                       sampleStratifiedSource();
     MCLS_CHECK( VT::isLocalRow(*d_b,local_state) );
-    Ordinal starting_state = VT::getGlobalRow( *d_b, local_state );
-    MCLS_CHECK( DT::isGlobalState(*d_domain,starting_state) );
 
     // Update count.
     --d_nh_left;
@@ -162,7 +163,8 @@ UniformAdjointSource<Domain>::getHistory()
 
     // Generate the history.
     Ordinal weight_sign = (d_local_source[local_state] > 0.0) ? 1 : -1;
-    return HistoryType( starting_state, local_state, d_weight * weight_sign );
+    return HistoryType(
+	d_global_states[local_state], local_state, d_weight * weight_sign );
 }
 
 //---------------------------------------------------------------------------//

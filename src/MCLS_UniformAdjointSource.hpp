@@ -51,7 +51,6 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ArrayRCP.hpp>
-#include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
 
 namespace MCLS
@@ -145,6 +144,9 @@ class UniformAdjointSource
 
     // Local source vector view.
     Teuchos::ArrayRCP<const Scalar> d_local_source;
+
+    // Global source states.
+    Teuchos::ArrayView<const Ordinal> d_global_states;
 
     // Local domain.
     Teuchos::RCP<Domain> d_domain;
