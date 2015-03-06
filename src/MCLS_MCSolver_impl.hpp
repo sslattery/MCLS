@@ -62,7 +62,7 @@ MCSolver<Source>::MCSolver( const Teuchos::RCP<const Comm>& set_comm,
     , d_plist( plist )
     , d_rng( Teuchos::rcp(new PRNG<rng_type>(global_rank)) )
 #if HAVE_MCLS_TIMERS
-    , d_mc_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: Monte Carlo") )
+    , d_mc_timer( Teuchos::TimeMonitor::getNewCounter("MCLS: MC Transport") )
 #endif
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_plist) );
