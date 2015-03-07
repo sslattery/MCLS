@@ -86,6 +86,7 @@ APPEND_SET(HEADERS
   MCLS_Serializer.hpp
   MCLS_SolverFactory.hpp
   MCLS_SolverFactory_impl.hpp
+  MCLS_SolverManager.hpp
   MCLS_SourceTraits.hpp
   MCLS_SourceTransporter.hpp
   MCLS_SourceTransporter_impl.hpp

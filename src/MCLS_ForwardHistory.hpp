@@ -87,10 +87,6 @@ class ForwardHistory : public History<Ordinal>
     // Deserializer constructor.
     explicit ForwardHistory( const Teuchos::ArrayView<char>& buffer );
 
-    // Destructor.
-    ~ForwardHistory()
-    { /* ... */ }
-
     // Pack the history into a buffer.
     Teuchos::Array<char> pack() const;
 
@@ -103,10 +99,12 @@ class ForwardHistory : public History<Ordinal>
     { return d_starting_state; }
 
     //! Add to the history tally.
-    inline void addToHistoryTally( const double value ) { d_history_tally += value; }
+    inline void addToHistoryTally( const double value )
+    { d_history_tally += value; }
 
     //! Get the history tally.
-    double historyTally() const { return d_history_tally; }
+    double historyTally() const
+    { return d_history_tally; }
 
   public:
 
