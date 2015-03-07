@@ -41,6 +41,8 @@
 #ifndef MCLS_UNIFORMADJOINTSOURCE_HPP
 #define MCLS_UNIFORMADJOINTSOURCE_HPP
 
+#include <stack>
+
 #include "MCLS_SourceTraits.hpp"
 #include "MCLS_DomainTraits.hpp"
 #include "MCLS_VectorTraits.hpp"

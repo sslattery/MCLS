@@ -42,7 +42,6 @@
 #define MCLS_ALMOSTOPTIMALDOMAIN_HPP
 
 #include <stack>
-#include <set>
 #include <unordered_map>
 #include <random>
 
