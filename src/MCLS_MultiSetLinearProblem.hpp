@@ -88,10 +88,14 @@ class MultiSetLinearProblem
 	const Teuchos::RCP<Vector>& x,
 	const Teuchos::RCP<const Vector>& b );
 
+    // Get the global communicator.
+    Teuchos::RCP<const Teuchos::Comm<int> > globalComm() const
+    { return d_global_comm; }
+
     // Get the global rank.
     int globalRank() const
     { return d_global_comm->getRank(); }
-    
+
     // Get the number of sets.
     int numSets() const
     { return d_num_sets; }

@@ -95,6 +95,8 @@ APPEND_SET(HEADERS
   MCLS_SubdomainTransporter.hpp
   MCLS_SubdomainTransporter_impl.hpp
   MCLS_TallyTraits.hpp
+  MCLS_TemereSolverManager.hpp
+  MCLS_TemereSolverManager_impl.hpp
   MCLS_ThyraVectorExtraction.hpp
   MCLS_UniformAdjointSource.hpp
   MCLS_UniformAdjointSource_impl.hpp

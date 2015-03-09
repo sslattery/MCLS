@@ -128,6 +128,9 @@ UniformForwardSource<Domain>::getHistory()
     Ordinal starting_state = VT::getGlobalRow( *d_b, d_current_local_state );
     MCLS_CHECK( DT::isGlobalState(*d_domain,starting_state) );
 
+    // Create the history.
+    HistoryType history( starting_state, d_current_local_state, d_weight );
+    
     // Update local state.
     ++d_current_state_samples;
     if ( d_current_state_samples == d_nh_per_state )
@@ -140,8 +143,8 @@ UniformForwardSource<Domain>::getHistory()
     --d_nh_left;
     ++d_nh_emitted;
 
-    // Generate the history.
-    return HistoryType( starting_state, d_current_local_state, d_weight );
+    // Return the history.
+    return history;
 }
 
 //---------------------------------------------------------------------------//

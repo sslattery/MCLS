@@ -20,6 +20,7 @@
 #include "Partitioner.hpp"
 
 #include <MCLS_MCSASolverManager.hpp>
+#include <MCLS_TemereSolverManager.hpp>
 #include <MCLS_MultiSetLinearProblem.hpp>
 #include <MCLS_TpetraAdapter.hpp>
 
@@ -28,7 +29,6 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_OpaqueWrapper.hpp>
@@ -117,10 +117,21 @@ int main( int argc, char * argv[] )
 		diffusion_problem->getRHS() ) );
 
     // Build the MCLS solver.
-    MCLS::MCSASolverManager<Vector,Matrix> solver_manager( problem, mcls_list );
+    std::string solver_type = plist->get<std::string>("Solver Type");
+    Teuchos::RCP<MCLS::SolverManager<Vector,Matrix> > solver_manager;
+    if ( "MCLS" == solver_type )
+    {
+	solver_manager = Teuchos::rcp(
+	    new MCLS::MCSASolverManager<Vector,Matrix,MCLS::ForwardTag>(problem, mcls_list) );
+    }
+    else if ( "Temere" == solver_type )
+    {
+	solver_manager = Teuchos::rcp(
+	    new MCLS::TemereSolverManager<Vector,Matrix>(problem, mcls_list) );
+    }
 
     // Solve the problem.
-    solver_manager.solve();
+    solver_manager->solve();
 
     // Output final timing.
     Teuchos::TableFormat& format = Teuchos::TimeMonitor::format();
