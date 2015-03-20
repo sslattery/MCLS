@@ -291,7 +291,7 @@ bool FixedPointSolverManager<Vector,Matrix>::solve()
 
 	// Print iteration data.
 	if ( VT::getComm(*d_problem->getLHS())->getRank() == 0 &&
-	     d_num_iters % print_freq == 0 )
+	     ((d_num_iters % print_freq == 0) || !do_iterations) )
 	{
 	    std::cout << d_fixed_point->name() << " Iteration " << d_num_iters
 		      << ": Residual = " 
