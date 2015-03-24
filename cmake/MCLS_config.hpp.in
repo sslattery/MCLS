@@ -3,3 +3,4 @@
 #cmakedefine01 HAVE_MCLS_TIMERS
 #cmakedefine01 HAVE_MCLS_PARASAILS
 #cmakedefine01 HAVE_MCLS_EPETRA
+#cmakedefine01 HAVE_MCLS_TEMERE

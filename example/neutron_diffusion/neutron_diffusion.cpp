@@ -119,15 +119,20 @@ int main( int argc, char * argv[] )
     // Build the MCLS solver.
     std::string solver_type = plist->get<std::string>("Solver Type");
     Teuchos::RCP<MCLS::SolverManager<Vector,Matrix> > solver_manager;
-    if ( "MCLS" == solver_type )
+    if ( "MCLS" == solver_type || "MCSA" == solver_type )
     {
 	solver_manager = Teuchos::rcp(
 	    new MCLS::MCSASolverManager<Vector,Matrix,MCLS::ForwardTag>(problem, mcls_list) );
     }
     else if ( "Temere" == solver_type )
     {
+#if MCLS_HAVE_TEMERE
 	solver_manager = Teuchos::rcp(
 	    new MCLS::TemereSolverManager<Vector,Matrix>(problem, mcls_list) );
+#else
+	bool temere_is_supported = false;
+	assert( temere_is_supported );
+#endif
     }
 
     // Solve the problem.

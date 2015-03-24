@@ -41,6 +41,9 @@
 #ifndef MCLS_TemereSOLVERMANAGER_HPP
 #define MCLS_TemereSOLVERMANAGER_HPP
 
+// Only build if we have Temere support.
+#if MCLS_HAVE_TEMERE
+
 #include <random>
 
 #include "MCLS_config.hpp"
@@ -198,6 +201,8 @@ class TemereSolverManager : public SolverManager<Vector,Matrix>
 #include "MCLS_TemereSolverManager_impl.hpp"
 
 //---------------------------------------------------------------------------//
+
+#endif // end MCLS_HAVE_TEMERE
 
 #endif // end MCLS_TemereSOLVERMANAGER_HPP
 
