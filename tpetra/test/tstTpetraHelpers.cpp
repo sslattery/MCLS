@@ -60,7 +60,6 @@
 #include <Teuchos_SerialDenseMatrix.hpp>
 
 #include <Tpetra_Map.hpp>
-#include <Tpetra_BlockMap.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
