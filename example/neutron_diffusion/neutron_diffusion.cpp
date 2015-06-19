@@ -121,8 +121,21 @@ int main( int argc, char * argv[] )
     Teuchos::RCP<MCLS::SolverManager<Vector,Matrix> > solver_manager;
     if ( "MCLS" == solver_type || "MCSA" == solver_type )
     {
-	solver_manager = Teuchos::rcp(
-	    new MCLS::MCSASolverManager<Vector,Matrix,MCLS::ForwardTag>(problem, mcls_list) );
+	std::string mc_type = mcls_list->get<std::string>("MC Type");
+	if ( "Adjoint" == mc_type )
+	{
+	    solver_manager = Teuchos::rcp(
+		new MCLS::MCSASolverManager<Vector,Matrix,MCLS::AdjointTag>(problem, mcls_list) );
+	}
+	else if ( "Forward" == mc_type )
+	{
+	    solver_manager = Teuchos::rcp(
+		new MCLS::MCSASolverManager<Vector,Matrix,MCLS::ForwardTag>(problem, mcls_list) );
+	}
+	else
+	{
+	    assert( "Adjoint" == mc_type || "Forwafd" == mc_type );
+	}
     }
     else if ( "Temere" == solver_type )
     {
