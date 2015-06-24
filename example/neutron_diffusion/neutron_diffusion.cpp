@@ -134,7 +134,7 @@ int main( int argc, char * argv[] )
 	}
 	else
 	{
-	    assert( "Adjoint" == mc_type || "Forwafd" == mc_type );
+	    assert( "Adjoint" == mc_type || "Forward" == mc_type );
 	}
     }
     else if ( "Temere" == solver_type )
