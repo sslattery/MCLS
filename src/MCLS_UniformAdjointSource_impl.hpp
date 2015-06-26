@@ -48,7 +48,6 @@
 
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_Ptr.hpp>
-#include <Teuchos_ArrayRCP.hpp>
 
 namespace MCLS
 {
@@ -72,6 +71,8 @@ UniformAdjointSource<Domain>::UniformAdjointSource(
     , d_nh_emitted(0)
     , d_random_sampling(1)
     , d_local_length( VT::getLocalLength(*d_b) )
+    , d_cdf( d_local_length )
+    , d_samples_per_state( d_local_length )
 {
     MCLS_REQUIRE( Teuchos::nonnull(d_b) );
     MCLS_REQUIRE( Teuchos::nonnull(d_domain) );
@@ -151,11 +152,17 @@ UniformAdjointSource<Domain>::getHistory()
     MCLS_REQUIRE( d_nh_left > 0 );
     MCLS_REQUIRE( Teuchos::nonnull(d_rng) );
 
-    // Sample the local source cdf to get a starting state.
-    int local_state = d_random_sampling ? 
-                      sampleRandomSource( d_rng->random(*d_rng_dist) ) : 
-                      sampleStratifiedSource();
+    // Get the next state.
+    MCLS_REQUIRE( d_history_stack.top().second > 0 );
+    int local_state = d_history_stack.top().first;
     MCLS_CHECK( VT::isLocalRow(*d_b,local_state) );
+    
+    // Update the state count.
+    --d_history_stack.top().second;
+    if ( 0 == d_history_stack.top().second )
+    {
+        d_history_stack.pop();
+    }
 
     // Update count.
     --d_nh_left;
@@ -175,8 +182,7 @@ template<class Domain>
 void UniformAdjointSource<Domain>::buildRandomSource()
 {
     // Build a non-normalized CDF from the local source data.
-    d_cdf = Teuchos::ArrayRCP<double>( d_local_source.size(), 
-				       std::abs(d_local_source[0]) );
+    d_cdf[0] = d_local_source[0];
     typename Teuchos::ArrayRCP<const Scalar>::const_iterator src_it;
     Teuchos::ArrayRCP<double>::iterator cdf_it;
     for ( src_it = d_local_source.begin()+1, cdf_it = d_cdf.begin()+1;
@@ -198,6 +204,23 @@ void UniformAdjointSource<Domain>::buildRandomSource()
 	MCLS_CHECK( *cdf_it >= 0 );
     }
     MCLS_CHECK( std::abs(d_cdf().back()-1) < 1.0e-6 );
+
+    // Randomly sample the source to build the history stack.
+    for ( auto& i : d_samples_per_state ) i = 0;
+    for ( int i = 0; i < d_nh_domain; ++i )
+    {
+	++d_samples_per_state[
+	    SamplingTools::sampleDiscreteCDF( 
+		d_cdf.getRawPtr(), d_cdf.size(), d_rng->random(*d_rng_dist) )
+	    ];
+    }
+    for ( int i = 0; i < d_local_source.size(); ++i )
+    {
+        if ( d_samples_per_state[i] > 0 )
+        {
+            d_history_stack.emplace( std::pair<int,int>(i,d_samples_per_state[i]) );
+        }
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -237,39 +260,6 @@ void UniformAdjointSource<Domain>::buildStratifiedSource()
             d_nh_domain += nh_state;
         }
     }
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Sample the random source.
- */
-template<class Domain>
-int UniformAdjointSource<Domain>::sampleRandomSource( const double random )
-{
-    // Sample the local source cdf to get a starting state.
-    return SamplingTools::sampleDiscreteCDF( 
-	d_cdf.getRawPtr(), d_cdf.size(), random );
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * \brief Sample the stratified source.
- */
-template<class Domain>
-int UniformAdjointSource<Domain>::sampleStratifiedSource()
-{
-    // Get the next state.
-    MCLS_REQUIRE( d_history_stack.top().second > 0 );
-    int local_state = d_history_stack.top().first;
-
-    // Update the state count.
-    --d_history_stack.top().second;
-    if ( 0 == d_history_stack.top().second )
-    {
-        d_history_stack.pop();
-    }
-
-    return local_state;
 }
 
 //---------------------------------------------------------------------------//

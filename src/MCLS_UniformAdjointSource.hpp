@@ -54,6 +54,7 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_ArrayView.hpp>
+#include <Teuchos_Array.hpp>
 
 namespace MCLS
 {
@@ -133,12 +134,6 @@ class UniformAdjointSource
     // Build a stratified source.
     void buildStratifiedSource();
 
-    // Sample the random source.
-    int sampleRandomSource( const double random );
-
-    // Sample the stratified source.
-    int sampleStratifiedSource();
-
   private:
 
     // Source vector.
@@ -159,9 +154,9 @@ class UniformAdjointSource
     // Random number distribution.
     Teuchos::RCP<RandomDistribution> d_rng_dist;
 
-    // Delayed stack of stratified source histories. First value of pair is
-    // the local state the history will be born in, second value is the number
-    // of histories left to create in that local state.
+    // Delayed stack of source histories. First value of pair is the local
+    // state the history will be born in, second value is the number of
+    // histories left to create in that local state.
     std::stack<std::pair<int,int> > d_history_stack;
 
     // Number of requested histories.
@@ -185,11 +180,14 @@ class UniformAdjointSource
     // Random/stratified sampling boolean.
     int d_random_sampling;
 
+    // Local length of the source.
+    Ordinal d_local_length;
+
     // Local source cdf for random histories.
     Teuchos::ArrayRCP<double> d_cdf;
 
-    // Local length of the source.
-    Ordinal d_local_length;
+    // Number of samples per state.
+    Teuchos::Array<int> d_samples_per_state;
 };
 
 //---------------------------------------------------------------------------//
