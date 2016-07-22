@@ -254,7 +254,6 @@ class MatrixTraits
 	const Teuchos::ArrayView<int>& ranks )
     {
 	UndefinedMatrixTraits<Vector,Matrix>::notDefined(); 
-	return 0; 
     }
 
     /*!
@@ -265,7 +264,6 @@ class MatrixTraits
 	const Teuchos::ArrayView<global_ordinal_type>& global_rows )
     {
 	UndefinedMatrixTraits<Vector,Matrix>::notDefined(); 
-	return 0; 
     }
 
     /*!
@@ -276,7 +274,6 @@ class MatrixTraits
 	const Teuchos::ArrayView<global_ordinal_type>& global_cols )
     {
 	UndefinedMatrixTraits<Vector,Matrix>::notDefined(); 
-	return 0; 
     }
 
     /*!
@@ -347,7 +344,6 @@ class MatrixTraits
     static void getLocalDiagCopy( const Matrix& matrix, Vector& vector )
     { 
 	UndefinedMatrixTraits<Vector,Matrix>::notDefined(); 
-	return Teuchos::null; 
     }
 
     /*!

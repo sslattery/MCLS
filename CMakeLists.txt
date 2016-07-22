@@ -5,9 +5,6 @@
 ## TriBITS package file for the MCLS package
 ##---------------------------------------------------------------------------##
 
-INCLUDE(TribitsPackageMacros)
-INCLUDE(TribitsAddOptionAndDefine)
-
 ##---------------------------------------------------------------------------##
 ## A) Define the package
 ##---------------------------------------------------------------------------##
@@ -20,30 +17,30 @@ TRIBITS_PACKAGE(MCLS)
 
 # Design-by-Contract
 TRIBITS_ADD_OPTION_AND_DEFINE(
-	${PACKAGE_NAME}_ENABLE_DBC
-	HAVE_MCLS_DBC
-	"Enable Design-by-Contract checks. WARNING: use for debug checking but disable for production runs as it incurs a significant overhead."
-	${${PROJECT_NAME}_ENABLE_DEBUG}
-)
+  ${PACKAGE_NAME}_ENABLE_DBC
+  HAVE_MCLS_DBC
+  "Enable Design-by-Contract checks. WARNING: use for debug checking but disable for production runs as it incurs a significant overhead."
+  ${${PROJECT_NAME}_ENABLE_DEBUG}
+  )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
-        ${PACKAGE_NAME}_USE_ParaSails
-	HAVE_MCLS_PARASAILS
-	"Build MCLS with ParaSails preconditioners."
-	${${PACKAGE_NAME}_ENABLE_ParaSails}
-)
+  ${PACKAGE_NAME}_USE_ParaSails
+  HAVE_MCLS_PARASAILS
+  "Build MCLS with ParaSails preconditioners."
+  ${${PACKAGE_NAME}_ENABLE_ParaSails}
+  )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
-        ${PACKAGE_NAME}_USE_Temere
-	HAVE_MCLS_TEMERE
-	"Build MCLS with Temere preconditioners."
-	${${PACKAGE_NAME}_ENABLE_Temere}
-)
+  ${PACKAGE_NAME}_USE_Temere
+  HAVE_MCLS_TEMERE
+  "Build MCLS with Temere preconditioners."
+  ${${PACKAGE_NAME}_ENABLE_Temere}
+  )
 
 # Timings
 TRIBITS_ADD_OPTION_AND_DEFINE(
-	${PACKAGE_NAME}_ENABLE_TIMERS
-	HAVE_MCLS_TIMERS
+  ${PACKAGE_NAME}_ENABLE_TIMERS
+  HAVE_MCLS_TIMERS
 	"Enable timing."
 	${${PROJECT_NAME}_ENABLE_DEBUG}
 )
